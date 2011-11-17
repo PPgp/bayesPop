@@ -1,1 +1,0 @@
-PopByAgeMale2010 <- read.delim(file='PopByAgeMale2010.txt', comment.char='#', check.names=FALSE)
