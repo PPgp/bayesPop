@@ -1,0 +1,11 @@
+Package: bayesPop
+Type: Package
+Title: Probabilistic Population Projection
+Version: 0.1-0
+Date: 2011-08-24
+Author: Hana Sevcikova, Adrian Raftery
+Maintainer: Hana Sevcikova <hanas@uw.edu>
+Depends: R (>= 2.12.0), abind, bayesTFR, bayesLife
+Description: The package generates population projection for all countries of the world using several probabilistic components, such as total fertility rate (TFR) and life expectancy.
+License: GPL (>=2)
+LazyLoad: yes

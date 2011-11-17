@@ -1,0 +1,26 @@
+# import
+import(
+    bayesTFR
+)
+
+#exportPattern("^[[:alpha:]]+")
+useDynLib(bayesPop)
+
+# export functions
+export(
+pop.predict,
+pop.trajectories.plot,
+pop.trajectories.plot.all,
+pop.trajectories.table,
+pop.pyramid,
+pop.pyramid.all,
+pop.trajectories.pyramid,
+pop.trajectories.pyramid.all,
+get.pop.prediction,
+has.pop.prediction
+)
+
+# register S3 methods
+S3method(summary, bayesPop.prediction)
+S3method(print, summary.bayesPop.prediction)
+S3method(get.countries.table, bayesPop.prediction)

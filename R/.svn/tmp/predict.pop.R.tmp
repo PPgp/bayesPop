@@ -1,0 +1,339 @@
+predict.pop <- function(inputs=list(
+							popM=NULL,
+							popF=NULL,
+							mxM=NULL,
+							mxF=NULL,
+							srb=NULL,
+							pasfr=NULL,
+							mig.type=NULL,
+							migM=NULL,
+							migF=NULL,
+							e0M=NULL,
+							e0F=NULL,
+							tfr=NULL,
+							e0M.sim.dir=NULL, 
+							e0F.sim.dir=NULL, 
+							tfr.sim.dir=NULL,
+						), nr.traj = 1000,
+						output.dir = file.path(getwd(), "bayesPop.output"),
+						verbose=FALSE) {
+	inp <- load.inputs(inputs)
+	nest <- 11 # get this from the data
+	data(LOCATIONS)
+	countries <- unique(inp$POPm0[,'country_code'])
+	ncountries <- length(countries)
+	totp <- matrix(NA, nrow=ncountries, ncol=0)
+	for(country in countries) {
+		country.idx <- which(LOCATIONS[,'country_code'] == country)
+		if(verbose)
+			cat('\nProcessing country ', country, ' -- ', as.character(LOCATIONS[country.idx,'name']))
+		# Extract the country-specific stuff from the inputs
+		inpc <- list()
+		for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB',
+						'PASFR', 'MIGtype', 'MIGm', 'MIGf')) {
+			idx <- inp[[par]][,'country_code'] == country
+			inpc[[par]] <- inp[[par]][idx,]
+			inpc[[par]] <- inpc[[par]][, !is.element(names(inpc[[par]]), c('country_code', 'Location', 'Age'))]
+		}
+		inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'BaseYear']
+		inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigrationType']
+		inpc$e0Mpred <- get.e0.trajectories(inp$e0Mpred, country)
+		if(is.null(inpc$e0Mpred)) {
+			warning('No e0 trajectories for ', LOCATIONS[country.idx,'name'])
+			next	
+		}
+		inpc$e0Fpred <- get.e0.trajectories(inp$e0Fpred, country)
+		e0mtraj.idx <- get.traj.index(nr.traj, inpc$e0Mpred)
+		if (ncol(inpc$e0Mpred) != ncol(inpc$e0Fpred)) {
+			warning('Male and female life expactancy have diferent number of e0 trajectories.')
+			e0ftraj.idx <- get.traj.index(nr.traj, inpc$e0Fpred)
+		} else e0ftraj.idx <- e0mtraj.idx
+		inpc$e0Mpred <- inpc$e0Mpred[,e0mtraj.idx]
+		inpc$e0Fpred <- inpc$e0Fpred[,e0ftraj.idx]
+		
+		inpc$TFRpred <- get.tfr.trajectories(inp$TFRpred, country)
+		if(is.null(inpc$TFRpred)) {
+			warning('No TFR trajectories for ', LOCATIONS[country.idx,'name'])
+			next	
+		}
+		tfr.traj.idx <- get.traj.index(nr.traj, inpc$TFRpred)
+		inpc$TFRpred <- inpc$TFRpred[,tfr.traj.idx]
+		npred <- nrow(inpc$TFRpred)
+
+		if(inpc$MIGtype < 2) {
+			for(itraj in 1:nr.traj) {
+				if (verbose) cat('\nTrajectory: ', itraj)
+				asfr <- inpc$TFRpred[,itraj] * inpc$PASFR / 100.
+				eopm <- inpc$e0Mpred[,itraj]
+				eopf <- inpc$e0Fpred[,itraj]
+				sr <- modifiedLC(nest, npred, inpc, asfr, eopm, eopf, verbose=verbose)
+				totp <- cbind(totp, StoPopProj1(npred, inpc, sr, asfr, LOCATIONS[country.idx,'name']))
+			}
+		} else {
+			
+		}
+	}
+		
+	return(totp)
+}
+
+load.inputs <- function(inputs) {
+	# Get initial population counts
+	if(is.null(inputs$popM)) data(POPm0)
+	else POPm0 <- read.delim(file=inputs$popM, comment.char='#', check.names=FALSE)
+	if(is.null(inputs$popF)) data(POPf0)
+	else POPf0 <- read.delim(file=inputs$popF, comment.char='#', check.names=FALSE)
+	
+	# Get death rates
+	if(is.null(inputs$mxM)) data(MXm)
+	else MXm <- read.delim(file=inputs$mxM, comment.char='#', check.names=FALSE)
+	if(is.null(inputs$mxF)) data(MXf)
+	else MXf <- read.delim(file=inputs$mxF, comment.char='#', check.names=FALSE)
+	
+	# Get sex ratio at birth
+	if(is.null(inputs$srb)) data(SRB)
+	else SRB <- read.delim(file=inputs$srb, comment.char='#', check.names=FALSE)
+	
+	# Get percentage age-specific fertility rate
+	if(is.null(inputs$pasfr)) data(PASFR)
+	else PASFR <- read.delim(file=inputs$pasfr, comment.char='#', check.names=FALSE)
+	
+	# Get migration type and base year
+	if(is.null(inputs$mig.type)) data(MIGtype)
+	else MIGtype <- read.delim(file=inputs$mig.type, comment.char='#', check.names=FALSE)
+
+	# Get age-specific migration
+	if(is.null(inputs$migM)) data(MIGm)
+	else MIGm <- read.delim(file=inputs$migM, comment.char='#', check.names=FALSE)
+	if(is.null(inputs$migF)) data(MIGf)
+	else MIGf <- read.delim(file=inputs$migF, comment.char='#', check.names=FALSE)
+
+	# Get life expectancy
+	e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir)
+	e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir)
+	
+	# Get TFR
+	TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir)
+
+	return(list(POPm0=POPm0, POPf0=POPf0, MXm=MXm, MXf=MXf, SRB=SRB,
+				PASFR=PASFR, MIGtype=MIGtype, MIGm=MIGm, MIGf=MIGf,
+				e0Mpred=e0Mpred, e0Fpred=e0Fpred, TFRpred=TFRpred))	
+}
+
+get.traj.index <- function(nr.traj, traj) {
+	ncoltraj <- ncol(traj)
+	if(nr.traj < ncoltraj) {
+		traj.idx <- sample(1:ncoltraj, nr.traj)
+	} else {
+		if(nr.traj > ncoltraj) {
+			traj.idx <- sample(1:ncoltraj, nr.traj, replace=TRUE)
+		} else traj.idx <- 1:ncoltraj
+	}
+	return(traj.idx)
+}
+
+modifiedLC <- function (nest, npred, inputs, asfr, eopm, eopf, verbose=FALSE) {
+	# extend mx, get LC ax,bx,k1
+	mxMKan <- KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear)
+	mxMKan$sex <- 1
+	mxMKan$eop <- eopm
+	mxFKan <- KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear)
+	mxFKan$sex <- 2
+	mxFKan$eop <- eopf
+    
+    # Using combined bx, This differs from ModifiedLC0!
+    bxm <- mxMKan$bx
+    bxf <- mxFKan$bx
+    bx <- 0.5 * (bxm + bxf)
+    kp <- list(rep(NA, npred), rep(NA, npred))
+    sr <- list(matrix(NA, nrow=27, ncol=npred), matrix(NA, nrow=27, ncol=npred))
+    #Get the projected kt from eo, and make projection of Mx
+    for (mxYKan in list(mxMKan, mxFKan)) { # iterate over male and female
+    	if (verbose) cat('\nSimulate ', c('male', 'female')[mxYKan$sex], ' prediction:')
+    	for(i in 1:npred) {
+    		if (verbose) cat(i, ', ')
+    		k1 <- if(mxYKan$d1 >=0) mxYKan$k0 else mxYKan$k0 + (i+1) * mxYKan$d1 # LC project kt
+    		kp[[mxYKan$sex]][i] <- k2 <- LCEoKt(mxYKan$sex, mxYKan$ax, bx, mxYKan$eop[i], k1)
+    		mx <- exp(mxYKan$ax + bx * k2)
+    		LT <- LifeTB(mxYKan$sex, mx)
+    		sr[[mxYKan$sex]][,i] <- LT$sx
+    	}
+    }
+    if (verbose) cat('\n')
+	return(sr)    
+}
+
+KannistoAxBx <- function(ne, mx, yb)  {
+	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
+	# ne is the number of projections
+	Mxe <- as.matrix(mx)
+	Mxe <- rbind(Mxe, 
+			matrix(NA, nrow=28-nrow(mx), ncol=ncol(mx)))
+
+	for(j in 1:ne) {
+		k <- 1:4
+		Xm1 <- sum(log(mx[17 + k, j] / (1 - mx[17 + k, j])))
+		Xm2 <- sum((5 * k - 5) * log(mx[17 + k, j] / (1 - mx[17 + k, j])))
+		aam = exp((350 * Xm1 - 30 * Xm2) / (4 * 350 - 30 * 30))
+		bbm = (Xm1 - 4 * log(aam)) / 30
+		# Ages 100-105, ..., 130+
+		k <- 1:7
+		h = 100 + 5 * (k - 1)
+		Mxe[21 + k, j] = aam * exp(bbm * (h - 80)) / (1 + aam * exp(bbm * (h - 80)))
+	}
+    lMxe <- log(Mxe)
+    	
+	#Get Lee-Cater Ax and Bx
+	if(yb > 1980) yb <- 1980
+	ns = (yb - 1950) / 5 + 1
+    
+    x1 <- apply(lMxe[,ns:ne], 1, sum)
+    ax <- x1 / (ne - ns + 1)
+
+	kt <- rep(NA, ne)
+	kt[ns:ne] = apply(lMxe[,ns:ne], 2, sum) - sum(ax)
+    
+	x2 <- sum(kt[ns:ne]*kt[ns:ne])
+	x1 <- rep(NA, nrow(Mxe))
+	for (i in 1:nrow(Mxe)) 
+		x1[i] <- sum((lMxe[i,ns:ne]-ax[i])*kt[ns:ne])
+	bx <- x1/x2
+	if (bx[i] <= 0) # irregular
+        bx[i] = 0.5 * bx[i - 1]
+       
+	for (i in 1:28) { # ?
+		if (bx[29 - i] == 0) bx[29 - i] = bx[29 - i - 1]
+	}
+    bx[19:28] <- bx[18]   # bx(80) is used for all older ages to fit large Eo
+       
+	return(list(mx=mx, ax=ax, bx=bx, k0=kt[ne], d1=(kt[ne] - kt[ns]) / (ne - ns + 1)))
+}
+
+LCEoKt <- function(sex, ax, bx, eop, k1) {
+	# The idea of the LCEoKt comes from Thomas Buettner
+	mxi <- exp(ax + bx*k1)
+	LT <- LifeTB(sex, mxi)
+	eo1 <- LT$eo
+	# Making the bracket, [kl,ku], to include the target eop
+	if(eo1 <= eop) {
+		kl <- k1 # the lower bound
+        #Find the upper bound
+		n <- 1
+		ku <- k1 - 2^n # the initial upper bound
+		while(eo1 < eop) {
+			mxi <- exp(ax + bx*ku)
+			LT <- LifeTB(sex, mxi)
+			eo1 <- LT$eo    	
+			n <- n + 1
+			ku <- k1 - 2^n # the updated upper bound
+		}
+	} else {
+		ku <- k1 # the upper bound
+		# Find the lower bound
+		n <- 1
+		kl <- k1 + 2^n #the initial lower bound
+		while(eo1 > eop) {
+			mxi <- exp(ax + bx*kl)
+			LT <- LifeTB(sex, mxi)
+			eo1 <- LT$eo 
+			n <- n + 1
+			kl <- k1 + 2^n # the updated lower bound
+		}
+	}
+	# Reduce the bracket
+	k2 <- ku
+	while(abs(eo1 - eop) > 0.01) {
+		k2 <- 0.5 * (kl + ku)
+		mxi <- exp(ax + bx*k2)
+		LT <- LifeTB(sex, mxi)
+		eo1 <- LT$eo
+		if(eo1 < eop) kl <- k2
+		else ku <- k2
+	}
+	return(k2)
+}
+
+LifeTB <- function(sex, mxm) {
+	# Life table computing
+    # Age0-4 (a0 and a1)
+    if(sex > 1) {# female
+		am <- if (mxm[1] < 0.107) c(0.053 + 2.8 * mxm[1], 1.522 - 1.518 * mxm[1])
+				else c(0.35, 1.361)
+	} else { # male
+		am <- if (mxm[1] < 0.107) c(0.045 + 2.684 * mxm[1], 1.651 - 2.816 * mxm[1])
+				else c(0.33, 1.352)
+	}
+	lm <- rep(NA, 28)
+	LLm <- rep(NA, 27)
+	lm[1:3] <- c(1, 1 - mxm[1] / (1 + (1 - am[1]) * mxm[1]), (1 - 4 * mxm[2] / (1 + (4 - am[2]) * mxm[2])))
+	lm[3] <- lm[2] * lm[3]
+	LLm[1] = (lm[2] + am[1] * (1 - lm[2])) + (4 * lm[3] + am[2] * (lm[2] - lm[3])) # Life table male 4L0
+    
+    # Age 5-9, .... 95-99
+    for(i in 2:20) { 
+    	# Greville formula used in Mortpak and UN MLT (1982)
+		am <- c(am, 2.5 - (25 / 12) * (mxm[i+1] - 0.1 * log(mxm[i+2] / mxm[i]))) 
+		qmx <- 5 * mxm[i+1] / (1 + (5 - am[i+1]) * mxm[i+1])
+     	lm[i+2] <- lm[i+1] * (1 - qmx)
+		LLm[i] = 5 * lm[i+2] + am[i+1] * (lm[i+1] - lm[i+2])
+    }
+	for(i in 21:26) { # Starts 104
+		qmx <- 1 - exp(-5 * mxm[i+1])
+		lm[i+2] = lm[i+1] * (1 - qmx)
+      	LLm[i] = (lm[i+1] - lm[i+2]) / mxm[i+1]
+    }
+    # Age 130+
+	LLm[27] <- lm[28] / mxm[28] # Assuming Mx levels off at age 130
+	# life table computing finished
+     
+    # Survival Ratios
+    sx <- rep(0, 27)
+    sx[1] = LLm[1] / 5
+    LLmneq0 <- which(LLm[1:25]!=0)
+    sx[LLmneq0+1] <- LLm[LLmneq0+1]/LLm[LLmneq0]
+
+	# Last age group
+	sx[27] <- if(LLm[26] == 0) 0 else LLm[27] / (LLm[26] + LLm[27])
+	if(sx[27] > sx[26])  sx[27] = sx[26]
+
+	# life expectancy
+	eo = sum(LLm) 
+
+	return(list(sx=sx, eo=eo))
+}
+
+StoPopProj1 <- function(npred, inputs, sr, asfr, country.name) {
+	popm <- popf <- matrix(NA, nrow=27, ncol=npred+1)	
+	popm[,1] <- c(inputs$POPm0, rep(0, 6))
+	popf[,1] <- c(inputs$POPf0, rep(0, 6))
+	
+	migm <- rbind(inputs$MIGm, matrix(0, nrow=6, ncol=ncol(inputs$MIGm), 
+						dimnames=list(NULL, colnames(inputs$MIGm))))
+	migf <- rbind(inputs$MIGf, matrix(0, nrow=6, ncol=ncol(inputs$MIGf),
+						dimnames=list(NULL, colnames(inputs$MIGf))))
+	totp <- rep(1, npred)
+	
+	# Population projection for one trajectory of TF
+	# Compute ages >=5
+	for(j in 2:(npred+1)) {
+		popm[2:26,j] <- popm[1:25, j-1] * sr[[1]][2:26, j-1] + migm[2:26, j-1]
+		popf[2:26,j] <- popf[1:25, j-1] * sr[[2]][2:26, j-1] + migf[2:26, j-1]
+		#Age 100+
+		popm[27,j] <- (popm[27, j-1] + popm[26, j-1]) * sr[[1]][27, j-1] + migm[27, j-1]
+		popf[27,j] <- (popf[27, j-1] + popf[26, j-1]) * sr[[2]][27, j-1] + migf[27, j-1]
+		
+		# birth in 5-yrs
+  		b <- sum(0.5 * (popf[4:10, j-1] + popf[4:10, j]) * asfr[1:7,j - 1])
+	  	bm <- b * inputs$SRB[j - 1] / (1 + inputs$SRB[j - 1])
+  		bf = b / (1 + inputs$SRB[j - 1])
+
+ 		popm[1, j] <- unlist(bm * sr[[1]][1, j - 1] + migm[1, j - 1])
+ 		popf[1, j] <- unlist(bf * sr[[2]][1, j - 1] + migf[1, j - 1])
+ 
+ 		if(any(popm[,j] < 0)) warnings('Negative male population for ', country.name)
+		if(any(popf[,j] < 0)) warnings('Negative female population for ', country.name)
+
+ 		totp[j-1] <- sum(popm[,j]+popf[,j])
+	}
+	return(totp)
+}

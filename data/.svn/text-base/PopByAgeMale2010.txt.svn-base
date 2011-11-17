@@ -1,0 +1,4831 @@
+"index"	"country"	"country_code"	"age"	"2010"
+1	"Afghanistan"	4	"0-4"	2852.494
+2	"Afghanistan"	4	"5-9"	2468.074
+3	"Afghanistan"	4	"10-14"	2207.065
+4	"Afghanistan"	4	"15-19"	1816.5
+5	"Afghanistan"	4	"20-24"	1476.985
+6	"Afghanistan"	4	"25-29"	1197.069
+7	"Afghanistan"	4	"30-34"	971.741
+8	"Afghanistan"	4	"35-39"	795.74
+9	"Afghanistan"	4	"40-44"	645.764
+10	"Afghanistan"	4	"45-49"	516.13
+11	"Afghanistan"	4	"50-54"	407.13
+12	"Afghanistan"	4	"55-59"	313.136
+13	"Afghanistan"	4	"60-64"	241.619
+14	"Afghanistan"	4	"65-69"	162.34
+15	"Afghanistan"	4	"70-74"	100.119
+16	"Afghanistan"	4	"75-79"	52.079
+17	"Afghanistan"	4	"80-84"	20.796
+18	"Afghanistan"	4	"85-89"	5.731
+19	"Afghanistan"	4	"90-94"	0.965
+20	"Afghanistan"	4	"95-99"	0.089
+21	"Afghanistan"	4	"100+"	0.005
+22	"Albania"	8	"0-4"	108.322
+23	"Albania"	8	"5-9"	127.582
+24	"Albania"	8	"10-14"	143.117
+25	"Albania"	8	"15-19"	146.764
+26	"Albania"	8	"20-24"	161.375
+27	"Albania"	8	"25-29"	135.16
+28	"Albania"	8	"30-34"	98.424
+29	"Albania"	8	"35-39"	100.077
+30	"Albania"	8	"40-44"	97.067
+31	"Albania"	8	"45-49"	103.718
+32	"Albania"	8	"50-54"	105.767
+33	"Albania"	8	"55-59"	73.757
+34	"Albania"	8	"60-64"	58.873
+35	"Albania"	8	"65-69"	53.461
+36	"Albania"	8	"70-74"	43.712
+37	"Albania"	8	"75-79"	28.281
+38	"Albania"	8	"80-84"	12.903
+39	"Albania"	8	"85-89"	5.068
+40	"Albania"	8	"90-94"	0.999
+41	"Albania"	8	"95-99"	0.162
+42	"Albania"	8	"100+"	0.007
+43	"Algeria"	12	"0-4"	1762.895
+44	"Algeria"	12	"5-9"	1611.026
+45	"Algeria"	12	"10-14"	1532.589
+46	"Algeria"	12	"15-19"	1824.417
+47	"Algeria"	12	"20-24"	1894.769
+48	"Algeria"	12	"25-29"	1848.536
+49	"Algeria"	12	"30-34"	1575.194
+50	"Algeria"	12	"35-39"	1330.592
+51	"Algeria"	12	"40-44"	1144.204
+52	"Algeria"	12	"45-49"	957.937
+53	"Algeria"	12	"50-54"	727.978
+54	"Algeria"	12	"55-59"	592.986
+55	"Algeria"	12	"60-64"	369.836
+56	"Algeria"	12	"65-69"	264.006
+57	"Algeria"	12	"70-74"	217.833
+58	"Algeria"	12	"75-79"	152.237
+59	"Algeria"	12	"80-84"	66.914
+60	"Algeria"	12	"85-89"	21.756
+61	"Algeria"	12	"90-94"	4.234
+62	"Algeria"	12	"95-99"	0.384
+63	"Algeria"	12	"100+"	0.021
+64	"American Samoa"	16	"0-4"	3.936
+65	"American Samoa"	16	"5-9"	4.061
+66	"American Samoa"	16	"10-14"	4.129
+67	"American Samoa"	16	"15-19"	4.029
+68	"American Samoa"	16	"20-24"	3.27
+69	"American Samoa"	16	"25-29"	2.344
+70	"American Samoa"	16	"30-34"	2.107
+71	"American Samoa"	16	"35-39"	1.963
+72	"American Samoa"	16	"40-44"	2.002
+73	"American Samoa"	16	"45-49"	1.822
+74	"American Samoa"	16	"50-54"	1.499
+75	"American Samoa"	16	"55-59"	1.223
+76	"American Samoa"	16	"60-64"	0.956
+77	"American Samoa"	16	"65-69"	0.696
+78	"American Samoa"	16	"70-74"	0.442
+79	"American Samoa"	16	"75-79"	0.226
+80	"American Samoa"	16	"80-84"	0.093
+81	"American Samoa"	16	"85-89"	0.033
+82	"American Samoa"	16	"90-94"	0.004
+83	"American Samoa"	16	"95-99"	0.001
+84	"American Samoa"	16	"100+"	0
+85	"Andorra"	20	"0-4"	1.948
+86	"Andorra"	20	"5-9"	2.194
+87	"Andorra"	20	"10-14"	2.279
+88	"Andorra"	20	"15-19"	1.959
+89	"Andorra"	20	"20-24"	2.315
+90	"Andorra"	20	"25-29"	3.054
+91	"Andorra"	20	"30-34"	4.074
+92	"Andorra"	20	"35-39"	4.315
+93	"Andorra"	20	"40-44"	4.184
+94	"Andorra"	20	"45-49"	3.97
+95	"Andorra"	20	"50-54"	3.387
+96	"Andorra"	20	"55-59"	2.814
+97	"Andorra"	20	"60-64"	2.226
+98	"Andorra"	20	"65-69"	1.661
+99	"Andorra"	20	"70-74"	1.168
+100	"Andorra"	20	"75-79"	0.96
+101	"Andorra"	20	"80-84"	0.964
+102	"Andorra"	20	"85-89"	0.558
+103	"Andorra"	20	"90-94"	0.138
+104	"Andorra"	20	"95-99"	0.018
+105	"Andorra"	20	"100+"	0.001
+106	"Angola"	24	"0-4"	1698.542
+107	"Angola"	24	"5-9"	1511.411
+108	"Angola"	24	"10-14"	1247.729
+109	"Angola"	24	"15-19"	1023.093
+110	"Angola"	24	"20-24"	848.181
+111	"Angola"	24	"25-29"	697.125
+112	"Angola"	24	"30-34"	564.685
+113	"Angola"	24	"35-39"	446.759
+114	"Angola"	24	"40-44"	363.82
+115	"Angola"	24	"45-49"	296.187
+116	"Angola"	24	"50-54"	233.395
+117	"Angola"	24	"55-59"	179.893
+118	"Angola"	24	"60-64"	128.057
+119	"Angola"	24	"65-69"	94.319
+120	"Angola"	24	"70-74"	62.013
+121	"Angola"	24	"75-79"	34.587
+122	"Angola"	24	"80-84"	14.879
+123	"Angola"	24	"85-89"	4.349
+124	"Angola"	24	"90-94"	0.745
+125	"Angola"	24	"95-99"	0.065
+126	"Angola"	24	"100+"	0.003
+127	"Anguilla"	660	"0-4"	0.642
+128	"Anguilla"	660	"5-9"	0.554
+129	"Anguilla"	660	"10-14"	0.485
+130	"Anguilla"	660	"15-19"	0.646
+131	"Anguilla"	660	"20-24"	0.628
+132	"Anguilla"	660	"25-29"	0.648
+133	"Anguilla"	660	"30-34"	0.65
+134	"Anguilla"	660	"35-39"	0.654
+135	"Anguilla"	660	"40-44"	0.693
+136	"Anguilla"	660	"45-49"	0.582
+137	"Anguilla"	660	"50-54"	0.466
+138	"Anguilla"	660	"55-59"	0.367
+139	"Anguilla"	660	"60-64"	0.238
+140	"Anguilla"	660	"65-69"	0.151
+141	"Anguilla"	660	"70-74"	0.085
+142	"Anguilla"	660	"75-79"	0.062
+143	"Anguilla"	660	"80-84"	0.048
+144	"Anguilla"	660	"85-89"	0.022
+145	"Anguilla"	660	"90-94"	0.007
+146	"Anguilla"	660	"95-99"	0.001
+147	"Anguilla"	660	"100+"	0
+148	"Antigua and Barbuda"	28	"0-4"	3.866
+149	"Antigua and Barbuda"	28	"5-9"	3.941
+150	"Antigua and Barbuda"	28	"10-14"	4.027
+151	"Antigua and Barbuda"	28	"15-19"	3.776
+152	"Antigua and Barbuda"	28	"20-24"	3.245
+153	"Antigua and Barbuda"	28	"25-29"	3.121
+154	"Antigua and Barbuda"	28	"30-34"	2.619
+155	"Antigua and Barbuda"	28	"35-39"	3.21
+156	"Antigua and Barbuda"	28	"40-44"	4.007
+157	"Antigua and Barbuda"	28	"45-49"	3.128
+158	"Antigua and Barbuda"	28	"50-54"	2.337
+159	"Antigua and Barbuda"	28	"55-59"	1.785
+160	"Antigua and Barbuda"	28	"60-64"	1.028
+161	"Antigua and Barbuda"	28	"65-69"	0.884
+162	"Antigua and Barbuda"	28	"70-74"	0.703
+163	"Antigua and Barbuda"	28	"75-79"	0.428
+164	"Antigua and Barbuda"	28	"80-84"	0.281
+165	"Antigua and Barbuda"	28	"85-89"	0.144
+166	"Antigua and Barbuda"	28	"90-94"	0.055
+167	"Antigua and Barbuda"	28	"95-99"	0.009
+168	"Antigua and Barbuda"	28	"100+"	0.001
+169	"Argentina"	32	"0-4"	1723.797
+170	"Argentina"	32	"5-9"	1671.493
+171	"Argentina"	32	"10-14"	1717.349
+172	"Argentina"	32	"15-19"	1735.334
+173	"Argentina"	32	"20-24"	1680.706
+174	"Argentina"	32	"25-29"	1609.274
+175	"Argentina"	32	"30-34"	1623.031
+176	"Argentina"	32	"35-39"	1350.189
+177	"Argentina"	32	"40-44"	1176.91
+178	"Argentina"	32	"45-49"	1092.667
+179	"Argentina"	32	"50-54"	992.136
+180	"Argentina"	32	"55-59"	909.712
+181	"Argentina"	32	"60-64"	764.188
+182	"Argentina"	32	"65-69"	607.936
+183	"Argentina"	32	"70-74"	459.829
+184	"Argentina"	32	"75-79"	329.979
+185	"Argentina"	32	"80-84"	202.34
+186	"Argentina"	32	"85-89"	89.281
+187	"Argentina"	32	"90-94"	26.609
+188	"Argentina"	32	"95-99"	5.102
+189	"Argentina"	32	"100+"	0.545
+190	"Armenia"	51	"0-4"	121.011
+191	"Armenia"	51	"5-9"	111.044
+192	"Armenia"	51	"10-14"	102.267
+193	"Armenia"	51	"15-19"	135.611
+194	"Armenia"	51	"20-24"	152.37
+195	"Armenia"	51	"25-29"	126.649
+196	"Armenia"	51	"30-34"	91.036
+197	"Armenia"	51	"35-39"	72.53
+198	"Armenia"	51	"40-44"	72.065
+199	"Armenia"	51	"45-49"	99.512
+200	"Armenia"	51	"50-54"	102.752
+201	"Armenia"	51	"55-59"	75.731
+202	"Armenia"	51	"60-64"	45.463
+203	"Armenia"	51	"65-69"	26.478
+204	"Armenia"	51	"70-74"	47.65
+205	"Armenia"	51	"75-79"	29.485
+206	"Armenia"	51	"80-84"	21.214
+207	"Armenia"	51	"85-89"	5.053
+208	"Armenia"	51	"90-94"	0.916
+209	"Armenia"	51	"95-99"	0.303
+210	"Armenia"	51	"100+"	0.04
+211	"Aruba"	533	"0-4"	3.127
+212	"Aruba"	533	"5-9"	3.33
+213	"Aruba"	533	"10-14"	3.934
+214	"Aruba"	533	"15-19"	4.075
+215	"Aruba"	533	"20-24"	3.47
+216	"Aruba"	533	"25-29"	3.12
+217	"Aruba"	533	"30-34"	2.952
+218	"Aruba"	533	"35-39"	3.646
+219	"Aruba"	533	"40-44"	4.283
+220	"Aruba"	533	"45-49"	4.884
+221	"Aruba"	533	"50-54"	4.214
+222	"Aruba"	533	"55-59"	3.239
+223	"Aruba"	533	"60-64"	2.37
+224	"Aruba"	533	"65-69"	1.68
+225	"Aruba"	533	"70-74"	1.291
+226	"Aruba"	533	"75-79"	0.821
+227	"Aruba"	533	"80-84"	0.361
+228	"Aruba"	533	"85-89"	0.144
+229	"Aruba"	533	"90-94"	0.041
+230	"Aruba"	533	"95-99"	0.005
+231	"Aruba"	533	"100+"	0
+232	"Australia"	36	"0-4"	748.405
+233	"Australia"	36	"5-9"	699.695
+234	"Australia"	36	"10-14"	721.137
+235	"Australia"	36	"15-19"	773.967
+236	"Australia"	36	"20-24"	842.711
+237	"Australia"	36	"25-29"	825.961
+238	"Australia"	36	"30-34"	751.967
+239	"Australia"	36	"35-39"	811.34
+240	"Australia"	36	"40-44"	763.926
+241	"Australia"	36	"45-49"	786.728
+242	"Australia"	36	"50-54"	727.859
+243	"Australia"	36	"55-59"	652.298
+244	"Australia"	36	"60-64"	614.152
+245	"Australia"	36	"65-69"	449.085
+246	"Australia"	36	"70-74"	338.91
+247	"Australia"	36	"75-79"	252.476
+248	"Australia"	36	"80-84"	195.783
+249	"Australia"	36	"85-89"	98.774
+250	"Australia"	36	"90-94"	30.531
+251	"Australia"	36	"95-99"	6.388
+252	"Australia"	36	"100+"	0.567
+253	"Austria"	40	"0-4"	198.309
+254	"Austria"	40	"5-9"	211.147
+255	"Austria"	40	"10-14"	224.927
+256	"Austria"	40	"15-19"	258.108
+257	"Austria"	40	"20-24"	265.717
+258	"Austria"	40	"25-29"	281.228
+259	"Austria"	40	"30-34"	267.209
+260	"Austria"	40	"35-39"	297.983
+261	"Austria"	40	"40-44"	353.433
+262	"Austria"	40	"45-49"	356.146
+263	"Austria"	40	"50-54"	300.692
+264	"Austria"	40	"55-59"	243.636
+265	"Austria"	40	"60-64"	224.317
+266	"Austria"	40	"65-69"	211.069
+267	"Austria"	40	"70-74"	161.794
+268	"Austria"	40	"75-79"	112.627
+269	"Austria"	40	"80-84"	78.404
+270	"Austria"	40	"85-89"	38.018
+271	"Austria"	40	"90-94"	8.47
+272	"Austria"	40	"95-99"	2.094
+273	"Austria"	40	"100+"	0.18
+274	"Azerbaijan"	31	"0-4"	427.96
+275	"Azerbaijan"	31	"5-9"	301.149
+276	"Azerbaijan"	31	"10-14"	298.683
+277	"Azerbaijan"	31	"15-19"	467.336
+278	"Azerbaijan"	31	"20-24"	523.528
+279	"Azerbaijan"	31	"25-29"	416.709
+280	"Azerbaijan"	31	"30-34"	319.406
+281	"Azerbaijan"	31	"35-39"	293.604
+282	"Azerbaijan"	31	"40-44"	297.31
+283	"Azerbaijan"	31	"45-49"	365.29
+284	"Azerbaijan"	31	"50-54"	295.589
+285	"Azerbaijan"	31	"55-59"	190.699
+286	"Azerbaijan"	31	"60-64"	97.949
+287	"Azerbaijan"	31	"65-69"	62.748
+288	"Azerbaijan"	31	"70-74"	83.349
+289	"Azerbaijan"	31	"75-79"	65.909
+290	"Azerbaijan"	31	"80-84"	28.324
+291	"Azerbaijan"	31	"85-89"	6.984
+292	"Azerbaijan"	31	"90-94"	1.181
+293	"Azerbaijan"	31	"95-99"	0.125
+294	"Azerbaijan"	31	"100+"	0.007
+295	"Bahamas"	44	"0-4"	13.054
+296	"Bahamas"	44	"5-9"	12.031
+297	"Bahamas"	44	"10-14"	14.246
+298	"Bahamas"	44	"15-19"	15.598
+299	"Bahamas"	44	"20-24"	14.798
+300	"Bahamas"	44	"25-29"	14.587
+301	"Bahamas"	44	"30-34"	12.46
+302	"Bahamas"	44	"35-39"	13.42
+303	"Bahamas"	44	"40-44"	12.345
+304	"Bahamas"	44	"45-49"	12.32
+305	"Bahamas"	44	"50-54"	9.848
+306	"Bahamas"	44	"55-59"	7.652
+307	"Bahamas"	44	"60-64"	5.674
+308	"Bahamas"	44	"65-69"	3.994
+309	"Bahamas"	44	"70-74"	2.86
+310	"Bahamas"	44	"75-79"	1.578
+311	"Bahamas"	44	"80-84"	0.797
+312	"Bahamas"	44	"85-89"	0.294
+313	"Bahamas"	44	"90-94"	0.08
+314	"Bahamas"	44	"95-99"	0.01
+315	"Bahamas"	44	"100+"	0
+316	"Bahrain"	48	"0-4"	47.493
+317	"Bahrain"	48	"5-9"	40.151
+318	"Bahrain"	48	"10-14"	41.927
+319	"Bahrain"	48	"15-19"	34.52
+320	"Bahrain"	48	"20-24"	70.235
+321	"Bahrain"	48	"25-29"	129.996
+322	"Bahrain"	48	"30-34"	116.699
+323	"Bahrain"	48	"35-39"	90.791
+324	"Bahrain"	48	"40-44"	76.182
+325	"Bahrain"	48	"45-49"	50.603
+326	"Bahrain"	48	"50-54"	43.2
+327	"Bahrain"	48	"55-59"	23.237
+328	"Bahrain"	48	"60-64"	9.819
+329	"Bahrain"	48	"65-69"	5.649
+330	"Bahrain"	48	"70-74"	3.458
+331	"Bahrain"	48	"75-79"	2.084
+332	"Bahrain"	48	"80-84"	1.394
+333	"Bahrain"	48	"85-89"	0.31
+334	"Bahrain"	48	"90-94"	0.077
+335	"Bahrain"	48	"95-99"	0.01
+336	"Bahrain"	48	"100+"	0.001
+337	"Bangladesh"	50	"0-4"	7514.643
+338	"Bangladesh"	50	"5-9"	8092.075
+339	"Bangladesh"	50	"10-14"	8224.012
+340	"Bangladesh"	50	"15-19"	7952.626
+341	"Bangladesh"	50	"20-24"	7397.927
+342	"Bangladesh"	50	"25-29"	6963.454
+343	"Bangladesh"	50	"30-34"	6071.943
+344	"Bangladesh"	50	"35-39"	4999.603
+345	"Bangladesh"	50	"40-44"	4668.473
+346	"Bangladesh"	50	"45-49"	3819.669
+347	"Bangladesh"	50	"50-54"	2797.868
+348	"Bangladesh"	50	"55-59"	1935.546
+349	"Bangladesh"	50	"60-64"	1444.472
+350	"Bangladesh"	50	"65-69"	1234.483
+351	"Bangladesh"	50	"70-74"	995.355
+352	"Bangladesh"	50	"75-79"	653.374
+353	"Bangladesh"	50	"80-84"	354.144
+354	"Bangladesh"	50	"85-89"	144.162
+355	"Bangladesh"	50	"90-94"	38.313
+356	"Bangladesh"	50	"95-99"	6.116
+357	"Bangladesh"	50	"100+"	0.542
+358	"Barbados"	52	"0-4"	7.387
+359	"Barbados"	52	"5-9"	7.384
+360	"Barbados"	52	"10-14"	9.684
+361	"Barbados"	52	"15-19"	10.478
+362	"Barbados"	52	"20-24"	10.412
+363	"Barbados"	52	"25-29"	10.409
+364	"Barbados"	52	"30-34"	9.84
+365	"Barbados"	52	"35-39"	10.762
+366	"Barbados"	52	"40-44"	10.526
+367	"Barbados"	52	"45-49"	11.076
+368	"Barbados"	52	"50-54"	10.249
+369	"Barbados"	52	"55-59"	8.367
+370	"Barbados"	52	"60-64"	6.563
+371	"Barbados"	52	"65-69"	4.074
+372	"Barbados"	52	"70-74"	3.294
+373	"Barbados"	52	"75-79"	2.501
+374	"Barbados"	52	"80-84"	1.697
+375	"Barbados"	52	"85-89"	0.703
+376	"Barbados"	52	"90-94"	0.215
+377	"Barbados"	52	"95-99"	0.027
+378	"Barbados"	52	"100+"	0.002
+379	"Belarus"	112	"0-4"	264.862
+380	"Belarus"	112	"5-9"	233.163
+381	"Belarus"	112	"10-14"	242.054
+382	"Belarus"	112	"15-19"	310.842
+383	"Belarus"	112	"20-24"	403.946
+384	"Belarus"	112	"25-29"	400.13
+385	"Belarus"	112	"30-34"	357.79
+386	"Belarus"	112	"35-39"	338.107
+387	"Belarus"	112	"40-44"	306.492
+388	"Belarus"	112	"45-49"	359.719
+389	"Belarus"	112	"50-54"	356.574
+390	"Belarus"	112	"55-59"	277.755
+391	"Belarus"	112	"60-64"	197.26
+392	"Belarus"	112	"65-69"	120.929
+393	"Belarus"	112	"70-74"	135.284
+394	"Belarus"	112	"75-79"	85.815
+395	"Belarus"	112	"80-84"	52.441
+396	"Belarus"	112	"85-89"	15.534
+397	"Belarus"	112	"90-94"	2.828
+398	"Belarus"	112	"95-99"	0.702
+399	"Belarus"	112	"100+"	0.099
+400	"Belgium"	56	"0-4"	315.379
+401	"Belgium"	56	"5-9"	307.469
+402	"Belgium"	56	"10-14"	300.405
+403	"Belgium"	56	"15-19"	315.802
+404	"Belgium"	56	"20-24"	323.487
+405	"Belgium"	56	"25-29"	335.788
+406	"Belgium"	56	"30-34"	346.096
+407	"Belgium"	56	"35-39"	374.454
+408	"Belgium"	56	"40-44"	396.65
+409	"Belgium"	56	"45-49"	405.217
+410	"Belgium"	56	"50-54"	381.704
+411	"Belgium"	56	"55-59"	346.028
+412	"Belgium"	56	"60-64"	314.074
+413	"Belgium"	56	"65-69"	226.02
+414	"Belgium"	56	"70-74"	206.225
+415	"Belgium"	56	"75-79"	173.128
+416	"Belgium"	56	"80-84"	112.448
+417	"Belgium"	56	"85-89"	55.99
+418	"Belgium"	56	"90-94"	11.504
+419	"Belgium"	56	"95-99"	2.453
+420	"Belgium"	56	"100+"	0.21
+421	"Belize"	84	"0-4"	18.19
+422	"Belize"	84	"5-9"	17.819
+423	"Belize"	84	"10-14"	17.528
+424	"Belize"	84	"15-19"	17.079
+425	"Belize"	84	"20-24"	15.461
+426	"Belize"	84	"25-29"	13.88
+427	"Belize"	84	"30-34"	10.708
+428	"Belize"	84	"35-39"	9.807
+429	"Belize"	84	"40-44"	8.484
+430	"Belize"	84	"45-49"	7.277
+431	"Belize"	84	"50-54"	5.474
+432	"Belize"	84	"55-59"	3.519
+433	"Belize"	84	"60-64"	2.667
+434	"Belize"	84	"65-69"	1.854
+435	"Belize"	84	"70-74"	1.598
+436	"Belize"	84	"75-79"	1.142
+437	"Belize"	84	"80-84"	0.772
+438	"Belize"	84	"85-89"	0.303
+439	"Belize"	84	"90-94"	0.105
+440	"Belize"	84	"95-99"	0.024
+441	"Belize"	84	"100+"	0.003
+442	"Benin"	204	"0-4"	761.5
+443	"Benin"	204	"5-9"	635.199
+444	"Benin"	204	"10-14"	546.465
+445	"Benin"	204	"15-19"	469.321
+446	"Benin"	204	"20-24"	395.467
+447	"Benin"	204	"25-29"	333.78
+448	"Benin"	204	"30-34"	280.02
+449	"Benin"	204	"35-39"	230.651
+450	"Benin"	204	"40-44"	188.083
+451	"Benin"	204	"45-49"	150.828
+452	"Benin"	204	"50-54"	116.455
+453	"Benin"	204	"55-59"	88.237
+454	"Benin"	204	"60-64"	60.54
+455	"Benin"	204	"65-69"	48.514
+456	"Benin"	204	"70-74"	30.44
+457	"Benin"	204	"75-79"	16.962
+458	"Benin"	204	"80-84"	7.89
+459	"Benin"	204	"85-89"	2.696
+460	"Benin"	204	"90-94"	0.562
+461	"Benin"	204	"95-99"	0.063
+462	"Benin"	204	"100+"	0.004
+463	"Bermuda"	60	"0-4"	1.891
+464	"Bermuda"	60	"5-9"	2.048
+465	"Bermuda"	60	"10-14"	2.035
+466	"Bermuda"	60	"15-19"	2.047
+467	"Bermuda"	60	"20-24"	2.147
+468	"Bermuda"	60	"25-29"	1.925
+469	"Bermuda"	60	"30-34"	1.852
+470	"Bermuda"	60	"35-39"	2.125
+471	"Bermuda"	60	"40-44"	2.24
+472	"Bermuda"	60	"45-49"	2.72
+473	"Bermuda"	60	"50-54"	2.579
+474	"Bermuda"	60	"55-59"	2.133
+475	"Bermuda"	60	"60-64"	2.02
+476	"Bermuda"	60	"65-69"	1.47
+477	"Bermuda"	60	"70-74"	1.02
+478	"Bermuda"	60	"75-79"	0.699
+479	"Bermuda"	60	"80-84"	0.411
+480	"Bermuda"	60	"85-89"	0.166
+481	"Bermuda"	60	"90-94"	0.04
+482	"Bermuda"	60	"95-99"	0.006
+483	"Bermuda"	60	"100+"	0
+484	"Bhutan"	64	"0-4"	35.965
+485	"Bhutan"	64	"5-9"	36.298
+486	"Bhutan"	64	"10-14"	35.915
+487	"Bhutan"	64	"15-19"	39.339
+488	"Bhutan"	64	"20-24"	40.246
+489	"Bhutan"	64	"25-29"	44.229
+490	"Bhutan"	64	"30-34"	34.866
+491	"Bhutan"	64	"35-39"	24.691
+492	"Bhutan"	64	"40-44"	22.892
+493	"Bhutan"	64	"45-49"	16.594
+494	"Bhutan"	64	"50-54"	15.681
+495	"Bhutan"	64	"55-59"	11.214
+496	"Bhutan"	64	"60-64"	8.876
+497	"Bhutan"	64	"65-69"	6.832
+498	"Bhutan"	64	"70-74"	5.062
+499	"Bhutan"	64	"75-79"	3.312
+500	"Bhutan"	64	"80-84"	1.603
+501	"Bhutan"	64	"85-89"	0.531
+502	"Bhutan"	64	"90-94"	0.106
+503	"Bhutan"	64	"95-99"	0.011
+504	"Bhutan"	64	"100+"	0.001
+505	"Bolivia (Plurinational State of)"	68	"0-4"	629.827
+506	"Bolivia (Plurinational State of)"	68	"5-9"	617.496
+507	"Bolivia (Plurinational State of)"	68	"10-14"	579.117
+508	"Bolivia (Plurinational State of)"	68	"15-19"	545.659
+509	"Bolivia (Plurinational State of)"	68	"20-24"	466.51
+510	"Bolivia (Plurinational State of)"	68	"25-29"	394.541
+511	"Bolivia (Plurinational State of)"	68	"30-34"	337.731
+512	"Bolivia (Plurinational State of)"	68	"35-39"	299.813
+513	"Bolivia (Plurinational State of)"	68	"40-44"	246.309
+514	"Bolivia (Plurinational State of)"	68	"45-49"	205.693
+515	"Bolivia (Plurinational State of)"	68	"50-54"	172.547
+516	"Bolivia (Plurinational State of)"	68	"55-59"	140.164
+517	"Bolivia (Plurinational State of)"	68	"60-64"	111.376
+518	"Bolivia (Plurinational State of)"	68	"65-69"	83.483
+519	"Bolivia (Plurinational State of)"	68	"70-74"	60.385
+520	"Bolivia (Plurinational State of)"	68	"75-79"	36.698
+521	"Bolivia (Plurinational State of)"	68	"80-84"	18.196
+522	"Bolivia (Plurinational State of)"	68	"85-89"	5.62
+523	"Bolivia (Plurinational State of)"	68	"90-94"	1.145
+524	"Bolivia (Plurinational State of)"	68	"95-99"	0.151
+525	"Bolivia (Plurinational State of)"	68	"100+"	0.01
+526	"Bosnia and Herzegovina"	70	"0-4"	85.222
+527	"Bosnia and Herzegovina"	70	"5-9"	93.409
+528	"Bosnia and Herzegovina"	70	"10-14"	113.56
+529	"Bosnia and Herzegovina"	70	"15-19"	116.495
+530	"Bosnia and Herzegovina"	70	"20-24"	147.794
+531	"Bosnia and Herzegovina"	70	"25-29"	145.195
+532	"Bosnia and Herzegovina"	70	"30-34"	132.911
+533	"Bosnia and Herzegovina"	70	"35-39"	124.974
+534	"Bosnia and Herzegovina"	70	"40-44"	128.335
+535	"Bosnia and Herzegovina"	70	"45-49"	141.702
+536	"Bosnia and Herzegovina"	70	"50-54"	138.865
+537	"Bosnia and Herzegovina"	70	"55-59"	125.093
+538	"Bosnia and Herzegovina"	70	"60-64"	90.566
+539	"Bosnia and Herzegovina"	70	"65-69"	66.255
+540	"Bosnia and Herzegovina"	70	"70-74"	72.624
+541	"Bosnia and Herzegovina"	70	"75-79"	50.761
+542	"Bosnia and Herzegovina"	70	"80-84"	24.915
+543	"Bosnia and Herzegovina"	70	"85-89"	7.002
+544	"Bosnia and Herzegovina"	70	"90-94"	1.373
+545	"Bosnia and Herzegovina"	70	"95-99"	0.322
+546	"Bosnia and Herzegovina"	70	"100+"	0.04
+547	"Botswana"	72	"0-4"	113.615
+548	"Botswana"	72	"5-9"	106.982
+549	"Botswana"	72	"10-14"	108.719
+550	"Botswana"	72	"15-19"	111.143
+551	"Botswana"	72	"20-24"	112.196
+552	"Botswana"	72	"25-29"	105.921
+553	"Botswana"	72	"30-34"	86.131
+554	"Botswana"	72	"35-39"	62.838
+555	"Botswana"	72	"40-44"	47.116
+556	"Botswana"	72	"45-49"	38.473
+557	"Botswana"	72	"50-54"	34.379
+558	"Botswana"	72	"55-59"	30.131
+559	"Botswana"	72	"60-64"	20.485
+560	"Botswana"	72	"65-69"	15.145
+561	"Botswana"	72	"70-74"	9.945
+562	"Botswana"	72	"75-79"	5.36
+563	"Botswana"	72	"80-84"	2.251
+564	"Botswana"	72	"85-89"	0.853
+565	"Botswana"	72	"90-94"	0.154
+566	"Botswana"	72	"95-99"	0.015
+567	"Botswana"	72	"100+"	0.001
+568	"Brazil"	76	"0-4"	7734.659
+569	"Brazil"	76	"5-9"	8761.216
+570	"Brazil"	76	"10-14"	8792.106
+571	"Brazil"	76	"15-19"	8346.784
+572	"Brazil"	76	"20-24"	8616.871
+573	"Brazil"	76	"25-29"	8809.395
+574	"Brazil"	76	"30-34"	7866.04
+575	"Brazil"	76	"35-39"	6853.08
+576	"Brazil"	76	"40-44"	6344.771
+577	"Brazil"	76	"45-49"	5987.57
+578	"Brazil"	76	"50-54"	4931.486
+579	"Brazil"	76	"55-59"	3965.624
+580	"Brazil"	76	"60-64"	2965.894
+581	"Brazil"	76	"65-69"	2130.501
+582	"Brazil"	76	"70-74"	1625.546
+583	"Brazil"	76	"75-79"	1046.973
+584	"Brazil"	76	"80-84"	670.172
+585	"Brazil"	76	"85-89"	326.74
+586	"Brazil"	76	"90-94"	121.682
+587	"Brazil"	76	"95-99"	33.646
+588	"Brazil"	76	"100+"	6.483
+589	"British Virgin Islands"	92	"0-4"	0.847
+590	"British Virgin Islands"	92	"5-9"	0.934
+591	"British Virgin Islands"	92	"10-14"	0.971
+592	"British Virgin Islands"	92	"15-19"	0.952
+593	"British Virgin Islands"	92	"20-24"	0.835
+594	"British Virgin Islands"	92	"25-29"	0.777
+595	"British Virgin Islands"	92	"30-34"	0.726
+596	"British Virgin Islands"	92	"35-39"	0.767
+597	"British Virgin Islands"	92	"40-44"	0.895
+598	"British Virgin Islands"	92	"45-49"	1.165
+599	"British Virgin Islands"	92	"50-54"	1.019
+600	"British Virgin Islands"	92	"55-59"	0.645
+601	"British Virgin Islands"	92	"60-64"	0.56
+602	"British Virgin Islands"	92	"65-69"	0.324
+603	"British Virgin Islands"	92	"70-74"	0.204
+604	"British Virgin Islands"	92	"75-79"	0.099
+605	"British Virgin Islands"	92	"80-84"	0.077
+606	"British Virgin Islands"	92	"85-89"	0.021
+607	"British Virgin Islands"	92	"90-94"	0.005
+608	"British Virgin Islands"	92	"95-99"	0.003
+609	"British Virgin Islands"	92	"100+"	0
+610	"Brunei Darussalam"	96	"0-4"	19.233
+611	"Brunei Darussalam"	96	"5-9"	18.321
+612	"Brunei Darussalam"	96	"10-14"	16.612
+613	"Brunei Darussalam"	96	"15-19"	16.75
+614	"Brunei Darussalam"	96	"20-24"	17.343
+615	"Brunei Darussalam"	96	"25-29"	17.913
+616	"Brunei Darussalam"	96	"30-34"	19.282
+617	"Brunei Darussalam"	96	"35-39"	17.608
+618	"Brunei Darussalam"	96	"40-44"	14.208
+619	"Brunei Darussalam"	96	"45-49"	13.077
+620	"Brunei Darussalam"	96	"50-54"	10.556
+621	"Brunei Darussalam"	96	"55-59"	8.669
+622	"Brunei Darussalam"	96	"60-64"	4.875
+623	"Brunei Darussalam"	96	"65-69"	2.774
+624	"Brunei Darussalam"	96	"70-74"	1.702
+625	"Brunei Darussalam"	96	"75-79"	1.362
+626	"Brunei Darussalam"	96	"80-84"	0.793
+627	"Brunei Darussalam"	96	"85-89"	0.347
+628	"Brunei Darussalam"	96	"90-94"	0.101
+629	"Brunei Darussalam"	96	"95-99"	0.029
+630	"Brunei Darussalam"	96	"100+"	0.007
+631	"Bulgaria"	100	"0-4"	191.923
+632	"Bulgaria"	100	"5-9"	170.233
+633	"Bulgaria"	100	"10-14"	166.644
+634	"Bulgaria"	100	"15-19"	204.966
+635	"Bulgaria"	100	"20-24"	257.428
+636	"Bulgaria"	100	"25-29"	270.163
+637	"Bulgaria"	100	"30-34"	292.353
+638	"Bulgaria"	100	"35-39"	281.214
+639	"Bulgaria"	100	"40-44"	262.127
+640	"Bulgaria"	100	"45-49"	255.435
+641	"Bulgaria"	100	"50-54"	255.024
+642	"Bulgaria"	100	"55-59"	247.783
+643	"Bulgaria"	100	"60-64"	234.879
+644	"Bulgaria"	100	"65-69"	172.459
+645	"Bulgaria"	100	"70-74"	139.862
+646	"Bulgaria"	100	"75-79"	117.287
+647	"Bulgaria"	100	"80-84"	68.348
+648	"Bulgaria"	100	"85-89"	28.519
+649	"Bulgaria"	100	"90-94"	5.066
+650	"Bulgaria"	100	"95-99"	0.895
+651	"Bulgaria"	100	"100+"	0.061
+652	"Burkina Faso"	854	"0-4"	1504.392
+653	"Burkina Faso"	854	"5-9"	1234.065
+654	"Burkina Faso"	854	"10-14"	1060.62
+655	"Burkina Faso"	854	"15-19"	911.65
+656	"Burkina Faso"	854	"20-24"	772.777
+657	"Burkina Faso"	854	"25-29"	647.26
+658	"Burkina Faso"	854	"30-34"	529.221
+659	"Burkina Faso"	854	"35-39"	409.719
+660	"Burkina Faso"	854	"40-44"	320.836
+661	"Burkina Faso"	854	"45-49"	238.872
+662	"Burkina Faso"	854	"50-54"	174.15
+663	"Burkina Faso"	854	"55-59"	121.748
+664	"Burkina Faso"	854	"60-64"	103.788
+665	"Burkina Faso"	854	"65-69"	69.31
+666	"Burkina Faso"	854	"70-74"	42.184
+667	"Burkina Faso"	854	"75-79"	21.254
+668	"Burkina Faso"	854	"80-84"	8.181
+669	"Burkina Faso"	854	"85-89"	2.014
+670	"Burkina Faso"	854	"90-94"	0.222
+671	"Burkina Faso"	854	"95-99"	0.008
+672	"Burkina Faso"	854	"100+"	0
+673	"Burundi"	108	"0-4"	594.888
+674	"Burundi"	108	"5-9"	509.4
+675	"Burundi"	108	"10-14"	485.994
+676	"Burundi"	108	"15-19"	485.873
+677	"Burundi"	108	"20-24"	461
+678	"Burundi"	108	"25-29"	390.145
+679	"Burundi"	108	"30-34"	293.161
+680	"Burundi"	108	"35-39"	212.536
+681	"Burundi"	108	"40-44"	168.973
+682	"Burundi"	108	"45-49"	142.761
+683	"Burundi"	108	"50-54"	120.436
+684	"Burundi"	108	"55-59"	95.488
+685	"Burundi"	108	"60-64"	58.542
+686	"Burundi"	108	"65-69"	40.883
+687	"Burundi"	108	"70-74"	26.919
+688	"Burundi"	108	"75-79"	15.674
+689	"Burundi"	108	"80-84"	7.502
+690	"Burundi"	108	"85-89"	2.607
+691	"Burundi"	108	"90-94"	0.542
+692	"Burundi"	108	"95-99"	0.055
+693	"Burundi"	108	"100+"	0.003
+694	"Cambodia"	116	"0-4"	761.247
+695	"Cambodia"	116	"5-9"	741.643
+696	"Cambodia"	116	"10-14"	797.911
+697	"Cambodia"	116	"15-19"	880.66
+698	"Cambodia"	116	"20-24"	718.574
+699	"Cambodia"	116	"25-29"	727.461
+700	"Cambodia"	116	"30-34"	357.302
+701	"Cambodia"	116	"35-39"	433.228
+702	"Cambodia"	116	"40-44"	387.075
+703	"Cambodia"	116	"45-49"	322.726
+704	"Cambodia"	116	"50-54"	254.081
+705	"Cambodia"	116	"55-59"	196.076
+706	"Cambodia"	116	"60-64"	143.504
+707	"Cambodia"	116	"65-69"	96.989
+708	"Cambodia"	116	"70-74"	51.701
+709	"Cambodia"	116	"75-79"	28.598
+710	"Cambodia"	116	"80-84"	12.854
+711	"Cambodia"	116	"85-89"	3.787
+712	"Cambodia"	116	"90-94"	1.06
+713	"Cambodia"	116	"95-99"	0.1
+714	"Cambodia"	116	"100+"	0.005
+715	"Cameroon"	120	"0-4"	1539.655
+716	"Cameroon"	120	"5-9"	1318.647
+717	"Cameroon"	120	"10-14"	1145.495
+718	"Cameroon"	120	"15-19"	1077.591
+719	"Cameroon"	120	"20-24"	959.626
+720	"Cameroon"	120	"25-29"	827.36
+721	"Cameroon"	120	"30-34"	668.739
+722	"Cameroon"	120	"35-39"	526.488
+723	"Cameroon"	120	"40-44"	413.003
+724	"Cameroon"	120	"45-49"	330.715
+725	"Cameroon"	120	"50-54"	267.184
+726	"Cameroon"	120	"55-59"	221.942
+727	"Cameroon"	120	"60-64"	173.246
+728	"Cameroon"	120	"65-69"	131.819
+729	"Cameroon"	120	"70-74"	91.005
+730	"Cameroon"	120	"75-79"	54.13
+731	"Cameroon"	120	"80-84"	25.487
+732	"Cameroon"	120	"85-89"	8.473
+733	"Cameroon"	120	"90-94"	1.742
+734	"Cameroon"	120	"95-99"	0.192
+735	"Cameroon"	120	"100+"	0.012
+736	"Canada"	124	"0-4"	966.612
+737	"Canada"	124	"5-9"	911.441
+738	"Canada"	124	"10-14"	987.549
+739	"Canada"	124	"15-19"	1159.569
+740	"Canada"	124	"20-24"	1187.764
+741	"Canada"	124	"25-29"	1185.917
+742	"Canada"	124	"30-34"	1148.208
+743	"Canada"	124	"35-39"	1140.914
+744	"Canada"	124	"40-44"	1221.428
+745	"Canada"	124	"45-49"	1408.453
+746	"Canada"	124	"50-54"	1320.859
+747	"Canada"	124	"55-59"	1127.864
+748	"Canada"	124	"60-64"	971.536
+749	"Canada"	124	"65-69"	711.032
+750	"Canada"	124	"70-74"	514.567
+751	"Canada"	124	"75-79"	410.696
+752	"Canada"	124	"80-84"	287.652
+753	"Canada"	124	"85-89"	149.547
+754	"Canada"	124	"90-94"	46.887
+755	"Canada"	124	"95-99"	9.697
+756	"Canada"	124	"100+"	0.942
+757	"Cape Verde"	132	"0-4"	25.462
+758	"Cape Verde"	132	"5-9"	25.927
+759	"Cape Verde"	132	"10-14"	27.706
+760	"Cape Verde"	132	"15-19"	29.825
+761	"Cape Verde"	132	"20-24"	28.323
+762	"Cape Verde"	132	"25-29"	23.408
+763	"Cape Verde"	132	"30-34"	18.003
+764	"Cape Verde"	132	"35-39"	14.447
+765	"Cape Verde"	132	"40-44"	12.777
+766	"Cape Verde"	132	"45-49"	12.186
+767	"Cape Verde"	132	"50-54"	8.003
+768	"Cape Verde"	132	"55-59"	5.506
+769	"Cape Verde"	132	"60-64"	2.461
+770	"Cape Verde"	132	"65-69"	2.539
+771	"Cape Verde"	132	"70-74"	3.527
+772	"Cape Verde"	132	"75-79"	3.239
+773	"Cape Verde"	132	"80-84"	1.631
+774	"Cape Verde"	132	"85-89"	0.385
+775	"Cape Verde"	132	"90-94"	0.087
+776	"Cape Verde"	132	"95-99"	0.011
+777	"Cape Verde"	132	"100+"	0.001
+778	"Cayman Islands"	136	"0-4"	1.672
+779	"Cayman Islands"	136	"5-9"	1.794
+780	"Cayman Islands"	136	"10-14"	1.739
+781	"Cayman Islands"	136	"15-19"	1.638
+782	"Cayman Islands"	136	"20-24"	1.566
+783	"Cayman Islands"	136	"25-29"	1.878
+784	"Cayman Islands"	136	"30-34"	2.428
+785	"Cayman Islands"	136	"35-39"	2.93
+786	"Cayman Islands"	136	"40-44"	2.962
+787	"Cayman Islands"	136	"45-49"	2.63
+788	"Cayman Islands"	136	"50-54"	2.027
+789	"Cayman Islands"	136	"55-59"	1.553
+790	"Cayman Islands"	136	"60-64"	1.162
+791	"Cayman Islands"	136	"65-69"	0.798
+792	"Cayman Islands"	136	"70-74"	0.541
+793	"Cayman Islands"	136	"75-79"	0.319
+794	"Cayman Islands"	136	"80-84"	0.16
+795	"Cayman Islands"	136	"85-89"	0.065
+796	"Cayman Islands"	136	"90-94"	0.015
+797	"Cayman Islands"	136	"95-99"	0.002
+798	"Cayman Islands"	136	"100+"	0
+799	"Central African Republic"	140	"0-4"	325.566
+800	"Central African Republic"	140	"5-9"	293.357
+801	"Central African Republic"	140	"10-14"	265.848
+802	"Central African Republic"	140	"15-19"	236.023
+803	"Central African Republic"	140	"20-24"	213.927
+804	"Central African Republic"	140	"25-29"	181.529
+805	"Central African Republic"	140	"30-34"	147.085
+806	"Central African Republic"	140	"35-39"	115.523
+807	"Central African Republic"	140	"40-44"	89.602
+808	"Central African Republic"	140	"45-49"	72.408
+809	"Central African Republic"	140	"50-54"	60.247
+810	"Central African Republic"	140	"55-59"	49.568
+811	"Central African Republic"	140	"60-64"	40.151
+812	"Central African Republic"	140	"65-69"	32.275
+813	"Central African Republic"	140	"70-74"	22.742
+814	"Central African Republic"	140	"75-79"	13.436
+815	"Central African Republic"	140	"80-84"	6.204
+816	"Central African Republic"	140	"85-89"	1.957
+817	"Central African Republic"	140	"90-94"	0.373
+818	"Central African Republic"	140	"95-99"	0.039
+819	"Central African Republic"	140	"100+"	0.002
+820	"Chad"	148	"0-4"	1007.914
+821	"Chad"	148	"5-9"	841.948
+822	"Chad"	148	"10-14"	710.356
+823	"Chad"	148	"15-19"	602.887
+824	"Chad"	148	"20-24"	508.417
+825	"Chad"	148	"25-29"	422.574
+826	"Chad"	148	"30-34"	342.255
+827	"Chad"	148	"35-39"	269.814
+828	"Chad"	148	"40-44"	211.663
+829	"Chad"	148	"45-49"	172.501
+830	"Chad"	148	"50-54"	143.984
+831	"Chad"	148	"55-59"	117.159
+832	"Chad"	148	"60-64"	86.383
+833	"Chad"	148	"65-69"	65.659
+834	"Chad"	148	"70-74"	43.205
+835	"Chad"	148	"75-79"	23.284
+836	"Chad"	148	"80-84"	9.493
+837	"Chad"	148	"85-89"	2.471
+838	"Chad"	148	"90-94"	0.341
+839	"Chad"	148	"95-99"	0.022
+840	"Chad"	148	"100+"	0.001
+841	"Channel Islands"	830	"0-4"	3.626
+842	"Channel Islands"	830	"5-9"	3.932
+843	"Channel Islands"	830	"10-14"	4.146
+844	"Channel Islands"	830	"15-19"	4.45
+845	"Channel Islands"	830	"20-24"	4.604
+846	"Channel Islands"	830	"25-29"	4.615
+847	"Channel Islands"	830	"30-34"	4.75
+848	"Channel Islands"	830	"35-39"	5.356
+849	"Channel Islands"	830	"40-44"	6.241
+850	"Channel Islands"	830	"45-49"	6.443
+851	"Channel Islands"	830	"50-54"	5.659
+852	"Channel Islands"	830	"55-59"	5.094
+853	"Channel Islands"	830	"60-64"	5.137
+854	"Channel Islands"	830	"65-69"	3.59
+855	"Channel Islands"	830	"70-74"	3.147
+856	"Channel Islands"	830	"75-79"	2.13
+857	"Channel Islands"	830	"80-84"	1.257
+858	"Channel Islands"	830	"85-89"	0.696
+859	"Channel Islands"	830	"90-94"	0.178
+860	"Channel Islands"	830	"95-99"	0.035
+861	"Channel Islands"	830	"100+"	0.003
+862	"Chile"	152	"0-4"	621.095
+863	"Chile"	152	"5-9"	629.803
+864	"Chile"	152	"10-14"	676.105
+865	"Chile"	152	"15-19"	756.417
+866	"Chile"	152	"20-24"	741.906
+867	"Chile"	152	"25-29"	667.771
+868	"Chile"	152	"30-34"	587.578
+869	"Chile"	152	"35-39"	617.935
+870	"Chile"	152	"40-44"	613.82
+871	"Chile"	152	"45-49"	620.288
+872	"Chile"	152	"50-54"	529.163
+873	"Chile"	152	"55-59"	406.39
+874	"Chile"	152	"60-64"	318.622
+875	"Chile"	152	"65-69"	251.016
+876	"Chile"	152	"70-74"	173.307
+877	"Chile"	152	"75-79"	122.752
+878	"Chile"	152	"80-84"	75.486
+879	"Chile"	152	"85-89"	35.36
+880	"Chile"	152	"90-94"	13.184
+881	"Chile"	152	"95-99"	3.31
+882	"Chile"	152	"100+"	0.556
+883	"China"	156	"0-4"	44689.317
+884	"China"	156	"5-9"	46225.382
+885	"China"	156	"10-14"	51775.79
+886	"China"	156	"15-19"	56449.047
+887	"China"	156	"20-24"	62787.72
+888	"China"	156	"25-29"	51849.196
+889	"China"	156	"30-34"	47162.712
+890	"China"	156	"35-39"	60850.635
+891	"China"	156	"40-44"	62650.297
+892	"China"	156	"45-49"	48337.781
+893	"China"	156	"50-54"	41824.201
+894	"China"	156	"55-59"	41619.108
+895	"China"	156	"60-64"	27980.967
+896	"China"	156	"65-69"	19585.603
+897	"China"	156	"70-74"	15109.517
+898	"China"	156	"75-79"	10074.008
+899	"China"	156	"80-84"	5013.06
+900	"China"	156	"85-89"	1834.811
+901	"China"	156	"90-94"	468.91
+902	"China"	156	"95-99"	49.888
+903	"China"	156	"100+"	2.802
+904	"China, Hong Kong SAR"	344	"0-4"	118.943
+905	"China, Hong Kong SAR"	344	"5-9"	116.953
+906	"China, Hong Kong SAR"	344	"10-14"	191.327
+907	"China, Hong Kong SAR"	344	"15-19"	240.926
+908	"China, Hong Kong SAR"	344	"20-24"	226.037
+909	"China, Hong Kong SAR"	344	"25-29"	234.944
+910	"China, Hong Kong SAR"	344	"30-34"	229.588
+911	"China, Hong Kong SAR"	344	"35-39"	240.544
+912	"China, Hong Kong SAR"	344	"40-44"	253.626
+913	"China, Hong Kong SAR"	344	"45-49"	315.081
+914	"China, Hong Kong SAR"	344	"50-54"	311.76
+915	"China, Hong Kong SAR"	344	"55-59"	248.874
+916	"China, Hong Kong SAR"	344	"60-64"	194.303
+917	"China, Hong Kong SAR"	344	"65-69"	116.509
+918	"China, Hong Kong SAR"	344	"70-74"	111.398
+919	"China, Hong Kong SAR"	344	"75-79"	92.506
+920	"China, Hong Kong SAR"	344	"80-84"	60.404
+921	"China, Hong Kong SAR"	344	"85-89"	26.286
+922	"China, Hong Kong SAR"	344	"90-94"	9.868
+923	"China, Hong Kong SAR"	344	"95-99"	1.765
+924	"China, Hong Kong SAR"	344	"100+"	0.208
+925	"China, Macao SAR"	446	"0-4"	12.255
+926	"China, Macao SAR"	446	"5-9"	10.644
+927	"China, Macao SAR"	446	"10-14"	13.836
+928	"China, Macao SAR"	446	"15-19"	18.577
+929	"China, Macao SAR"	446	"20-24"	22.547
+930	"China, Macao SAR"	446	"25-29"	20.486
+931	"China, Macao SAR"	446	"30-34"	20.782
+932	"China, Macao SAR"	446	"35-39"	23.602
+933	"China, Macao SAR"	446	"40-44"	22.098
+934	"China, Macao SAR"	446	"45-49"	22.604
+935	"China, Macao SAR"	446	"50-54"	24.025
+936	"China, Macao SAR"	446	"55-59"	17.198
+937	"China, Macao SAR"	446	"60-64"	13.622
+938	"China, Macao SAR"	446	"65-69"	7.09
+939	"China, Macao SAR"	446	"70-74"	4.727
+940	"China, Macao SAR"	446	"75-79"	3.425
+941	"China, Macao SAR"	446	"80-84"	2.282
+942	"China, Macao SAR"	446	"85-89"	0.925
+943	"China, Macao SAR"	446	"90-94"	0.264
+944	"China, Macao SAR"	446	"95-99"	0.036
+945	"China, Macao SAR"	446	"100+"	0.003
+946	"Colombia"	170	"0-4"	2296.527
+947	"Colombia"	170	"5-9"	2252.779
+948	"Colombia"	170	"10-14"	2239.195
+949	"Colombia"	170	"15-19"	2216.224
+950	"Colombia"	170	"20-24"	2072.529
+951	"Colombia"	170	"25-29"	1914.421
+952	"Colombia"	170	"30-34"	1743.955
+953	"Colombia"	170	"35-39"	1519.534
+954	"Colombia"	170	"40-44"	1493.803
+955	"Colombia"	170	"45-49"	1314.869
+956	"Colombia"	170	"50-54"	1077.4
+957	"Colombia"	170	"55-59"	870.68
+958	"Colombia"	170	"60-64"	637.013
+959	"Colombia"	170	"65-69"	430.559
+960	"Colombia"	170	"70-74"	299.877
+961	"Colombia"	170	"75-79"	199.558
+962	"Colombia"	170	"80-84"	117.497
+963	"Colombia"	170	"85-89"	56.139
+964	"Colombia"	170	"90-94"	17.825
+965	"Colombia"	170	"95-99"	3.889
+966	"Colombia"	170	"100+"	0.494
+967	"Comoros"	174	"0-4"	62.347
+968	"Comoros"	174	"5-9"	53.511
+969	"Comoros"	174	"10-14"	43.493
+970	"Comoros"	174	"15-19"	35.166
+971	"Comoros"	174	"20-24"	32.304
+972	"Comoros"	174	"25-29"	32.864
+973	"Comoros"	174	"30-34"	25.994
+974	"Comoros"	174	"35-39"	20.55
+975	"Comoros"	174	"40-44"	16.658
+976	"Comoros"	174	"45-49"	13.731
+977	"Comoros"	174	"50-54"	11.044
+978	"Comoros"	174	"55-59"	8.227
+979	"Comoros"	174	"60-64"	5.131
+980	"Comoros"	174	"65-69"	3.851
+981	"Comoros"	174	"70-74"	2.654
+982	"Comoros"	174	"75-79"	1.498
+983	"Comoros"	174	"80-84"	0.681
+984	"Comoros"	174	"85-89"	0.218
+985	"Comoros"	174	"90-94"	0.043
+986	"Comoros"	174	"95-99"	0.005
+987	"Comoros"	174	"100+"	0
+988	"Congo"	178	"0-4"	314.427
+989	"Congo"	178	"5-9"	273.579
+990	"Congo"	178	"10-14"	239.177
+991	"Congo"	178	"15-19"	208.06
+992	"Congo"	178	"20-24"	185.744
+993	"Congo"	178	"25-29"	166.098
+994	"Congo"	178	"30-34"	144.297
+995	"Congo"	178	"35-39"	119.479
+996	"Congo"	178	"40-44"	94.688
+997	"Congo"	178	"45-49"	73.095
+998	"Congo"	178	"50-54"	56.681
+999	"Congo"	178	"55-59"	44.997
+1000	"Congo"	178	"60-64"	35.401
+1001	"Congo"	178	"65-69"	27.432
+1002	"Congo"	178	"70-74"	19.625
+1003	"Congo"	178	"75-79"	12.133
+1004	"Congo"	178	"80-84"	5.998
+1005	"Congo"	178	"85-89"	2.139
+1006	"Congo"	178	"90-94"	0.481
+1007	"Congo"	178	"95-99"	0.058
+1008	"Congo"	178	"100+"	0.004
+1009	"Cook Islands"	184	"0-4"	0.919
+1010	"Cook Islands"	184	"5-9"	0.938
+1011	"Cook Islands"	184	"10-14"	1.06
+1012	"Cook Islands"	184	"15-19"	1.087
+1013	"Cook Islands"	184	"20-24"	0.985
+1014	"Cook Islands"	184	"25-29"	0.738
+1015	"Cook Islands"	184	"30-34"	0.681
+1016	"Cook Islands"	184	"35-39"	0.746
+1017	"Cook Islands"	184	"40-44"	0.701
+1018	"Cook Islands"	184	"45-49"	0.638
+1019	"Cook Islands"	184	"50-54"	0.441
+1020	"Cook Islands"	184	"55-59"	0.312
+1021	"Cook Islands"	184	"60-64"	0.404
+1022	"Cook Islands"	184	"65-69"	0.197
+1023	"Cook Islands"	184	"70-74"	0.259
+1024	"Cook Islands"	184	"75-79"	0.139
+1025	"Cook Islands"	184	"80-84"	0.084
+1026	"Cook Islands"	184	"85-89"	0.032
+1027	"Cook Islands"	184	"90-94"	0.008
+1028	"Cook Islands"	184	"95-99"	0.001
+1029	"Cook Islands"	184	"100+"	0
+1030	"Costa Rica"	188	"0-4"	185.809
+1031	"Costa Rica"	188	"5-9"	199.931
+1032	"Costa Rica"	188	"10-14"	209.371
+1033	"Costa Rica"	188	"15-19"	220.854
+1034	"Costa Rica"	188	"20-24"	233.069
+1035	"Costa Rica"	188	"25-29"	213.572
+1036	"Costa Rica"	188	"30-34"	186.234
+1037	"Costa Rica"	188	"35-39"	161.134
+1038	"Costa Rica"	188	"40-44"	160.659
+1039	"Costa Rica"	188	"45-49"	157.258
+1040	"Costa Rica"	188	"50-54"	127.736
+1041	"Costa Rica"	188	"55-59"	99.808
+1042	"Costa Rica"	188	"60-64"	68.614
+1043	"Costa Rica"	188	"65-69"	49.228
+1044	"Costa Rica"	188	"70-74"	36.656
+1045	"Costa Rica"	188	"75-79"	25.213
+1046	"Costa Rica"	188	"80-84"	16.802
+1047	"Costa Rica"	188	"85-89"	8.134
+1048	"Costa Rica"	188	"90-94"	3.954
+1049	"Costa Rica"	188	"95-99"	1.037
+1050	"Costa Rica"	188	"100+"	0.178
+1051	"Cote d'Ivoire"	384	"0-4"	1491.32
+1052	"Cote d'Ivoire"	384	"5-9"	1354.523
+1053	"Cote d'Ivoire"	384	"10-14"	1207.244
+1054	"Cote d'Ivoire"	384	"15-19"	1078.726
+1055	"Cote d'Ivoire"	384	"20-24"	925.686
+1056	"Cote d'Ivoire"	384	"25-29"	789.762
+1057	"Cote d'Ivoire"	384	"30-34"	663.251
+1058	"Cote d'Ivoire"	384	"35-39"	526.126
+1059	"Cote d'Ivoire"	384	"40-44"	422.855
+1060	"Cote d'Ivoire"	384	"45-49"	364.112
+1061	"Cote d'Ivoire"	384	"50-54"	323.45
+1062	"Cote d'Ivoire"	384	"55-59"	281.63
+1063	"Cote d'Ivoire"	384	"60-64"	227.359
+1064	"Cote d'Ivoire"	384	"65-69"	175.86
+1065	"Cote d'Ivoire"	384	"70-74"	119.157
+1066	"Cote d'Ivoire"	384	"75-79"	66.726
+1067	"Cote d'Ivoire"	384	"80-84"	28.984
+1068	"Cote d'Ivoire"	384	"85-89"	8.871
+1069	"Cote d'Ivoire"	384	"90-94"	1.686
+1070	"Cote d'Ivoire"	384	"95-99"	0.181
+1071	"Cote d'Ivoire"	384	"100+"	0.011
+1072	"Croatia"	191	"0-4"	107.94
+1073	"Croatia"	191	"5-9"	107.031
+1074	"Croatia"	191	"10-14"	123.691
+1075	"Croatia"	191	"15-19"	131.824
+1076	"Croatia"	191	"20-24"	140.985
+1077	"Croatia"	191	"25-29"	157.194
+1078	"Croatia"	191	"30-34"	157.848
+1079	"Croatia"	191	"35-39"	149.461
+1080	"Croatia"	191	"40-44"	149.56
+1081	"Croatia"	191	"45-49"	158.766
+1082	"Croatia"	191	"50-54"	161.561
+1083	"Croatia"	191	"55-59"	154.789
+1084	"Croatia"	191	"60-64"	127.441
+1085	"Croatia"	191	"65-69"	87.647
+1086	"Croatia"	191	"70-74"	90.08
+1087	"Croatia"	191	"75-79"	65.027
+1088	"Croatia"	191	"80-84"	34.718
+1089	"Croatia"	191	"85-89"	11.163
+1090	"Croatia"	191	"90-94"	2.416
+1091	"Croatia"	191	"95-99"	0.585
+1092	"Croatia"	191	"100+"	0.076
+1093	"Cuba"	192	"0-4"	292.83
+1094	"Cuba"	192	"5-9"	344.772
+1095	"Cuba"	192	"10-14"	365.152
+1096	"Cuba"	192	"15-19"	396.029
+1097	"Cuba"	192	"20-24"	427.632
+1098	"Cuba"	192	"25-29"	359.469
+1099	"Cuba"	192	"30-34"	354.244
+1100	"Cuba"	192	"35-39"	509.457
+1101	"Cuba"	192	"40-44"	536.381
+1102	"Cuba"	192	"45-49"	519.053
+1103	"Cuba"	192	"50-54"	337.604
+1104	"Cuba"	192	"55-59"	318.751
+1105	"Cuba"	192	"60-64"	252.499
+1106	"Cuba"	192	"65-69"	218.187
+1107	"Cuba"	192	"70-74"	175.508
+1108	"Cuba"	192	"75-79"	119.434
+1109	"Cuba"	192	"80-84"	75.02
+1110	"Cuba"	192	"85-89"	38.876
+1111	"Cuba"	192	"90-94"	16.097
+1112	"Cuba"	192	"95-99"	4.626
+1113	"Cuba"	192	"100+"	0.807
+1114	"Cyprus"	196	"0-4"	32.953
+1115	"Cyprus"	196	"5-9"	32.31
+1116	"Cyprus"	196	"10-14"	36.018
+1117	"Cyprus"	196	"15-19"	44.067
+1118	"Cyprus"	196	"20-24"	50.23
+1119	"Cyprus"	196	"25-29"	54.817
+1120	"Cyprus"	196	"30-34"	47.768
+1121	"Cyprus"	196	"35-39"	41.487
+1122	"Cyprus"	196	"40-44"	37.631
+1123	"Cyprus"	196	"45-49"	37.185
+1124	"Cyprus"	196	"50-54"	35.228
+1125	"Cyprus"	196	"55-59"	30.568
+1126	"Cyprus"	196	"60-64"	25.403
+1127	"Cyprus"	196	"65-69"	19.876
+1128	"Cyprus"	196	"70-74"	15.731
+1129	"Cyprus"	196	"75-79"	10.561
+1130	"Cyprus"	196	"80-84"	7.512
+1131	"Cyprus"	196	"85-89"	3.037
+1132	"Cyprus"	196	"90-94"	0.848
+1133	"Cyprus"	196	"95-99"	0.116
+1134	"Cyprus"	196	"100+"	0.004
+1135	"Czech Republic"	203	"0-4"	280.775
+1136	"Czech Republic"	203	"5-9"	234.345
+1137	"Czech Republic"	203	"10-14"	239.901
+1138	"Czech Republic"	203	"15-19"	328.92
+1139	"Czech Republic"	203	"20-24"	360.367
+1140	"Czech Republic"	203	"25-29"	399.87
+1141	"Czech Republic"	203	"30-34"	506.512
+1142	"Czech Republic"	203	"35-39"	396.423
+1143	"Czech Republic"	203	"40-44"	375.589
+1144	"Czech Republic"	203	"45-49"	313.655
+1145	"Czech Republic"	203	"50-54"	367.573
+1146	"Czech Republic"	203	"55-59"	377.501
+1147	"Czech Republic"	203	"60-64"	345.738
+1148	"Czech Republic"	203	"65-69"	227.302
+1149	"Czech Republic"	203	"70-74"	148.208
+1150	"Czech Republic"	203	"75-79"	128.301
+1151	"Czech Republic"	203	"80-84"	75.219
+1152	"Czech Republic"	203	"85-89"	33.848
+1153	"Czech Republic"	203	"90-94"	5.366
+1154	"Czech Republic"	203	"95-99"	1.282
+1155	"Czech Republic"	203	"100+"	0.081
+1156	"Dem. People's Rep. of Korea"	408	"0-4"	871.147
+1157	"Dem. People's Rep. of Korea"	408	"5-9"	930.625
+1158	"Dem. People's Rep. of Korea"	408	"10-14"	1053.611
+1159	"Dem. People's Rep. of Korea"	408	"15-19"	1065.38
+1160	"Dem. People's Rep. of Korea"	408	"20-24"	936.665
+1161	"Dem. People's Rep. of Korea"	408	"25-29"	926.291
+1162	"Dem. People's Rep. of Korea"	408	"30-34"	743.559
+1163	"Dem. People's Rep. of Korea"	408	"35-39"	1051.458
+1164	"Dem. People's Rep. of Korea"	408	"40-44"	1091.201
+1165	"Dem. People's Rep. of Korea"	408	"45-49"	815.239
+1166	"Dem. People's Rep. of Korea"	408	"50-54"	751.743
+1167	"Dem. People's Rep. of Korea"	408	"55-59"	406.115
+1168	"Dem. People's Rep. of Korea"	408	"60-64"	495.4
+1169	"Dem. People's Rep. of Korea"	408	"65-69"	401.729
+1170	"Dem. People's Rep. of Korea"	408	"70-74"	257.19
+1171	"Dem. People's Rep. of Korea"	408	"75-79"	105.274
+1172	"Dem. People's Rep. of Korea"	408	"80-84"	32.381
+1173	"Dem. People's Rep. of Korea"	408	"85-89"	8.089
+1174	"Dem. People's Rep. of Korea"	408	"90-94"	1.086
+1175	"Dem. People's Rep. of Korea"	408	"95-99"	0.084
+1176	"Dem. People's Rep. of Korea"	408	"100+"	0.002
+1177	"Dem. Republic of the Congo"	180	"0-4"	5947.792
+1178	"Dem. Republic of the Congo"	180	"5-9"	5063.03
+1179	"Dem. Republic of the Congo"	180	"10-14"	4304.176
+1180	"Dem. Republic of the Congo"	180	"15-19"	3659.177
+1181	"Dem. Republic of the Congo"	180	"20-24"	3024.921
+1182	"Dem. Republic of the Congo"	180	"25-29"	2414.94
+1183	"Dem. Republic of the Congo"	180	"30-34"	1929.984
+1184	"Dem. Republic of the Congo"	180	"35-39"	1555.932
+1185	"Dem. Republic of the Congo"	180	"40-44"	1249.839
+1186	"Dem. Republic of the Congo"	180	"45-49"	1000.849
+1187	"Dem. Republic of the Congo"	180	"50-54"	790.851
+1188	"Dem. Republic of the Congo"	180	"55-59"	620.866
+1189	"Dem. Republic of the Congo"	180	"60-64"	479.622
+1190	"Dem. Republic of the Congo"	180	"65-69"	348.575
+1191	"Dem. Republic of the Congo"	180	"70-74"	224.762
+1192	"Dem. Republic of the Congo"	180	"75-79"	122.703
+1193	"Dem. Republic of the Congo"	180	"80-84"	52.089
+1194	"Dem. Republic of the Congo"	180	"85-89"	15.217
+1195	"Dem. Republic of the Congo"	180	"90-94"	2.704
+1196	"Dem. Republic of the Congo"	180	"95-99"	0.256
+1197	"Dem. Republic of the Congo"	180	"100+"	0.014
+1198	"Denmark"	208	"0-4"	167.182
+1199	"Denmark"	208	"5-9"	168.047
+1200	"Denmark"	208	"10-14"	176.936
+1201	"Denmark"	208	"15-19"	182.456
+1202	"Denmark"	208	"20-24"	168.626
+1203	"Denmark"	208	"25-29"	154.415
+1204	"Denmark"	208	"30-34"	175.343
+1205	"Denmark"	208	"35-39"	193.436
+1206	"Denmark"	208	"40-44"	210.754
+1207	"Denmark"	208	"45-49"	204.256
+1208	"Denmark"	208	"50-54"	183.642
+1209	"Denmark"	208	"55-59"	172.71
+1210	"Denmark"	208	"60-64"	188.021
+1211	"Denmark"	208	"65-69"	149.487
+1212	"Denmark"	208	"70-74"	103.871
+1213	"Denmark"	208	"75-79"	70.958
+1214	"Denmark"	208	"80-84"	47.815
+1215	"Denmark"	208	"85-89"	24.154
+1216	"Denmark"	208	"90-94"	7.854
+1217	"Denmark"	208	"95-99"	1.465
+1218	"Denmark"	208	"100+"	0.131
+1219	"Djibouti"	262	"0-4"	57.229
+1220	"Djibouti"	262	"5-9"	52.639
+1221	"Djibouti"	262	"10-14"	50.732
+1222	"Djibouti"	262	"15-19"	50.681
+1223	"Djibouti"	262	"20-24"	45.855
+1224	"Djibouti"	262	"25-29"	38.873
+1225	"Djibouti"	262	"30-34"	32.57
+1226	"Djibouti"	262	"35-39"	27.313
+1227	"Djibouti"	262	"40-44"	22.661
+1228	"Djibouti"	262	"45-49"	18.318
+1229	"Djibouti"	262	"50-54"	14.421
+1230	"Djibouti"	262	"55-59"	11.213
+1231	"Djibouti"	262	"60-64"	8.938
+1232	"Djibouti"	262	"65-69"	6.189
+1233	"Djibouti"	262	"70-74"	3.801
+1234	"Djibouti"	262	"75-79"	2.003
+1235	"Djibouti"	262	"80-84"	0.829
+1236	"Djibouti"	262	"85-89"	0.239
+1237	"Djibouti"	262	"90-94"	0.042
+1238	"Djibouti"	262	"95-99"	0.004
+1239	"Djibouti"	262	"100+"	0
+1240	"Dominica"	212	"0-4"	2.213
+1241	"Dominica"	212	"5-9"	2.344
+1242	"Dominica"	212	"10-14"	3.069
+1243	"Dominica"	212	"15-19"	3.685
+1244	"Dominica"	212	"20-24"	3.172
+1245	"Dominica"	212	"25-29"	2.861
+1246	"Dominica"	212	"30-34"	1.717
+1247	"Dominica"	212	"35-39"	1.928
+1248	"Dominica"	212	"40-44"	2.635
+1249	"Dominica"	212	"45-49"	2.232
+1250	"Dominica"	212	"50-54"	2.345
+1251	"Dominica"	212	"55-59"	1.517
+1252	"Dominica"	212	"60-64"	1.133
+1253	"Dominica"	212	"65-69"	1.065
+1254	"Dominica"	212	"70-74"	0.918
+1255	"Dominica"	212	"75-79"	0.385
+1256	"Dominica"	212	"80-84"	0.337
+1257	"Dominica"	212	"85-89"	0.21
+1258	"Dominica"	212	"90-94"	0.079
+1259	"Dominica"	212	"95-99"	0.017
+1260	"Dominica"	212	"100+"	0.002
+1261	"Dominican Republic"	214	"0-4"	537.657
+1262	"Dominican Republic"	214	"5-9"	527.374
+1263	"Dominican Republic"	214	"10-14"	502.866
+1264	"Dominican Republic"	214	"15-19"	490.914
+1265	"Dominican Republic"	214	"20-24"	449.763
+1266	"Dominican Republic"	214	"25-29"	405.05
+1267	"Dominican Republic"	214	"30-34"	353.875
+1268	"Dominican Republic"	214	"35-39"	322.679
+1269	"Dominican Republic"	214	"40-44"	294.475
+1270	"Dominican Republic"	214	"45-49"	264.106
+1271	"Dominican Republic"	214	"50-54"	223.435
+1272	"Dominican Republic"	214	"55-59"	175.933
+1273	"Dominican Republic"	214	"60-64"	127.934
+1274	"Dominican Republic"	214	"65-69"	97.014
+1275	"Dominican Republic"	214	"70-74"	80.637
+1276	"Dominican Republic"	214	"75-79"	59.003
+1277	"Dominican Republic"	214	"80-84"	36.731
+1278	"Dominican Republic"	214	"85-89"	19.394
+1279	"Dominican Republic"	214	"90-94"	8.481
+1280	"Dominican Republic"	214	"95-99"	2.309
+1281	"Dominican Republic"	214	"100+"	0.408
+1282	"Ecuador"	218	"0-4"	750.535
+1283	"Ecuador"	218	"5-9"	748.591
+1284	"Ecuador"	218	"10-14"	738.392
+1285	"Ecuador"	218	"15-19"	700.935
+1286	"Ecuador"	218	"20-24"	672.419
+1287	"Ecuador"	218	"25-29"	624.88
+1288	"Ecuador"	218	"30-34"	556.533
+1289	"Ecuador"	218	"35-39"	484.278
+1290	"Ecuador"	218	"40-44"	425.913
+1291	"Ecuador"	218	"45-49"	365.429
+1292	"Ecuador"	218	"50-54"	308.651
+1293	"Ecuador"	218	"55-59"	260.183
+1294	"Ecuador"	218	"60-64"	189.189
+1295	"Ecuador"	218	"65-69"	148.275
+1296	"Ecuador"	218	"70-74"	113.066
+1297	"Ecuador"	218	"75-79"	77.757
+1298	"Ecuador"	218	"80-84"	46.588
+1299	"Ecuador"	218	"85-89"	22.529
+1300	"Ecuador"	218	"90-94"	8.213
+1301	"Ecuador"	218	"95-99"	2.119
+1302	"Ecuador"	218	"100+"	0.299
+1303	"Egypt"	818	"0-4"	4610.711
+1304	"Egypt"	818	"5-9"	4346.263
+1305	"Egypt"	818	"10-14"	4123.591
+1306	"Egypt"	818	"15-19"	3997.499
+1307	"Egypt"	818	"20-24"	4138.373
+1308	"Egypt"	818	"25-29"	3689.676
+1309	"Egypt"	818	"30-34"	2942.31
+1310	"Egypt"	818	"35-39"	2396.422
+1311	"Egypt"	818	"40-44"	2241.453
+1312	"Egypt"	818	"45-49"	2049.858
+1313	"Egypt"	818	"50-54"	1778.561
+1314	"Egypt"	818	"55-59"	1422.681
+1315	"Egypt"	818	"60-64"	1174.436
+1316	"Egypt"	818	"65-69"	731.892
+1317	"Egypt"	818	"70-74"	535.351
+1318	"Egypt"	818	"75-79"	329.803
+1319	"Egypt"	818	"80-84"	163.636
+1320	"Egypt"	818	"85-89"	51.049
+1321	"Egypt"	818	"90-94"	9.155
+1322	"Egypt"	818	"95-99"	0.842
+1323	"Egypt"	818	"100+"	0.04
+1324	"El Salvador"	222	"0-4"	315.212
+1325	"El Salvador"	222	"5-9"	319.556
+1326	"El Salvador"	222	"10-14"	376.466
+1327	"El Salvador"	222	"15-19"	366.379
+1328	"El Salvador"	222	"20-24"	301.959
+1329	"El Salvador"	222	"25-29"	229.737
+1330	"El Salvador"	222	"30-34"	183.438
+1331	"El Salvador"	222	"35-39"	156.098
+1332	"El Salvador"	222	"40-44"	140.215
+1333	"El Salvador"	222	"45-49"	118.639
+1334	"El Salvador"	222	"50-54"	96.278
+1335	"El Salvador"	222	"55-59"	83.626
+1336	"El Salvador"	222	"60-64"	69.866
+1337	"El Salvador"	222	"65-69"	61.956
+1338	"El Salvador"	222	"70-74"	47.866
+1339	"El Salvador"	222	"75-79"	33.157
+1340	"El Salvador"	222	"80-84"	21.187
+1341	"El Salvador"	222	"85-89"	12.351
+1342	"El Salvador"	222	"90-94"	5.416
+1343	"El Salvador"	222	"95-99"	1.808
+1344	"El Salvador"	222	"100+"	0.523
+1345	"Equatorial Guinea"	226	"0-4"	53.944
+1346	"Equatorial Guinea"	226	"5-9"	44.638
+1347	"Equatorial Guinea"	226	"10-14"	39.518
+1348	"Equatorial Guinea"	226	"15-19"	36.06
+1349	"Equatorial Guinea"	226	"20-24"	32.362
+1350	"Equatorial Guinea"	226	"25-29"	24.636
+1351	"Equatorial Guinea"	226	"30-34"	19.037
+1352	"Equatorial Guinea"	226	"35-39"	20.52
+1353	"Equatorial Guinea"	226	"40-44"	22.555
+1354	"Equatorial Guinea"	226	"45-49"	21.527
+1355	"Equatorial Guinea"	226	"50-54"	17.298
+1356	"Equatorial Guinea"	226	"55-59"	10.963
+1357	"Equatorial Guinea"	226	"60-64"	5.848
+1358	"Equatorial Guinea"	226	"65-69"	4
+1359	"Equatorial Guinea"	226	"70-74"	2.912
+1360	"Equatorial Guinea"	226	"75-79"	1.872
+1361	"Equatorial Guinea"	226	"80-84"	0.915
+1362	"Equatorial Guinea"	226	"85-89"	0.314
+1363	"Equatorial Guinea"	226	"90-94"	0.067
+1364	"Equatorial Guinea"	226	"95-99"	0.007
+1365	"Equatorial Guinea"	226	"100+"	0
+1366	"Eritrea"	232	"0-4"	436.152
+1367	"Eritrea"	232	"5-9"	367.194
+1368	"Eritrea"	232	"10-14"	300.352
+1369	"Eritrea"	232	"15-19"	273.991
+1370	"Eritrea"	232	"20-24"	253.804
+1371	"Eritrea"	232	"25-29"	230.931
+1372	"Eritrea"	232	"30-34"	228.715
+1373	"Eritrea"	232	"35-39"	164.659
+1374	"Eritrea"	232	"40-44"	95.401
+1375	"Eritrea"	232	"45-49"	61.256
+1376	"Eritrea"	232	"50-54"	49.35
+1377	"Eritrea"	232	"55-59"	40.89
+1378	"Eritrea"	232	"60-64"	35.063
+1379	"Eritrea"	232	"65-69"	25.107
+1380	"Eritrea"	232	"70-74"	13.71
+1381	"Eritrea"	232	"75-79"	6.809
+1382	"Eritrea"	232	"80-84"	3.025
+1383	"Eritrea"	232	"85-89"	0.975
+1384	"Eritrea"	232	"90-94"	0.224
+1385	"Eritrea"	232	"95-99"	0.032
+1386	"Eritrea"	232	"100+"	0.003
+1387	"Estonia"	233	"0-4"	40.212
+1388	"Estonia"	233	"5-9"	33.587
+1389	"Estonia"	233	"10-14"	31.886
+1390	"Estonia"	233	"15-19"	39.265
+1391	"Estonia"	233	"20-24"	54.801
+1392	"Estonia"	233	"25-29"	51.196
+1393	"Estonia"	233	"30-34"	47.363
+1394	"Estonia"	233	"35-39"	45.763
+1395	"Estonia"	233	"40-44"	42.389
+1396	"Estonia"	233	"45-49"	42.945
+1397	"Estonia"	233	"50-54"	42.929
+1398	"Estonia"	233	"55-59"	38.098
+1399	"Estonia"	233	"60-64"	31.394
+1400	"Estonia"	233	"65-69"	24.244
+1401	"Estonia"	233	"70-74"	22.626
+1402	"Estonia"	233	"75-79"	15.381
+1403	"Estonia"	233	"80-84"	9.558
+1404	"Estonia"	233	"85-89"	3.421
+1405	"Estonia"	233	"90-94"	0.846
+1406	"Estonia"	233	"95-99"	0.222
+1407	"Estonia"	233	"100+"	0.025
+1408	"Ethiopia"	231	"0-4"	6016.073
+1409	"Ethiopia"	231	"5-9"	5823.453
+1410	"Ethiopia"	231	"10-14"	5462.195
+1411	"Ethiopia"	231	"15-19"	4833.431
+1412	"Ethiopia"	231	"20-24"	3961.699
+1413	"Ethiopia"	231	"25-29"	3153.033
+1414	"Ethiopia"	231	"30-34"	2573.242
+1415	"Ethiopia"	231	"35-39"	2162.586
+1416	"Ethiopia"	231	"40-44"	1779.991
+1417	"Ethiopia"	231	"45-49"	1438.72
+1418	"Ethiopia"	231	"50-54"	1134.479
+1419	"Ethiopia"	231	"55-59"	917.49
+1420	"Ethiopia"	231	"60-64"	758.053
+1421	"Ethiopia"	231	"65-69"	555.273
+1422	"Ethiopia"	231	"70-74"	367.299
+1423	"Ethiopia"	231	"75-79"	210.992
+1424	"Ethiopia"	231	"80-84"	96.162
+1425	"Ethiopia"	231	"85-89"	30.801
+1426	"Ethiopia"	231	"90-94"	5.963
+1427	"Ethiopia"	231	"95-99"	0.61
+1428	"Ethiopia"	231	"100+"	0.032
+1429	"Faeroe Islands"	234	"0-4"	1.712
+1430	"Faeroe Islands"	234	"5-9"	1.863
+1431	"Faeroe Islands"	234	"10-14"	1.877
+1432	"Faeroe Islands"	234	"15-19"	1.932
+1433	"Faeroe Islands"	234	"20-24"	1.759
+1434	"Faeroe Islands"	234	"25-29"	1.334
+1435	"Faeroe Islands"	234	"30-34"	1.577
+1436	"Faeroe Islands"	234	"35-39"	1.672
+1437	"Faeroe Islands"	234	"40-44"	1.91
+1438	"Faeroe Islands"	234	"45-49"	1.728
+1439	"Faeroe Islands"	234	"50-54"	1.641
+1440	"Faeroe Islands"	234	"55-59"	1.515
+1441	"Faeroe Islands"	234	"60-64"	1.461
+1442	"Faeroe Islands"	234	"65-69"	1.203
+1443	"Faeroe Islands"	234	"70-74"	0.8
+1444	"Faeroe Islands"	234	"75-79"	0.659
+1445	"Faeroe Islands"	234	"80-84"	0.356
+1446	"Faeroe Islands"	234	"85-89"	0.236
+1447	"Faeroe Islands"	234	"90-94"	0.086
+1448	"Faeroe Islands"	234	"95-99"	0.019
+1449	"Faeroe Islands"	234	"100+"	0.002
+1450	"Falkland Islands (Malvinas)"	238	"0-4"	0.088
+1451	"Falkland Islands (Malvinas)"	238	"5-9"	0.087
+1452	"Falkland Islands (Malvinas)"	238	"10-14"	0.092
+1453	"Falkland Islands (Malvinas)"	238	"15-19"	0.094
+1454	"Falkland Islands (Malvinas)"	238	"20-24"	0.091
+1455	"Falkland Islands (Malvinas)"	238	"25-29"	0.089
+1456	"Falkland Islands (Malvinas)"	238	"30-34"	0.094
+1457	"Falkland Islands (Malvinas)"	238	"35-39"	0.109
+1458	"Falkland Islands (Malvinas)"	238	"40-44"	0.121
+1459	"Falkland Islands (Malvinas)"	238	"45-49"	0.108
+1460	"Falkland Islands (Malvinas)"	238	"50-54"	0.083
+1461	"Falkland Islands (Malvinas)"	238	"55-59"	0.062
+1462	"Falkland Islands (Malvinas)"	238	"60-64"	0.141
+1463	"Falkland Islands (Malvinas)"	238	"65-69"	0.098
+1464	"Falkland Islands (Malvinas)"	238	"70-74"	0.064
+1465	"Falkland Islands (Malvinas)"	238	"75-79"	0.035
+1466	"Falkland Islands (Malvinas)"	238	"80-84"	0.016
+1467	"Falkland Islands (Malvinas)"	238	"85-89"	0.008
+1468	"Falkland Islands (Malvinas)"	238	"90-94"	0.003
+1469	"Falkland Islands (Malvinas)"	238	"95-99"	0
+1470	"Falkland Islands (Malvinas)"	238	"100+"	0
+1471	"Fiji"	242	"0-4"	46.181
+1472	"Fiji"	242	"5-9"	42.182
+1473	"Fiji"	242	"10-14"	40.723
+1474	"Fiji"	242	"15-19"	42.013
+1475	"Fiji"	242	"20-24"	39.403
+1476	"Fiji"	242	"25-29"	39.229
+1477	"Fiji"	242	"30-34"	34.05
+1478	"Fiji"	242	"35-39"	28.611
+1479	"Fiji"	242	"40-44"	27.011
+1480	"Fiji"	242	"45-49"	26.978
+1481	"Fiji"	242	"50-54"	23.254
+1482	"Fiji"	242	"55-59"	17.142
+1483	"Fiji"	242	"60-64"	13.171
+1484	"Fiji"	242	"65-69"	9.256
+1485	"Fiji"	242	"70-74"	5.453
+1486	"Fiji"	242	"75-79"	2.936
+1487	"Fiji"	242	"80-84"	1.222
+1488	"Fiji"	242	"85-89"	0.33
+1489	"Fiji"	242	"90-94"	0.099
+1490	"Fiji"	242	"95-99"	0.013
+1491	"Fiji"	242	"100+"	0.001
+1492	"Finland"	246	"0-4"	153.013
+1493	"Finland"	246	"5-9"	147.506
+1494	"Finland"	246	"10-14"	152.86
+1495	"Finland"	246	"15-19"	170.598
+1496	"Finland"	246	"20-24"	166.324
+1497	"Finland"	246	"25-29"	175.454
+1498	"Finland"	246	"30-34"	175.435
+1499	"Finland"	246	"35-39"	159.557
+1500	"Finland"	246	"40-44"	179.228
+1501	"Finland"	246	"45-49"	191.271
+1502	"Finland"	246	"50-54"	188.337
+1503	"Finland"	246	"55-59"	191.015
+1504	"Finland"	246	"60-64"	198.453
+1505	"Finland"	246	"65-69"	129.117
+1506	"Finland"	246	"70-74"	99.621
+1507	"Finland"	246	"75-79"	75.212
+1508	"Finland"	246	"80-84"	50.106
+1509	"Finland"	246	"85-89"	22.27
+1510	"Finland"	246	"90-94"	5.803
+1511	"Finland"	246	"95-99"	1.043
+1512	"Finland"	246	"100+"	0.086
+1513	"France"	250	"0-4"	2036.273
+1514	"France"	250	"5-9"	1966.056
+1515	"France"	250	"10-14"	1899.677
+1516	"France"	250	"15-19"	1917.306
+1517	"France"	250	"20-24"	2043.748
+1518	"France"	250	"25-29"	2026.77
+1519	"France"	250	"30-34"	1937.468
+1520	"France"	250	"35-39"	2147.261
+1521	"France"	250	"40-44"	2147.457
+1522	"France"	250	"45-49"	2138.91
+1523	"France"	250	"50-54"	2033.821
+1524	"France"	250	"55-59"	1972.072
+1525	"France"	250	"60-64"	1884.972
+1526	"France"	250	"65-69"	1236.94
+1527	"France"	250	"70-74"	1083.196
+1528	"France"	250	"75-79"	931.929
+1529	"France"	250	"80-84"	658.839
+1530	"France"	250	"85-89"	375.203
+1531	"France"	250	"90-94"	85.24
+1532	"France"	250	"95-99"	23.373
+1533	"France"	250	"100+"	2.104
+1534	"French Guiana"	254	"0-4"	13.71
+1535	"French Guiana"	254	"5-9"	13.46
+1536	"French Guiana"	254	"10-14"	12.05
+1537	"French Guiana"	254	"15-19"	11.103
+1538	"French Guiana"	254	"20-24"	9.649
+1539	"French Guiana"	254	"25-29"	7.89
+1540	"French Guiana"	254	"30-34"	7.456
+1541	"French Guiana"	254	"35-39"	7.561
+1542	"French Guiana"	254	"40-44"	7.435
+1543	"French Guiana"	254	"45-49"	6.852
+1544	"French Guiana"	254	"50-54"	5.608
+1545	"French Guiana"	254	"55-59"	4.903
+1546	"French Guiana"	254	"60-64"	3.338
+1547	"French Guiana"	254	"65-69"	2.259
+1548	"French Guiana"	254	"70-74"	1.228
+1549	"French Guiana"	254	"75-79"	0.658
+1550	"French Guiana"	254	"80-84"	0.406
+1551	"French Guiana"	254	"85-89"	0.126
+1552	"French Guiana"	254	"90-94"	0.031
+1553	"French Guiana"	254	"95-99"	0.004
+1554	"French Guiana"	254	"100+"	0
+1555	"French Polynesia"	258	"0-4"	11.074
+1556	"French Polynesia"	258	"5-9"	10.946
+1557	"French Polynesia"	258	"10-14"	12.732
+1558	"French Polynesia"	258	"15-19"	12.625
+1559	"French Polynesia"	258	"20-24"	13.238
+1560	"French Polynesia"	258	"25-29"	10.447
+1561	"French Polynesia"	258	"30-34"	10.404
+1562	"French Polynesia"	258	"35-39"	10.252
+1563	"French Polynesia"	258	"40-44"	10.944
+1564	"French Polynesia"	258	"45-49"	9.386
+1565	"French Polynesia"	258	"50-54"	7.651
+1566	"French Polynesia"	258	"55-59"	6.444
+1567	"French Polynesia"	258	"60-64"	3.975
+1568	"French Polynesia"	258	"65-69"	3.523
+1569	"French Polynesia"	258	"70-74"	2.344
+1570	"French Polynesia"	258	"75-79"	1.599
+1571	"French Polynesia"	258	"80-84"	0.788
+1572	"French Polynesia"	258	"85-89"	0.267
+1573	"French Polynesia"	258	"90-94"	0.037
+1574	"French Polynesia"	258	"95-99"	0.006
+1575	"French Polynesia"	258	"100+"	0
+1576	"Gabon"	266	"0-4"	93.572
+1577	"Gabon"	266	"5-9"	88.778
+1578	"Gabon"	266	"10-14"	87.179
+1579	"Gabon"	266	"15-19"	86.496
+1580	"Gabon"	266	"20-24"	74.273
+1581	"Gabon"	266	"25-29"	63.457
+1582	"Gabon"	266	"30-34"	53.018
+1583	"Gabon"	266	"35-39"	44.088
+1584	"Gabon"	266	"40-44"	37.384
+1585	"Gabon"	266	"45-49"	32.107
+1586	"Gabon"	266	"50-54"	26.24
+1587	"Gabon"	266	"55-59"	22.064
+1588	"Gabon"	266	"60-64"	16.147
+1589	"Gabon"	266	"65-69"	11.835
+1590	"Gabon"	266	"70-74"	7.911
+1591	"Gabon"	266	"75-79"	5.376
+1592	"Gabon"	266	"80-84"	3.303
+1593	"Gabon"	266	"85-89"	1.385
+1594	"Gabon"	266	"90-94"	0.347
+1595	"Gabon"	266	"95-99"	0.046
+1596	"Gabon"	266	"100+"	0.003
+1597	"Gambia"	270	"0-4"	144.913
+1598	"Gambia"	270	"5-9"	127.414
+1599	"Gambia"	270	"10-14"	110.495
+1600	"Gambia"	270	"15-19"	93.853
+1601	"Gambia"	270	"20-24"	80.577
+1602	"Gambia"	270	"25-29"	69.704
+1603	"Gambia"	270	"30-34"	55.817
+1604	"Gambia"	270	"35-39"	40.379
+1605	"Gambia"	270	"40-44"	34.095
+1606	"Gambia"	270	"45-49"	26.3
+1607	"Gambia"	270	"50-54"	21.519
+1608	"Gambia"	270	"55-59"	16.798
+1609	"Gambia"	270	"60-64"	12.191
+1610	"Gambia"	270	"65-69"	9.516
+1611	"Gambia"	270	"70-74"	5.765
+1612	"Gambia"	270	"75-79"	2.939
+1613	"Gambia"	270	"80-84"	1.01
+1614	"Gambia"	270	"85-89"	0.215
+1615	"Gambia"	270	"90-94"	0.017
+1616	"Gambia"	270	"95-99"	0
+1617	"Gambia"	270	"100+"	0
+1618	"Georgia"	268	"0-4"	134.812
+1619	"Georgia"	268	"5-9"	122.324
+1620	"Georgia"	268	"10-14"	124.818
+1621	"Georgia"	268	"15-19"	168.927
+1622	"Georgia"	268	"20-24"	185.732
+1623	"Georgia"	268	"25-29"	158.752
+1624	"Georgia"	268	"30-34"	139.542
+1625	"Georgia"	268	"35-39"	135.484
+1626	"Georgia"	268	"40-44"	129.218
+1627	"Georgia"	268	"45-49"	153.036
+1628	"Georgia"	268	"50-54"	145.264
+1629	"Georgia"	268	"55-59"	120.675
+1630	"Georgia"	268	"60-64"	92.119
+1631	"Georgia"	268	"65-69"	62.043
+1632	"Georgia"	268	"70-74"	85.525
+1633	"Georgia"	268	"75-79"	49.076
+1634	"Georgia"	268	"80-84"	32.818
+1635	"Georgia"	268	"85-89"	7.845
+1636	"Georgia"	268	"90-94"	1.484
+1637	"Georgia"	268	"95-99"	0.398
+1638	"Georgia"	268	"100+"	0.051
+1639	"Germany"	276	"0-4"	1773.899
+1640	"Germany"	276	"5-9"	1845.594
+1641	"Germany"	276	"10-14"	2061.314
+1642	"Germany"	276	"15-19"	2132.661
+1643	"Germany"	276	"20-24"	2555.308
+1644	"Germany"	276	"25-29"	2483.751
+1645	"Germany"	276	"30-34"	2479.444
+1646	"Germany"	276	"35-39"	2563.296
+1647	"Germany"	276	"40-44"	3532.923
+1648	"Germany"	276	"45-49"	3667.4
+1649	"Germany"	276	"50-54"	3122.156
+1650	"Germany"	276	"55-59"	2690.648
+1651	"Germany"	276	"60-64"	2275.37
+1652	"Germany"	276	"65-69"	2130.384
+1653	"Germany"	276	"70-74"	2326.478
+1654	"Germany"	276	"75-79"	1350.6
+1655	"Germany"	276	"80-84"	877.811
+1656	"Germany"	276	"85-89"	368.75
+1657	"Germany"	276	"90-94"	81.668
+1658	"Germany"	276	"95-99"	19.625
+1659	"Germany"	276	"100+"	1.691
+1660	"Ghana"	288	"0-4"	1810.058
+1661	"Ghana"	288	"5-9"	1595.738
+1662	"Ghana"	288	"10-14"	1415.305
+1663	"Ghana"	288	"15-19"	1312.473
+1664	"Ghana"	288	"20-24"	1174.71
+1665	"Ghana"	288	"25-29"	1025.868
+1666	"Ghana"	288	"30-34"	873.96
+1667	"Ghana"	288	"35-39"	729.218
+1668	"Ghana"	288	"40-44"	604.786
+1669	"Ghana"	288	"45-49"	489.197
+1670	"Ghana"	288	"50-54"	384.626
+1671	"Ghana"	288	"55-59"	293.655
+1672	"Ghana"	288	"60-64"	253.718
+1673	"Ghana"	288	"65-69"	186.593
+1674	"Ghana"	288	"70-74"	127.698
+1675	"Ghana"	288	"75-79"	76.881
+1676	"Ghana"	288	"80-84"	37.651
+1677	"Ghana"	288	"85-89"	13.428
+1678	"Ghana"	288	"90-94"	2.948
+1679	"Ghana"	288	"95-99"	0.349
+1680	"Ghana"	288	"100+"	0.021
+1681	"Gibraltar"	292	"0-4"	0.778
+1682	"Gibraltar"	292	"5-9"	0.795
+1683	"Gibraltar"	292	"10-14"	0.811
+1684	"Gibraltar"	292	"15-19"	0.962
+1685	"Gibraltar"	292	"20-24"	1.031
+1686	"Gibraltar"	292	"25-29"	0.923
+1687	"Gibraltar"	292	"30-34"	0.939
+1688	"Gibraltar"	292	"35-39"	0.913
+1689	"Gibraltar"	292	"40-44"	0.984
+1690	"Gibraltar"	292	"45-49"	1.125
+1691	"Gibraltar"	292	"50-54"	0.956
+1692	"Gibraltar"	292	"55-59"	1.026
+1693	"Gibraltar"	292	"60-64"	1.12
+1694	"Gibraltar"	292	"65-69"	0.736
+1695	"Gibraltar"	292	"70-74"	0.628
+1696	"Gibraltar"	292	"75-79"	0.409
+1697	"Gibraltar"	292	"80-84"	0.314
+1698	"Gibraltar"	292	"85-89"	0.168
+1699	"Gibraltar"	292	"90-94"	0.051
+1700	"Gibraltar"	292	"95-99"	0.009
+1701	"Gibraltar"	292	"100+"	0.001
+1702	"Greece"	300	"0-4"	302.066
+1703	"Greece"	300	"5-9"	275.032
+1704	"Greece"	300	"10-14"	275.126
+1705	"Greece"	300	"15-19"	286.539
+1706	"Greece"	300	"20-24"	328.664
+1707	"Greece"	300	"25-29"	413.812
+1708	"Greece"	300	"30-34"	470.041
+1709	"Greece"	300	"35-39"	461.266
+1710	"Greece"	300	"40-44"	450.995
+1711	"Greece"	300	"45-49"	395.345
+1712	"Greece"	300	"50-54"	379.754
+1713	"Greece"	300	"55-59"	344.653
+1714	"Greece"	300	"60-64"	315.389
+1715	"Greece"	300	"65-69"	240.207
+1716	"Greece"	300	"70-74"	248.275
+1717	"Greece"	300	"75-79"	210.971
+1718	"Greece"	300	"80-84"	143.177
+1719	"Greece"	300	"85-89"	56.012
+1720	"Greece"	300	"90-94"	17.328
+1721	"Greece"	300	"95-99"	4.37
+1722	"Greece"	300	"100+"	0.491
+1723	"Greenland"	304	"0-4"	2.123
+1724	"Greenland"	304	"5-9"	2.02
+1725	"Greenland"	304	"10-14"	2.09
+1726	"Greenland"	304	"15-19"	2.325
+1727	"Greenland"	304	"20-24"	2.311
+1728	"Greenland"	304	"25-29"	2.41
+1729	"Greenland"	304	"30-34"	2.169
+1730	"Greenland"	304	"35-39"	1.927
+1731	"Greenland"	304	"40-44"	2.91
+1732	"Greenland"	304	"45-49"	2.96
+1733	"Greenland"	304	"50-54"	2.373
+1734	"Greenland"	304	"55-59"	1.691
+1735	"Greenland"	304	"60-64"	1.193
+1736	"Greenland"	304	"65-69"	0.919
+1737	"Greenland"	304	"70-74"	0.466
+1738	"Greenland"	304	"75-79"	0.3
+1739	"Greenland"	304	"80-84"	0.117
+1740	"Greenland"	304	"85-89"	0.022
+1741	"Greenland"	304	"90-94"	0.003
+1742	"Greenland"	304	"95-99"	0
+1743	"Greenland"	304	"100+"	0
+1744	"Grenada"	308	"0-4"	4.962
+1745	"Grenada"	308	"5-9"	4.626
+1746	"Grenada"	308	"10-14"	5.124
+1747	"Grenada"	308	"15-19"	5.584
+1748	"Grenada"	308	"20-24"	6.28
+1749	"Grenada"	308	"25-29"	5.207
+1750	"Grenada"	308	"30-34"	3.793
+1751	"Grenada"	308	"35-39"	3.165
+1752	"Grenada"	308	"40-44"	2.478
+1753	"Grenada"	308	"45-49"	2.904
+1754	"Grenada"	308	"50-54"	2.169
+1755	"Grenada"	308	"55-59"	1.748
+1756	"Grenada"	308	"60-64"	1.174
+1757	"Grenada"	308	"65-69"	0.907
+1758	"Grenada"	308	"70-74"	0.85
+1759	"Grenada"	308	"75-79"	0.574
+1760	"Grenada"	308	"80-84"	0.467
+1761	"Grenada"	308	"85-89"	0.158
+1762	"Grenada"	308	"90-94"	0.05
+1763	"Grenada"	308	"95-99"	0.005
+1764	"Grenada"	308	"100+"	0
+1765	"Guadeloupe"	312	"0-4"	17.105
+1766	"Guadeloupe"	312	"5-9"	17.209
+1767	"Guadeloupe"	312	"10-14"	18.458
+1768	"Guadeloupe"	312	"15-19"	17.919
+1769	"Guadeloupe"	312	"20-24"	14.93
+1770	"Guadeloupe"	312	"25-29"	12.314
+1771	"Guadeloupe"	312	"30-34"	11.2
+1772	"Guadeloupe"	312	"35-39"	14.476
+1773	"Guadeloupe"	312	"40-44"	16.266
+1774	"Guadeloupe"	312	"45-49"	16.944
+1775	"Guadeloupe"	312	"50-54"	14.177
+1776	"Guadeloupe"	312	"55-59"	11.994
+1777	"Guadeloupe"	312	"60-64"	10.12
+1778	"Guadeloupe"	312	"65-69"	7.883
+1779	"Guadeloupe"	312	"70-74"	6.011
+1780	"Guadeloupe"	312	"75-79"	4.642
+1781	"Guadeloupe"	312	"80-84"	3.026
+1782	"Guadeloupe"	312	"85-89"	1.78
+1783	"Guadeloupe"	312	"90-94"	0.705
+1784	"Guadeloupe"	312	"95-99"	0.176
+1785	"Guadeloupe"	312	"100+"	0.027
+1786	"Guam"	316	"0-4"	8.178
+1787	"Guam"	316	"5-9"	8.519
+1788	"Guam"	316	"10-14"	8.74
+1789	"Guam"	316	"15-19"	8.338
+1790	"Guam"	316	"20-24"	7.144
+1791	"Guam"	316	"25-29"	6.272
+1792	"Guam"	316	"30-34"	6.008
+1793	"Guam"	316	"35-39"	6.17
+1794	"Guam"	316	"40-44"	7.012
+1795	"Guam"	316	"45-49"	6.128
+1796	"Guam"	316	"50-54"	5.304
+1797	"Guam"	316	"55-59"	4.323
+1798	"Guam"	316	"60-64"	3.429
+1799	"Guam"	316	"65-69"	2.248
+1800	"Guam"	316	"70-74"	1.676
+1801	"Guam"	316	"75-79"	1.073
+1802	"Guam"	316	"80-84"	0.631
+1803	"Guam"	316	"85-89"	0.245
+1804	"Guam"	316	"90-94"	0.042
+1805	"Guam"	316	"95-99"	0.004
+1806	"Guam"	316	"100+"	0
+1807	"Guatemala"	320	"0-4"	1103.815
+1808	"Guatemala"	320	"5-9"	1016.98
+1809	"Guatemala"	320	"10-14"	905.937
+1810	"Guatemala"	320	"15-19"	793.932
+1811	"Guatemala"	320	"20-24"	647.204
+1812	"Guatemala"	320	"25-29"	538.925
+1813	"Guatemala"	320	"30-34"	419.352
+1814	"Guatemala"	320	"35-39"	324.073
+1815	"Guatemala"	320	"40-44"	260.522
+1816	"Guatemala"	320	"45-49"	218.499
+1817	"Guatemala"	320	"50-54"	185.846
+1818	"Guatemala"	320	"55-59"	168.087
+1819	"Guatemala"	320	"60-64"	140.909
+1820	"Guatemala"	320	"65-69"	104.173
+1821	"Guatemala"	320	"70-74"	80.747
+1822	"Guatemala"	320	"75-79"	56.174
+1823	"Guatemala"	320	"80-84"	30.72
+1824	"Guatemala"	320	"85-89"	12.177
+1825	"Guatemala"	320	"90-94"	3.199
+1826	"Guatemala"	320	"95-99"	0.558
+1827	"Guatemala"	320	"100+"	0.055
+1828	"Guinea"	324	"0-4"	846.926
+1829	"Guinea"	324	"5-9"	715.116
+1830	"Guinea"	324	"10-14"	619.476
+1831	"Guinea"	324	"15-19"	542.127
+1832	"Guinea"	324	"20-24"	464.835
+1833	"Guinea"	324	"25-29"	387.498
+1834	"Guinea"	324	"30-34"	319.461
+1835	"Guinea"	324	"35-39"	261.279
+1836	"Guinea"	324	"40-44"	214.672
+1837	"Guinea"	324	"45-49"	175.448
+1838	"Guinea"	324	"50-54"	146.746
+1839	"Guinea"	324	"55-59"	118.845
+1840	"Guinea"	324	"60-64"	81.633
+1841	"Guinea"	324	"65-69"	64.34
+1842	"Guinea"	324	"70-74"	43.851
+1843	"Guinea"	324	"75-79"	25.321
+1844	"Guinea"	324	"80-84"	11.621
+1845	"Guinea"	324	"85-89"	3.675
+1846	"Guinea"	324	"90-94"	0.683
+1847	"Guinea"	324	"95-99"	0.065
+1848	"Guinea"	324	"100+"	0.003
+1849	"Guinea-Bissau"	624	"0-4"	120.62
+1850	"Guinea-Bissau"	624	"5-9"	102.545
+1851	"Guinea-Bissau"	624	"10-14"	90.416
+1852	"Guinea-Bissau"	624	"15-19"	81.392
+1853	"Guinea-Bissau"	624	"20-24"	69.506
+1854	"Guinea-Bissau"	624	"25-29"	61.021
+1855	"Guinea-Bissau"	624	"30-34"	47.581
+1856	"Guinea-Bissau"	624	"35-39"	47.423
+1857	"Guinea-Bissau"	624	"40-44"	24.867
+1858	"Guinea-Bissau"	624	"45-49"	25.573
+1859	"Guinea-Bissau"	624	"50-54"	21.051
+1860	"Guinea-Bissau"	624	"55-59"	22.384
+1861	"Guinea-Bissau"	624	"60-64"	13.737
+1862	"Guinea-Bissau"	624	"65-69"	10.478
+1863	"Guinea-Bissau"	624	"70-74"	6.403
+1864	"Guinea-Bissau"	624	"75-79"	3.725
+1865	"Guinea-Bissau"	624	"80-84"	1.647
+1866	"Guinea-Bissau"	624	"85-89"	0.499
+1867	"Guinea-Bissau"	624	"90-94"	0.09
+1868	"Guinea-Bissau"	624	"95-99"	0.008
+1869	"Guinea-Bissau"	624	"100+"	0
+1870	"Guyana"	328	"0-4"	32.98
+1871	"Guyana"	328	"5-9"	46.979
+1872	"Guyana"	328	"10-14"	51.261
+1873	"Guyana"	328	"15-19"	40.61
+1874	"Guyana"	328	"20-24"	29.912
+1875	"Guyana"	328	"25-29"	27.627
+1876	"Guyana"	328	"30-34"	26.771
+1877	"Guyana"	328	"35-39"	27.489
+1878	"Guyana"	328	"40-44"	24.53
+1879	"Guyana"	328	"45-49"	21.272
+1880	"Guyana"	328	"50-54"	15.976
+1881	"Guyana"	328	"55-59"	12.916
+1882	"Guyana"	328	"60-64"	7.626
+1883	"Guyana"	328	"65-69"	5.347
+1884	"Guyana"	328	"70-74"	3.717
+1885	"Guyana"	328	"75-79"	2.15
+1886	"Guyana"	328	"80-84"	1.099
+1887	"Guyana"	328	"85-89"	0.449
+1888	"Guyana"	328	"90-94"	0.223
+1889	"Guyana"	328	"95-99"	0.048
+1890	"Guyana"	328	"100+"	0.006
+1891	"Haiti"	332	"0-4"	631.479
+1892	"Haiti"	332	"5-9"	603.92
+1893	"Haiti"	332	"10-14"	589.878
+1894	"Haiti"	332	"15-19"	551.699
+1895	"Haiti"	332	"20-24"	501.995
+1896	"Haiti"	332	"25-29"	451.298
+1897	"Haiti"	332	"30-34"	334.118
+1898	"Haiti"	332	"35-39"	254.32
+1899	"Haiti"	332	"40-44"	229.588
+1900	"Haiti"	332	"45-49"	200.89
+1901	"Haiti"	332	"50-54"	168.134
+1902	"Haiti"	332	"55-59"	140.639
+1903	"Haiti"	332	"60-64"	100.264
+1904	"Haiti"	332	"65-69"	85.079
+1905	"Haiti"	332	"70-74"	58.919
+1906	"Haiti"	332	"75-79"	33.903
+1907	"Haiti"	332	"80-84"	14.965
+1908	"Haiti"	332	"85-89"	4.715
+1909	"Haiti"	332	"90-94"	0.871
+1910	"Haiti"	332	"95-99"	0.074
+1911	"Haiti"	332	"100+"	0.002
+1912	"Holy See"	336	"0-4"	0.006
+1913	"Holy See"	336	"5-9"	0.004
+1914	"Holy See"	336	"10-14"	0.007
+1915	"Holy See"	336	"15-19"	0.007
+1916	"Holy See"	336	"20-24"	0.008
+1917	"Holy See"	336	"25-29"	0.01
+1918	"Holy See"	336	"30-34"	0.013
+1919	"Holy See"	336	"35-39"	0.016
+1920	"Holy See"	336	"40-44"	0.013
+1921	"Holy See"	336	"45-49"	0.014
+1922	"Holy See"	336	"50-54"	0.012
+1923	"Holy See"	336	"55-59"	0.002
+1924	"Holy See"	336	"60-64"	0.039
+1925	"Holy See"	336	"65-69"	0.026
+1926	"Holy See"	336	"70-74"	0.019
+1927	"Holy See"	336	"75-79"	0.011
+1928	"Holy See"	336	"80-84"	0.006
+1929	"Holy See"	336	"85-89"	0.002
+1930	"Holy See"	336	"90-94"	0
+1931	"Holy See"	336	"95-99"	0
+1932	"Holy See"	336	"100+"	0
+1933	"Honduras"	340	"0-4"	492.923
+1934	"Honduras"	340	"5-9"	471.333
+1935	"Honduras"	340	"10-14"	460.138
+1936	"Honduras"	340	"15-19"	435.718
+1937	"Honduras"	340	"20-24"	379.777
+1938	"Honduras"	340	"25-29"	322.144
+1939	"Honduras"	340	"30-34"	261.038
+1940	"Honduras"	340	"35-39"	206.723
+1941	"Honduras"	340	"40-44"	176.197
+1942	"Honduras"	340	"45-49"	146.746
+1943	"Honduras"	340	"50-54"	121.353
+1944	"Honduras"	340	"55-59"	98.284
+1945	"Honduras"	340	"60-64"	72.584
+1946	"Honduras"	340	"65-69"	54.195
+1947	"Honduras"	340	"70-74"	42
+1948	"Honduras"	340	"75-79"	29.761
+1949	"Honduras"	340	"80-84"	16.805
+1950	"Honduras"	340	"85-89"	7.714
+1951	"Honduras"	340	"90-94"	2.189
+1952	"Honduras"	340	"95-99"	0.466
+1953	"Honduras"	340	"100+"	0.048
+1954	"Hungary"	348	"0-4"	252.321
+1955	"Hungary"	348	"5-9"	246.442
+1956	"Hungary"	348	"10-14"	255.413
+1957	"Hungary"	348	"15-19"	305.921
+1958	"Hungary"	348	"20-24"	327.99
+1959	"Hungary"	348	"25-29"	352.705
+1960	"Hungary"	348	"30-34"	427.661
+1961	"Hungary"	348	"35-39"	391.607
+1962	"Hungary"	348	"40-44"	344.923
+1963	"Hungary"	348	"45-49"	293.212
+1964	"Hungary"	348	"50-54"	327.946
+1965	"Hungary"	348	"55-59"	343.212
+1966	"Hungary"	348	"60-64"	267.417
+1967	"Hungary"	348	"65-69"	213.771
+1968	"Hungary"	348	"70-74"	154.383
+1969	"Hungary"	348	"75-79"	117.759
+1970	"Hungary"	348	"80-84"	72.095
+1971	"Hungary"	348	"85-89"	34.169
+1972	"Hungary"	348	"90-94"	8.126
+1973	"Hungary"	348	"95-99"	2.351
+1974	"Hungary"	348	"100+"	0.208
+1975	"Iceland"	352	"0-4"	12.091
+1976	"Iceland"	352	"5-9"	10.851
+1977	"Iceland"	352	"10-14"	11.065
+1978	"Iceland"	352	"15-19"	12.298
+1979	"Iceland"	352	"20-24"	11.715
+1980	"Iceland"	352	"25-29"	12.541
+1981	"Iceland"	352	"30-34"	11.612
+1982	"Iceland"	352	"35-39"	11.262
+1983	"Iceland"	352	"40-44"	10.785
+1984	"Iceland"	352	"45-49"	11.181
+1985	"Iceland"	352	"50-54"	10.852
+1986	"Iceland"	352	"55-59"	9.396
+1987	"Iceland"	352	"60-64"	7.921
+1988	"Iceland"	352	"65-69"	5.522
+1989	"Iceland"	352	"70-74"	4.134
+1990	"Iceland"	352	"75-79"	3.664
+1991	"Iceland"	352	"80-84"	2.601
+1992	"Iceland"	352	"85-89"	1.257
+1993	"Iceland"	352	"90-94"	0.4
+1994	"Iceland"	352	"95-99"	0.072
+1995	"Iceland"	352	"100+"	0.007
+1996	"India"	356	"0-4"	66645.583
+1997	"India"	356	"5-9"	64701.696
+1998	"India"	356	"10-14"	64018.275
+1999	"India"	356	"15-19"	62907.354
+2000	"India"	356	"20-24"	59548.797
+2001	"India"	356	"25-29"	54556.107
+2002	"India"	356	"30-34"	49061.297
+2003	"India"	356	"35-39"	42954.027
+2004	"India"	356	"40-44"	38169.392
+2005	"India"	356	"45-49"	33144.511
+2006	"India"	356	"50-54"	28650.607
+2007	"India"	356	"55-59"	23844.677
+2008	"India"	356	"60-64"	16087.281
+2009	"India"	356	"65-69"	11599.918
+2010	"India"	356	"70-74"	8112.229
+2011	"India"	356	"75-79"	4851.916
+2012	"India"	356	"80-84"	2417.943
+2013	"India"	356	"85-89"	941.069
+2014	"India"	356	"90-94"	271.907
+2015	"India"	356	"95-99"	54.237
+2016	"India"	356	"100+"	7.958
+2017	"Indonesia"	360	"0-4"	11007.129
+2018	"Indonesia"	360	"5-9"	11245.498
+2019	"Indonesia"	360	"10-14"	10786.556
+2020	"Indonesia"	360	"15-19"	10966.319
+2021	"Indonesia"	360	"20-24"	10869.276
+2022	"Indonesia"	360	"25-29"	10779.066
+2023	"Indonesia"	360	"30-34"	10042.608
+2024	"Indonesia"	360	"35-39"	9269.028
+2025	"Indonesia"	360	"40-44"	8387.229
+2026	"Indonesia"	360	"45-49"	7225.591
+2027	"Indonesia"	360	"50-54"	5907.192
+2028	"Indonesia"	360	"55-59"	4310.938
+2029	"Indonesia"	360	"60-64"	2960.917
+2030	"Indonesia"	360	"65-69"	2376.056
+2031	"Indonesia"	360	"70-74"	1756.67
+2032	"Indonesia"	360	"75-79"	1047.543
+2033	"Indonesia"	360	"80-84"	491.919
+2034	"Indonesia"	360	"85-89"	154.923
+2035	"Indonesia"	360	"90-94"	32.683
+2036	"Indonesia"	360	"95-99"	4.877
+2037	"Indonesia"	360	"100+"	0.421
+2038	"Iran (Islamic Republic of)"	364	"0-4"	3141.862
+2039	"Iran (Islamic Republic of)"	364	"5-9"	2743.095
+2040	"Iran (Islamic Republic of)"	364	"10-14"	2804.432
+2041	"Iran (Islamic Republic of)"	364	"15-19"	3655.161
+2042	"Iran (Islamic Republic of)"	364	"20-24"	4605.724
+2043	"Iran (Islamic Republic of)"	364	"25-29"	4447.689
+2044	"Iran (Islamic Republic of)"	364	"30-34"	3400.36
+2045	"Iran (Islamic Republic of)"	364	"35-39"	2663.472
+2046	"Iran (Islamic Republic of)"	364	"40-44"	2347.632
+2047	"Iran (Islamic Republic of)"	364	"45-49"	2002.588
+2048	"Iran (Islamic Republic of)"	364	"50-54"	1655.511
+2049	"Iran (Islamic Republic of)"	364	"55-59"	1265.774
+2050	"Iran (Islamic Republic of)"	364	"60-64"	799.751
+2051	"Iran (Islamic Republic of)"	364	"65-69"	610.43
+2052	"Iran (Islamic Republic of)"	364	"70-74"	552.138
+2053	"Iran (Islamic Republic of)"	364	"75-79"	457.869
+2054	"Iran (Islamic Republic of)"	364	"80-84"	251.077
+2055	"Iran (Islamic Republic of)"	364	"85-89"	111.705
+2056	"Iran (Islamic Republic of)"	364	"90-94"	22.647
+2057	"Iran (Islamic Republic of)"	364	"95-99"	2.178
+2058	"Iran (Islamic Republic of)"	364	"100+"	0.127
+2059	"Iraq"	368	"0-4"	2669.319
+2060	"Iraq"	368	"5-9"	2340.692
+2061	"Iraq"	368	"10-14"	2017.774
+2062	"Iraq"	368	"15-19"	1710.799
+2063	"Iraq"	368	"20-24"	1472.695
+2064	"Iraq"	368	"25-29"	1254.669
+2065	"Iraq"	368	"30-34"	1101.6
+2066	"Iraq"	368	"35-39"	915.012
+2067	"Iraq"	368	"40-44"	692
+2068	"Iraq"	368	"45-49"	427.651
+2069	"Iraq"	368	"50-54"	321.995
+2070	"Iraq"	368	"55-59"	339.277
+2071	"Iraq"	368	"60-64"	209.006
+2072	"Iraq"	368	"65-69"	183.478
+2073	"Iraq"	368	"70-74"	123.528
+2074	"Iraq"	368	"75-79"	69.542
+2075	"Iraq"	368	"80-84"	28.464
+2076	"Iraq"	368	"85-89"	8.071
+2077	"Iraq"	368	"90-94"	1.21
+2078	"Iraq"	368	"95-99"	0.065
+2079	"Iraq"	368	"100+"	0.002
+2080	"Ireland"	372	"0-4"	185.09
+2081	"Ireland"	372	"5-9"	155.298
+2082	"Ireland"	372	"10-14"	146.598
+2083	"Ireland"	372	"15-19"	143.096
+2084	"Ireland"	372	"20-24"	154.493
+2085	"Ireland"	372	"25-29"	179.491
+2086	"Ireland"	372	"30-34"	187.681
+2087	"Ireland"	372	"35-39"	177.353
+2088	"Ireland"	372	"40-44"	160.916
+2089	"Ireland"	372	"45-49"	147.738
+2090	"Ireland"	372	"50-54"	133.639
+2091	"Ireland"	372	"55-59"	121
+2092	"Ireland"	372	"60-64"	108.349
+2093	"Ireland"	372	"65-69"	82.45
+2094	"Ireland"	372	"70-74"	61.874
+2095	"Ireland"	372	"75-79"	45.944
+2096	"Ireland"	372	"80-84"	27.657
+2097	"Ireland"	372	"85-89"	13.208
+2098	"Ireland"	372	"90-94"	3.812
+2099	"Ireland"	372	"95-99"	0.697
+2100	"Ireland"	372	"100+"	0.058
+2101	"Isle of Man"	833	"0-4"	2.294
+2102	"Isle of Man"	833	"5-9"	2.21
+2103	"Isle of Man"	833	"10-14"	2.531
+2104	"Isle of Man"	833	"15-19"	2.74
+2105	"Isle of Man"	833	"20-24"	2.505
+2106	"Isle of Man"	833	"25-29"	2.246
+2107	"Isle of Man"	833	"30-34"	2.484
+2108	"Isle of Man"	833	"35-39"	3.031
+2109	"Isle of Man"	833	"40-44"	3.206
+2110	"Isle of Man"	833	"45-49"	3.168
+2111	"Isle of Man"	833	"50-54"	2.693
+2112	"Isle of Man"	833	"55-59"	2.567
+2113	"Isle of Man"	833	"60-64"	2.866
+2114	"Isle of Man"	833	"65-69"	2.118
+2115	"Isle of Man"	833	"70-74"	1.679
+2116	"Isle of Man"	833	"75-79"	1.229
+2117	"Isle of Man"	833	"80-84"	0.816
+2118	"Isle of Man"	833	"85-89"	0.507
+2119	"Isle of Man"	833	"90-94"	0.169
+2120	"Isle of Man"	833	"95-99"	0.05
+2121	"Isle of Man"	833	"100+"	0.005
+2122	"Israel"	376	"0-4"	376.987
+2123	"Israel"	376	"5-9"	341.671
+2124	"Israel"	376	"10-14"	318.169
+2125	"Israel"	376	"15-19"	289.56
+2126	"Israel"	376	"20-24"	281.658
+2127	"Israel"	376	"25-29"	279.068
+2128	"Israel"	376	"30-34"	272.85
+2129	"Israel"	376	"35-39"	249.361
+2130	"Israel"	376	"40-44"	209.842
+2131	"Israel"	376	"45-49"	190.961
+2132	"Israel"	376	"50-54"	178.641
+2133	"Israel"	376	"55-59"	185.653
+2134	"Israel"	376	"60-64"	158.023
+2135	"Israel"	376	"65-69"	102.098
+2136	"Israel"	376	"70-74"	80.871
+2137	"Israel"	376	"75-79"	66.852
+2138	"Israel"	376	"80-84"	45.366
+2139	"Israel"	376	"85-89"	23.953
+2140	"Israel"	376	"90-94"	7.228
+2141	"Israel"	376	"95-99"	1.65
+2142	"Israel"	376	"100+"	0.161
+2143	"Italy"	380	"0-4"	1531.166
+2144	"Italy"	380	"5-9"	1439.024
+2145	"Italy"	380	"10-14"	1444.979
+2146	"Italy"	380	"15-19"	1509.857
+2147	"Italy"	380	"20-24"	1553.702
+2148	"Italy"	380	"25-29"	1787.113
+2149	"Italy"	380	"30-34"	2147.892
+2150	"Italy"	380	"35-39"	2515.638
+2151	"Italy"	380	"40-44"	2539.439
+2152	"Italy"	380	"45-49"	2356.66
+2153	"Italy"	380	"50-54"	1991.879
+2154	"Italy"	380	"55-59"	1806.559
+2155	"Italy"	380	"60-64"	1817.365
+2156	"Italy"	380	"65-69"	1489.883
+2157	"Italy"	380	"70-74"	1401.776
+2158	"Italy"	380	"75-79"	1076.458
+2159	"Italy"	380	"80-84"	716.586
+2160	"Italy"	380	"85-89"	375.47
+2161	"Italy"	380	"90-94"	87.565
+2162	"Italy"	380	"95-99"	24.795
+2163	"Italy"	380	"100+"	2.114
+2164	"Jamaica"	388	"0-4"	126.183
+2165	"Jamaica"	388	"5-9"	125.859
+2166	"Jamaica"	388	"10-14"	150.297
+2167	"Jamaica"	388	"15-19"	135.642
+2168	"Jamaica"	388	"20-24"	115.706
+2169	"Jamaica"	388	"25-29"	93.632
+2170	"Jamaica"	388	"30-34"	85.001
+2171	"Jamaica"	388	"35-39"	90.375
+2172	"Jamaica"	388	"40-44"	93.225
+2173	"Jamaica"	388	"45-49"	82.097
+2174	"Jamaica"	388	"50-54"	60.518
+2175	"Jamaica"	388	"55-59"	55.874
+2176	"Jamaica"	388	"60-64"	38.085
+2177	"Jamaica"	388	"65-69"	31.924
+2178	"Jamaica"	388	"70-74"	25.996
+2179	"Jamaica"	388	"75-79"	18.378
+2180	"Jamaica"	388	"80-84"	11.308
+2181	"Jamaica"	388	"85-89"	5.779
+2182	"Jamaica"	388	"90-94"	2.381
+2183	"Jamaica"	388	"95-99"	0.556
+2184	"Jamaica"	388	"100+"	0.09
+2185	"Japan"	392	"0-4"	2788.628
+2186	"Japan"	392	"5-9"	2882.869
+2187	"Japan"	392	"10-14"	2999.08
+2188	"Japan"	392	"15-19"	3078.567
+2189	"Japan"	392	"20-24"	3365.572
+2190	"Japan"	392	"25-29"	3842.817
+2191	"Japan"	392	"30-34"	4293.053
+2192	"Japan"	392	"35-39"	4940.648
+2193	"Japan"	392	"40-44"	4353.498
+2194	"Japan"	392	"45-49"	3999.942
+2195	"Japan"	392	"50-54"	3793.581
+2196	"Japan"	392	"55-59"	4280.216
+2197	"Japan"	392	"60-64"	4807.025
+2198	"Japan"	392	"65-69"	3828.429
+2199	"Japan"	392	"70-74"	3153.903
+2200	"Japan"	392	"75-79"	2522.916
+2201	"Japan"	392	"80-84"	1665.743
+2202	"Japan"	392	"85-89"	739.402
+2203	"Japan"	392	"90-94"	252.467
+2204	"Japan"	392	"95-99"	59.409
+2205	"Japan"	392	"100+"	6.4
+2206	"Jordan"	400	"0-4"	418.023
+2207	"Jordan"	400	"5-9"	396.707
+2208	"Jordan"	400	"10-14"	375.522
+2209	"Jordan"	400	"15-19"	348.616
+2210	"Jordan"	400	"20-24"	338.728
+2211	"Jordan"	400	"25-29"	290.124
+2212	"Jordan"	400	"30-34"	235.54
+2213	"Jordan"	400	"35-39"	206.188
+2214	"Jordan"	400	"40-44"	145.043
+2215	"Jordan"	400	"45-49"	98.385
+2216	"Jordan"	400	"50-54"	76.613
+2217	"Jordan"	400	"55-59"	68.599
+2218	"Jordan"	400	"60-64"	59.093
+2219	"Jordan"	400	"65-69"	50.931
+2220	"Jordan"	400	"70-74"	36.527
+2221	"Jordan"	400	"75-79"	21.68
+2222	"Jordan"	400	"80-84"	10.444
+2223	"Jordan"	400	"85-89"	4.02
+2224	"Jordan"	400	"90-94"	1.113
+2225	"Jordan"	400	"95-99"	0.287
+2226	"Jordan"	400	"100+"	0.048
+2227	"Kazakhstan"	398	"0-4"	842.495
+2228	"Kazakhstan"	398	"5-9"	605.823
+2229	"Kazakhstan"	398	"10-14"	562.358
+2230	"Kazakhstan"	398	"15-19"	711.3
+2231	"Kazakhstan"	398	"20-24"	807.747
+2232	"Kazakhstan"	398	"25-29"	688.397
+2233	"Kazakhstan"	398	"30-34"	596.408
+2234	"Kazakhstan"	398	"35-39"	546.238
+2235	"Kazakhstan"	398	"40-44"	489.881
+2236	"Kazakhstan"	398	"45-49"	514.114
+2237	"Kazakhstan"	398	"50-54"	436.774
+2238	"Kazakhstan"	398	"55-59"	332.135
+2239	"Kazakhstan"	398	"60-64"	211.718
+2240	"Kazakhstan"	398	"65-69"	110.478
+2241	"Kazakhstan"	398	"70-74"	146.376
+2242	"Kazakhstan"	398	"75-79"	51.409
+2243	"Kazakhstan"	398	"80-84"	31.619
+2244	"Kazakhstan"	398	"85-89"	7.657
+2245	"Kazakhstan"	398	"90-94"	1.325
+2246	"Kazakhstan"	398	"95-99"	0.341
+2247	"Kazakhstan"	398	"100+"	0.035
+2248	"Kenya"	404	"0-4"	3358.059
+2249	"Kenya"	404	"5-9"	2872.599
+2250	"Kenya"	404	"10-14"	2421.868
+2251	"Kenya"	404	"15-19"	2163.836
+2252	"Kenya"	404	"20-24"	2069.615
+2253	"Kenya"	404	"25-29"	1782.276
+2254	"Kenya"	404	"30-34"	1425.286
+2255	"Kenya"	404	"35-39"	1081.132
+2256	"Kenya"	404	"40-44"	792.532
+2257	"Kenya"	404	"45-49"	607.517
+2258	"Kenya"	404	"50-54"	487.219
+2259	"Kenya"	404	"55-59"	394.276
+2260	"Kenya"	404	"60-64"	285.497
+2261	"Kenya"	404	"65-69"	186.114
+2262	"Kenya"	404	"70-74"	140.797
+2263	"Kenya"	404	"75-79"	96.075
+2264	"Kenya"	404	"80-84"	47.598
+2265	"Kenya"	404	"85-89"	16.966
+2266	"Kenya"	404	"90-94"	3.891
+2267	"Kenya"	404	"95-99"	0.512
+2268	"Kenya"	404	"100+"	0.036
+2269	"Kiribati"	296	"0-4"	5.622
+2270	"Kiribati"	296	"5-9"	5.631
+2271	"Kiribati"	296	"10-14"	5.985
+2272	"Kiribati"	296	"15-19"	5.723
+2273	"Kiribati"	296	"20-24"	5.153
+2274	"Kiribati"	296	"25-29"	4.141
+2275	"Kiribati"	296	"30-34"	3.135
+2276	"Kiribati"	296	"35-39"	2.429
+2277	"Kiribati"	296	"40-44"	2.987
+2278	"Kiribati"	296	"45-49"	2.45
+2279	"Kiribati"	296	"50-54"	1.924
+2280	"Kiribati"	296	"55-59"	1.36
+2281	"Kiribati"	296	"60-64"	1.038
+2282	"Kiribati"	296	"65-69"	0.665
+2283	"Kiribati"	296	"70-74"	0.447
+2284	"Kiribati"	296	"75-79"	0.257
+2285	"Kiribati"	296	"80-84"	0.109
+2286	"Kiribati"	296	"85-89"	0.033
+2287	"Kiribati"	296	"90-94"	0.008
+2288	"Kiribati"	296	"95-99"	0.001
+2289	"Kiribati"	296	"100+"	0
+2290	"Kuwait"	414	"0-4"	144.825
+2291	"Kuwait"	414	"5-9"	128.916
+2292	"Kuwait"	414	"10-14"	103.178
+2293	"Kuwait"	414	"15-19"	95.946
+2294	"Kuwait"	414	"20-24"	136.877
+2295	"Kuwait"	414	"25-29"	216.889
+2296	"Kuwait"	414	"30-34"	205.068
+2297	"Kuwait"	414	"35-39"	185.886
+2298	"Kuwait"	414	"40-44"	152.845
+2299	"Kuwait"	414	"45-49"	89.251
+2300	"Kuwait"	414	"50-54"	72.242
+2301	"Kuwait"	414	"55-59"	30.44
+2302	"Kuwait"	414	"60-64"	27.462
+2303	"Kuwait"	414	"65-69"	8.194
+2304	"Kuwait"	414	"70-74"	15.068
+2305	"Kuwait"	414	"75-79"	14.835
+2306	"Kuwait"	414	"80-84"	4.187
+2307	"Kuwait"	414	"85-89"	1.01
+2308	"Kuwait"	414	"90-94"	0.14
+2309	"Kuwait"	414	"95-99"	0.012
+2310	"Kuwait"	414	"100+"	0.001
+2311	"Kyrgyzstan"	417	"0-4"	303.727
+2312	"Kyrgyzstan"	417	"5-9"	246.89
+2313	"Kyrgyzstan"	417	"10-14"	266.145
+2314	"Kyrgyzstan"	417	"15-19"	301.929
+2315	"Kyrgyzstan"	417	"20-24"	306.507
+2316	"Kyrgyzstan"	417	"25-29"	229.792
+2317	"Kyrgyzstan"	417	"30-34"	177.08
+2318	"Kyrgyzstan"	417	"35-39"	167.186
+2319	"Kyrgyzstan"	417	"40-44"	151.616
+2320	"Kyrgyzstan"	417	"45-49"	151.758
+2321	"Kyrgyzstan"	417	"50-54"	114.728
+2322	"Kyrgyzstan"	417	"55-59"	74.214
+2323	"Kyrgyzstan"	417	"60-64"	44.265
+2324	"Kyrgyzstan"	417	"65-69"	26.088
+2325	"Kyrgyzstan"	417	"70-74"	33.877
+2326	"Kyrgyzstan"	417	"75-79"	17.265
+2327	"Kyrgyzstan"	417	"80-84"	13.852
+2328	"Kyrgyzstan"	417	"85-89"	4.124
+2329	"Kyrgyzstan"	417	"90-94"	0.623
+2330	"Kyrgyzstan"	417	"95-99"	0.074
+2331	"Kyrgyzstan"	417	"100+"	0.006
+2332	"Lao People's Dem. Republic"	418	"0-4"	348.944
+2333	"Lao People's Dem. Republic"	418	"5-9"	359.641
+2334	"Lao People's Dem. Republic"	418	"10-14"	382.522
+2335	"Lao People's Dem. Republic"	418	"15-19"	388.035
+2336	"Lao People's Dem. Republic"	418	"20-24"	332.209
+2337	"Lao People's Dem. Republic"	418	"25-29"	264.711
+2338	"Lao People's Dem. Republic"	418	"30-34"	215.033
+2339	"Lao People's Dem. Republic"	418	"35-39"	179.309
+2340	"Lao People's Dem. Republic"	418	"40-44"	149.034
+2341	"Lao People's Dem. Republic"	418	"45-49"	126.579
+2342	"Lao People's Dem. Republic"	418	"50-54"	103.171
+2343	"Lao People's Dem. Republic"	418	"55-59"	81.944
+2344	"Lao People's Dem. Republic"	418	"60-64"	56.638
+2345	"Lao People's Dem. Republic"	418	"65-69"	42.163
+2346	"Lao People's Dem. Republic"	418	"70-74"	31.487
+2347	"Lao People's Dem. Republic"	418	"75-79"	19.395
+2348	"Lao People's Dem. Republic"	418	"80-84"	9.372
+2349	"Lao People's Dem. Republic"	418	"85-89"	3.012
+2350	"Lao People's Dem. Republic"	418	"90-94"	0.583
+2351	"Lao People's Dem. Republic"	418	"95-99"	0.059
+2352	"Lao People's Dem. Republic"	418	"100+"	0.003
+2353	"Latvia"	428	"0-4"	58.674
+2354	"Latvia"	428	"5-9"	51.62
+2355	"Latvia"	428	"10-14"	49.129
+2356	"Latvia"	428	"15-19"	67.883
+2357	"Latvia"	428	"20-24"	95.191
+2358	"Latvia"	428	"25-29"	87.416
+2359	"Latvia"	428	"30-34"	78.959
+2360	"Latvia"	428	"35-39"	79.598
+2361	"Latvia"	428	"40-44"	73.869
+2362	"Latvia"	428	"45-49"	78.845
+2363	"Latvia"	428	"50-54"	72.696
+2364	"Latvia"	428	"55-59"	63.333
+2365	"Latvia"	428	"60-64"	47.387
+2366	"Latvia"	428	"65-69"	46.042
+2367	"Latvia"	428	"70-74"	37.299
+2368	"Latvia"	428	"75-79"	26.187
+2369	"Latvia"	428	"80-84"	14.625
+2370	"Latvia"	428	"85-89"	5.16
+2371	"Latvia"	428	"90-94"	1.454
+2372	"Latvia"	428	"95-99"	0.38
+2373	"Latvia"	428	"100+"	0.041
+2374	"Lebanon"	422	"0-4"	164.158
+2375	"Lebanon"	422	"5-9"	170.221
+2376	"Lebanon"	422	"10-14"	199.65
+2377	"Lebanon"	422	"15-19"	196.394
+2378	"Lebanon"	422	"20-24"	188.349
+2379	"Lebanon"	422	"25-29"	186.783
+2380	"Lebanon"	422	"30-34"	169.92
+2381	"Lebanon"	422	"35-39"	153.093
+2382	"Lebanon"	422	"40-44"	133.183
+2383	"Lebanon"	422	"45-49"	116.038
+2384	"Lebanon"	422	"50-54"	99.477
+2385	"Lebanon"	422	"55-59"	84.692
+2386	"Lebanon"	422	"60-64"	59.743
+2387	"Lebanon"	422	"65-69"	48.25
+2388	"Lebanon"	422	"70-74"	42.933
+2389	"Lebanon"	422	"75-79"	30.088
+2390	"Lebanon"	422	"80-84"	14.989
+2391	"Lebanon"	422	"85-89"	5.067
+2392	"Lebanon"	422	"90-94"	0.957
+2393	"Lebanon"	422	"95-99"	0.147
+2394	"Lebanon"	422	"100+"	0.008
+2395	"Lesotho"	426	"0-4"	138.182
+2396	"Lesotho"	426	"5-9"	134.501
+2397	"Lesotho"	426	"10-14"	135.99
+2398	"Lesotho"	426	"15-19"	131.364
+2399	"Lesotho"	426	"20-24"	124.068
+2400	"Lesotho"	426	"25-29"	110.31
+2401	"Lesotho"	426	"30-34"	84.241
+2402	"Lesotho"	426	"35-39"	53.613
+2403	"Lesotho"	426	"40-44"	33.111
+2404	"Lesotho"	426	"45-49"	24.8
+2405	"Lesotho"	426	"50-54"	21.819
+2406	"Lesotho"	426	"55-59"	19.424
+2407	"Lesotho"	426	"60-64"	17.436
+2408	"Lesotho"	426	"65-69"	13.522
+2409	"Lesotho"	426	"70-74"	11.61
+2410	"Lesotho"	426	"75-79"	7.95
+2411	"Lesotho"	426	"80-84"	3.651
+2412	"Lesotho"	426	"85-89"	1.261
+2413	"Lesotho"	426	"90-94"	0.245
+2414	"Lesotho"	426	"95-99"	0.026
+2415	"Lesotho"	426	"100+"	0.002
+2416	"Liberia"	430	"0-4"	347.559
+2417	"Liberia"	430	"5-9"	293.027
+2418	"Liberia"	430	"10-14"	243.341
+2419	"Liberia"	430	"15-19"	207.087
+2420	"Liberia"	430	"20-24"	185.62
+2421	"Liberia"	430	"25-29"	162.546
+2422	"Liberia"	430	"30-34"	135.456
+2423	"Liberia"	430	"35-39"	108.374
+2424	"Liberia"	430	"40-44"	84.507
+2425	"Liberia"	430	"45-49"	67.308
+2426	"Liberia"	430	"50-54"	52.839
+2427	"Liberia"	430	"55-59"	39.98
+2428	"Liberia"	430	"60-64"	29.206
+2429	"Liberia"	430	"65-69"	23.281
+2430	"Liberia"	430	"70-74"	14.528
+2431	"Liberia"	430	"75-79"	7.612
+2432	"Liberia"	430	"80-84"	3.241
+2433	"Liberia"	430	"85-89"	0.961
+2434	"Liberia"	430	"90-94"	0.164
+2435	"Liberia"	430	"95-99"	0.015
+2436	"Liberia"	430	"100+"	0.001
+2437	"Libyan Arab Jamahiriya"	434	"0-4"	367.569
+2438	"Libyan Arab Jamahiriya"	434	"5-9"	337.01
+2439	"Libyan Arab Jamahiriya"	434	"10-14"	288.311
+2440	"Libyan Arab Jamahiriya"	434	"15-19"	277.734
+2441	"Libyan Arab Jamahiriya"	434	"20-24"	295.741
+2442	"Libyan Arab Jamahiriya"	434	"25-29"	347.508
+2443	"Libyan Arab Jamahiriya"	434	"30-34"	293.39
+2444	"Libyan Arab Jamahiriya"	434	"35-39"	244.739
+2445	"Libyan Arab Jamahiriya"	434	"40-44"	186.352
+2446	"Libyan Arab Jamahiriya"	434	"45-49"	149.518
+2447	"Libyan Arab Jamahiriya"	434	"50-54"	133.315
+2448	"Libyan Arab Jamahiriya"	434	"55-59"	96.549
+2449	"Libyan Arab Jamahiriya"	434	"60-64"	72.448
+2450	"Libyan Arab Jamahiriya"	434	"65-69"	56.141
+2451	"Libyan Arab Jamahiriya"	434	"70-74"	36.616
+2452	"Libyan Arab Jamahiriya"	434	"75-79"	23.91
+2453	"Libyan Arab Jamahiriya"	434	"80-84"	10.785
+2454	"Libyan Arab Jamahiriya"	434	"85-89"	4.012
+2455	"Libyan Arab Jamahiriya"	434	"90-94"	0.955
+2456	"Libyan Arab Jamahiriya"	434	"95-99"	0.152
+2457	"Libyan Arab Jamahiriya"	434	"100+"	0.015
+2458	"Liechtenstein"	438	"0-4"	0.934
+2459	"Liechtenstein"	438	"5-9"	0.979
+2460	"Liechtenstein"	438	"10-14"	1.023
+2461	"Liechtenstein"	438	"15-19"	1.093
+2462	"Liechtenstein"	438	"20-24"	1.113
+2463	"Liechtenstein"	438	"25-29"	1.164
+2464	"Liechtenstein"	438	"30-34"	1.148
+2465	"Liechtenstein"	438	"35-39"	1.369
+2466	"Liechtenstein"	438	"40-44"	1.58
+2467	"Liechtenstein"	438	"45-49"	1.483
+2468	"Liechtenstein"	438	"50-54"	1.399
+2469	"Liechtenstein"	438	"55-59"	1.26
+2470	"Liechtenstein"	438	"60-64"	1.14
+2471	"Liechtenstein"	438	"65-69"	0.922
+2472	"Liechtenstein"	438	"70-74"	0.536
+2473	"Liechtenstein"	438	"75-79"	0.313
+2474	"Liechtenstein"	438	"80-84"	0.224
+2475	"Liechtenstein"	438	"85-89"	0.119
+2476	"Liechtenstein"	438	"90-94"	0.029
+2477	"Liechtenstein"	438	"95-99"	0.004
+2478	"Liechtenstein"	438	"100+"	0
+2479	"Lithuania"	440	"0-4"	84.52
+2480	"Lithuania"	440	"5-9"	76.525
+2481	"Lithuania"	440	"10-14"	91.889
+2482	"Lithuania"	440	"15-19"	119.366
+2483	"Lithuania"	440	"20-24"	138.393
+2484	"Lithuania"	440	"25-29"	126.218
+2485	"Lithuania"	440	"30-34"	109.663
+2486	"Lithuania"	440	"35-39"	113.173
+2487	"Lithuania"	440	"40-44"	116.774
+2488	"Lithuania"	440	"45-49"	123.838
+2489	"Lithuania"	440	"50-54"	110.499
+2490	"Lithuania"	440	"55-59"	85.103
+2491	"Lithuania"	440	"60-64"	68.384
+2492	"Lithuania"	440	"65-69"	59.158
+2493	"Lithuania"	440	"70-74"	51.11
+2494	"Lithuania"	440	"75-79"	37.467
+2495	"Lithuania"	440	"80-84"	22.285
+2496	"Lithuania"	440	"85-89"	7.854
+2497	"Lithuania"	440	"90-94"	1.557
+2498	"Lithuania"	440	"95-99"	0.344
+2499	"Lithuania"	440	"100+"	0.05
+2500	"Luxembourg"	442	"0-4"	14.756
+2501	"Luxembourg"	442	"5-9"	15.455
+2502	"Luxembourg"	442	"10-14"	15.902
+2503	"Luxembourg"	442	"15-19"	15.394
+2504	"Luxembourg"	442	"20-24"	15.304
+2505	"Luxembourg"	442	"25-29"	17.847
+2506	"Luxembourg"	442	"30-34"	19.003
+2507	"Luxembourg"	442	"35-39"	19.451
+2508	"Luxembourg"	442	"40-44"	22.025
+2509	"Luxembourg"	442	"45-49"	20.848
+2510	"Luxembourg"	442	"50-54"	18.036
+2511	"Luxembourg"	442	"55-59"	15.413
+2512	"Luxembourg"	442	"60-64"	12.721
+2513	"Luxembourg"	442	"65-69"	9.53
+2514	"Luxembourg"	442	"70-74"	8.017
+2515	"Luxembourg"	442	"75-79"	6.428
+2516	"Luxembourg"	442	"80-84"	4.238
+2517	"Luxembourg"	442	"85-89"	1.475
+2518	"Luxembourg"	442	"90-94"	0.346
+2519	"Luxembourg"	442	"95-99"	0.055
+2520	"Luxembourg"	442	"100+"	0.004
+2521	"Madagascar"	450	"0-4"	1667.302
+2522	"Madagascar"	450	"5-9"	1486.667
+2523	"Madagascar"	450	"10-14"	1332.445
+2524	"Madagascar"	450	"15-19"	1127.927
+2525	"Madagascar"	450	"20-24"	923.267
+2526	"Madagascar"	450	"25-29"	724.153
+2527	"Madagascar"	450	"30-34"	670.136
+2528	"Madagascar"	450	"35-39"	561.728
+2529	"Madagascar"	450	"40-44"	455.426
+2530	"Madagascar"	450	"45-49"	372.987
+2531	"Madagascar"	450	"50-54"	302.334
+2532	"Madagascar"	450	"55-59"	238.553
+2533	"Madagascar"	450	"60-64"	157.656
+2534	"Madagascar"	450	"65-69"	115.036
+2535	"Madagascar"	450	"70-74"	87.127
+2536	"Madagascar"	450	"75-79"	58.413
+2537	"Madagascar"	450	"80-84"	30.356
+2538	"Madagascar"	450	"85-89"	11.291
+2539	"Madagascar"	450	"90-94"	2.422
+2540	"Madagascar"	450	"95-99"	0.294
+2541	"Madagascar"	450	"100+"	0.019
+2542	"Malawi"	454	"0-4"	1373.265
+2543	"Malawi"	454	"5-9"	1110.731
+2544	"Malawi"	454	"10-14"	964.818
+2545	"Malawi"	454	"15-19"	839.405
+2546	"Malawi"	454	"20-24"	685.34
+2547	"Malawi"	454	"25-29"	552.981
+2548	"Malawi"	454	"30-34"	490.203
+2549	"Malawi"	454	"35-39"	351.408
+2550	"Malawi"	454	"40-44"	251.29
+2551	"Malawi"	454	"45-49"	200.597
+2552	"Malawi"	454	"50-54"	162.032
+2553	"Malawi"	454	"55-59"	135.324
+2554	"Malawi"	454	"60-64"	125.875
+2555	"Malawi"	454	"65-69"	90.846
+2556	"Malawi"	454	"70-74"	62.308
+2557	"Malawi"	454	"75-79"	37.154
+2558	"Malawi"	454	"80-84"	16.007
+2559	"Malawi"	454	"85-89"	4.455
+2560	"Malawi"	454	"90-94"	0.703
+2561	"Malawi"	454	"95-99"	0.046
+2562	"Malawi"	454	"100+"	0.002
+2563	"Malaysia"	458	"0-4"	1453.748
+2564	"Malaysia"	458	"5-9"	1517.61
+2565	"Malaysia"	458	"10-14"	1459.83
+2566	"Malaysia"	458	"15-19"	1336.187
+2567	"Malaysia"	458	"20-24"	1261.674
+2568	"Malaysia"	458	"25-29"	1180.043
+2569	"Malaysia"	458	"30-34"	1061.364
+2570	"Malaysia"	458	"35-39"	974.499
+2571	"Malaysia"	458	"40-44"	895.52
+2572	"Malaysia"	458	"45-49"	869.741
+2573	"Malaysia"	458	"50-54"	727.669
+2574	"Malaysia"	458	"55-59"	586.536
+2575	"Malaysia"	458	"60-64"	420.623
+2576	"Malaysia"	458	"65-69"	278.833
+2577	"Malaysia"	458	"70-74"	203.562
+2578	"Malaysia"	458	"75-79"	107.66
+2579	"Malaysia"	458	"80-84"	53.811
+2580	"Malaysia"	458	"85-89"	15.524
+2581	"Malaysia"	458	"90-94"	2.727
+2582	"Malaysia"	458	"95-99"	0.197
+2583	"Malaysia"	458	"100+"	0.009
+2584	"Maldives"	462	"0-4"	13.369
+2585	"Maldives"	462	"5-9"	13.877
+2586	"Maldives"	462	"10-14"	15.932
+2587	"Maldives"	462	"15-19"	19.494
+2588	"Maldives"	462	"20-24"	19.875
+2589	"Maldives"	462	"25-29"	16.212
+2590	"Maldives"	462	"30-34"	11.619
+2591	"Maldives"	462	"35-39"	10.084
+2592	"Maldives"	462	"40-44"	8.911
+2593	"Maldives"	462	"45-49"	7.786
+2594	"Maldives"	462	"50-54"	6.432
+2595	"Maldives"	462	"55-59"	4.099
+2596	"Maldives"	462	"60-64"	2.71
+2597	"Maldives"	462	"65-69"	2.918
+2598	"Maldives"	462	"70-74"	2.805
+2599	"Maldives"	462	"75-79"	1.972
+2600	"Maldives"	462	"80-84"	0.857
+2601	"Maldives"	462	"85-89"	0.274
+2602	"Maldives"	462	"90-94"	0.046
+2603	"Maldives"	462	"95-99"	0.004
+2604	"Maldives"	462	"100+"	0
+2605	"Mali"	466	"0-4"	1486.265
+2606	"Mali"	466	"5-9"	1206.54
+2607	"Mali"	466	"10-14"	1005.856
+2608	"Mali"	466	"15-19"	835.73
+2609	"Mali"	466	"20-24"	707.073
+2610	"Mali"	466	"25-29"	596.852
+2611	"Mali"	466	"30-34"	485.873
+2612	"Mali"	466	"35-39"	379.15
+2613	"Mali"	466	"40-44"	279.352
+2614	"Mali"	466	"45-49"	200.451
+2615	"Mali"	466	"50-54"	151.61
+2616	"Mali"	466	"55-59"	120.329
+2617	"Mali"	466	"60-64"	84.791
+2618	"Mali"	466	"65-69"	67.929
+2619	"Mali"	466	"70-74"	39.6
+2620	"Mali"	466	"75-79"	21.087
+2621	"Mali"	466	"80-84"	8.093
+2622	"Mali"	466	"85-89"	1.976
+2623	"Mali"	466	"90-94"	0.217
+2624	"Mali"	466	"95-99"	0.007
+2625	"Mali"	466	"100+"	0
+2626	"Malta"	470	"0-4"	9.827
+2627	"Malta"	470	"5-9"	9.93
+2628	"Malta"	470	"10-14"	12.229
+2629	"Malta"	470	"15-19"	14.306
+2630	"Malta"	470	"20-24"	16.035
+2631	"Malta"	470	"25-29"	16.149
+2632	"Malta"	470	"30-34"	15.904
+2633	"Malta"	470	"35-39"	13.808
+2634	"Malta"	470	"40-44"	12.625
+2635	"Malta"	470	"45-49"	15.125
+2636	"Malta"	470	"50-54"	15.72
+2637	"Malta"	470	"55-59"	15.144
+2638	"Malta"	470	"60-64"	14.866
+2639	"Malta"	470	"65-69"	7.853
+2640	"Malta"	470	"70-74"	7.893
+2641	"Malta"	470	"75-79"	4.574
+2642	"Malta"	470	"80-84"	2.812
+2643	"Malta"	470	"85-89"	1.317
+2644	"Malta"	470	"90-94"	0.423
+2645	"Malta"	470	"95-99"	0.089
+2646	"Malta"	470	"100+"	0.01
+2647	"Marshall Islands"	584	"0-4"	4.146
+2648	"Marshall Islands"	584	"5-9"	3.814
+2649	"Marshall Islands"	584	"10-14"	3.007
+2650	"Marshall Islands"	584	"15-19"	1.882
+2651	"Marshall Islands"	584	"20-24"	1.99
+2652	"Marshall Islands"	584	"25-29"	1.933
+2653	"Marshall Islands"	584	"30-34"	1.492
+2654	"Marshall Islands"	584	"35-39"	1.835
+2655	"Marshall Islands"	584	"40-44"	1.655
+2656	"Marshall Islands"	584	"45-49"	1.512
+2657	"Marshall Islands"	584	"50-54"	1.232
+2658	"Marshall Islands"	584	"55-59"	1.123
+2659	"Marshall Islands"	584	"60-64"	0.808
+2660	"Marshall Islands"	584	"65-69"	0.368
+2661	"Marshall Islands"	584	"70-74"	0.243
+2662	"Marshall Islands"	584	"75-79"	0.136
+2663	"Marshall Islands"	584	"80-84"	0.059
+2664	"Marshall Islands"	584	"85-89"	0.02
+2665	"Marshall Islands"	584	"90-94"	0.005
+2666	"Marshall Islands"	584	"95-99"	0.001
+2667	"Marshall Islands"	584	"100+"	0
+2668	"Martinique"	474	"0-4"	12.584
+2669	"Martinique"	474	"5-9"	13.117
+2670	"Martinique"	474	"10-14"	14.178
+2671	"Martinique"	474	"15-19"	14.527
+2672	"Martinique"	474	"20-24"	14.705
+2673	"Martinique"	474	"25-29"	11.453
+2674	"Martinique"	474	"30-34"	8.931
+2675	"Martinique"	474	"35-39"	11.668
+2676	"Martinique"	474	"40-44"	13.978
+2677	"Martinique"	474	"45-49"	15.166
+2678	"Martinique"	474	"50-54"	13.516
+2679	"Martinique"	474	"55-59"	11.125
+2680	"Martinique"	474	"60-64"	9.8
+2681	"Martinique"	474	"65-69"	7.742
+2682	"Martinique"	474	"70-74"	6.626
+2683	"Martinique"	474	"75-79"	4.882
+2684	"Martinique"	474	"80-84"	3.183
+2685	"Martinique"	474	"85-89"	1.723
+2686	"Martinique"	474	"90-94"	0.624
+2687	"Martinique"	474	"95-99"	0.115
+2688	"Martinique"	474	"100+"	0.009
+2689	"Mauritania"	478	"0-4"	261.234
+2690	"Mauritania"	478	"5-9"	232.568
+2691	"Mauritania"	478	"10-14"	208.104
+2692	"Mauritania"	478	"15-19"	186.553
+2693	"Mauritania"	478	"20-24"	164.995
+2694	"Mauritania"	478	"25-29"	144.771
+2695	"Mauritania"	478	"30-34"	126.455
+2696	"Mauritania"	478	"35-39"	105.801
+2697	"Mauritania"	478	"40-44"	84.9
+2698	"Mauritania"	478	"45-49"	67.076
+2699	"Mauritania"	478	"50-54"	52.487
+2700	"Mauritania"	478	"55-59"	38.241
+2701	"Mauritania"	478	"60-64"	26.469
+2702	"Mauritania"	478	"65-69"	18.569
+2703	"Mauritania"	478	"70-74"	11.767
+2704	"Mauritania"	478	"75-79"	6.043
+2705	"Mauritania"	478	"80-84"	2.123
+2706	"Mauritania"	478	"85-89"	0.432
+2707	"Mauritania"	478	"90-94"	0.038
+2708	"Mauritania"	478	"95-99"	0.001
+2709	"Mauritania"	478	"100+"	0
+2710	"Mauritius"	480	"0-4"	43.037
+2711	"Mauritius"	480	"5-9"	49.979
+2712	"Mauritius"	480	"10-14"	51.794
+2713	"Mauritius"	480	"15-19"	56.225
+2714	"Mauritius"	480	"20-24"	53.181
+2715	"Mauritius"	480	"25-29"	47.997
+2716	"Mauritius"	480	"30-34"	56.68
+2717	"Mauritius"	480	"35-39"	46.628
+2718	"Mauritius"	480	"40-44"	49.756
+2719	"Mauritius"	480	"45-49"	52.964
+2720	"Mauritius"	480	"50-54"	38.763
+2721	"Mauritius"	480	"55-59"	32.908
+2722	"Mauritius"	480	"60-64"	24.97
+2723	"Mauritius"	480	"65-69"	15.187
+2724	"Mauritius"	480	"70-74"	9.45
+2725	"Mauritius"	480	"75-79"	6.026
+2726	"Mauritius"	480	"80-84"	3.674
+2727	"Mauritius"	480	"85-89"	1.829
+2728	"Mauritius"	480	"90-94"	0.575
+2729	"Mauritius"	480	"95-99"	0.09
+2730	"Mauritius"	480	"100+"	0.008
+2731	"Mayotte"	175	"0-4"	21.852
+2732	"Mayotte"	175	"5-9"	14.887
+2733	"Mayotte"	175	"10-14"	11.437
+2734	"Mayotte"	175	"15-19"	8.163
+2735	"Mayotte"	175	"20-24"	6.612
+2736	"Mayotte"	175	"25-29"	5.06
+2737	"Mayotte"	175	"30-34"	7.433
+2738	"Mayotte"	175	"35-39"	9.071
+2739	"Mayotte"	175	"40-44"	5.453
+2740	"Mayotte"	175	"45-49"	3.76
+2741	"Mayotte"	175	"50-54"	2.644
+2742	"Mayotte"	175	"55-59"	2.137
+2743	"Mayotte"	175	"60-64"	1.256
+2744	"Mayotte"	175	"65-69"	0.595
+2745	"Mayotte"	175	"70-74"	0.685
+2746	"Mayotte"	175	"75-79"	0.216
+2747	"Mayotte"	175	"80-84"	0.233
+2748	"Mayotte"	175	"85-89"	0.163
+2749	"Mayotte"	175	"90-94"	0.072
+2750	"Mayotte"	175	"95-99"	0.039
+2751	"Mayotte"	175	"100+"	0.01
+2752	"Mexico"	484	"0-4"	5667.841
+2753	"Mexico"	484	"5-9"	5692.769
+2754	"Mexico"	484	"10-14"	5447.02
+2755	"Mexico"	484	"15-19"	5484.807
+2756	"Mexico"	484	"20-24"	4811.229
+2757	"Mexico"	484	"25-29"	4361.636
+2758	"Mexico"	484	"30-34"	4290.642
+2759	"Mexico"	484	"35-39"	4248.285
+2760	"Mexico"	484	"40-44"	3546.692
+2761	"Mexico"	484	"45-49"	3028.919
+2762	"Mexico"	484	"50-54"	2543.345
+2763	"Mexico"	484	"55-59"	2061.799
+2764	"Mexico"	484	"60-64"	1475.292
+2765	"Mexico"	484	"65-69"	1189.411
+2766	"Mexico"	484	"70-74"	872.204
+2767	"Mexico"	484	"75-79"	611.108
+2768	"Mexico"	484	"80-84"	361.101
+2769	"Mexico"	484	"85-89"	169.75
+2770	"Mexico"	484	"90-94"	52.569
+2771	"Mexico"	484	"95-99"	14.121
+2772	"Mexico"	484	"100+"	2.501
+2773	"Micronesia (Fed. States of)"	583	"0-4"	6.85
+2774	"Micronesia (Fed. States of)"	583	"5-9"	6.987
+2775	"Micronesia (Fed. States of)"	583	"10-14"	7.111
+2776	"Micronesia (Fed. States of)"	583	"15-19"	6.748
+2777	"Micronesia (Fed. States of)"	583	"20-24"	6.417
+2778	"Micronesia (Fed. States of)"	583	"25-29"	5.247
+2779	"Micronesia (Fed. States of)"	583	"30-34"	3.323
+2780	"Micronesia (Fed. States of)"	583	"35-39"	2.232
+2781	"Micronesia (Fed. States of)"	583	"40-44"	2.231
+2782	"Micronesia (Fed. States of)"	583	"45-49"	2.357
+2783	"Micronesia (Fed. States of)"	583	"50-54"	2.08
+2784	"Micronesia (Fed. States of)"	583	"55-59"	1.999
+2785	"Micronesia (Fed. States of)"	583	"60-64"	1.255
+2786	"Micronesia (Fed. States of)"	583	"65-69"	0.627
+2787	"Micronesia (Fed. States of)"	583	"70-74"	0.476
+2788	"Micronesia (Fed. States of)"	583	"75-79"	0.414
+2789	"Micronesia (Fed. States of)"	583	"80-84"	0.148
+2790	"Micronesia (Fed. States of)"	583	"85-89"	0.107
+2791	"Micronesia (Fed. States of)"	583	"90-94"	0.022
+2792	"Micronesia (Fed. States of)"	583	"95-99"	0.002
+2793	"Micronesia (Fed. States of)"	583	"100+"	0
+2794	"Monaco"	492	"0-4"	0.626
+2795	"Monaco"	492	"5-9"	0.943
+2796	"Monaco"	492	"10-14"	0.804
+2797	"Monaco"	492	"15-19"	0.763
+2798	"Monaco"	492	"20-24"	0.655
+2799	"Monaco"	492	"25-29"	0.931
+2800	"Monaco"	492	"30-34"	1.347
+2801	"Monaco"	492	"35-39"	1.2
+2802	"Monaco"	492	"40-44"	1.3
+2803	"Monaco"	492	"45-49"	1.299
+2804	"Monaco"	492	"50-54"	1.5
+2805	"Monaco"	492	"55-59"	1.218
+2806	"Monaco"	492	"60-64"	1.177
+2807	"Monaco"	492	"65-69"	0.982
+2808	"Monaco"	492	"70-74"	0.933
+2809	"Monaco"	492	"75-79"	0.77
+2810	"Monaco"	492	"80-84"	0.425
+2811	"Monaco"	492	"85-89"	0.27
+2812	"Monaco"	492	"90-94"	0.106
+2813	"Monaco"	492	"95-99"	0.019
+2814	"Monaco"	492	"100+"	0.001
+2815	"Mongolia"	496	"0-4"	150.096
+2816	"Mongolia"	496	"5-9"	112.597
+2817	"Mongolia"	496	"10-14"	121.692
+2818	"Mongolia"	496	"15-19"	140.115
+2819	"Mongolia"	496	"20-24"	159.715
+2820	"Mongolia"	496	"25-29"	131.302
+2821	"Mongolia"	496	"30-34"	114.214
+2822	"Mongolia"	496	"35-39"	103.555
+2823	"Mongolia"	496	"40-44"	88.592
+2824	"Mongolia"	496	"45-49"	78.806
+2825	"Mongolia"	496	"50-54"	53.48
+2826	"Mongolia"	496	"55-59"	36.239
+2827	"Mongolia"	496	"60-64"	22.916
+2828	"Mongolia"	496	"65-69"	19.087
+2829	"Mongolia"	496	"70-74"	13.726
+2830	"Mongolia"	496	"75-79"	8.45
+2831	"Mongolia"	496	"80-84"	4.043
+2832	"Mongolia"	496	"85-89"	1.596
+2833	"Mongolia"	496	"90-94"	0.444
+2834	"Mongolia"	496	"95-99"	0.054
+2835	"Mongolia"	496	"100+"	0.003
+2836	"Montenegro"	499	"0-4"	20.33
+2837	"Montenegro"	499	"5-9"	20.991
+2838	"Montenegro"	499	"10-14"	21.557
+2839	"Montenegro"	499	"15-19"	21.614
+2840	"Montenegro"	499	"20-24"	25.454
+2841	"Montenegro"	499	"25-29"	24.527
+2842	"Montenegro"	499	"30-34"	22.664
+2843	"Montenegro"	499	"35-39"	19.939
+2844	"Montenegro"	499	"40-44"	20.101
+2845	"Montenegro"	499	"45-49"	21.432
+2846	"Montenegro"	499	"50-54"	22.474
+2847	"Montenegro"	499	"55-59"	20.404
+2848	"Montenegro"	499	"60-64"	15.331
+2849	"Montenegro"	499	"65-69"	9.556
+2850	"Montenegro"	499	"70-74"	10.598
+2851	"Montenegro"	499	"75-79"	7.135
+2852	"Montenegro"	499	"80-84"	4.037
+2853	"Montenegro"	499	"85-89"	1.257
+2854	"Montenegro"	499	"90-94"	0.269
+2855	"Montenegro"	499	"95-99"	0.137
+2856	"Montenegro"	499	"100+"	0.056
+2857	"Montserrat"	500	"0-4"	0.242
+2858	"Montserrat"	500	"5-9"	0.258
+2859	"Montserrat"	500	"10-14"	0.118
+2860	"Montserrat"	500	"15-19"	0.251
+2861	"Montserrat"	500	"20-24"	0.189
+2862	"Montserrat"	500	"25-29"	0.237
+2863	"Montserrat"	500	"30-34"	0.216
+2864	"Montserrat"	500	"35-39"	0.201
+2865	"Montserrat"	500	"40-44"	0.277
+2866	"Montserrat"	500	"45-49"	0.202
+2867	"Montserrat"	500	"50-54"	0.191
+2868	"Montserrat"	500	"55-59"	0.138
+2869	"Montserrat"	500	"60-64"	0.144
+2870	"Montserrat"	500	"65-69"	0.123
+2871	"Montserrat"	500	"70-74"	0.078
+2872	"Montserrat"	500	"75-79"	0.046
+2873	"Montserrat"	500	"80-84"	0.014
+2874	"Montserrat"	500	"85-89"	0.005
+2875	"Montserrat"	500	"90-94"	0.003
+2876	"Montserrat"	500	"95-99"	0.001
+2877	"Montserrat"	500	"100+"	0
+2878	"Morocco"	504	"0-4"	1545.492
+2879	"Morocco"	504	"5-9"	1490.021
+2880	"Morocco"	504	"10-14"	1538.006
+2881	"Morocco"	504	"15-19"	1597.188
+2882	"Morocco"	504	"20-24"	1535.767
+2883	"Morocco"	504	"25-29"	1404.952
+2884	"Morocco"	504	"30-34"	1147.443
+2885	"Morocco"	504	"35-39"	1013.195
+2886	"Morocco"	504	"40-44"	901.459
+2887	"Morocco"	504	"45-49"	824.163
+2888	"Morocco"	504	"50-54"	835.302
+2889	"Morocco"	504	"55-59"	617.099
+2890	"Morocco"	504	"60-64"	428.324
+2891	"Morocco"	504	"65-69"	289.546
+2892	"Morocco"	504	"70-74"	240.499
+2893	"Morocco"	504	"75-79"	152.869
+2894	"Morocco"	504	"80-84"	80.513
+2895	"Morocco"	504	"85-89"	21.859
+2896	"Morocco"	504	"90-94"	4.785
+2897	"Morocco"	504	"95-99"	0.428
+2898	"Morocco"	504	"100+"	0.021
+2899	"Mozambique"	508	"0-4"	1951.411
+2900	"Mozambique"	508	"5-9"	1764.702
+2901	"Mozambique"	508	"10-14"	1460.593
+2902	"Mozambique"	508	"15-19"	1240.183
+2903	"Mozambique"	508	"20-24"	1057.865
+2904	"Mozambique"	508	"25-29"	890.694
+2905	"Mozambique"	508	"30-34"	704.208
+2906	"Mozambique"	508	"35-39"	517.409
+2907	"Mozambique"	508	"40-44"	401.206
+2908	"Mozambique"	508	"45-49"	342.206
+2909	"Mozambique"	508	"50-54"	290.664
+2910	"Mozambique"	508	"55-59"	243.143
+2911	"Mozambique"	508	"60-64"	188.466
+2912	"Mozambique"	508	"65-69"	139.822
+2913	"Mozambique"	508	"70-74"	95.693
+2914	"Mozambique"	508	"75-79"	56.394
+2915	"Mozambique"	508	"80-84"	25.931
+2916	"Mozambique"	508	"85-89"	8.152
+2917	"Mozambique"	508	"90-94"	1.53
+2918	"Mozambique"	508	"95-99"	0.145
+2919	"Mozambique"	508	"100+"	0.007
+2920	"Myanmar"	104	"0-4"	1999.208
+2921	"Myanmar"	104	"5-9"	2022.712
+2922	"Myanmar"	104	"10-14"	2189.585
+2923	"Myanmar"	104	"15-19"	2226.931
+2924	"Myanmar"	104	"20-24"	2259.745
+2925	"Myanmar"	104	"25-29"	2086.822
+2926	"Myanmar"	104	"30-34"	1967.439
+2927	"Myanmar"	104	"35-39"	1929.085
+2928	"Myanmar"	104	"40-44"	1637.528
+2929	"Myanmar"	104	"45-49"	1398.928
+2930	"Myanmar"	104	"50-54"	1204.491
+2931	"Myanmar"	104	"55-59"	991.798
+2932	"Myanmar"	104	"60-64"	636.888
+2933	"Myanmar"	104	"65-69"	432.936
+2934	"Myanmar"	104	"70-74"	303.118
+2935	"Myanmar"	104	"75-79"	207.538
+2936	"Myanmar"	104	"80-84"	104.043
+2937	"Myanmar"	104	"85-89"	33.616
+2938	"Myanmar"	104	"90-94"	6.761
+2939	"Myanmar"	104	"95-99"	0.673
+2940	"Myanmar"	104	"100+"	0.04
+2941	"Namibia"	516	"0-4"	144.605
+2942	"Namibia"	516	"5-9"	139.566
+2943	"Namibia"	516	"10-14"	135.199
+2944	"Namibia"	516	"15-19"	129.091
+2945	"Namibia"	516	"20-24"	113.316
+2946	"Namibia"	516	"25-29"	97.516
+2947	"Namibia"	516	"30-34"	85.914
+2948	"Namibia"	516	"35-39"	71.042
+2949	"Namibia"	516	"40-44"	56.264
+2950	"Namibia"	516	"45-49"	44.723
+2951	"Namibia"	516	"50-54"	34.087
+2952	"Namibia"	516	"55-59"	26.109
+2953	"Namibia"	516	"60-64"	20.419
+2954	"Namibia"	516	"65-69"	15.209
+2955	"Namibia"	516	"70-74"	10.15
+2956	"Namibia"	516	"75-79"	6.263
+2957	"Namibia"	516	"80-84"	3.218
+2958	"Namibia"	516	"85-89"	1.067
+2959	"Namibia"	516	"90-94"	0.21
+2960	"Namibia"	516	"95-99"	0.022
+2961	"Namibia"	516	"100+"	0.001
+2962	"Nauru"	520	"0-4"	0.405
+2963	"Nauru"	520	"5-9"	0.405
+2964	"Nauru"	520	"10-14"	0.395
+2965	"Nauru"	520	"15-19"	0.401
+2966	"Nauru"	520	"20-24"	0.374
+2967	"Nauru"	520	"25-29"	0.38
+2968	"Nauru"	520	"30-34"	0.388
+2969	"Nauru"	520	"35-39"	0.393
+2970	"Nauru"	520	"40-44"	0.376
+2971	"Nauru"	520	"45-49"	0.372
+2972	"Nauru"	520	"50-54"	0.321
+2973	"Nauru"	520	"55-59"	0.26
+2974	"Nauru"	520	"60-64"	0.236
+2975	"Nauru"	520	"65-69"	0.165
+2976	"Nauru"	520	"70-74"	0.108
+2977	"Nauru"	520	"75-79"	0.057
+2978	"Nauru"	520	"80-84"	0.027
+2979	"Nauru"	520	"85-89"	0.014
+2980	"Nauru"	520	"90-94"	0.005
+2981	"Nauru"	520	"95-99"	0.001
+2982	"Nauru"	520	"100+"	0
+2983	"Nepal"	524	"0-4"	1797.241
+2984	"Nepal"	524	"5-9"	1904.576
+2985	"Nepal"	524	"10-14"	1862.227
+2986	"Nepal"	524	"15-19"	1700.346
+2987	"Nepal"	524	"20-24"	1481.542
+2988	"Nepal"	524	"25-29"	1260.663
+2989	"Nepal"	524	"30-34"	1045.972
+2990	"Nepal"	524	"35-39"	853.071
+2991	"Nepal"	524	"40-44"	694.686
+2992	"Nepal"	524	"45-49"	571.254
+2993	"Nepal"	524	"50-54"	468.827
+2994	"Nepal"	524	"55-59"	378.06
+2995	"Nepal"	524	"60-64"	287.869
+2996	"Nepal"	524	"65-69"	239.867
+2997	"Nepal"	524	"70-74"	162.999
+2998	"Nepal"	524	"75-79"	93.919
+2999	"Nepal"	524	"80-84"	42.488
+3000	"Nepal"	524	"85-89"	13.7
+3001	"Nepal"	524	"90-94"	2.628
+3002	"Nepal"	524	"95-99"	0.269
+3003	"Nepal"	524	"100+"	0.015
+3004	"Netherlands"	528	"0-4"	480.482
+3005	"Netherlands"	528	"5-9"	518.903
+3006	"Netherlands"	528	"10-14"	508.62
+3007	"Netherlands"	528	"15-19"	523.073
+3008	"Netherlands"	528	"20-24"	505.459
+3009	"Netherlands"	528	"25-29"	494.106
+3010	"Netherlands"	528	"30-34"	498.167
+3011	"Netherlands"	528	"35-39"	596.483
+3012	"Netherlands"	528	"40-44"	663.6
+3013	"Netherlands"	528	"45-49"	656.591
+3014	"Netherlands"	528	"50-54"	595.918
+3015	"Netherlands"	528	"55-59"	548.642
+3016	"Netherlands"	528	"60-64"	541.092
+3017	"Netherlands"	528	"65-69"	386.165
+3018	"Netherlands"	528	"70-74"	292.895
+3019	"Netherlands"	528	"75-79"	215.227
+3020	"Netherlands"	528	"80-84"	133.157
+3021	"Netherlands"	528	"85-89"	64.771
+3022	"Netherlands"	528	"90-94"	16.878
+3023	"Netherlands"	528	"95-99"	2.949
+3024	"Netherlands"	528	"100+"	0.265
+3025	"Netherlands Antilles"	530	"0-4"	6.887
+3026	"Netherlands Antilles"	530	"5-9"	6.973
+3027	"Netherlands Antilles"	530	"10-14"	6.908
+3028	"Netherlands Antilles"	530	"15-19"	5.671
+3029	"Netherlands Antilles"	530	"20-24"	5.473
+3030	"Netherlands Antilles"	530	"25-29"	5.793
+3031	"Netherlands Antilles"	530	"30-34"	6.378
+3032	"Netherlands Antilles"	530	"35-39"	7.509
+3033	"Netherlands Antilles"	530	"40-44"	7.821
+3034	"Netherlands Antilles"	530	"45-49"	7.877
+3035	"Netherlands Antilles"	530	"50-54"	6.832
+3036	"Netherlands Antilles"	530	"55-59"	5.536
+3037	"Netherlands Antilles"	530	"60-64"	4.566
+3038	"Netherlands Antilles"	530	"65-69"	3.15
+3039	"Netherlands Antilles"	530	"70-74"	2.353
+3040	"Netherlands Antilles"	530	"75-79"	1.632
+3041	"Netherlands Antilles"	530	"80-84"	0.96
+3042	"Netherlands Antilles"	530	"85-89"	0.463
+3043	"Netherlands Antilles"	530	"90-94"	0.199
+3044	"Netherlands Antilles"	530	"95-99"	0.049
+3045	"Netherlands Antilles"	530	"100+"	0.008
+3046	"New Caledonia"	540	"0-4"	10.735
+3047	"New Caledonia"	540	"5-9"	10.552
+3048	"New Caledonia"	540	"10-14"	11.071
+3049	"New Caledonia"	540	"15-19"	11.174
+3050	"New Caledonia"	540	"20-24"	10.108
+3051	"New Caledonia"	540	"25-29"	9.789
+3052	"New Caledonia"	540	"30-34"	9.219
+3053	"New Caledonia"	540	"35-39"	9.663
+3054	"New Caledonia"	540	"40-44"	8.278
+3055	"New Caledonia"	540	"45-49"	7.861
+3056	"New Caledonia"	540	"50-54"	6.979
+3057	"New Caledonia"	540	"55-59"	5.82
+3058	"New Caledonia"	540	"60-64"	4.944
+3059	"New Caledonia"	540	"65-69"	3.856
+3060	"New Caledonia"	540	"70-74"	2.45
+3061	"New Caledonia"	540	"75-79"	1.506
+3062	"New Caledonia"	540	"80-84"	0.902
+3063	"New Caledonia"	540	"85-89"	0.443
+3064	"New Caledonia"	540	"90-94"	0.153
+3065	"New Caledonia"	540	"95-99"	0.038
+3066	"New Caledonia"	540	"100+"	0.007
+3067	"New Zealand"	554	"0-4"	160.126
+3068	"New Zealand"	554	"5-9"	146.8
+3069	"New Zealand"	554	"10-14"	151.878
+3070	"New Zealand"	554	"15-19"	164.898
+3071	"New Zealand"	554	"20-24"	162.136
+3072	"New Zealand"	554	"25-29"	142.704
+3073	"New Zealand"	554	"30-34"	129.36
+3074	"New Zealand"	554	"35-39"	143.723
+3075	"New Zealand"	554	"40-44"	147.764
+3076	"New Zealand"	554	"45-49"	157.998
+3077	"New Zealand"	554	"50-54"	141.293
+3078	"New Zealand"	554	"55-59"	123.812
+3079	"New Zealand"	554	"60-64"	113.79
+3080	"New Zealand"	554	"65-69"	84.561
+3081	"New Zealand"	554	"70-74"	67.145
+3082	"New Zealand"	554	"75-79"	47.632
+3083	"New Zealand"	554	"80-84"	36.156
+3084	"New Zealand"	554	"85-89"	16.88
+3085	"New Zealand"	554	"90-94"	5.082
+3086	"New Zealand"	554	"95-99"	1.038
+3087	"New Zealand"	554	"100+"	0.079
+3088	"Nicaragua"	558	"0-4"	345.941
+3089	"Nicaragua"	558	"5-9"	332.43
+3090	"Nicaragua"	558	"10-14"	338.704
+3091	"Nicaragua"	558	"15-19"	331.407
+3092	"Nicaragua"	558	"20-24"	286.869
+3093	"Nicaragua"	558	"25-29"	254.641
+3094	"Nicaragua"	558	"30-34"	201.121
+3095	"Nicaragua"	558	"35-39"	165.275
+3096	"Nicaragua"	558	"40-44"	139.091
+3097	"Nicaragua"	558	"45-49"	119.135
+3098	"Nicaragua"	558	"50-54"	100.978
+3099	"Nicaragua"	558	"55-59"	79.236
+3100	"Nicaragua"	558	"60-64"	46.294
+3101	"Nicaragua"	558	"65-69"	44.437
+3102	"Nicaragua"	558	"70-74"	33.684
+3103	"Nicaragua"	558	"75-79"	22.501
+3104	"Nicaragua"	558	"80-84"	13.24
+3105	"Nicaragua"	558	"85-89"	6.123
+3106	"Nicaragua"	558	"90-94"	1.99
+3107	"Nicaragua"	558	"95-99"	0.428
+3108	"Nicaragua"	558	"100+"	0.054
+3109	"Niger"	562	"0-4"	1579.172
+3110	"Niger"	562	"5-9"	1269.541
+3111	"Niger"	562	"10-14"	1045.858
+3112	"Niger"	562	"15-19"	798.685
+3113	"Niger"	562	"20-24"	566.906
+3114	"Niger"	562	"25-29"	450.014
+3115	"Niger"	562	"30-34"	428.557
+3116	"Niger"	562	"35-39"	357.158
+3117	"Niger"	562	"40-44"	294.308
+3118	"Niger"	562	"45-49"	316.133
+3119	"Niger"	562	"50-54"	241.684
+3120	"Niger"	562	"55-59"	169.093
+3121	"Niger"	562	"60-64"	127.305
+3122	"Niger"	562	"65-69"	80.503
+3123	"Niger"	562	"70-74"	44.554
+3124	"Niger"	562	"75-79"	22.032
+3125	"Niger"	562	"80-84"	8.209
+3126	"Niger"	562	"85-89"	1.817
+3127	"Niger"	562	"90-94"	0.177
+3128	"Niger"	562	"95-99"	0.006
+3129	"Niger"	562	"100+"	0
+3130	"Nigeria"	566	"0-4"	13594.657
+3131	"Nigeria"	566	"5-9"	11401.375
+3132	"Nigeria"	566	"10-14"	9667.759
+3133	"Nigeria"	566	"15-19"	8350.595
+3134	"Nigeria"	566	"20-24"	7393.195
+3135	"Nigeria"	566	"25-29"	6424.002
+3136	"Nigeria"	566	"30-34"	5358.197
+3137	"Nigeria"	566	"35-39"	4220.526
+3138	"Nigeria"	566	"40-44"	3248.069
+3139	"Nigeria"	566	"45-49"	2656.484
+3140	"Nigeria"	566	"50-54"	2182.772
+3141	"Nigeria"	566	"55-59"	1763.916
+3142	"Nigeria"	566	"60-64"	1432.591
+3143	"Nigeria"	566	"65-69"	1103.596
+3144	"Nigeria"	566	"70-74"	733.257
+3145	"Nigeria"	566	"75-79"	414.183
+3146	"Nigeria"	566	"80-84"	185.857
+3147	"Nigeria"	566	"85-89"	58.089
+3148	"Nigeria"	566	"90-94"	10.793
+3149	"Nigeria"	566	"95-99"	1.035
+3150	"Nigeria"	566	"100+"	0.055
+3151	"Niue"	570	"0-4"	0.064
+3152	"Niue"	570	"5-9"	0.061
+3153	"Niue"	570	"10-14"	0.06
+3154	"Niue"	570	"15-19"	0.073
+3155	"Niue"	570	"20-24"	0.064
+3156	"Niue"	570	"25-29"	0.058
+3157	"Niue"	570	"30-34"	0.049
+3158	"Niue"	570	"35-39"	0.04
+3159	"Niue"	570	"40-44"	0.042
+3160	"Niue"	570	"45-49"	0.056
+3161	"Niue"	570	"50-54"	0.055
+3162	"Niue"	570	"55-59"	0.049
+3163	"Niue"	570	"60-64"	0.012
+3164	"Niue"	570	"65-69"	0.022
+3165	"Niue"	570	"70-74"	0.023
+3166	"Niue"	570	"75-79"	0.01
+3167	"Niue"	570	"80-84"	0.004
+3168	"Niue"	570	"85-89"	0.002
+3169	"Niue"	570	"90-94"	0.001
+3170	"Niue"	570	"95-99"	0
+3171	"Niue"	570	"100+"	0
+3172	"Northern Mariana Islands"	580	"0-4"	1.63
+3173	"Northern Mariana Islands"	580	"5-9"	2.258
+3174	"Northern Mariana Islands"	580	"10-14"	2.448
+3175	"Northern Mariana Islands"	580	"15-19"	1.999
+3176	"Northern Mariana Islands"	580	"20-24"	1.425
+3177	"Northern Mariana Islands"	580	"25-29"	1.603
+3178	"Northern Mariana Islands"	580	"30-34"	1.606
+3179	"Northern Mariana Islands"	580	"35-39"	2.597
+3180	"Northern Mariana Islands"	580	"40-44"	3.502
+3181	"Northern Mariana Islands"	580	"45-49"	3.217
+3182	"Northern Mariana Islands"	580	"50-54"	2.699
+3183	"Northern Mariana Islands"	580	"55-59"	2.018
+3184	"Northern Mariana Islands"	580	"60-64"	1.312
+3185	"Northern Mariana Islands"	580	"65-69"	0.718
+3186	"Northern Mariana Islands"	580	"70-74"	0.356
+3187	"Northern Mariana Islands"	580	"75-79"	0.128
+3188	"Northern Mariana Islands"	580	"80-84"	0.043
+3189	"Northern Mariana Islands"	580	"85-89"	0.016
+3190	"Northern Mariana Islands"	580	"90-94"	0.003
+3191	"Northern Mariana Islands"	580	"95-99"	0
+3192	"Northern Mariana Islands"	580	"100+"	0
+3193	"Norway"	578	"0-4"	155.166
+3194	"Norway"	578	"5-9"	150.339
+3195	"Norway"	578	"10-14"	162.055
+3196	"Norway"	578	"15-19"	169.888
+3197	"Norway"	578	"20-24"	155.395
+3198	"Norway"	578	"25-29"	157.251
+3199	"Norway"	578	"30-34"	159.322
+3200	"Norway"	578	"35-39"	186.936
+3201	"Norway"	578	"40-44"	192.582
+3202	"Norway"	578	"45-49"	171.579
+3203	"Norway"	578	"50-54"	163.291
+3204	"Norway"	578	"55-59"	147.259
+3205	"Norway"	578	"60-64"	159.721
+3206	"Norway"	578	"65-69"	103.103
+3207	"Norway"	578	"70-74"	71.679
+3208	"Norway"	578	"75-79"	58.858
+3209	"Norway"	578	"80-84"	44.488
+3210	"Norway"	578	"85-89"	24.92
+3211	"Norway"	578	"90-94"	7.648
+3212	"Norway"	578	"95-99"	1.242
+3213	"Norway"	578	"100+"	0.097
+3214	"Occupied Palestinian Territory"	275	"0-4"	317.1
+3215	"Occupied Palestinian Territory"	275	"5-9"	287.611
+3216	"Occupied Palestinian Territory"	275	"10-14"	272.472
+3217	"Occupied Palestinian Territory"	275	"15-19"	249.259
+3218	"Occupied Palestinian Territory"	275	"20-24"	188.096
+3219	"Occupied Palestinian Territory"	275	"25-29"	158.185
+3220	"Occupied Palestinian Territory"	275	"30-34"	132.935
+3221	"Occupied Palestinian Territory"	275	"35-39"	108.383
+3222	"Occupied Palestinian Territory"	275	"40-44"	90.293
+3223	"Occupied Palestinian Territory"	275	"45-49"	71.581
+3224	"Occupied Palestinian Territory"	275	"50-54"	49.999
+3225	"Occupied Palestinian Territory"	275	"55-59"	37.888
+3226	"Occupied Palestinian Territory"	275	"60-64"	34.318
+3227	"Occupied Palestinian Territory"	275	"65-69"	22.902
+3228	"Occupied Palestinian Territory"	275	"70-74"	15.583
+3229	"Occupied Palestinian Territory"	275	"75-79"	8.518
+3230	"Occupied Palestinian Territory"	275	"80-84"	3.527
+3231	"Occupied Palestinian Territory"	275	"85-89"	1.111
+3232	"Occupied Palestinian Territory"	275	"90-94"	0.225
+3233	"Occupied Palestinian Territory"	275	"95-99"	0.026
+3234	"Occupied Palestinian Territory"	275	"100+"	0.002
+3235	"Oman"	512	"0-4"	143.365
+3236	"Oman"	512	"5-9"	124.404
+3237	"Oman"	512	"10-14"	116.125
+3238	"Oman"	512	"15-19"	140.02
+3239	"Oman"	512	"20-24"	209.795
+3240	"Oman"	512	"25-29"	261.638
+3241	"Oman"	512	"30-34"	182.861
+3242	"Oman"	512	"35-39"	133.668
+3243	"Oman"	512	"40-44"	108.314
+3244	"Oman"	512	"45-49"	65.703
+3245	"Oman"	512	"50-54"	58.132
+3246	"Oman"	512	"55-59"	28.008
+3247	"Oman"	512	"60-64"	25.971
+3248	"Oman"	512	"65-69"	11.411
+3249	"Oman"	512	"70-74"	11.006
+3250	"Oman"	512	"75-79"	6.578
+3251	"Oman"	512	"80-84"	4.128
+3252	"Oman"	512	"85-89"	2.246
+3253	"Oman"	512	"90-94"	0.291
+3254	"Oman"	512	"95-99"	0.054
+3255	"Oman"	512	"100+"	0.007
+3256	"Pakistan"	586	"0-4"	10934.101
+3257	"Pakistan"	586	"5-9"	9955.652
+3258	"Pakistan"	586	"10-14"	10443.172
+3259	"Pakistan"	586	"15-19"	9909.232
+3260	"Pakistan"	586	"20-24"	9031.543
+3261	"Pakistan"	586	"25-29"	7443.069
+3262	"Pakistan"	586	"30-34"	6179.663
+3263	"Pakistan"	586	"35-39"	5084.218
+3264	"Pakistan"	586	"40-44"	4330.035
+3265	"Pakistan"	586	"45-49"	3729.524
+3266	"Pakistan"	586	"50-54"	3069.539
+3267	"Pakistan"	586	"55-59"	2378.235
+3268	"Pakistan"	586	"60-64"	1873.048
+3269	"Pakistan"	586	"65-69"	1543.591
+3270	"Pakistan"	586	"70-74"	1100.599
+3271	"Pakistan"	586	"75-79"	694.127
+3272	"Pakistan"	586	"80-84"	361.603
+3273	"Pakistan"	586	"85-89"	139.218
+3274	"Pakistan"	586	"90-94"	33.001
+3275	"Pakistan"	586	"95-99"	3.604
+3276	"Pakistan"	586	"100+"	0.204
+3277	"Palau"	585	"0-4"	0.716
+3278	"Palau"	585	"5-9"	0.818
+3279	"Palau"	585	"10-14"	0.781
+3280	"Palau"	585	"15-19"	0.871
+3281	"Palau"	585	"20-24"	1
+3282	"Palau"	585	"25-29"	1.046
+3283	"Palau"	585	"30-34"	0.913
+3284	"Palau"	585	"35-39"	1.043
+3285	"Palau"	585	"40-44"	1.056
+3286	"Palau"	585	"45-49"	0.747
+3287	"Palau"	585	"50-54"	0.794
+3288	"Palau"	585	"55-59"	0.559
+3289	"Palau"	585	"60-64"	0.308
+3290	"Palau"	585	"65-69"	0.193
+3291	"Palau"	585	"70-74"	0.097
+3292	"Palau"	585	"75-79"	0.081
+3293	"Palau"	585	"80-84"	0.039
+3294	"Palau"	585	"85-89"	0.017
+3295	"Palau"	585	"90-94"	0.008
+3296	"Palau"	585	"95-99"	0.001
+3297	"Palau"	585	"100+"	0
+3298	"Panama"	591	"0-4"	176.338
+3299	"Panama"	591	"5-9"	175.141
+3300	"Panama"	591	"10-14"	168.707
+3301	"Panama"	591	"15-19"	157.558
+3302	"Panama"	591	"20-24"	152.816
+3303	"Panama"	591	"25-29"	141.713
+3304	"Panama"	591	"30-34"	133.912
+3305	"Panama"	591	"35-39"	131.311
+3306	"Panama"	591	"40-44"	119.69
+3307	"Panama"	591	"45-49"	101.586
+3308	"Panama"	591	"50-54"	82.769
+3309	"Panama"	591	"55-59"	66.875
+3310	"Panama"	591	"60-64"	53.498
+3311	"Panama"	591	"65-69"	41.666
+3312	"Panama"	591	"70-74"	29.285
+3313	"Panama"	591	"75-79"	19.905
+3314	"Panama"	591	"80-84"	11.648
+3315	"Panama"	591	"85-89"	5.329
+3316	"Panama"	591	"90-94"	1.726
+3317	"Panama"	591	"95-99"	0.32
+3318	"Panama"	591	"100+"	0.027
+3319	"Papua New Guinea"	598	"0-4"	499.401
+3320	"Papua New Guinea"	598	"5-9"	463.222
+3321	"Papua New Guinea"	598	"10-14"	424.97
+3322	"Papua New Guinea"	598	"15-19"	359.639
+3323	"Papua New Guinea"	598	"20-24"	310.788
+3324	"Papua New Guinea"	598	"25-29"	286.202
+3325	"Papua New Guinea"	598	"30-34"	259.727
+3326	"Papua New Guinea"	598	"35-39"	235.511
+3327	"Papua New Guinea"	598	"40-44"	177.326
+3328	"Papua New Guinea"	598	"45-49"	140.477
+3329	"Papua New Guinea"	598	"50-54"	111.983
+3330	"Papua New Guinea"	598	"55-59"	86.954
+3331	"Papua New Guinea"	598	"60-64"	60.176
+3332	"Papua New Guinea"	598	"65-69"	39.869
+3333	"Papua New Guinea"	598	"70-74"	23.62
+3334	"Papua New Guinea"	598	"75-79"	11.795
+3335	"Papua New Guinea"	598	"80-84"	4.806
+3336	"Papua New Guinea"	598	"85-89"	1.47
+3337	"Papua New Guinea"	598	"90-94"	0.308
+3338	"Papua New Guinea"	598	"95-99"	0.04
+3339	"Papua New Guinea"	598	"100+"	0.003
+3340	"Paraguay"	600	"0-4"	377.218
+3341	"Paraguay"	600	"5-9"	367.681
+3342	"Paraguay"	600	"10-14"	356.745
+3343	"Paraguay"	600	"15-19"	342.037
+3344	"Paraguay"	600	"20-24"	320.351
+3345	"Paraguay"	600	"25-29"	287.311
+3346	"Paraguay"	600	"30-34"	228.394
+3347	"Paraguay"	600	"35-39"	182.361
+3348	"Paraguay"	600	"40-44"	166.972
+3349	"Paraguay"	600	"45-49"	149.268
+3350	"Paraguay"	600	"50-54"	129.618
+3351	"Paraguay"	600	"55-59"	110.04
+3352	"Paraguay"	600	"60-64"	81.846
+3353	"Paraguay"	600	"65-69"	59.915
+3354	"Paraguay"	600	"70-74"	43.554
+3355	"Paraguay"	600	"75-79"	26.353
+3356	"Paraguay"	600	"80-84"	16.542
+3357	"Paraguay"	600	"85-89"	7.342
+3358	"Paraguay"	600	"90-94"	2.329
+3359	"Paraguay"	600	"95-99"	0.455
+3360	"Paraguay"	600	"100+"	0.05
+3361	"Peru"	604	"0-4"	1484.469
+3362	"Peru"	604	"5-9"	1476.709
+3363	"Peru"	604	"10-14"	1476.939
+3364	"Peru"	604	"15-19"	1453.773
+3365	"Peru"	604	"20-24"	1354.54
+3366	"Peru"	604	"25-29"	1230.089
+3367	"Peru"	604	"30-34"	1148.084
+3368	"Peru"	604	"35-39"	1006.177
+3369	"Peru"	604	"40-44"	877.896
+3370	"Peru"	604	"45-49"	756.509
+3371	"Peru"	604	"50-54"	613.852
+3372	"Peru"	604	"55-59"	496.198
+3373	"Peru"	604	"60-64"	385.196
+3374	"Peru"	604	"65-69"	301.251
+3375	"Peru"	604	"70-74"	226.565
+3376	"Peru"	604	"75-79"	150.646
+3377	"Peru"	604	"80-84"	81.148
+3378	"Peru"	604	"85-89"	35.587
+3379	"Peru"	604	"90-94"	11.655
+3380	"Peru"	604	"95-99"	2.531
+3381	"Peru"	604	"100+"	0.307
+3382	"Philippines"	608	"0-4"	5766.431
+3383	"Philippines"	608	"5-9"	5781.937
+3384	"Philippines"	608	"10-14"	5370.149
+3385	"Philippines"	608	"15-19"	4955.016
+3386	"Philippines"	608	"20-24"	4510.248
+3387	"Philippines"	608	"25-29"	3921.234
+3388	"Philippines"	608	"30-34"	3388.623
+3389	"Philippines"	608	"35-39"	2856.738
+3390	"Philippines"	608	"40-44"	2488.527
+3391	"Philippines"	608	"45-49"	2155.515
+3392	"Philippines"	608	"50-54"	1797.267
+3393	"Philippines"	608	"55-59"	1441.591
+3394	"Philippines"	608	"60-64"	922.37
+3395	"Philippines"	608	"65-69"	635.74
+3396	"Philippines"	608	"70-74"	407.044
+3397	"Philippines"	608	"75-79"	241.885
+3398	"Philippines"	608	"80-84"	98.807
+3399	"Philippines"	608	"85-89"	35.411
+3400	"Philippines"	608	"90-94"	8.016
+3401	"Philippines"	608	"95-99"	1.116
+3402	"Philippines"	608	"100+"	0.083
+3403	"Poland"	616	"0-4"	993.639
+3404	"Poland"	616	"5-9"	892.638
+3405	"Poland"	616	"10-14"	1017.657
+3406	"Poland"	616	"15-19"	1277.678
+3407	"Poland"	616	"20-24"	1516.152
+3408	"Poland"	616	"25-29"	1673.501
+3409	"Poland"	616	"30-34"	1570.15
+3410	"Poland"	616	"35-39"	1327.871
+3411	"Poland"	616	"40-44"	1143.152
+3412	"Poland"	616	"45-49"	1230.763
+3413	"Poland"	616	"50-54"	1483.442
+3414	"Poland"	616	"55-59"	1388.918
+3415	"Poland"	616	"60-64"	989.946
+3416	"Poland"	616	"65-69"	585.388
+3417	"Poland"	616	"70-74"	546.105
+3418	"Poland"	616	"75-79"	442.412
+3419	"Poland"	616	"80-84"	257.093
+3420	"Poland"	616	"85-89"	102.125
+3421	"Poland"	616	"90-94"	22.352
+3422	"Poland"	616	"95-99"	5.278
+3423	"Poland"	616	"100+"	0.515
+3424	"Portugal"	620	"0-4"	266.095
+3425	"Portugal"	620	"5-9"	285.794
+3426	"Portugal"	620	"10-14"	276.825
+3427	"Portugal"	620	"15-19"	284.709
+3428	"Portugal"	620	"20-24"	307.177
+3429	"Portugal"	620	"25-29"	370.293
+3430	"Portugal"	620	"30-34"	421.153
+3431	"Portugal"	620	"35-39"	420.153
+3432	"Portugal"	620	"40-44"	391.041
+3433	"Portugal"	620	"45-49"	384.975
+3434	"Portugal"	620	"50-54"	352.32
+3435	"Portugal"	620	"55-59"	322.089
+3436	"Portugal"	620	"60-64"	288.434
+3437	"Portugal"	620	"65-69"	239.708
+3438	"Portugal"	620	"70-74"	215.024
+3439	"Portugal"	620	"75-79"	172.326
+3440	"Portugal"	620	"80-84"	106.945
+3441	"Portugal"	620	"85-89"	50.507
+3442	"Portugal"	620	"90-94"	13.281
+3443	"Portugal"	620	"95-99"	2.299
+3444	"Portugal"	620	"100+"	0.138
+3445	"Puerto Rico"	630	"0-4"	129.501
+3446	"Puerto Rico"	630	"5-9"	131.69
+3447	"Puerto Rico"	630	"10-14"	147.183
+3448	"Puerto Rico"	630	"15-19"	150.019
+3449	"Puerto Rico"	630	"20-24"	142.703
+3450	"Puerto Rico"	630	"25-29"	133.605
+3451	"Puerto Rico"	630	"30-34"	130.403
+3452	"Puerto Rico"	630	"35-39"	121.633
+3453	"Puerto Rico"	630	"40-44"	117.682
+3454	"Puerto Rico"	630	"45-49"	110.135
+3455	"Puerto Rico"	630	"50-54"	106.891
+3456	"Puerto Rico"	630	"55-59"	88.848
+3457	"Puerto Rico"	630	"60-64"	87.197
+3458	"Puerto Rico"	630	"65-69"	68.783
+3459	"Puerto Rico"	630	"70-74"	51.173
+3460	"Puerto Rico"	630	"75-79"	37.569
+3461	"Puerto Rico"	630	"80-84"	25.468
+3462	"Puerto Rico"	630	"85-89"	14.038
+3463	"Puerto Rico"	630	"90-94"	6.291
+3464	"Puerto Rico"	630	"95-99"	1.796
+3465	"Puerto Rico"	630	"100+"	0.305
+3466	"Qatar"	634	"0-4"	46.138
+3467	"Qatar"	634	"5-9"	40.287
+3468	"Qatar"	634	"10-14"	34.669
+3469	"Qatar"	634	"15-19"	43.533
+3470	"Qatar"	634	"20-24"	146.788
+3471	"Qatar"	634	"25-29"	233.428
+3472	"Qatar"	634	"30-34"	224.973
+3473	"Qatar"	634	"35-39"	205.275
+3474	"Qatar"	634	"40-44"	148.179
+3475	"Qatar"	634	"45-49"	96.961
+3476	"Qatar"	634	"50-54"	58.831
+3477	"Qatar"	634	"55-59"	29.212
+3478	"Qatar"	634	"60-64"	10.591
+3479	"Qatar"	634	"65-69"	4.152
+3480	"Qatar"	634	"70-74"	5.608
+3481	"Qatar"	634	"75-79"	1.206
+3482	"Qatar"	634	"80-84"	0.713
+3483	"Qatar"	634	"85-89"	0.217
+3484	"Qatar"	634	"90-94"	0.142
+3485	"Qatar"	634	"95-99"	0.031
+3486	"Qatar"	634	"100+"	0.006
+3487	"Republic of Korea"	410	"0-4"	1242.137
+3488	"Republic of Korea"	410	"5-9"	1235.706
+3489	"Republic of Korea"	410	"10-14"	1652.901
+3490	"Republic of Korea"	410	"15-19"	1811.985
+3491	"Republic of Korea"	410	"20-24"	1618.532
+3492	"Republic of Korea"	410	"25-29"	1905.846
+3493	"Republic of Korea"	410	"30-34"	1848.087
+3494	"Republic of Korea"	410	"35-39"	2047.313
+3495	"Republic of Korea"	410	"40-44"	2046.512
+3496	"Republic of Korea"	410	"45-49"	2051.613
+3497	"Republic of Korea"	410	"50-54"	1917.554
+3498	"Republic of Korea"	410	"55-59"	1378.976
+3499	"Republic of Korea"	410	"60-64"	1073.357
+3500	"Republic of Korea"	410	"65-69"	831.644
+3501	"Republic of Korea"	410	"70-74"	664.552
+3502	"Republic of Korea"	410	"75-79"	413.788
+3503	"Republic of Korea"	410	"80-84"	186.017
+3504	"Republic of Korea"	410	"85-89"	72.787
+3505	"Republic of Korea"	410	"90-94"	17.414
+3506	"Republic of Korea"	410	"95-99"	2.774
+3507	"Republic of Korea"	410	"100+"	0.226
+3508	"Republic of Moldova"	498	"0-4"	110.414
+3509	"Republic of Moldova"	498	"5-9"	89.269
+3510	"Republic of Moldova"	498	"10-14"	103.593
+3511	"Republic of Moldova"	498	"15-19"	146.294
+3512	"Republic of Moldova"	498	"20-24"	174.737
+3513	"Republic of Moldova"	498	"25-29"	147.371
+3514	"Republic of Moldova"	498	"30-34"	119.867
+3515	"Republic of Moldova"	498	"35-39"	103.219
+3516	"Republic of Moldova"	498	"40-44"	107.845
+3517	"Republic of Moldova"	498	"45-49"	127.021
+3518	"Republic of Moldova"	498	"50-54"	125.711
+3519	"Republic of Moldova"	498	"55-59"	114.326
+3520	"Republic of Moldova"	498	"60-64"	79.799
+3521	"Republic of Moldova"	498	"65-69"	50.467
+3522	"Republic of Moldova"	498	"70-74"	44.419
+3523	"Republic of Moldova"	498	"75-79"	27.766
+3524	"Republic of Moldova"	498	"80-84"	16.422
+3525	"Republic of Moldova"	498	"85-89"	5.558
+3526	"Republic of Moldova"	498	"90-94"	0.987
+3527	"Republic of Moldova"	498	"95-99"	0.189
+3528	"Republic of Moldova"	498	"100+"	0.015
+3529	"Reunion"	638	"0-4"	37.515
+3530	"Reunion"	638	"5-9"	37.779
+3531	"Reunion"	638	"10-14"	34.924
+3532	"Reunion"	638	"15-19"	35.625
+3533	"Reunion"	638	"20-24"	36.947
+3534	"Reunion"	638	"25-29"	32.518
+3535	"Reunion"	638	"30-34"	27.185
+3536	"Reunion"	638	"35-39"	25.205
+3537	"Reunion"	638	"40-44"	30.005
+3538	"Reunion"	638	"45-49"	29.08
+3539	"Reunion"	638	"50-54"	23.998
+3540	"Reunion"	638	"55-59"	19.702
+3541	"Reunion"	638	"60-64"	13.711
+3542	"Reunion"	638	"65-69"	10.251
+3543	"Reunion"	638	"70-74"	7.771
+3544	"Reunion"	638	"75-79"	5.924
+3545	"Reunion"	638	"80-84"	3.282
+3546	"Reunion"	638	"85-89"	1.937
+3547	"Reunion"	638	"90-94"	0.766
+3548	"Reunion"	638	"95-99"	0.254
+3549	"Reunion"	638	"100+"	0.078
+3550	"Romania"	642	"0-4"	555.473
+3551	"Romania"	642	"5-9"	545.824
+3552	"Romania"	642	"10-14"	577.364
+3553	"Romania"	642	"15-19"	611.869
+3554	"Romania"	642	"20-24"	863.584
+3555	"Romania"	642	"25-29"	807.01
+3556	"Romania"	642	"30-34"	937.583
+3557	"Romania"	642	"35-39"	855.655
+3558	"Romania"	642	"40-44"	871.482
+3559	"Romania"	642	"45-49"	591.141
+3560	"Romania"	642	"50-54"	716.657
+3561	"Romania"	642	"55-59"	684.256
+3562	"Romania"	642	"60-64"	530.949
+3563	"Romania"	642	"65-69"	385
+3564	"Romania"	642	"70-74"	387.73
+3565	"Romania"	642	"75-79"	278.047
+3566	"Romania"	642	"80-84"	159.465
+3567	"Romania"	642	"85-89"	58.725
+3568	"Romania"	642	"90-94"	8.948
+3569	"Romania"	642	"95-99"	1.924
+3570	"Romania"	642	"100+"	0.13
+3571	"Russian Federation"	643	"0-4"	4169.186
+3572	"Russian Federation"	643	"5-9"	3563.559
+3573	"Russian Federation"	643	"10-14"	3284.836
+3574	"Russian Federation"	643	"15-19"	4197.865
+3575	"Russian Federation"	643	"20-24"	6268.177
+3576	"Russian Federation"	643	"25-29"	6307.553
+3577	"Russian Federation"	643	"30-34"	5436.641
+3578	"Russian Federation"	643	"35-39"	5035.948
+3579	"Russian Federation"	643	"40-44"	4381.986
+3580	"Russian Federation"	643	"45-49"	5299.858
+3581	"Russian Federation"	643	"50-54"	5173.577
+3582	"Russian Federation"	643	"55-59"	4335.634
+3583	"Russian Federation"	643	"60-64"	2958.589
+3584	"Russian Federation"	643	"65-69"	1551.936
+3585	"Russian Federation"	643	"70-74"	2133.589
+3586	"Russian Federation"	643	"75-79"	1060.786
+3587	"Russian Federation"	643	"80-84"	736.907
+3588	"Russian Federation"	643	"85-89"	183.785
+3589	"Russian Federation"	643	"90-94"	42.309
+3590	"Russian Federation"	643	"95-99"	10.793
+3591	"Russian Federation"	643	"100+"	1.026
+3592	"Rwanda"	646	"0-4"	914.659
+3593	"Rwanda"	646	"5-9"	723.581
+3594	"Rwanda"	646	"10-14"	620.367
+3595	"Rwanda"	646	"15-19"	530.104
+3596	"Rwanda"	646	"20-24"	565.876
+3597	"Rwanda"	646	"25-29"	461.128
+3598	"Rwanda"	646	"30-34"	343.786
+3599	"Rwanda"	646	"35-39"	248.615
+3600	"Rwanda"	646	"40-44"	194.652
+3601	"Rwanda"	646	"45-49"	163.818
+3602	"Rwanda"	646	"50-54"	133.605
+3603	"Rwanda"	646	"55-59"	103.297
+3604	"Rwanda"	646	"60-64"	84.696
+3605	"Rwanda"	646	"65-69"	52.974
+3606	"Rwanda"	646	"70-74"	36.475
+3607	"Rwanda"	646	"75-79"	23.566
+3608	"Rwanda"	646	"80-84"	10.799
+3609	"Rwanda"	646	"85-89"	2.604
+3610	"Rwanda"	646	"90-94"	0.363
+3611	"Rwanda"	646	"95-99"	0.041
+3612	"Rwanda"	646	"100+"	0.003
+3613	"Saint Helena"	654	"0-4"	0.125
+3614	"Saint Helena"	654	"5-9"	0.127
+3615	"Saint Helena"	654	"10-14"	0.173
+3616	"Saint Helena"	654	"15-19"	0.166
+3617	"Saint Helena"	654	"20-24"	0.132
+3618	"Saint Helena"	654	"25-29"	0.167
+3619	"Saint Helena"	654	"30-34"	0.153
+3620	"Saint Helena"	654	"35-39"	0.154
+3621	"Saint Helena"	654	"40-44"	0.185
+3622	"Saint Helena"	654	"45-49"	0.122
+3623	"Saint Helena"	654	"50-54"	0.147
+3624	"Saint Helena"	654	"55-59"	0.09
+3625	"Saint Helena"	654	"60-64"	0.114
+3626	"Saint Helena"	654	"65-69"	0.08
+3627	"Saint Helena"	654	"70-74"	0.054
+3628	"Saint Helena"	654	"75-79"	0.03
+3629	"Saint Helena"	654	"80-84"	0.011
+3630	"Saint Helena"	654	"85-89"	0.005
+3631	"Saint Helena"	654	"90-94"	0.002
+3632	"Saint Helena"	654	"95-99"	0
+3633	"Saint Helena"	654	"100+"	0
+3634	"Saint Kitts and Nevis"	659	"0-4"	2.421
+3635	"Saint Kitts and Nevis"	659	"5-9"	2.393
+3636	"Saint Kitts and Nevis"	659	"10-14"	2.4
+3637	"Saint Kitts and Nevis"	659	"15-19"	2.167
+3638	"Saint Kitts and Nevis"	659	"20-24"	2.37
+3639	"Saint Kitts and Nevis"	659	"25-29"	2.461
+3640	"Saint Kitts and Nevis"	659	"30-34"	2.207
+3641	"Saint Kitts and Nevis"	659	"35-39"	1.868
+3642	"Saint Kitts and Nevis"	659	"40-44"	1.667
+3643	"Saint Kitts and Nevis"	659	"45-49"	1.694
+3644	"Saint Kitts and Nevis"	659	"50-54"	1.335
+3645	"Saint Kitts and Nevis"	659	"55-59"	1.205
+3646	"Saint Kitts and Nevis"	659	"60-64"	0.654
+3647	"Saint Kitts and Nevis"	659	"65-69"	0.399
+3648	"Saint Kitts and Nevis"	659	"70-74"	0.248
+3649	"Saint Kitts and Nevis"	659	"75-79"	0.241
+3650	"Saint Kitts and Nevis"	659	"80-84"	0.123
+3651	"Saint Kitts and Nevis"	659	"85-89"	0.075
+3652	"Saint Kitts and Nevis"	659	"90-94"	0.019
+3653	"Saint Kitts and Nevis"	659	"95-99"	0.003
+3654	"Saint Kitts and Nevis"	659	"100+"	0
+3655	"Saint Lucia"	662	"0-4"	7.649
+3656	"Saint Lucia"	662	"5-9"	7.188
+3657	"Saint Lucia"	662	"10-14"	7.846
+3658	"Saint Lucia"	662	"15-19"	8.606
+3659	"Saint Lucia"	662	"20-24"	8.497
+3660	"Saint Lucia"	662	"25-29"	7.762
+3661	"Saint Lucia"	662	"30-34"	6.645
+3662	"Saint Lucia"	662	"35-39"	5.935
+3663	"Saint Lucia"	662	"40-44"	5.489
+3664	"Saint Lucia"	662	"45-49"	5.124
+3665	"Saint Lucia"	662	"50-54"	3.978
+3666	"Saint Lucia"	662	"55-59"	2.902
+3667	"Saint Lucia"	662	"60-64"	2.102
+3668	"Saint Lucia"	662	"65-69"	1.574
+3669	"Saint Lucia"	662	"70-74"	1.364
+3670	"Saint Lucia"	662	"75-79"	1.028
+3671	"Saint Lucia"	662	"80-84"	0.595
+3672	"Saint Lucia"	662	"85-89"	0.34
+3673	"Saint Lucia"	662	"90-94"	0.171
+3674	"Saint Lucia"	662	"95-99"	0.032
+3675	"Saint Lucia"	662	"100+"	0.004
+3676	"Saint Pierre and Miquelon"	666	"0-4"	0.238
+3677	"Saint Pierre and Miquelon"	666	"5-9"	0.248
+3678	"Saint Pierre and Miquelon"	666	"10-14"	0.25
+3679	"Saint Pierre and Miquelon"	666	"15-19"	0.244
+3680	"Saint Pierre and Miquelon"	666	"20-24"	0.211
+3681	"Saint Pierre and Miquelon"	666	"25-29"	0.239
+3682	"Saint Pierre and Miquelon"	666	"30-34"	0.217
+3683	"Saint Pierre and Miquelon"	666	"35-39"	0.22
+3684	"Saint Pierre and Miquelon"	666	"40-44"	0.259
+3685	"Saint Pierre and Miquelon"	666	"45-49"	0.178
+3686	"Saint Pierre and Miquelon"	666	"50-54"	0.197
+3687	"Saint Pierre and Miquelon"	666	"55-59"	0.138
+3688	"Saint Pierre and Miquelon"	666	"60-64"	0.144
+3689	"Saint Pierre and Miquelon"	666	"65-69"	0.094
+3690	"Saint Pierre and Miquelon"	666	"70-74"	0.061
+3691	"Saint Pierre and Miquelon"	666	"75-79"	0.034
+3692	"Saint Pierre and Miquelon"	666	"80-84"	0.012
+3693	"Saint Pierre and Miquelon"	666	"85-89"	0.006
+3694	"Saint Pierre and Miquelon"	666	"90-94"	0.003
+3695	"Saint Pierre and Miquelon"	666	"95-99"	0.001
+3696	"Saint Pierre and Miquelon"	666	"100+"	0
+3697	"St. Vincent and the Grenadines"	670	"0-4"	4.678
+3698	"St. Vincent and the Grenadines"	670	"5-9"	4.734
+3699	"St. Vincent and the Grenadines"	670	"10-14"	5.226
+3700	"St. Vincent and the Grenadines"	670	"15-19"	5.323
+3701	"St. Vincent and the Grenadines"	670	"20-24"	4.972
+3702	"St. Vincent and the Grenadines"	670	"25-29"	4.68
+3703	"St. Vincent and the Grenadines"	670	"30-34"	4.234
+3704	"St. Vincent and the Grenadines"	670	"35-39"	3.842
+3705	"St. Vincent and the Grenadines"	670	"40-44"	3.674
+3706	"St. Vincent and the Grenadines"	670	"45-49"	3.876
+3707	"St. Vincent and the Grenadines"	670	"50-54"	3.021
+3708	"St. Vincent and the Grenadines"	670	"55-59"	2.071
+3709	"St. Vincent and the Grenadines"	670	"60-64"	1.538
+3710	"St. Vincent and the Grenadines"	670	"65-69"	1.09
+3711	"St. Vincent and the Grenadines"	670	"70-74"	1.001
+3712	"St. Vincent and the Grenadines"	670	"75-79"	0.654
+3713	"St. Vincent and the Grenadines"	670	"80-84"	0.37
+3714	"St. Vincent and the Grenadines"	670	"85-89"	0.16
+3715	"St. Vincent and the Grenadines"	670	"90-94"	0.047
+3716	"St. Vincent and the Grenadines"	670	"95-99"	0.006
+3717	"St. Vincent and the Grenadines"	670	"100+"	0
+3718	"Samoa"	882	"0-4"	11.591
+3719	"Samoa"	882	"5-9"	12.543
+3720	"Samoa"	882	"10-14"	12.064
+3721	"Samoa"	882	"15-19"	10.398
+3722	"Samoa"	882	"20-24"	7.609
+3723	"Samoa"	882	"25-29"	6.015
+3724	"Samoa"	882	"30-34"	5.924
+3725	"Samoa"	882	"35-39"	5.905
+3726	"Samoa"	882	"40-44"	5.408
+3727	"Samoa"	882	"45-49"	4.485
+3728	"Samoa"	882	"50-54"	3.715
+3729	"Samoa"	882	"55-59"	2.849
+3730	"Samoa"	882	"60-64"	2.073
+3731	"Samoa"	882	"65-69"	1.493
+3732	"Samoa"	882	"70-74"	1.124
+3733	"Samoa"	882	"75-79"	0.722
+3734	"Samoa"	882	"80-84"	0.455
+3735	"Samoa"	882	"85-89"	0.151
+3736	"Samoa"	882	"90-94"	0.028
+3737	"Samoa"	882	"95-99"	0.005
+3738	"Samoa"	882	"100+"	0.001
+3739	"San Marino"	674	"0-4"	0.791
+3740	"San Marino"	674	"5-9"	0.772
+3741	"San Marino"	674	"10-14"	0.723
+3742	"San Marino"	674	"15-19"	0.873
+3743	"San Marino"	674	"20-24"	0.854
+3744	"San Marino"	674	"25-29"	1.029
+3745	"San Marino"	674	"30-34"	1.266
+3746	"San Marino"	674	"35-39"	1.183
+3747	"San Marino"	674	"40-44"	1.261
+3748	"San Marino"	674	"45-49"	1.305
+3749	"San Marino"	674	"50-54"	1.283
+3750	"San Marino"	674	"55-59"	1.103
+3751	"San Marino"	674	"60-64"	0.731
+3752	"San Marino"	674	"65-69"	0.76
+3753	"San Marino"	674	"70-74"	0.683
+3754	"San Marino"	674	"75-79"	0.475
+3755	"San Marino"	674	"80-84"	0.286
+3756	"San Marino"	674	"85-89"	0.137
+3757	"San Marino"	674	"90-94"	0.04
+3758	"San Marino"	674	"95-99"	0.007
+3759	"San Marino"	674	"100+"	0.001
+3760	"Sao Tome and Principe"	678	"0-4"	11.869
+3761	"Sao Tome and Principe"	678	"5-9"	11.321
+3762	"Sao Tome and Principe"	678	"10-14"	10.504
+3763	"Sao Tome and Principe"	678	"15-19"	9.496
+3764	"Sao Tome and Principe"	678	"20-24"	8.143
+3765	"Sao Tome and Principe"	678	"25-29"	7.97
+3766	"Sao Tome and Principe"	678	"30-34"	6.012
+3767	"Sao Tome and Principe"	678	"35-39"	3.849
+3768	"Sao Tome and Principe"	678	"40-44"	2.938
+3769	"Sao Tome and Principe"	678	"45-49"	2.443
+3770	"Sao Tome and Principe"	678	"50-54"	2.042
+3771	"Sao Tome and Principe"	678	"55-59"	1.577
+3772	"Sao Tome and Principe"	678	"60-64"	0.965
+3773	"Sao Tome and Principe"	678	"65-69"	0.79
+3774	"Sao Tome and Principe"	678	"70-74"	0.955
+3775	"Sao Tome and Principe"	678	"75-79"	0.628
+3776	"Sao Tome and Principe"	678	"80-84"	0.274
+3777	"Sao Tome and Principe"	678	"85-89"	0.11
+3778	"Sao Tome and Principe"	678	"90-94"	0.024
+3779	"Sao Tome and Principe"	678	"95-99"	0.003
+3780	"Sao Tome and Principe"	678	"100+"	0
+3781	"Saudi Arabia"	682	"0-4"	1604.078
+3782	"Saudi Arabia"	682	"5-9"	1392.86
+3783	"Saudi Arabia"	682	"10-14"	1237.439
+3784	"Saudi Arabia"	682	"15-19"	1260.146
+3785	"Saudi Arabia"	682	"20-24"	1243.706
+3786	"Saudi Arabia"	682	"25-29"	1362.051
+3787	"Saudi Arabia"	682	"30-34"	1705.102
+3788	"Saudi Arabia"	682	"35-39"	1594.053
+3789	"Saudi Arabia"	682	"40-44"	1179.228
+3790	"Saudi Arabia"	682	"45-49"	847.506
+3791	"Saudi Arabia"	682	"50-54"	668.626
+3792	"Saudi Arabia"	682	"55-59"	470.795
+3793	"Saudi Arabia"	682	"60-64"	230.968
+3794	"Saudi Arabia"	682	"65-69"	165.739
+3795	"Saudi Arabia"	682	"70-74"	81.831
+3796	"Saudi Arabia"	682	"75-79"	86.378
+3797	"Saudi Arabia"	682	"80-84"	30.895
+3798	"Saudi Arabia"	682	"85-89"	28.567
+3799	"Saudi Arabia"	682	"90-94"	5.002
+3800	"Saudi Arabia"	682	"95-99"	0.997
+3801	"Saudi Arabia"	682	"100+"	0.165
+3802	"Senegal"	686	"0-4"	1053.812
+3803	"Senegal"	686	"5-9"	905.402
+3804	"Senegal"	686	"10-14"	787.444
+3805	"Senegal"	686	"15-19"	696.345
+3806	"Senegal"	686	"20-24"	598.645
+3807	"Senegal"	686	"25-29"	495.14
+3808	"Senegal"	686	"30-34"	403.482
+3809	"Senegal"	686	"35-39"	320.257
+3810	"Senegal"	686	"40-44"	248.293
+3811	"Senegal"	686	"45-49"	186.475
+3812	"Senegal"	686	"50-54"	137.107
+3813	"Senegal"	686	"55-59"	103.975
+3814	"Senegal"	686	"60-64"	88.848
+3815	"Senegal"	686	"65-69"	68.981
+3816	"Senegal"	686	"70-74"	44.167
+3817	"Senegal"	686	"75-79"	20.82
+3818	"Senegal"	686	"80-84"	6.442
+3819	"Senegal"	686	"85-89"	1.153
+3820	"Senegal"	686	"90-94"	0.092
+3821	"Senegal"	686	"95-99"	0.002
+3822	"Senegal"	686	"100+"	0
+3823	"Serbia"	688	"0-4"	293.046
+3824	"Serbia"	688	"5-9"	306.546
+3825	"Serbia"	688	"10-14"	299.992
+3826	"Serbia"	688	"15-19"	332.846
+3827	"Serbia"	688	"20-24"	364.957
+3828	"Serbia"	688	"25-29"	377.71
+3829	"Serbia"	688	"30-34"	371.514
+3830	"Serbia"	688	"35-39"	356.68
+3831	"Serbia"	688	"40-44"	331.315
+3832	"Serbia"	688	"45-49"	319.021
+3833	"Serbia"	688	"50-54"	323.096
+3834	"Serbia"	688	"55-59"	342.425
+3835	"Serbia"	688	"60-64"	252.234
+3836	"Serbia"	688	"65-69"	171.811
+3837	"Serbia"	688	"70-74"	170.417
+3838	"Serbia"	688	"75-79"	141.878
+3839	"Serbia"	688	"80-84"	82.964
+3840	"Serbia"	688	"85-89"	31.747
+3841	"Serbia"	688	"90-94"	5.701
+3842	"Serbia"	688	"95-99"	1.605
+3843	"Serbia"	688	"100+"	0.166
+3844	"Seychelles"	690	"0-4"	3.746
+3845	"Seychelles"	690	"5-9"	3.275
+3846	"Seychelles"	690	"10-14"	2.93
+3847	"Seychelles"	690	"15-19"	3.811
+3848	"Seychelles"	690	"20-24"	4.008
+3849	"Seychelles"	690	"25-29"	4.368
+3850	"Seychelles"	690	"30-34"	3.667
+3851	"Seychelles"	690	"35-39"	4.362
+3852	"Seychelles"	690	"40-44"	2.775
+3853	"Seychelles"	690	"45-49"	3.014
+3854	"Seychelles"	690	"50-54"	2.705
+3855	"Seychelles"	690	"55-59"	1.661
+3856	"Seychelles"	690	"60-64"	1.372
+3857	"Seychelles"	690	"65-69"	0.819
+3858	"Seychelles"	690	"70-74"	0.777
+3859	"Seychelles"	690	"75-79"	0.524
+3860	"Seychelles"	690	"80-84"	0.272
+3861	"Seychelles"	690	"85-89"	0.123
+3862	"Seychelles"	690	"90-94"	0.041
+3863	"Seychelles"	690	"95-99"	0.006
+3864	"Seychelles"	690	"100+"	0.001
+3865	"Sierra Leone"	694	"0-4"	483.126
+3866	"Sierra Leone"	694	"5-9"	411.827
+3867	"Sierra Leone"	694	"10-14"	353.661
+3868	"Sierra Leone"	694	"15-19"	298.378
+3869	"Sierra Leone"	694	"20-24"	255.969
+3870	"Sierra Leone"	694	"25-29"	230.437
+3871	"Sierra Leone"	694	"30-34"	194.169
+3872	"Sierra Leone"	694	"35-39"	155.106
+3873	"Sierra Leone"	694	"40-44"	128.747
+3874	"Sierra Leone"	694	"45-49"	104.363
+3875	"Sierra Leone"	694	"50-54"	82.709
+3876	"Sierra Leone"	694	"55-59"	63.012
+3877	"Sierra Leone"	694	"60-64"	47.531
+3878	"Sierra Leone"	694	"65-69"	31.325
+3879	"Sierra Leone"	694	"70-74"	16.594
+3880	"Sierra Leone"	694	"75-79"	6.809
+3881	"Sierra Leone"	694	"80-84"	1.953
+3882	"Sierra Leone"	694	"85-89"	0.347
+3883	"Sierra Leone"	694	"90-94"	0.028
+3884	"Sierra Leone"	694	"95-99"	0.001
+3885	"Sierra Leone"	694	"100+"	0
+3886	"Singapore"	702	"0-4"	119.312
+3887	"Singapore"	702	"5-9"	145.299
+3888	"Singapore"	702	"10-14"	193.237
+3889	"Singapore"	702	"15-19"	189.631
+3890	"Singapore"	702	"20-24"	165.344
+3891	"Singapore"	702	"25-29"	194.852
+3892	"Singapore"	702	"30-34"	202.288
+3893	"Singapore"	702	"35-39"	198.878
+3894	"Singapore"	702	"40-44"	229.318
+3895	"Singapore"	702	"45-49"	212.349
+3896	"Singapore"	702	"50-54"	207.158
+3897	"Singapore"	702	"55-59"	169.349
+3898	"Singapore"	702	"60-64"	126.483
+3899	"Singapore"	702	"65-69"	78.872
+3900	"Singapore"	702	"70-74"	56.928
+3901	"Singapore"	702	"75-79"	38.614
+3902	"Singapore"	702	"80-84"	23.347
+3903	"Singapore"	702	"85-89"	9.466
+3904	"Singapore"	702	"90-94"	2.962
+3905	"Singapore"	702	"95-99"	0.663
+3906	"Singapore"	702	"100+"	0.093
+3907	"Slovakia"	703	"0-4"	141.335
+3908	"Slovakia"	703	"5-9"	133.802
+3909	"Slovakia"	703	"10-14"	148.107
+3910	"Slovakia"	703	"15-19"	190.446
+3911	"Slovakia"	703	"20-24"	218.746
+3912	"Slovakia"	703	"25-29"	233.887
+3913	"Slovakia"	703	"30-34"	246.178
+3914	"Slovakia"	703	"35-39"	214.635
+3915	"Slovakia"	703	"40-44"	183.01
+3916	"Slovakia"	703	"45-49"	190.515
+3917	"Slovakia"	703	"50-54"	195.141
+3918	"Slovakia"	703	"55-59"	184.035
+3919	"Slovakia"	703	"60-64"	130.459
+3920	"Slovakia"	703	"65-69"	90.641
+3921	"Slovakia"	703	"70-74"	64.118
+3922	"Slovakia"	703	"75-79"	46.618
+3923	"Slovakia"	703	"80-84"	27.843
+3924	"Slovakia"	703	"85-89"	13.142
+3925	"Slovakia"	703	"90-94"	2.487
+3926	"Slovakia"	703	"95-99"	0.71
+3927	"Slovakia"	703	"100+"	0.057
+3928	"Slovenia"	705	"0-4"	50.967
+3929	"Slovenia"	705	"5-9"	46.104
+3930	"Slovenia"	705	"10-14"	47.879
+3931	"Slovenia"	705	"15-19"	53.599
+3932	"Slovenia"	705	"20-24"	66.062
+3933	"Slovenia"	705	"25-29"	74.177
+3934	"Slovenia"	705	"30-34"	80.474
+3935	"Slovenia"	705	"35-39"	76.156
+3936	"Slovenia"	705	"40-44"	75.16
+3937	"Slovenia"	705	"45-49"	78.491
+3938	"Slovenia"	705	"50-54"	77.537
+3939	"Slovenia"	705	"55-59"	77.105
+3940	"Slovenia"	705	"60-64"	59.463
+3941	"Slovenia"	705	"65-69"	42.838
+3942	"Slovenia"	705	"70-74"	37.793
+3943	"Slovenia"	705	"75-79"	26.259
+3944	"Slovenia"	705	"80-84"	15.478
+3945	"Slovenia"	705	"85-89"	5.715
+3946	"Slovenia"	705	"90-94"	1.17
+3947	"Slovenia"	705	"95-99"	0.281
+3948	"Slovenia"	705	"100+"	0.024
+3949	"Solomon Islands"	90	"0-4"	41.599
+3950	"Solomon Islands"	90	"5-9"	37.017
+3951	"Solomon Islands"	90	"10-14"	32.616
+3952	"Solomon Islands"	90	"15-19"	29.334
+3953	"Solomon Islands"	90	"20-24"	25.725
+3954	"Solomon Islands"	90	"25-29"	22.795
+3955	"Solomon Islands"	90	"30-34"	21.02
+3956	"Solomon Islands"	90	"35-39"	17.519
+3957	"Solomon Islands"	90	"40-44"	13.073
+3958	"Solomon Islands"	90	"45-49"	10.785
+3959	"Solomon Islands"	90	"50-54"	7.833
+3960	"Solomon Islands"	90	"55-59"	5.866
+3961	"Solomon Islands"	90	"60-64"	4.78
+3962	"Solomon Islands"	90	"65-69"	3.743
+3963	"Solomon Islands"	90	"70-74"	2.272
+3964	"Solomon Islands"	90	"75-79"	1.424
+3965	"Solomon Islands"	90	"80-84"	0.576
+3966	"Solomon Islands"	90	"85-89"	0.213
+3967	"Solomon Islands"	90	"90-94"	0.044
+3968	"Solomon Islands"	90	"95-99"	0.005
+3969	"Solomon Islands"	90	"100+"	0
+3970	"Somalia"	706	"0-4"	838.568
+3971	"Somalia"	706	"5-9"	691.998
+3972	"Somalia"	706	"10-14"	573.288
+3973	"Somalia"	706	"15-19"	465.896
+3974	"Somalia"	706	"20-24"	398.376
+3975	"Somalia"	706	"25-29"	316.134
+3976	"Somalia"	706	"30-34"	310.513
+3977	"Somalia"	706	"35-39"	247.8
+3978	"Somalia"	706	"40-44"	202.211
+3979	"Somalia"	706	"45-49"	162.226
+3980	"Somalia"	706	"50-54"	130.501
+3981	"Somalia"	706	"55-59"	103.013
+3982	"Somalia"	706	"60-64"	71.926
+3983	"Somalia"	706	"65-69"	49.783
+3984	"Somalia"	706	"70-74"	34.328
+3985	"Somalia"	706	"75-79"	18.906
+3986	"Somalia"	706	"80-84"	8.515
+3987	"Somalia"	706	"85-89"	2.606
+3988	"Somalia"	706	"90-94"	0.477
+3989	"Somalia"	706	"95-99"	0.044
+3990	"Somalia"	706	"100+"	0.002
+3991	"South Africa"	710	"0-4"	2538.734
+3992	"South Africa"	710	"5-9"	2559.867
+3993	"South Africa"	710	"10-14"	2489.713
+3994	"South Africa"	710	"15-19"	2503.178
+3995	"South Africa"	710	"20-24"	2552.728
+3996	"South Africa"	710	"25-29"	2423.253
+3997	"South Africa"	710	"30-34"	2085.122
+3998	"South Africa"	710	"35-39"	1734.047
+3999	"South Africa"	710	"40-44"	1401.737
+4000	"South Africa"	710	"45-49"	1172.214
+4001	"South Africa"	710	"50-54"	1019.66
+4002	"South Africa"	710	"55-59"	836.913
+4003	"South Africa"	710	"60-64"	614.515
+4004	"South Africa"	710	"65-69"	424.448
+4005	"South Africa"	710	"70-74"	252.231
+4006	"South Africa"	710	"75-79"	133.894
+4007	"South Africa"	710	"80-84"	58.7
+4008	"South Africa"	710	"85-89"	18.504
+4009	"South Africa"	710	"90-94"	4.211
+4010	"South Africa"	710	"95-99"	0.58
+4011	"South Africa"	710	"100+"	0.051
+4012	"Spain"	724	"0-4"	1297.01
+4013	"Spain"	724	"5-9"	1182.949
+4014	"Spain"	724	"10-14"	1063.392
+4015	"Spain"	724	"15-19"	1133.339
+4016	"Spain"	724	"20-24"	1301.144
+4017	"Spain"	724	"25-29"	1708.859
+4018	"Spain"	724	"30-34"	2099.753
+4019	"Spain"	724	"35-39"	2043.065
+4020	"Spain"	724	"40-44"	1903.863
+4021	"Spain"	724	"45-49"	1737.922
+4022	"Spain"	724	"50-54"	1504.66
+4023	"Spain"	724	"55-59"	1268.682
+4024	"Spain"	724	"60-64"	1179.104
+4025	"Spain"	724	"65-69"	961.77
+4026	"Spain"	724	"70-74"	804.564
+4027	"Spain"	724	"75-79"	737.796
+4028	"Spain"	724	"80-84"	493.319
+4029	"Spain"	724	"85-89"	242.15
+4030	"Spain"	724	"90-94"	70.464
+4031	"Spain"	724	"95-99"	13.367
+4032	"Spain"	724	"100+"	1.151
+4033	"Sri Lanka"	144	"0-4"	963.898
+4034	"Sri Lanka"	144	"5-9"	886.321
+4035	"Sri Lanka"	144	"10-14"	790.302
+4036	"Sri Lanka"	144	"15-19"	822.592
+4037	"Sri Lanka"	144	"20-24"	837.528
+4038	"Sri Lanka"	144	"25-29"	876.668
+4039	"Sri Lanka"	144	"30-34"	806.032
+4040	"Sri Lanka"	144	"35-39"	704.863
+4041	"Sri Lanka"	144	"40-44"	699.528
+4042	"Sri Lanka"	144	"45-49"	653.214
+4043	"Sri Lanka"	144	"50-54"	597.933
+4044	"Sri Lanka"	144	"55-59"	478.647
+4045	"Sri Lanka"	144	"60-64"	407.166
+4046	"Sri Lanka"	144	"65-69"	292.223
+4047	"Sri Lanka"	144	"70-74"	209.022
+4048	"Sri Lanka"	144	"75-79"	135.756
+4049	"Sri Lanka"	144	"80-84"	79.318
+4050	"Sri Lanka"	144	"85-89"	38.748
+4051	"Sri Lanka"	144	"90-94"	14.485
+4052	"Sri Lanka"	144	"95-99"	4.029
+4053	"Sri Lanka"	144	"100+"	0.841
+4054	"Sudan"	736	"0-4"	3260.103
+4055	"Sudan"	736	"5-9"	2977.487
+4056	"Sudan"	736	"10-14"	2659.845
+4057	"Sudan"	736	"15-19"	2325.819
+4058	"Sudan"	736	"20-24"	2021.675
+4059	"Sudan"	736	"25-29"	1758.447
+4060	"Sudan"	736	"30-34"	1492.212
+4061	"Sudan"	736	"35-39"	1250.162
+4062	"Sudan"	736	"40-44"	1018.948
+4063	"Sudan"	736	"45-49"	825.768
+4064	"Sudan"	736	"50-54"	669.933
+4065	"Sudan"	736	"55-59"	532.764
+4066	"Sudan"	736	"60-64"	430.236
+4067	"Sudan"	736	"65-69"	311.626
+4068	"Sudan"	736	"70-74"	210.857
+4069	"Sudan"	736	"75-79"	124.478
+4070	"Sudan"	736	"80-84"	55.444
+4071	"Sudan"	736	"85-89"	14.741
+4072	"Sudan"	736	"90-94"	2.018
+4073	"Sudan"	736	"95-99"	0.165
+4074	"Sudan"	736	"100+"	0.003
+4075	"Suriname"	740	"0-4"	24.599
+4076	"Suriname"	740	"5-9"	26.068
+4077	"Suriname"	740	"10-14"	25.73
+4078	"Suriname"	740	"15-19"	22.235
+4079	"Suriname"	740	"20-24"	23.143
+4080	"Suriname"	740	"25-29"	22.587
+4081	"Suriname"	740	"30-34"	18.505
+4082	"Suriname"	740	"35-39"	19.758
+4083	"Suriname"	740	"40-44"	18.643
+4084	"Suriname"	740	"45-49"	17.769
+4085	"Suriname"	740	"50-54"	12.993
+4086	"Suriname"	740	"55-59"	9.473
+4087	"Suriname"	740	"60-64"	7.061
+4088	"Suriname"	740	"65-69"	5.479
+4089	"Suriname"	740	"70-74"	4.161
+4090	"Suriname"	740	"75-79"	2.742
+4091	"Suriname"	740	"80-84"	1.384
+4092	"Suriname"	740	"85-89"	0.549
+4093	"Suriname"	740	"90-94"	0.136
+4094	"Suriname"	740	"95-99"	0.029
+4095	"Suriname"	740	"100+"	0.004
+4096	"Swaziland"	748	"0-4"	79.002
+4097	"Swaziland"	748	"5-9"	75.24
+4098	"Swaziland"	748	"10-14"	75.178
+4099	"Swaziland"	748	"15-19"	77.534
+4100	"Swaziland"	748	"20-24"	71.572
+4101	"Swaziland"	748	"25-29"	53.024
+4102	"Swaziland"	748	"30-34"	35.182
+4103	"Swaziland"	748	"35-39"	25.572
+4104	"Swaziland"	748	"40-44"	20.638
+4105	"Swaziland"	748	"45-49"	16.59
+4106	"Swaziland"	748	"50-54"	14.218
+4107	"Swaziland"	748	"55-59"	12.24
+4108	"Swaziland"	748	"60-64"	10.102
+4109	"Swaziland"	748	"65-69"	7.386
+4110	"Swaziland"	748	"70-74"	5.094
+4111	"Swaziland"	748	"75-79"	2.706
+4112	"Swaziland"	748	"80-84"	1.2
+4113	"Swaziland"	748	"85-89"	0.423
+4114	"Swaziland"	748	"90-94"	0.086
+4115	"Swaziland"	748	"95-99"	0.008
+4116	"Swaziland"	748	"100+"	0
+4117	"Sweden"	752	"0-4"	286.624
+4118	"Sweden"	752	"5-9"	260.612
+4119	"Sweden"	752	"10-14"	249.249
+4120	"Sweden"	752	"15-19"	326.403
+4121	"Sweden"	752	"20-24"	319.367
+4122	"Sweden"	752	"25-29"	288.835
+4123	"Sweden"	752	"30-34"	300.179
+4124	"Sweden"	752	"35-39"	321.971
+4125	"Sweden"	752	"40-44"	337.044
+4126	"Sweden"	752	"45-49"	323.206
+4127	"Sweden"	752	"50-54"	291.681
+4128	"Sweden"	752	"55-59"	287.881
+4129	"Sweden"	752	"60-64"	312.548
+4130	"Sweden"	752	"65-69"	266.017
+4131	"Sweden"	752	"70-74"	181.161
+4132	"Sweden"	752	"75-79"	135.541
+4133	"Sweden"	752	"80-84"	100.618
+4134	"Sweden"	752	"85-89"	59.861
+4135	"Sweden"	752	"90-94"	18.887
+4136	"Sweden"	752	"95-99"	3.185
+4137	"Sweden"	752	"100+"	0.253
+4138	"Switzerland"	756	"0-4"	193.196
+4139	"Switzerland"	756	"5-9"	194.124
+4140	"Switzerland"	756	"10-14"	213.705
+4141	"Switzerland"	756	"15-19"	236.993
+4142	"Switzerland"	756	"20-24"	230.056
+4143	"Switzerland"	756	"25-29"	244.074
+4144	"Switzerland"	756	"30-34"	249.801
+4145	"Switzerland"	756	"35-39"	285.049
+4146	"Switzerland"	756	"40-44"	330.387
+4147	"Switzerland"	756	"45-49"	309.177
+4148	"Switzerland"	756	"50-54"	268.918
+4149	"Switzerland"	756	"55-59"	237.739
+4150	"Switzerland"	756	"60-64"	230.029
+4151	"Switzerland"	756	"65-69"	175.617
+4152	"Switzerland"	756	"70-74"	135.623
+4153	"Switzerland"	756	"75-79"	106.876
+4154	"Switzerland"	756	"80-84"	69.505
+4155	"Switzerland"	756	"85-89"	39.755
+4156	"Switzerland"	756	"90-94"	12.937
+4157	"Switzerland"	756	"95-99"	3.065
+4158	"Switzerland"	756	"100+"	0.325
+4159	"Syrian Arab Republic"	760	"0-4"	1279.621
+4160	"Syrian Arab Republic"	760	"5-9"	1335.623
+4161	"Syrian Arab Republic"	760	"10-14"	1255.307
+4162	"Syrian Arab Republic"	760	"15-19"	1170.336
+4163	"Syrian Arab Republic"	760	"20-24"	996.492
+4164	"Syrian Arab Republic"	760	"25-29"	813.962
+4165	"Syrian Arab Republic"	760	"30-34"	672.693
+4166	"Syrian Arab Republic"	760	"35-39"	585.06
+4167	"Syrian Arab Republic"	760	"40-44"	535.7
+4168	"Syrian Arab Republic"	760	"45-49"	421.81
+4169	"Syrian Arab Republic"	760	"50-54"	366.134
+4170	"Syrian Arab Republic"	760	"55-59"	312.65
+4171	"Syrian Arab Republic"	760	"60-64"	207.641
+4172	"Syrian Arab Republic"	760	"65-69"	144.845
+4173	"Syrian Arab Republic"	760	"70-74"	103.56
+4174	"Syrian Arab Republic"	760	"75-79"	67.954
+4175	"Syrian Arab Republic"	760	"80-84"	39.542
+4176	"Syrian Arab Republic"	760	"85-89"	16.314
+4177	"Syrian Arab Republic"	760	"90-94"	3.875
+4178	"Syrian Arab Republic"	760	"95-99"	0.665
+4179	"Syrian Arab Republic"	760	"100+"	0.077
+4180	"Taiwan, Province of China"	158	"0-4"	532.434
+4181	"Taiwan, Province of China"	158	"5-9"	592.075
+4182	"Taiwan, Province of China"	158	"10-14"	798.247
+4183	"Taiwan, Province of China"	158	"15-19"	853.47
+4184	"Taiwan, Province of China"	158	"20-24"	833.307
+4185	"Taiwan, Province of China"	158	"25-29"	981.304
+4186	"Taiwan, Province of China"	158	"30-34"	1015.366
+4187	"Taiwan, Province of China"	158	"35-39"	907.262
+4188	"Taiwan, Province of China"	158	"40-44"	948.952
+4189	"Taiwan, Province of China"	158	"45-49"	968.494
+4190	"Taiwan, Province of China"	158	"50-54"	889.976
+4191	"Taiwan, Province of China"	158	"55-59"	763.051
+4192	"Taiwan, Province of China"	158	"60-64"	474.098
+4193	"Taiwan, Province of China"	158	"65-69"	357.837
+4194	"Taiwan, Province of China"	158	"70-74"	294.056
+4195	"Taiwan, Province of China"	158	"75-79"	239.054
+4196	"Taiwan, Province of China"	158	"80-84"	185.043
+4197	"Taiwan, Province of China"	158	"85-89"	83.781
+4198	"Taiwan, Province of China"	158	"90-94"	24.2
+4199	"Taiwan, Province of China"	158	"95-99"	5.314
+4200	"Taiwan, Province of China"	158	"100+"	0.482
+4201	"Tajikistan"	762	"0-4"	445.411
+4202	"Tajikistan"	762	"5-9"	424.194
+4203	"Tajikistan"	762	"10-14"	428.925
+4204	"Tajikistan"	762	"15-19"	424.389
+4205	"Tajikistan"	762	"20-24"	386.513
+4206	"Tajikistan"	762	"25-29"	271.911
+4207	"Tajikistan"	762	"30-34"	191.709
+4208	"Tajikistan"	762	"35-39"	168.243
+4209	"Tajikistan"	762	"40-44"	149.649
+4210	"Tajikistan"	762	"45-49"	155.016
+4211	"Tajikistan"	762	"50-54"	117.636
+4212	"Tajikistan"	762	"55-59"	73.084
+4213	"Tajikistan"	762	"60-64"	44.537
+4214	"Tajikistan"	762	"65-69"	32.816
+4215	"Tajikistan"	762	"70-74"	35.383
+4216	"Tajikistan"	762	"75-79"	19.694
+4217	"Tajikistan"	762	"80-84"	12.057
+4218	"Tajikistan"	762	"85-89"	2.926
+4219	"Tajikistan"	762	"90-94"	0.533
+4220	"Tajikistan"	762	"95-99"	0.129
+4221	"Tajikistan"	762	"100+"	0.018
+4222	"TFYR Macedonia"	807	"0-4"	58.094
+4223	"TFYR Macedonia"	807	"5-9"	61.17
+4224	"TFYR Macedonia"	807	"10-14"	69.275
+4225	"TFYR Macedonia"	807	"15-19"	79.03
+4226	"TFYR Macedonia"	807	"20-24"	82.255
+4227	"TFYR Macedonia"	807	"25-29"	85.544
+4228	"TFYR Macedonia"	807	"30-34"	82.981
+4229	"TFYR Macedonia"	807	"35-39"	77.78
+4230	"TFYR Macedonia"	807	"40-44"	75.131
+4231	"TFYR Macedonia"	807	"45-49"	72.773
+4232	"TFYR Macedonia"	807	"50-54"	70.652
+4233	"TFYR Macedonia"	807	"55-59"	64.486
+4234	"TFYR Macedonia"	807	"60-64"	48.218
+4235	"TFYR Macedonia"	807	"65-69"	37.941
+4236	"TFYR Macedonia"	807	"70-74"	30.36
+4237	"TFYR Macedonia"	807	"75-79"	21.432
+4238	"TFYR Macedonia"	807	"80-84"	10.456
+4239	"TFYR Macedonia"	807	"85-89"	3.866
+4240	"TFYR Macedonia"	807	"90-94"	0.625
+4241	"TFYR Macedonia"	807	"95-99"	0.093
+4242	"TFYR Macedonia"	807	"100+"	0.004
+4243	"Thailand"	764	"0-4"	2243.828
+4244	"Thailand"	764	"5-9"	2461.662
+4245	"Thailand"	764	"10-14"	2578.794
+4246	"Thailand"	764	"15-19"	2673.962
+4247	"Thailand"	764	"20-24"	2667.576
+4248	"Thailand"	764	"25-29"	2711.424
+4249	"Thailand"	764	"30-34"	2730.477
+4250	"Thailand"	764	"35-39"	2697.655
+4251	"Thailand"	764	"40-44"	2644.64
+4252	"Thailand"	764	"45-49"	2437.9
+4253	"Thailand"	764	"50-54"	2249.553
+4254	"Thailand"	764	"55-59"	1839.293
+4255	"Thailand"	764	"60-64"	1323.72
+4256	"Thailand"	764	"65-69"	959.237
+4257	"Thailand"	764	"70-74"	772.204
+4258	"Thailand"	764	"75-79"	518.485
+4259	"Thailand"	764	"80-84"	302.33
+4260	"Thailand"	764	"85-89"	119.308
+4261	"Thailand"	764	"90-94"	33.23
+4262	"Thailand"	764	"95-99"	6.369
+4263	"Thailand"	764	"100+"	0.701
+4264	"Timor-Leste"	626	"0-4"	98.633
+4265	"Timor-Leste"	626	"5-9"	83.872
+4266	"Timor-Leste"	626	"10-14"	83.284
+4267	"Timor-Leste"	626	"15-19"	67.519
+4268	"Timor-Leste"	626	"20-24"	49.537
+4269	"Timor-Leste"	626	"25-29"	42.57
+4270	"Timor-Leste"	626	"30-34"	25.626
+4271	"Timor-Leste"	626	"35-39"	28.484
+4272	"Timor-Leste"	626	"40-44"	20.791
+4273	"Timor-Leste"	626	"45-49"	16.681
+4274	"Timor-Leste"	626	"50-54"	16.572
+4275	"Timor-Leste"	626	"55-59"	14.228
+4276	"Timor-Leste"	626	"60-64"	9.806
+4277	"Timor-Leste"	626	"65-69"	7.053
+4278	"Timor-Leste"	626	"70-74"	4.973
+4279	"Timor-Leste"	626	"75-79"	2.275
+4280	"Timor-Leste"	626	"80-84"	0.938
+4281	"Timor-Leste"	626	"85-89"	0.272
+4282	"Timor-Leste"	626	"90-94"	0.045
+4283	"Timor-Leste"	626	"95-99"	0.005
+4284	"Timor-Leste"	626	"100+"	0
+4285	"Togo"	768	"0-4"	432.143
+4286	"Togo"	768	"5-9"	397.993
+4287	"Togo"	768	"10-14"	364.857
+4288	"Togo"	768	"15-19"	330.166
+4289	"Togo"	768	"20-24"	293.061
+4290	"Togo"	768	"25-29"	253.261
+4291	"Togo"	768	"30-34"	211.258
+4292	"Togo"	768	"35-39"	169.068
+4293	"Togo"	768	"40-44"	132.54
+4294	"Togo"	768	"45-49"	105.359
+4295	"Togo"	768	"50-54"	83.56
+4296	"Togo"	768	"55-59"	66.553
+4297	"Togo"	768	"60-64"	52.207
+4298	"Togo"	768	"65-69"	39.785
+4299	"Togo"	768	"70-74"	26.833
+4300	"Togo"	768	"75-79"	15.882
+4301	"Togo"	768	"80-84"	7.523
+4302	"Togo"	768	"85-89"	2.541
+4303	"Togo"	768	"90-94"	0.539
+4304	"Togo"	768	"95-99"	0.06
+4305	"Togo"	768	"100+"	0.004
+4306	"Tokelau"	772	"0-4"	0.053
+4307	"Tokelau"	772	"5-9"	0.059
+4308	"Tokelau"	772	"10-14"	0.057
+4309	"Tokelau"	772	"15-19"	0.061
+4310	"Tokelau"	772	"20-24"	0.058
+4311	"Tokelau"	772	"25-29"	0.024
+4312	"Tokelau"	772	"30-34"	0.022
+4313	"Tokelau"	772	"35-39"	0.036
+4314	"Tokelau"	772	"40-44"	0.036
+4315	"Tokelau"	772	"45-49"	0.025
+4316	"Tokelau"	772	"50-54"	0.026
+4317	"Tokelau"	772	"55-59"	0.022
+4318	"Tokelau"	772	"60-64"	0.012
+4319	"Tokelau"	772	"65-69"	0.016
+4320	"Tokelau"	772	"70-74"	0.012
+4321	"Tokelau"	772	"75-79"	0.008
+4322	"Tokelau"	772	"80-84"	0.007
+4323	"Tokelau"	772	"85-89"	0.004
+4324	"Tokelau"	772	"90-94"	0.002
+4325	"Tokelau"	772	"95-99"	0
+4326	"Tokelau"	772	"100+"	0
+4327	"Tonga"	776	"0-4"	7.117
+4328	"Tonga"	776	"5-9"	6.85
+4329	"Tonga"	776	"10-14"	6.322
+4330	"Tonga"	776	"15-19"	5.597
+4331	"Tonga"	776	"20-24"	4.25
+4332	"Tonga"	776	"25-29"	3.854
+4333	"Tonga"	776	"30-34"	3.343
+4334	"Tonga"	776	"35-39"	3.236
+4335	"Tonga"	776	"40-44"	2.57
+4336	"Tonga"	776	"45-49"	2.072
+4337	"Tonga"	776	"50-54"	2
+4338	"Tonga"	776	"55-59"	1.257
+4339	"Tonga"	776	"60-64"	1.019
+4340	"Tonga"	776	"65-69"	0.911
+4341	"Tonga"	776	"70-74"	0.751
+4342	"Tonga"	776	"75-79"	0.502
+4343	"Tonga"	776	"80-84"	0.306
+4344	"Tonga"	776	"85-89"	0.114
+4345	"Tonga"	776	"90-94"	0.032
+4346	"Tonga"	776	"95-99"	0.006
+4347	"Tonga"	776	"100+"	0.001
+4348	"Trinidad and Tobago"	780	"0-4"	48.47
+4349	"Trinidad and Tobago"	780	"5-9"	45.581
+4350	"Trinidad and Tobago"	780	"10-14"	46.013
+4351	"Trinidad and Tobago"	780	"15-19"	53.063
+4352	"Trinidad and Tobago"	780	"20-24"	67.332
+4353	"Trinidad and Tobago"	780	"25-29"	70.029
+4354	"Trinidad and Tobago"	780	"30-34"	54.516
+4355	"Trinidad and Tobago"	780	"35-39"	47.897
+4356	"Trinidad and Tobago"	780	"40-44"	43.92
+4357	"Trinidad and Tobago"	780	"45-49"	47.959
+4358	"Trinidad and Tobago"	780	"50-54"	38.747
+4359	"Trinidad and Tobago"	780	"55-59"	28.783
+4360	"Trinidad and Tobago"	780	"60-64"	22.397
+4361	"Trinidad and Tobago"	780	"65-69"	14.99
+4362	"Trinidad and Tobago"	780	"70-74"	9.981
+4363	"Trinidad and Tobago"	780	"75-79"	5.59
+4364	"Trinidad and Tobago"	780	"80-84"	3.021
+4365	"Trinidad and Tobago"	780	"85-89"	1.304
+4366	"Trinidad and Tobago"	780	"90-94"	0.399
+4367	"Trinidad and Tobago"	780	"95-99"	0.084
+4368	"Trinidad and Tobago"	780	"100+"	0.009
+4369	"Tunisia"	788	"0-4"	443.42
+4370	"Tunisia"	788	"5-9"	400.516
+4371	"Tunisia"	788	"10-14"	410.903
+4372	"Tunisia"	788	"15-19"	484.464
+4373	"Tunisia"	788	"20-24"	528.465
+4374	"Tunisia"	788	"25-29"	503.489
+4375	"Tunisia"	788	"30-34"	455.395
+4376	"Tunisia"	788	"35-39"	386.792
+4377	"Tunisia"	788	"40-44"	330.588
+4378	"Tunisia"	788	"45-49"	292.255
+4379	"Tunisia"	788	"50-54"	271.797
+4380	"Tunisia"	788	"55-59"	230.332
+4381	"Tunisia"	788	"60-64"	157.037
+4382	"Tunisia"	788	"65-69"	111.801
+4383	"Tunisia"	788	"70-74"	98.656
+4384	"Tunisia"	788	"75-79"	77.582
+4385	"Tunisia"	788	"80-84"	41.826
+4386	"Tunisia"	788	"85-89"	12.466
+4387	"Tunisia"	788	"90-94"	2.061
+4388	"Tunisia"	788	"95-99"	0.22
+4389	"Tunisia"	788	"100+"	0.003
+4390	"Turkey"	792	"0-4"	3278.684
+4391	"Turkey"	792	"5-9"	3186.983
+4392	"Turkey"	792	"10-14"	3325.334
+4393	"Turkey"	792	"15-19"	3310.446
+4394	"Turkey"	792	"20-24"	3222.701
+4395	"Turkey"	792	"25-29"	3333.47
+4396	"Turkey"	792	"30-34"	3064.86
+4397	"Turkey"	792	"35-39"	2698.754
+4398	"Turkey"	792	"40-44"	2394.225
+4399	"Turkey"	792	"45-49"	2212.232
+4400	"Turkey"	792	"50-54"	1763.854
+4401	"Turkey"	792	"55-59"	1510.726
+4402	"Turkey"	792	"60-64"	1051.335
+4403	"Turkey"	792	"65-69"	713.867
+4404	"Turkey"	792	"70-74"	571.974
+4405	"Turkey"	792	"75-79"	399.434
+4406	"Turkey"	792	"80-84"	186.576
+4407	"Turkey"	792	"85-89"	51.307
+4408	"Turkey"	792	"90-94"	7.434
+4409	"Turkey"	792	"95-99"	1.004
+4410	"Turkey"	792	"100+"	0.05
+4411	"Turkmenistan"	795	"0-4"	256.855
+4412	"Turkmenistan"	795	"5-9"	251.529
+4413	"Turkmenistan"	795	"10-14"	239.313
+4414	"Turkmenistan"	795	"15-19"	282.141
+4415	"Turkmenistan"	795	"20-24"	271.886
+4416	"Turkmenistan"	795	"25-29"	224.047
+4417	"Turkmenistan"	795	"30-34"	190.881
+4418	"Turkmenistan"	795	"35-39"	167.491
+4419	"Turkmenistan"	795	"40-44"	150.383
+4420	"Turkmenistan"	795	"45-49"	134.383
+4421	"Turkmenistan"	795	"50-54"	109.954
+4422	"Turkmenistan"	795	"55-59"	74.281
+4423	"Turkmenistan"	795	"60-64"	45.247
+4424	"Turkmenistan"	795	"65-69"	27.179
+4425	"Turkmenistan"	795	"70-74"	28.947
+4426	"Turkmenistan"	795	"75-79"	16.123
+4427	"Turkmenistan"	795	"80-84"	9.024
+4428	"Turkmenistan"	795	"85-89"	2.305
+4429	"Turkmenistan"	795	"90-94"	0.516
+4430	"Turkmenistan"	795	"95-99"	0.13
+4431	"Turkmenistan"	795	"100+"	0.016
+4432	"Turks and Caicos Islands"	796	"0-4"	1.878
+4433	"Turks and Caicos Islands"	796	"5-9"	1.627
+4434	"Turks and Caicos Islands"	796	"10-14"	1.25
+4435	"Turks and Caicos Islands"	796	"15-19"	1.14
+4436	"Turks and Caicos Islands"	796	"20-24"	1.445
+4437	"Turks and Caicos Islands"	796	"25-29"	1.909
+4438	"Turks and Caicos Islands"	796	"30-34"	2.031
+4439	"Turks and Caicos Islands"	796	"35-39"	1.933
+4440	"Turks and Caicos Islands"	796	"40-44"	1.759
+4441	"Turks and Caicos Islands"	796	"45-49"	1.47
+4442	"Turks and Caicos Islands"	796	"50-54"	1.007
+4443	"Turks and Caicos Islands"	796	"55-59"	0.667
+4444	"Turks and Caicos Islands"	796	"60-64"	0.49
+4445	"Turks and Caicos Islands"	796	"65-69"	0.307
+4446	"Turks and Caicos Islands"	796	"70-74"	0.179
+4447	"Turks and Caicos Islands"	796	"75-79"	0.098
+4448	"Turks and Caicos Islands"	796	"80-84"	0.058
+4449	"Turks and Caicos Islands"	796	"85-89"	0.019
+4450	"Turks and Caicos Islands"	796	"90-94"	0.005
+4451	"Turks and Caicos Islands"	796	"95-99"	0
+4452	"Turks and Caicos Islands"	796	"100+"	0
+4453	"Tuvalu"	798	"0-4"	0.532
+4454	"Tuvalu"	798	"5-9"	0.598
+4455	"Tuvalu"	798	"10-14"	0.615
+4456	"Tuvalu"	798	"15-19"	0.51
+4457	"Tuvalu"	798	"20-24"	0.441
+4458	"Tuvalu"	798	"25-29"	0.276
+4459	"Tuvalu"	798	"30-34"	0.191
+4460	"Tuvalu"	798	"35-39"	0.308
+4461	"Tuvalu"	798	"40-44"	0.298
+4462	"Tuvalu"	798	"45-49"	0.23
+4463	"Tuvalu"	798	"50-54"	0.135
+4464	"Tuvalu"	798	"55-59"	0.173
+4465	"Tuvalu"	798	"60-64"	0.121
+4466	"Tuvalu"	798	"65-69"	0.091
+4467	"Tuvalu"	798	"70-74"	0.064
+4468	"Tuvalu"	798	"75-79"	0.042
+4469	"Tuvalu"	798	"80-84"	0.03
+4470	"Tuvalu"	798	"85-89"	0.009
+4471	"Tuvalu"	798	"90-94"	0.002
+4472	"Tuvalu"	798	"95-99"	0
+4473	"Tuvalu"	798	"100+"	0
+4474	"Uganda"	800	"0-4"	3265.505
+4475	"Uganda"	800	"5-9"	2686.565
+4476	"Uganda"	800	"10-14"	2197.064
+4477	"Uganda"	800	"15-19"	1825.13
+4478	"Uganda"	800	"20-24"	1513.472
+4479	"Uganda"	800	"25-29"	1241.403
+4480	"Uganda"	800	"30-34"	995.921
+4481	"Uganda"	800	"35-39"	784.27
+4482	"Uganda"	800	"40-44"	580.814
+4483	"Uganda"	800	"45-49"	425.579
+4484	"Uganda"	800	"50-54"	328.582
+4485	"Uganda"	800	"55-59"	269.036
+4486	"Uganda"	800	"60-64"	211.824
+4487	"Uganda"	800	"65-69"	162.084
+4488	"Uganda"	800	"70-74"	101.522
+4489	"Uganda"	800	"75-79"	69.61
+4490	"Uganda"	800	"80-84"	32.373
+4491	"Uganda"	800	"85-89"	10.459
+4492	"Uganda"	800	"90-94"	2.029
+4493	"Uganda"	800	"95-99"	0.206
+4494	"Uganda"	800	"100+"	0.011
+4495	"Ukraine"	804	"0-4"	1220.012
+4496	"Ukraine"	804	"5-9"	1017.054
+4497	"Ukraine"	804	"10-14"	1075.952
+4498	"Ukraine"	804	"15-19"	1426.828
+4499	"Ukraine"	804	"20-24"	1829.034
+4500	"Ukraine"	804	"25-29"	1894.772
+4501	"Ukraine"	804	"30-34"	1702.365
+4502	"Ukraine"	804	"35-39"	1574.842
+4503	"Ukraine"	804	"40-44"	1431.249
+4504	"Ukraine"	804	"45-49"	1572.322
+4505	"Ukraine"	804	"50-54"	1551.906
+4506	"Ukraine"	804	"55-59"	1312.142
+4507	"Ukraine"	804	"60-64"	979.998
+4508	"Ukraine"	804	"65-69"	687.644
+4509	"Ukraine"	804	"70-74"	841.272
+4510	"Ukraine"	804	"75-79"	404.555
+4511	"Ukraine"	804	"80-84"	285.397
+4512	"Ukraine"	804	"85-89"	86.086
+4513	"Ukraine"	804	"90-94"	16.206
+4514	"Ukraine"	804	"95-99"	3.687
+4515	"Ukraine"	804	"100+"	0.362
+4516	"United Arab Emirates"	784	"0-4"	215.652
+4517	"United Arab Emirates"	784	"5-9"	213.542
+4518	"United Arab Emirates"	784	"10-14"	235.868
+4519	"United Arab Emirates"	784	"15-19"	224.295
+4520	"United Arab Emirates"	784	"20-24"	497.341
+4521	"United Arab Emirates"	784	"25-29"	907.882
+4522	"United Arab Emirates"	784	"30-34"	951.448
+4523	"United Arab Emirates"	784	"35-39"	750.412
+4524	"United Arab Emirates"	784	"40-44"	519.646
+4525	"United Arab Emirates"	784	"45-49"	336.719
+4526	"United Arab Emirates"	784	"50-54"	212.11
+4527	"United Arab Emirates"	784	"55-59"	100.897
+4528	"United Arab Emirates"	784	"60-64"	36.571
+4529	"United Arab Emirates"	784	"65-69"	9.974
+4530	"United Arab Emirates"	784	"70-74"	5.403
+4531	"United Arab Emirates"	784	"75-79"	3.279
+4532	"United Arab Emirates"	784	"80-84"	1.342
+4533	"United Arab Emirates"	784	"85-89"	0.853
+4534	"United Arab Emirates"	784	"90-94"	0.258
+4535	"United Arab Emirates"	784	"95-99"	0.098
+4536	"United Arab Emirates"	784	"100+"	0.004
+4537	"United Kingdom"	826	"0-4"	1928.732
+4538	"United Kingdom"	826	"5-9"	1760.767
+4539	"United Kingdom"	826	"10-14"	1829.14
+4540	"United Kingdom"	826	"15-19"	2019.147
+4541	"United Kingdom"	826	"20-24"	2175.413
+4542	"United Kingdom"	826	"25-29"	2115.754
+4543	"United Kingdom"	826	"30-34"	1939.803
+4544	"United Kingdom"	826	"35-39"	2095.765
+4545	"United Kingdom"	826	"40-44"	2299.919
+4546	"United Kingdom"	826	"45-49"	2249.508
+4547	"United Kingdom"	826	"50-54"	1970.805
+4548	"United Kingdom"	826	"55-59"	1768.952
+4549	"United Kingdom"	826	"60-64"	1840.132
+4550	"United Kingdom"	826	"65-69"	1422.14
+4551	"United Kingdom"	826	"70-74"	1158.884
+4552	"United Kingdom"	826	"75-79"	893.773
+4553	"United Kingdom"	826	"80-84"	603.494
+4554	"United Kingdom"	826	"85-89"	321.752
+4555	"United Kingdom"	826	"90-94"	99.256
+4556	"United Kingdom"	826	"95-99"	20.62
+4557	"United Kingdom"	826	"100+"	1.774
+4558	"United Republic of Tanzania"	834	"0-4"	4042.222
+4559	"United Republic of Tanzania"	834	"5-9"	3311.176
+4560	"United Republic of Tanzania"	834	"10-14"	2748.913
+4561	"United Republic of Tanzania"	834	"15-19"	2371.568
+4562	"United Republic of Tanzania"	834	"20-24"	2072.2
+4563	"United Republic of Tanzania"	834	"25-29"	1755.54
+4564	"United Republic of Tanzania"	834	"30-34"	1451.963
+4565	"United Republic of Tanzania"	834	"35-39"	1131.834
+4566	"United Republic of Tanzania"	834	"40-44"	866.67
+4567	"United Republic of Tanzania"	834	"45-49"	675.648
+4568	"United Republic of Tanzania"	834	"50-54"	542.623
+4569	"United Republic of Tanzania"	834	"55-59"	437.675
+4570	"United Republic of Tanzania"	834	"60-64"	359.728
+4571	"United Republic of Tanzania"	834	"65-69"	268.198
+4572	"United Republic of Tanzania"	834	"70-74"	183.063
+4573	"United Republic of Tanzania"	834	"75-79"	107.421
+4574	"United Republic of Tanzania"	834	"80-84"	50.337
+4575	"United Republic of Tanzania"	834	"85-89"	16.739
+4576	"United Republic of Tanzania"	834	"90-94"	3.434
+4577	"United Republic of Tanzania"	834	"95-99"	0.372
+4578	"United Republic of Tanzania"	834	"100+"	0.021
+4579	"United States of America"	840	"0-4"	11066.899
+4580	"United States of America"	840	"5-9"	10672.778
+4581	"United States of America"	840	"10-14"	10126.427
+4582	"United States of America"	840	"15-19"	11116.259
+4583	"United States of America"	840	"20-24"	11151.532
+4584	"United States of America"	840	"25-29"	11325.247
+4585	"United States of America"	840	"30-34"	10117.037
+4586	"United States of America"	840	"35-39"	10304.357
+4587	"United States of America"	840	"40-44"	10319.81
+4588	"United States of America"	840	"45-49"	11353.267
+4589	"United States of America"	840	"50-54"	10922.031
+4590	"United States of America"	840	"55-59"	9421.989
+4591	"United States of America"	840	"60-64"	7979.282
+4592	"United States of America"	840	"65-69"	5735.088
+4593	"United States of America"	840	"70-74"	4159.609
+4594	"United States of America"	840	"75-79"	3161.334
+4595	"United States of America"	840	"80-84"	2329.546
+4596	"United States of America"	840	"85-89"	1329.068
+4597	"United States of America"	840	"90-94"	453.952
+4598	"United States of America"	840	"95-99"	84.962
+4599	"United States of America"	840	"100+"	9.089
+4600	"United States Virgin Islands"	850	"0-4"	3.555
+4601	"United States Virgin Islands"	850	"5-9"	3.752
+4602	"United States Virgin Islands"	850	"10-14"	4.019
+4603	"United States Virgin Islands"	850	"15-19"	4.466
+4604	"United States Virgin Islands"	850	"20-24"	3.744
+4605	"United States Virgin Islands"	850	"25-29"	3.103
+4606	"United States Virgin Islands"	850	"30-34"	2.055
+4607	"United States Virgin Islands"	850	"35-39"	2.622
+4608	"United States Virgin Islands"	850	"40-44"	3.308
+4609	"United States Virgin Islands"	850	"45-49"	3.652
+4610	"United States Virgin Islands"	850	"50-54"	3.659
+4611	"United States Virgin Islands"	850	"55-59"	3.285
+4612	"United States Virgin Islands"	850	"60-64"	3.526
+4613	"United States Virgin Islands"	850	"65-69"	2.924
+4614	"United States Virgin Islands"	850	"70-74"	1.858
+4615	"United States Virgin Islands"	850	"75-79"	1.109
+4616	"United States Virgin Islands"	850	"80-84"	0.64
+4617	"United States Virgin Islands"	850	"85-89"	0.262
+4618	"United States Virgin Islands"	850	"90-94"	0.083
+4619	"United States Virgin Islands"	850	"95-99"	0.027
+4620	"United States Virgin Islands"	850	"100+"	0.001
+4621	"Uruguay"	858	"0-4"	126.081
+4622	"Uruguay"	858	"5-9"	128.458
+4623	"Uruguay"	858	"10-14"	132.648
+4624	"Uruguay"	858	"15-19"	135.618
+4625	"Uruguay"	858	"20-24"	126.769
+4626	"Uruguay"	858	"25-29"	115.884
+4627	"Uruguay"	858	"30-34"	120.974
+4628	"Uruguay"	858	"35-39"	113.181
+4629	"Uruguay"	858	"40-44"	99.774
+4630	"Uruguay"	858	"45-49"	100.076
+4631	"Uruguay"	858	"50-54"	93.386
+4632	"Uruguay"	858	"55-59"	81.227
+4633	"Uruguay"	858	"60-64"	69.974
+4634	"Uruguay"	858	"65-69"	58.784
+4635	"Uruguay"	858	"70-74"	46.421
+4636	"Uruguay"	858	"75-79"	37.523
+4637	"Uruguay"	858	"80-84"	23.73
+4638	"Uruguay"	858	"85-89"	10.952
+4639	"Uruguay"	858	"90-94"	3.494
+4640	"Uruguay"	858	"95-99"	0.852
+4641	"Uruguay"	858	"100+"	0.112
+4642	"Uzbekistan"	860	"0-4"	1395.063
+4643	"Uzbekistan"	860	"5-9"	1292.597
+4644	"Uzbekistan"	860	"10-14"	1415.776
+4645	"Uzbekistan"	860	"15-19"	1605.11
+4646	"Uzbekistan"	860	"20-24"	1519.771
+4647	"Uzbekistan"	860	"25-29"	1237.743
+4648	"Uzbekistan"	860	"30-34"	1010.399
+4649	"Uzbekistan"	860	"35-39"	896.691
+4650	"Uzbekistan"	860	"40-44"	761.681
+4651	"Uzbekistan"	860	"45-49"	741.329
+4652	"Uzbekistan"	860	"50-54"	608.027
+4653	"Uzbekistan"	860	"55-59"	406.449
+4654	"Uzbekistan"	860	"60-64"	238.856
+4655	"Uzbekistan"	860	"65-69"	153.402
+4656	"Uzbekistan"	860	"70-74"	174.498
+4657	"Uzbekistan"	860	"75-79"	98.367
+4658	"Uzbekistan"	860	"80-84"	61.448
+4659	"Uzbekistan"	860	"85-89"	17.486
+4660	"Uzbekistan"	860	"90-94"	4.208
+4661	"Uzbekistan"	860	"95-99"	1.464
+4662	"Uzbekistan"	860	"100+"	0.379
+4663	"Vanuatu"	548	"0-4"	17.066
+4664	"Vanuatu"	548	"5-9"	15.665
+4665	"Vanuatu"	548	"10-14"	14.431
+4666	"Vanuatu"	548	"15-19"	13.101
+4667	"Vanuatu"	548	"20-24"	11.709
+4668	"Vanuatu"	548	"25-29"	10.351
+4669	"Vanuatu"	548	"30-34"	8.124
+4670	"Vanuatu"	548	"35-39"	6.555
+4671	"Vanuatu"	548	"40-44"	5.957
+4672	"Vanuatu"	548	"45-49"	5.168
+4673	"Vanuatu"	548	"50-54"	4.121
+4674	"Vanuatu"	548	"55-59"	3.149
+4675	"Vanuatu"	548	"60-64"	2.464
+4676	"Vanuatu"	548	"65-69"	1.796
+4677	"Vanuatu"	548	"70-74"	1.167
+4678	"Vanuatu"	548	"75-79"	0.702
+4679	"Vanuatu"	548	"80-84"	0.361
+4680	"Vanuatu"	548	"85-89"	0.146
+4681	"Vanuatu"	548	"90-94"	0.039
+4682	"Vanuatu"	548	"95-99"	0.006
+4683	"Vanuatu"	548	"100+"	0
+4684	"Venezuela (Bolivarian Republic of)"	862	"0-4"	1495.316
+4685	"Venezuela (Bolivarian Republic of)"	862	"5-9"	1454.002
+4686	"Venezuela (Bolivarian Republic of)"	862	"10-14"	1410.355
+4687	"Venezuela (Bolivarian Republic of)"	862	"15-19"	1385.462
+4688	"Venezuela (Bolivarian Republic of)"	862	"20-24"	1360.129
+4689	"Venezuela (Bolivarian Republic of)"	862	"25-29"	1235.226
+4690	"Venezuela (Bolivarian Republic of)"	862	"30-34"	1119.237
+4691	"Venezuela (Bolivarian Republic of)"	862	"35-39"	961.258
+4692	"Venezuela (Bolivarian Republic of)"	862	"40-44"	905.648
+4693	"Venezuela (Bolivarian Republic of)"	862	"45-49"	823.978
+4694	"Venezuela (Bolivarian Republic of)"	862	"50-54"	665
+4695	"Venezuela (Bolivarian Republic of)"	862	"55-59"	553.093
+4696	"Venezuela (Bolivarian Republic of)"	862	"60-64"	427.01
+4697	"Venezuela (Bolivarian Republic of)"	862	"65-69"	297.598
+4698	"Venezuela (Bolivarian Republic of)"	862	"70-74"	197.25
+4699	"Venezuela (Bolivarian Republic of)"	862	"75-79"	131.298
+4700	"Venezuela (Bolivarian Republic of)"	862	"80-84"	76.271
+4701	"Venezuela (Bolivarian Republic of)"	862	"85-89"	31.34
+4702	"Venezuela (Bolivarian Republic of)"	862	"90-94"	9.558
+4703	"Venezuela (Bolivarian Republic of)"	862	"95-99"	1.872
+4704	"Venezuela (Bolivarian Republic of)"	862	"100+"	0.218
+4705	"Viet Nam"	704	"0-4"	3674.625
+4706	"Viet Nam"	704	"5-9"	3429.58
+4707	"Viet Nam"	704	"10-14"	3501.775
+4708	"Viet Nam"	704	"15-19"	4573.024
+4709	"Viet Nam"	704	"20-24"	4542.113
+4710	"Viet Nam"	704	"25-29"	4167.299
+4711	"Viet Nam"	704	"30-34"	3524.261
+4712	"Viet Nam"	704	"35-39"	3302.339
+4713	"Viet Nam"	704	"40-44"	2980.791
+4714	"Viet Nam"	704	"45-49"	2699.531
+4715	"Viet Nam"	704	"50-54"	2205.669
+4716	"Viet Nam"	704	"55-59"	1716.774
+4717	"Viet Nam"	704	"60-64"	911.608
+4718	"Viet Nam"	704	"65-69"	702.759
+4719	"Viet Nam"	704	"70-74"	587.713
+4720	"Viet Nam"	704	"75-79"	478.907
+4721	"Viet Nam"	704	"80-84"	263.268
+4722	"Viet Nam"	704	"85-89"	118.492
+4723	"Viet Nam"	704	"90-94"	31.936
+4724	"Viet Nam"	704	"95-99"	5.084
+4725	"Viet Nam"	704	"100+"	0.352
+4726	"Wallis and Futuna Islands"	876	"0-4"	0.548
+4727	"Wallis and Futuna Islands"	876	"5-9"	0.592
+4728	"Wallis and Futuna Islands"	876	"10-14"	0.731
+4729	"Wallis and Futuna Islands"	876	"15-19"	0.766
+4730	"Wallis and Futuna Islands"	876	"20-24"	0.419
+4731	"Wallis and Futuna Islands"	876	"25-29"	0.283
+4732	"Wallis and Futuna Islands"	876	"30-34"	0.373
+4733	"Wallis and Futuna Islands"	876	"35-39"	0.496
+4734	"Wallis and Futuna Islands"	876	"40-44"	0.525
+4735	"Wallis and Futuna Islands"	876	"45-49"	0.385
+4736	"Wallis and Futuna Islands"	876	"50-54"	0.369
+4737	"Wallis and Futuna Islands"	876	"55-59"	0.406
+4738	"Wallis and Futuna Islands"	876	"60-64"	0.312
+4739	"Wallis and Futuna Islands"	876	"65-69"	0.258
+4740	"Wallis and Futuna Islands"	876	"70-74"	0.163
+4741	"Wallis and Futuna Islands"	876	"75-79"	0.076
+4742	"Wallis and Futuna Islands"	876	"80-84"	0.034
+4743	"Wallis and Futuna Islands"	876	"85-89"	0.019
+4744	"Wallis and Futuna Islands"	876	"90-94"	0.008
+4745	"Wallis and Futuna Islands"	876	"95-99"	0.001
+4746	"Wallis and Futuna Islands"	876	"100+"	0
+4747	"Western Sahara"	732	"0-4"	28.139
+4748	"Western Sahara"	732	"5-9"	25.134
+4749	"Western Sahara"	732	"10-14"	23.605
+4750	"Western Sahara"	732	"15-19"	24.414
+4751	"Western Sahara"	732	"20-24"	26.163
+4752	"Western Sahara"	732	"25-29"	27.344
+4753	"Western Sahara"	732	"30-34"	26.687
+4754	"Western Sahara"	732	"35-39"	24.821
+4755	"Western Sahara"	732	"40-44"	21.702
+4756	"Western Sahara"	732	"45-49"	17.809
+4757	"Western Sahara"	732	"50-54"	13.552
+4758	"Western Sahara"	732	"55-59"	9.09
+4759	"Western Sahara"	732	"60-64"	5.061
+4760	"Western Sahara"	732	"65-69"	2.919
+4761	"Western Sahara"	732	"70-74"	1.972
+4762	"Western Sahara"	732	"75-79"	1.125
+4763	"Western Sahara"	732	"80-84"	0.6
+4764	"Western Sahara"	732	"85-89"	0.211
+4765	"Western Sahara"	732	"90-94"	0.038
+4766	"Western Sahara"	732	"95-99"	0.003
+4767	"Western Sahara"	732	"100+"	0
+4768	"Yemen"	887	"0-4"	2070.27
+4769	"Yemen"	887	"5-9"	1775.269
+4770	"Yemen"	887	"10-14"	1580.807
+4771	"Yemen"	887	"15-19"	1462.073
+4772	"Yemen"	887	"20-24"	1246.411
+4773	"Yemen"	887	"25-29"	1023.083
+4774	"Yemen"	887	"30-34"	745.691
+4775	"Yemen"	887	"35-39"	508.299
+4776	"Yemen"	887	"40-44"	402.621
+4777	"Yemen"	887	"45-49"	338.187
+4778	"Yemen"	887	"50-54"	281.878
+4779	"Yemen"	887	"55-59"	217.207
+4780	"Yemen"	887	"60-64"	173.019
+4781	"Yemen"	887	"65-69"	123.584
+4782	"Yemen"	887	"70-74"	79.351
+4783	"Yemen"	887	"75-79"	45.355
+4784	"Yemen"	887	"80-84"	21.476
+4785	"Yemen"	887	"85-89"	7.342
+4786	"Yemen"	887	"90-94"	1.478
+4787	"Yemen"	887	"95-99"	0.184
+4788	"Yemen"	887	"100+"	0.009
+4789	"Zambia"	894	"0-4"	1214.494
+4790	"Zambia"	894	"5-9"	989.285
+4791	"Zambia"	894	"10-14"	847.182
+4792	"Zambia"	894	"15-19"	701.971
+4793	"Zambia"	894	"20-24"	605.471
+4794	"Zambia"	894	"25-29"	515.132
+4795	"Zambia"	894	"30-34"	431.442
+4796	"Zambia"	894	"35-39"	330.375
+4797	"Zambia"	894	"40-44"	237.488
+4798	"Zambia"	894	"45-49"	169.95
+4799	"Zambia"	894	"50-54"	130.405
+4800	"Zambia"	894	"55-59"	108.4
+4801	"Zambia"	894	"60-64"	98.234
+4802	"Zambia"	894	"65-69"	76.458
+4803	"Zambia"	894	"70-74"	53.145
+4804	"Zambia"	894	"75-79"	30.465
+4805	"Zambia"	894	"80-84"	13.8
+4806	"Zambia"	894	"85-89"	4.38
+4807	"Zambia"	894	"90-94"	0.878
+4808	"Zambia"	894	"95-99"	0.094
+4809	"Zambia"	894	"100+"	0.006
+4810	"Zimbabwe"	716	"0-4"	850.046
+4811	"Zimbabwe"	716	"5-9"	799.076
+4812	"Zimbabwe"	716	"10-14"	801.022
+4813	"Zimbabwe"	716	"15-19"	808.146
+4814	"Zimbabwe"	716	"20-24"	734.663
+4815	"Zimbabwe"	716	"25-29"	605.01
+4816	"Zimbabwe"	716	"30-34"	431.59
+4817	"Zimbabwe"	716	"35-39"	270.49
+4818	"Zimbabwe"	716	"40-44"	177.196
+4819	"Zimbabwe"	716	"45-49"	142.512
+4820	"Zimbabwe"	716	"50-54"	128.139
+4821	"Zimbabwe"	716	"55-59"	123.153
+4822	"Zimbabwe"	716	"60-64"	93.513
+4823	"Zimbabwe"	716	"65-69"	90.607
+4824	"Zimbabwe"	716	"70-74"	66.533
+4825	"Zimbabwe"	716	"75-79"	42.521
+4826	"Zimbabwe"	716	"80-84"	22.546
+4827	"Zimbabwe"	716	"85-89"	8.035
+4828	"Zimbabwe"	716	"90-94"	2.121
+4829	"Zimbabwe"	716	"95-99"	0.257
+4830	"Zimbabwe"	716	"100+"	0.019

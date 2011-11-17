@@ -1,0 +1,3 @@
+library(bayesPop)
+source('test_functions.R')
+pred <- test.prediction()

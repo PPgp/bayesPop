@@ -1,0 +1,1 @@
+PercentASFR2008 <- read.delim(file='PercentASFR2008.txt', comment.char='#', check.names=FALSE)
