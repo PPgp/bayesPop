@@ -9,11 +9,10 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							pasfr=NULL,
 							mig.type=NULL,
 							migM=NULL,
-							migF=NULL,										e0M.file=NULL, 
-							e0F.file=NULL, 
+							migF=NULL,	
+							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL,
-							e0M.sim.dir=NULL, 
-							e0F.sim.dir=NULL, 
+							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL	
 						), nr.traj = 1000, 
 						replace.output=FALSE, 
@@ -111,6 +110,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			#debug <- country == 478
+			#if(itraj == 2) debug <- TRUE
 			sr <- modifiedLC(nest, npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
 			popres <- StoPopProj(npred, inpc, sr, asfr, inpc$MIGtype, LOCATIONS[country.idx,'name'])
@@ -118,9 +118,22 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
 		}
+		totp.hch <- matrix(NA, nrow=npred+1, ncol=2)
+		totpm.hch <- totpf.hch <- array(NA, dim=c(27, npred+1, 2))
+		for (variant in 1:nrow(inpc$TFRhalfchild)) { # compute the two half child variants
+			asfr <- inpc$PASFR/100.
+			for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
+			sr <- modifiedLC(nest, npred, MxKan, inpc$e0Mmedian, 
+									inpc$e0Fmedian, verbose=verbose, debug=debug)
+			popres <- StoPopProj(npred, inpc, sr, asfr, inpc$MIGtype, LOCATIONS[country.idx,'name'])
+			totp.hch[,variant] <- popres$totpop
+			totpm.hch[,,variant] <- popres$mpop
+			totpf.hch[,,variant] <- popres$fpop
+		}
 		country.idx.proj <- c(country.idx.proj, country.idx)
 		cidx <- cidx + 1
-		save(totp, totpm, totpf, file = file.path(outdir, paste('totpop_country', country, '.rda', sep='')))
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
+			 file = file.path(outdir, paste('totpop_country', country, '.rda', sep='')))
 		PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
 		mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
@@ -156,7 +169,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
                				quantilesF = quantF[c(),,,drop=FALSE], 
                				traj.mean.sdF = mean_sdF[c(),,,drop=FALSE],
                				quantilesMage = quantMage[c(),,,,drop=FALSE], 
-               				quantilesFage = quantFage[c(),,,,drop=FALSE],               				            quantilesPropMage = quantPropMage[c(),,,,drop=FALSE], 
+               				quantilesFage = quantFage[c(),,,,drop=FALSE], 
+               				quantilesPropMage = quantPropMage[c(),,,,drop=FALSE], 
                				quantilesPropFage = quantPropFage[c(),,,,drop=FALSE],
                				estim.years=inp$estim.years, 
                				proj.years=c(inp$estim.years[length(inp$estim.years)], 
@@ -217,21 +231,28 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	# Get initial population counts
 	if(is.null(inputs$popM)) 
 		POPm0 <- read.bayesPop.file(paste('PopByAgeMale', wpp.year, '.txt', sep=''))	else POPm0 <- read.pop.file(inputs$popM)
+	num.columns <- grep('^[0-9]{4}$', colnames(POPm0), value=TRUE) # values of year-columns
 	if(!is.element(as.character(present.year), colnames(POPm0))) {
-		num.columns <- grep('^[0-9]{4}$', colnames(POPm0), value=TRUE) # values of year-columns
 		stop('Wrong present.year. ', present.year, ' not available in the popM file.\nAvailable years: ',
 				num.columns)
 	}
+	popm.matrix <- POPm0[,num.columns]
+	dimnames(popm.matrix) <- list(paste(POPm0[,'country_code'], POPm0[,'age'], sep='_'), 
+									as.character(as.integer(num.columns)-2))
 	POPm0 <- POPm0[,c('country_code', 'age', present.year)]
+	
 	if(is.null(inputs$popF)) 
 		POPf0 <- read.bayesPop.file(paste('PopByAgeFemale', wpp.year, '.txt', sep=''))
 	else POPf0 <- read.pop.file(inputs$popF)
-	POPf0 <- POPf0[,c('country_code', 'age', present.year)]
+	num.columns <- grep('^[0-9]{4}$', colnames(POPf0), value=TRUE) # values of year-columns
 	if(!is.element(as.character(present.year), colnames(POPf0))) {
-		num.columns <- grep('^[0-9]{4}.[0-9]{4}$', colnames(POPf0), value=TRUE) # values of year-columns
 		stop('Wrong present.year. ', present.year, ' not available in the popF file.\nAvailable years: ',
 				num.columns)
 	}
+	popf.matrix <- POPf0[, num.columns]
+	dimnames(popf.matrix) <- list(paste(POPf0[,'country_code'], POPf0[,'age'], sep='_'), 
+									as.character(as.integer(num.columns)-2))
+	POPf0 <- POPf0[,c('country_code', 'age', present.year)]
 	# Get death rates
 	if(is.null(inputs$mxM)) 
 		MXm <- read.bayesPop.file(paste('ASMRMale', wpp.year, '.txt', sep=''))
@@ -291,19 +312,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
 	
 	# Get life expectancy
-	if(!is.null(inputs$e0M.sim.dir)) # male
-		e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
-	else {
-		file.name <- if(!is.null(inputs$e0M.file)) inputs$e0M.file 
-					else file.path(.find.package("bayesPop"), "ex-data", 
-							paste('e0Mwpp', wpp.year, '.csv', sep=''))
-		if(!file.exists(file.name))
-			stop('File ', file.name, 
-				' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
-		e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-		e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
-		colnames(e0Mpred) <- c('country_code', 'year', 'value')
-	} 
 	if(!is.null(inputs$e0F.sim.dir))  # female
 		e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
 	else {
@@ -316,6 +324,24 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 		e0Fpred <- e0Fpred[,c('LocID', 'Year', 'e0')]
 		colnames(e0Fpred) <- c('country_code', 'year', 'value')
+	} 
+
+	if(!is.null(inputs$e0M.sim.dir)) { # male
+		if(inputs$e0M.sim.dir == 'joint_') {
+			if(!has.e0.jmale.prediction(e0Fpred))
+				stop('No joint prediction for female and male available. Correct the e0M.sim.dir argument.' )
+			e0Mpred <- get.e0.jmale.prediction(e0Fpred)
+		} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
+	} else {
+		file.name <- if(!is.null(inputs$e0M.file)) inputs$e0M.file 
+					else file.path(.find.package("bayesPop"), "ex-data", 
+							paste('e0Mwpp', wpp.year, '.csv', sep=''))
+		if(!file.exists(file.name))
+			stop('File ', file.name, 
+				' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
+		e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+		e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
+		colnames(e0Mpred) <- c('country_code', 'year', 'value')
 	} 
 		
 	# Get TFR
@@ -335,7 +361,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	return(list(POPm0=POPm0, POPf0=POPf0, MXm=MXm, MXf=MXf, SRB=SRB,
 				PASFR=PASFR, MIGtype=MIGtype, MIGm=MIGm, MIGf=MIGf,
 				e0Mpred=e0Mpred, e0Fpred=e0Fpred, TFRpred=TFRpred, 
-				estim.years=mid.est.years, proj.years=mid.proj.years))
+				estim.years=mid.est.years, proj.years=mid.proj.years,
+				pop.matrix=list(male=popm.matrix, female=popf.matrix)))
 }
 
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
@@ -350,6 +377,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	what.traj <- list(TFRpred='TFR', e0Mpred='male e0', e0Fpred='female e0')
+	medians <- list()
 	for(par in names(what.traj)) {
 		if (is.data.frame(inputs[[par]])) {
 			idx <- inputs[[par]][,'country_code'] == country & is.element(inputs[[par]][,'year'], inputs$proj.years)
@@ -361,6 +389,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 			inpc[[par]] <- inputs[[par]][idx,]
 			inpc[[par]] <- matrix(inpc[[par]][, 'value'], nrow=length(inputs$proj.years))
 			rownames(inpc[[par]]) <- as.character(inputs$proj.years)
+			medians[[par]] <- apply(inpc[[par]], 1, quantile, 0.5, na.rm = TRUE)
 		}
 	}
 	if(is.null(inpc$TFRpred)) {
@@ -370,7 +399,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 					'. No population projection generated.')
 			return(NULL)	
 		}
-	}
+		country.obj <- get.country.object(country, inputs$TFRpred$mcmc.set$meta)
+		medians$TFRpred <- bayesTFR:::get.median.from.prediction(inputs$TFRpred, country.obj$index, country.obj$code)[-1]
+	} 
+	inpc$TFRhalfchild <- bayesTFR:::get.half.child.variant(median=medians$TFRpred, increment=c(0.25, 0.4, 0.5))
+	
 	if(is.null(inpc$e0Mpred)) {
 		inpc$e0Mpred <- get.e0.trajectories(inputs$e0Mpred, country)
 		if(is.null(inpc$e0Mpred)) {
@@ -378,7 +411,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 					'. No population projection generated.')
 			return(NULL)	
 		}
+		country.obj <- get.country.object(country, inputs$e0Mpred$mcmc.set$meta)
+		medians$e0Mpred <- bayesTFR:::get.median.from.prediction(inputs$e0Mpred, country.obj$index, country.obj$code)
 	}
+	inpc$e0Mmedian <- medians$e0Mpred
+	
 	if(is.null(inpc$e0Fpred)) {
 		inpc$e0Fpred <- get.e0.trajectories(inputs$e0Fpred, country)
 		if(is.null(inpc$e0Fpred)) {
@@ -386,7 +423,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 					'. No population projection generated.')
 			return(NULL)
 		}
+		country.obj <- get.country.object(country, inputs$e0Fpred$mcmc.set$meta)
+		medians$e0Fpred <- bayesTFR:::get.median.from.prediction(inputs$e0Fpred, country.obj$index, country.obj$code)
 	}
+	inpc$e0Fmedian <- medians$e0Fpred
+	
 	indices <- list()
 	indices$e0Mpred <- get.traj.index(nr.traj, inpc$e0Mpred)
 	indices$e0Fpred <- if (ncol(inpc$e0Mpred) != ncol(inpc$e0Fpred)) get.traj.index(nr.traj, inpc$e0Fpred)
@@ -440,6 +481,7 @@ modifiedLC <- function (nest, npred, mxKan, eopm, eopf, verbose=FALSE, debug=FAL
     # Using combined bx, This differs from ModifiedLC0!    
     sr <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
     sr1 <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
+    #if(debug) print('Start check ===========================')
     #Get the projected kt from eo, and make projection of Mx
     for (mxYKan in list(mxKan$male, mxKan$female)) { # iterate over male and female
     	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxYKan$bx), 

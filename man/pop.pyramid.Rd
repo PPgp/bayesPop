@@ -53,10 +53,10 @@ Hana Sevcikova, Adrian Raftery, using feedback from Sam Clark and the bayesPop g
 \code{\link{pop.trajectories.plot}}, \code{\link{bayesPop.prediction}}, \code{\link{summary.bayesPop.prediction}}
 }
 \examples{
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", 'Pop')
+sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
-pop.pyramid(pred, 'India', 2045)
-pop.trajectories.pyramid(pred, 'India', 2045, age=1:25)
+pop.pyramid(pred, "Netherlands", 2045)
+pop.trajectories.pyramid(pred, "Netherlands", 2045, age=1:25)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

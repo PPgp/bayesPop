@@ -1,5 +1,6 @@
 #include <R.h>
 #include <math.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,8 @@ void LifeTableC(int sex, double *mxm,
 	/* Age 5-9, .... 95-99 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
 	for(i = 2; i < 21; ++i) {
-		am[i] = 2.5 - (25 / 12.0) * (mxm[i] - 0.1 * log(mxm[i+1] / mxm[i-1]));
+		am[i] = 2.5 - (25 / 12.0) * (mxm[i] - 0.1 * log(fmax(mxm[i+1] / fmax(mxm[i-1], DBL_MIN), DBL_MIN)));
+		/*Rprintf("am%i=%f, mxm%i=%f", i, am[i], i-1, mxm[i-1]);*/
 		qmx[i-2] = 5 * mxm[i] / (1 + (5 - am[i]) * mxm[i]);
 	}
     
@@ -55,11 +57,11 @@ void LifeTableC(int sex, double *mxm,
 	
 	for(i = 20; i<26; ++i) {
 		lm[i+2] = lm[i+1] * (1 - (1 - exp(-5 * mxm[i+1]))); /* Starts 104 */
-		LLm[i] = (lm[i+1] - lm[i+2]) / mxm[i+1];
+		LLm[i] = (lm[i+1] - lm[i+2]) / fmax(mxm[i+1], DBL_MIN);
 	}
 	
 	/* Age 130+ */
-	LLm[26] = lm[27] / mxm[27]; /* Assuming Mx levels off at age 130 */
+	LLm[26] = lm[27] / fmax(mxm[27], DBL_MIN); /* Assuming Mx levels off at age 130 */
 	
 }
 
@@ -90,6 +92,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	k2 = 0.5 * (kl + ku);
 	for (i=0; i < 28; ++i) mxm[i] = exp(ax[i] + bx[i]*k2);
 	LifeTableC(sex, mxm, LLm);
+	/*Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm0-2=%f %f %f", LLm[2], k2, kl, ku, mxm[0], mxm[1], mxm[2]);*/
 	LTeo = sum(LLm, dim);
 	while(abs(LTeo - eop) > 0.01) {
 		if(LTeo < eop) kl = k2;
@@ -97,6 +100,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 		k2 = 0.5 * (kl + ku);
 		for (i=0; i < 28; ++i) mxm[i] = exp(ax[i] + bx[i]*k2);
 		LifeTableC(sex, mxm, LLm);
+		/*Rprintf("\nLTeo=%lf, LLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm0-2=%f %f %f", LTeo, LLm[2], k2, kl, ku, mxm[0], mxm[1], mxm[2]);*/
 		LTeo = sum(LLm, dim);
 	}
 	/*Rprintf("\nk2=%d, eop=%lf, LTeo=%lf", k2, eop, LTeo);*/
@@ -112,7 +116,7 @@ void get_sx(double *LLm, double *sx) {
 		else sx[i] = LLm[i]/LLm[i-1];
 	}
 	/* Last age group */
-	if(LLm[25] == 0) sx[26] = 0;
+	if(LLm[25] == 0 ||  (LLm[25]+LLm[26]) == 0) sx[26] = 0;
 	else sx[26] = LLm[26] / (LLm[25] + LLm[26]);
 	if(sx[26] > sx[25]) sx[26] = sx[25];
 }
@@ -129,12 +133,13 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 	
 	for (pred=0; pred < npred; ++pred) {
 		eop = Eop[pred];
+		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
 		LCEoKtC(sex, ax, bx, eop, kl, ku, LLm);
 		get_sx(LLm, sx);
-		/*Rprintf("\n");*/
+
 		for (i=0; i < 27; ++i) {
-			/*Rprintf("%lf, ", LLm[i]);*/
 			Sr[i + pred*27] = sx[i];
+			/*Rprintf("\nLLm=%lf, Sr=%lf", LLm[i], Sr[i + pred*27]);*/
 		}
 	}
 }
