@@ -8,13 +8,25 @@ get.pop.prediction <- function(sim.dir) {
 	# Returns an object of class bayesPop.prediction
 	############
 	output.dir <- file.path(sim.dir, 'predictions')
-	pred.file <- file.path(output.dir, 'prediction.rda')
+	return(.get.prediction.object(output.dir))
+}
+
+get.pop.aggregation <- function(sim.dir) {
+	############
+	# Returns an object of class bayesPop.prediction created by aggregation
+	############
+	output.dir <- file.path(sim.dir, 'aggregations')
+	return(.get.prediction.object(output.dir))
+}
+
+.get.prediction.object <- function(directory) {
+	pred.file <- file.path(directory, 'prediction.rda')
 	if(!file.exists(pred.file)) {
 		warning('File ', pred.file, ' does not exist.')
 		return(NULL)
 	}
 	load(file=pred.file)
-	bayesPop.prediction$output.directory <- output.dir
+	bayesPop.prediction$output.directory <- directory
 	return(bayesPop.prediction)
 }
 

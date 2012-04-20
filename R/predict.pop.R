@@ -29,25 +29,14 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year)
 	}
-	nages <- length(ages)
-	nest <- length(inp$estim.years)
+
 	outdir <- file.path(output.dir, 'predictions')
 	if(!prediction.exist) {
 		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 			stop('Prediction in ', outdir,
 			' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		unlink(outdir, recursive=TRUE)
-	} else {
-		PIs_cqp <- pred$quantiles
-		quantM <- pred$quatilesM
-		quantF <- pred$quatilesF
-		mean_sd <- pred$traj.mean.sd
-		mean_sdM <- pred$traj.mean.sdM
-		mean_sdF <- pred$traj.mean.sdF
-		quantMage <- pred$quantilesMage
-		quantFage <- pred$quantilesFage
-	}
-	prediction.file <- file.path(outdir, 'prediction.rda')
+	} 
 	
 	data(LOCATIONS)
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
@@ -69,12 +58,18 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		} else
 			country.codes <- unique(inp$POPm0[,'country_code'])
 	}
-			
+	invisible(do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
+					verbose=verbose))
+}
+
+do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, verbose=FALSE) {
 	ncountries <- length(country.codes)
 	nr_project <- length(inp$proj.years)
+	nages <- length(ages)
+	nest <- length(inp$estim.years)
 	if(!file.exists(outdir)) 
 		dir.create(outdir, recursive=TRUE)
-		
+	prediction.file <- file.path(outdir, 'prediction.rda')	
 	quantiles.to.keep <- c(0,0.025,0.05,0.1,0.2,0.25,0.3,0.4,0.5,0.6,0.7,0.75,0.8,0.9,0.95,0.975,1)
 	PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, length(quantiles.to.keep), nr_project+1),
 						dimnames=list(NULL, quantiles.to.keep, c(inp$estim.years[nest], inp$proj.years)))
@@ -83,7 +78,6 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, nr_project+1))
 	country.idx.proj <- c()
 	cidx <- 0
-	bayesPop.prediction <- NULL
 	for(country in country.codes) {
 		country.idx <- which(LOCATIONS[,'country_code'] == country)
 		if(length(country.idx) == 0) {
@@ -95,7 +89,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, LOCATIONS[country.idx,'name'])
 		if(is.null(inpc)) next
-		nr.traj <- ncol(inpc$TFRpred)		
+		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
 			cat(' (', nr.traj, ' trajectories )')
 		
@@ -155,11 +149,9 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		#save updated meta file
 		country.row <- LOCATIONS[country.idx,c('country_code', 'name')]
 		colnames(country.row) <- c('code', 'name')
-		if(is.null(bayesPop.prediction)) {
-			if(prediction.exist) 
-				bayesPop.prediction <- pred
-			else {
-				bayesPop.prediction <- structure(list(output.directory=outdir,
+		if(cidx == 1) { # first pass
+			bayesPop.prediction <- if(!is.null(pred)) pred 
+					else structure(list(output.directory=outdir,
 							nr.traj = nr.traj,	
 							# assign empty arrays
 							quantiles = PIs_cqp[c(),,,drop=FALSE],
@@ -178,10 +170,9 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			   				inputs = inp,
 			   				countries=matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name'))),
 			   				ages=ages), class='bayesPop.prediction')
-			}
-		}
+		}	
 		idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
-		if(any(idx.in.pred.overwrite)) {
+		if(length(idx.in.pred.overwrite)>0) {
 			bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- PIs_cqp[cidx,,,drop=FALSE]
 			bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- mean_sd[cidx,,,drop=FALSE]
 			bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- mean_sdM[cidx,,,drop=FALSE]
@@ -216,9 +207,9 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
 		}
 		save(bayesPop.prediction, file=prediction.file)
-	}			   
+	} 
 	cat('\nPrediction stored into', outdir, '\n')
-	invisible(bayesPop.prediction)
+	return(bayesPop.prediction)
 }
 
 read.pop.file <- function(file) 
@@ -370,9 +361,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB',
 						'PASFR', 'MIGtype', 'MIGm', 'MIGf')) {
 		idx <- inputs[[par]][,'country_code'] == country
-		inpc[[par]] <- inputs[[par]][idx,]
+		inpc[[par]] <- inputs[[par]][idx,,drop=FALSE]
 		inpc[[par]] <- as.matrix(inpc[[par]][, !is.element(colnames(inpc[[par]]), 
-							c('country_code', 'age'))])
+							c('country_code', 'age')),drop=FALSE])
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
@@ -571,4 +562,3 @@ StoPopProj <- function(npred, inputs, sr, asfr, mig.type, country.name) {
 
 	return(list(totpop=res$totp, mpop=res$popm, fpop=res$popf))
 }
-

@@ -160,6 +160,9 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index, coun
 		if (!is.null(trajectories)) {
 			cqp <- apply(trajectories, 1, 
 						quantile, al, na.rm = TRUE)
+		} else {
+			warning('Quantiles not found')
+			return(NULL)
 		}
 	}
 	return(cqp)
