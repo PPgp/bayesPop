@@ -90,7 +90,7 @@ sim.dir <- tempfile()
 pred <- pop.predict(countries=c("Netherlands", 218, "Madagascar"), nr.traj=10, 
            output.dir=sim.dir)
 pop.trajectories.plot(pred, "Ecuador", sum.over.ages=TRUE)
-unlink(sim.dir)
+unlink(sim.dir, recursive=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

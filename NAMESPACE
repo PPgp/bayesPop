@@ -17,7 +17,9 @@ pop.pyramid.all,
 pop.trajectories.pyramid,
 pop.trajectories.pyramid.all,
 get.pop.prediction,
-has.pop.prediction
+has.pop.prediction,
+pop.aggregate,
+get.pop.aggregation
 )
 
 # register S3 methods

@@ -11,12 +11,26 @@ get.pop.prediction <- function(sim.dir) {
 	return(.get.prediction.object(output.dir))
 }
 
-get.pop.aggregation <- function(sim.dir) {
+get.pop.aggregation <- function(sim.dir, name=NULL) {
 	############
 	# Returns an object of class bayesPop.prediction created by aggregation
 	############
-	output.dir <- file.path(sim.dir, 'aggregations')
-	return(.get.prediction.object(output.dir))
+	dirs <- list.files(sim.dir, pattern='^aggregations_', full.names=FALSE)
+	if(length(dirs) == 0) {
+		warning('No aggregation available in', sim.dir)
+		return(NULL)
+	}
+	output.dir <- file.path(sim.dir, dirs)
+	names <- substr(dirs, 14, nchar(dirs))
+	if(length(names) == 1){
+		if(!is.null(name) && name != names) 
+			warning('Mismatch in aggregation names. Available aggregation is called', names)
+		return(.get.prediction.object(output.dir))
+	}
+	idx <- which(names == name)
+	if (length(idx) > 0) return(.get.prediction.object(output.dir[idx]))
+	idx <- menu(names, title='Available aggregations:')
+	return(.get.prediction.object(output.dir[idx]))
 }
 
 .get.prediction.object <- function(directory) {

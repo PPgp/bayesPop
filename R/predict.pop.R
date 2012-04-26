@@ -168,7 +168,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
                				proj.years=c(inp$estim.years[length(inp$estim.years)], 
                									inp$proj.years), # includes present period
 			   				inputs = inp,
-			   				countries=matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name'))),
+			   				countries=as.data.frame(matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name')))),
 			   				ages=ages), class='bayesPop.prediction')
 		}	
 		idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)

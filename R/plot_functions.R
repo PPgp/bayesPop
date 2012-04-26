@@ -17,7 +17,7 @@ get.psr.denominator.startindex <- function() return(14)
 
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
  									nr.traj=NULL, typical.trajectory=FALSE) {
-	traj.file <- file.path(pop.pred$output.dir, paste('totpop_country', country, '.rda', sep=''))
+	traj.file <- file.path(pop.pred$output.directory, paste('totpop_country', country, '.rda', sep=''))
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
 	load.traj <- is.null(nr.traj) || nr.traj > 0
 	if (!file.exists(traj.file)) 

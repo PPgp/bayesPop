@@ -1,12 +1,24 @@
-pop.aggregate <- function(regions, pop.pred, 
+pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'),
+						name = method,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
 						verbose=FALSE) {
 	data(LOCATIONS)
 	regions <- unique(regions)
+	method <- match.arg(method)
+	if(missing(name)) name <- method
+	if(method == 'independence') 
+		invisible(pop.aggregate.independence(pop.pred, regions, name, verbose=verbose))
+	if(method == 'regional')
+		invisible(pop.aggregate.regional(pop.pred, regions, name, inputs=inputs, verbose=verbose))
+}
+
+pop.aggregate.regional <- function(pop.pred, regions, name,
+						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
+						verbose=FALSE) {
 	inp <- pop.pred$inputs
 	for (item in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MIGm', 'MIGf', 'SRB', 'PASFR', 'MIGtype'))
 		inp[[item]] <- NULL
-	if(verbose) cat('\nAggregating inputs.')
+	if(verbose) cat('\nAggregating inputs using regional method.')
 	for(id in regions) {
 		countries <- LOCATIONS[is.element(LOCATIONS[,'area_code'], id),'country_code']
 		countries <- countries[is.element(countries, pop.pred$countries[,'code'])]
@@ -20,16 +32,19 @@ pop.aggregate <- function(regions, pop.pred,
 		inp$SRB <- rbind(inp$SRB, .aggregate.srb(pop.pred, countries, countries.index, id))
 		inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
 		inp$MIGtype <- rbind(inp$MIGtype, .aggregate.migtype(pop.pred, countries, countries.index, id))
+		inp$aggregated.countries[[as.character(id)]] <- countries
 	}
-	if(!is.null(inputs$tfr.sim.dir))
-		inp$TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir)
-	if(!is.null(inputs$e0F.sim.dir))
-		inp$e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir)
-	if(is.null(inputs$e0M.sim.dir) || inputs$e0M.sim.dir == 'joint_') 
+	dir <- if(is.null(inputs$tfr.sim.dir)) pop.pred$inputs$TFRpred$mcmc.set$meta$parent.meta$output.dir else inputs$tfr.sim.dir
+	if(!is.null(dir)) inp$TFRpred <- get.tfr.prediction(dir)
+	dir <- if(is.null(inputs$e0F.sim.dir)) pop.pred$inputs$e0Fpred$mcmc.set$meta$parent.meta$output.dir else inputs$e0F.sim.dir
+	if(!is.null(dir)) inp$e0Fpred <- get.e0.prediction(dir)
+	if(is.null(inputs$e0M.sim.dir) || inputs$e0M.sim.dir == 'joint_') {
 		if(has.e0.jmale.prediction(inp$e0Fpred)) inp$e0Mpred <- get.e0.jmale.prediction(inp$e0Fpred)
-
-	outdir <- gsub('predictions', 'aggregations', pred$output.dir)
-	invisible(do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose))
+	} else inp$e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir)
+	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.pred$output.directory)
+	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose)
+	aggr.pred$aggregation.method <- 'regional'
+	return(aggr.pred)
 }
 
 .aggregate.by.sum <- function(pop.pred, countries, what.names, id) {
@@ -124,4 +139,84 @@ pop.aggregate <- function(regions, pop.pred,
 	f <- factor(rep(pop.pred$inputs[["MIGtype"]][idx,"MigCode"], obsN), levels=c(0,9))
 	res[,3] <- as.integer(f[which.max(tapply(rep(1,sum(obsN)), f, sum))])
 	return(res)
+}
+
+pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose) {
+	if(verbose) cat('\nAggregating inputs using independence method.')
+	nreg <- length(regions)
+	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
+	quant <- quantM <- quantF <- array(NA, c(nreg, dim(pop.pred$quantiles)[2:3]), dimnames=dimnames(pop.pred$quantiles))
+	quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(nreg, dim(pop.pred$quantilesMage)[2:4]),
+						dimnames=dimnames(pop.pred$quantilesMage))
+	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(nreg,dim(pop.pred$traj.mean.sd)[2:3]))
+	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.pred$output.directory)
+	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
+	dir.create(outdir, recursive=TRUE)
+	reg.idx <- c()
+	for(id.idx in 1:length(regions)) {
+		id <- regions[id.idx]
+		if(verbose) cat('\nAggregating region ', id)
+		countries <- LOCATIONS[is.element(LOCATIONS[,'area_code'], id),'country_code']
+		countries <- countries[is.element(countries, pop.pred$countries[,'code'])]
+		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
+		reg.idx <- c(reg.idx, which(LOCATIONS[,'country_code']==id))
+		for(cidx in 1:length(countries.index)) {
+			traj.file <- file.path(pop.pred$output.directory, paste('totpop_country', countries[cidx], '.rda', sep=''))
+			load(traj.file)
+			if(cidx == 1) {
+				stotp <- totp
+				stotpm <- totpm
+				stotpf <- totpf
+				stotp.hch <- totp.hch
+				stotpm.hch <- totpm.hch
+				stotpf.hch <- totpf.hch
+			} else {
+				stotp <- stotp + totp
+				stotpm <- stotpm + totpm
+				stotpf <- stotpf + totpf
+				stotp.hch <- stotp.hch + totp.hch
+				stotpm.hch <- stotpm.hch + totpm.hch
+				stotpf.hch <- stotpf.hch + totpf.hch
+			}
+		}
+		save(stotp, stotpm, stotpf, stotp.hch, stotpm.hch, stotpf.hch,
+			 file = file.path(outdir, paste('totpop_country', id, '.rda', sep='')))
+		quant[id.idx,,] = apply(stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		mean_sd[id.idx,1,] <- apply(stotp, 1, mean, na.rm = TRUE)
+		mean_sd[id.idx,2,] = apply(stotp, 1, sd, na.rm = TRUE)
+		for (i in 1:dim(stotpm)[1]) {
+			quantMage[id.idx,i,,] <- apply(stotpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			quantFage[id.idx,i,,] = apply(stotpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			quantPropMage[id.idx,i,,] <- apply(stotpm[i,,]/stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			quantPropFage[id.idx,i,,] <- apply(stotpf[i,,]/stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		}
+		sstotpm <- colSums(stotpm)
+		quantM[id.idx,,] = apply(sstotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		mean_sdM[id.idx,1,] <- apply(sstotpm, 1, mean, na.rm = TRUE)
+		mean_sdM[id.idx,2,] = apply(sstotpm, 1, sd, na.rm = TRUE)
+		sstotpf <- colSums(stotpf)
+		quantF[id.idx,,] = apply(sstotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		mean_sdF[id.idx,1,] <- apply(sstotpf, 1, mean, na.rm = TRUE)
+		mean_sdF[id.idx,2,] = apply(sstotpf, 1, sd, na.rm = TRUE)
+
+	}
+	aggr.pred <- pop.pred
+	reg.idx <- is.element(LOCATIONS[,'country_code'], regions)
+	aggr.pred$countries=data.frame(code=regions, name=LOCATIONS[reg.idx, 'name'])
+	aggr.pred$output.directory <- outdir
+	aggr.pred$quantiles <- quant
+	aggr.pred$quantilesM <- quantM
+	aggr.pred$quantilesF <- quantF
+	aggr.pred$quantilesMage <- quantMage
+	aggr.pred$quantilesFage <- quantFage
+	aggr.pred$quantilesPropMage <- quantPropMage
+	aggr.pred$quantilesPropFage <- quantPropFage
+	aggr.pred$traj.mean.sd <- mean_sd
+	aggr.pred$traj.mean.sdM <- mean_sdM
+	aggr.pred$traj.mean.sdF <- mean_sdF
+	aggr.pred$aggregation.method <- 'independence'
+	bayesPop.prediction <- aggr.pred
+	save(bayesPop.prediction, file=file.path(outdir, 'prediction.rda'))
+	cat('\nAggregations stored into', outdir, '\n')
+	return(bayesPop.prediction)
 }
