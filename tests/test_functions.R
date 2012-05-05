@@ -8,5 +8,9 @@ test.prediction <- function() {
 	stopifnot(s$nr.traj == 10)
 	stopifnot(s$nr.countries == 3)
 	stopifnot(length(s$projection.years) == 18)
+	
+	# aggregate
+	aggr <- pop.aggregate(pred, c(900,904))
+	stopifnot(nrow(aggr$countries) == 2)
 	unlink(sim.dir, recursive=TRUE)
 }

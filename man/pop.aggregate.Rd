@@ -32,6 +32,8 @@ get.pop.aggregation(sim.dir, name = NULL)
   \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object.}
 }
 \details{
+The dataset \code{\link{LOCATIONS}} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the area given in the \code{regions} argument. There are three location types over which one can aggregate: Type 0 means aggregating all countries of the world, type 2 is aggregating over continents, and type 3 is aggregating over regions within continents. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link{LOCATIONS}} dataset. 
+	
 There are two methods available for generating aggregations of population projection:
 \describe{
 \item{Independence Method}{
@@ -55,7 +57,7 @@ Aggregations can be performed for any area/region given in the \code{\link{LOCAT
 Results of the aggregations are stored in the same top directory as the \code{pop.pred} object, in a sudirectory called \sQuote{\code{aggregations_}\emph{name}}. They can be accessed using the function \code{get.pop.aggregation}. Note that multiple runs of this function with the same name will overwrite previous aggregations results of the same name.
 }
 \value{
-Object of class \code{\link{bayesPop.prediction}} containing the aggregated results. In addition it contains an element \code{aggregation.method} giving the method used.
+Object of class \code{\link{bayesPop.prediction}} containing the aggregated results. In addition it contains elements \code{aggregation.method} giving the method used, and \code{aggregated.countries} which is a list of countries aggregated for each region. 
 }
 
 \author{
@@ -65,8 +67,16 @@ Hana Sevcikova, Adrian Raftery
 \seealso{
 \code{\link{pop.predict}}, \code{\link[bayesTFR]{tfr.predict.extra}}, \code{\link[bayesLife]{e0.predict.extra}}
 }
-%\examples{
-%}
+\examples{
+\dontrun{
+sim.dir <- tempfile()
+pred <- pop.predict(countries=c(528,218,450), nr.traj = 10, output.dir=sim.dir)
+aggr <- pop.aggregate(pred, 900) # aggregating World (i.e. all countries available in pred)
+pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
+# countries over which we aggregated:
+LOCATIONS[is.element(LOCATIONS[,'country_code'], aggr$aggregated.countries[['900']]),]
+unlink(sim.dir, recursive=TRUE)}
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ distribution }

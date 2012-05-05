@@ -18,7 +18,7 @@ United Nations table of locations, including regions. It is stored in a TAB-sepa
     \item{\code{reg_name}}{Name of the regions.}
     \item{\code{area_code}}{Area code.}
     \item{\code{area_name}}{Area names, such as  \code{Africa}, \code{Asia}, \code{Europe}, \code{World}.}
-    \item{\code{location_type}}{Code giving the type of the observation (0=World, 2=Major Area, 3=Region, 4=Country/Area, 5=Development group, 12=Special groupings). Not used by the package.}
+    \item{\code{location_type}}{Code giving the type of the observation (0=World, 2=Major Area, 3=Region, 4=Country/Area, 5=Development group, 12=Special groupings). This column is used to determine countries for aggregation in the \code{\link{pop.aggregate}} function.}
     \item{\code{include_code}}{Specific code. Not used by the package.}
   }
 }

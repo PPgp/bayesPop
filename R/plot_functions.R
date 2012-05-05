@@ -287,6 +287,8 @@ do.pop.trajectories.plot <- function(pop.pred, country, pi=c(80, 95),
 		cqp[[i]] <- get.pop.traj.quantiles(trajectories$quantiles, pop.pred, country$index, country$code, 
 										trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age)
 	pop.observed <- get.pop.observed(pop.pred, country$code, sex=sex, age=age)
+	obs.not.na <- !is.na(pop.observed)
+	pop.observed <- if(sum(obs.not.na)==0) pop.observed[length(pop.observed)] else pop.observed[obs.not.na]
 	x1 <- as.integer(names(pop.observed))
 	x2 <- as.numeric(dimnames(pop.pred$quantiles)[[3]])
 	y1 <- pop.observed
@@ -332,10 +334,16 @@ do.pop.trajectories.plot <- function(pop.pred, country, pi=c(80, 95),
 			lines(x2, cqp[[i]][2,], type='l', col=col[3], lty=lty[i], lwd=lwd[3])
 		}
 	}
-	legend <- c('median', paste(pi, '% PI', sep=''), 'observed')
-	lty <- c(1, lty, 1)
-	lwds <- c(lwd[2], rep(lwd[3], length(pi)), lwd[1])
-	cols <- c(col[2], rep(col[3], length(pi)), col[1])
+	legend <- c('median', paste(pi, '% PI', sep=''))
+	lty <- c(1, lty)
+	lwds <- c(lwd[2], rep(lwd[3], length(pi)))
+	cols <- c(col[2], rep(col[3], length(pi)))
+	if(sum(obs.not.na)>0) {
+		legend <- c(legend, 'observed')
+		lty <- c(lty, 1)
+		lwds <- c(lwds, lwd[1])
+		cols <- c(cols, col[1])
+	}
 	if (half.child.variant && !is.null(trajectories$half.child)) {
 		lty <- c(lty, max(lty)+1)
 		llty <- length(lty)
