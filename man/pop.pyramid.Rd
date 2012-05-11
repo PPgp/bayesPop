@@ -12,14 +12,14 @@ Functions for plotting probabilistic population pyramid for any country and proj
 }
 \usage{
 pop.pyramid(pop.pred, country, year = NULL, pi = c(80, 95), 
-    proportion = FALSE, main = NULL, age = 1:21)
+    proportion = FALSE, main = NULL, age = 1:21, draw.past.year = FALSE)
     
 pop.pyramid.all(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.pyramid'),
 	output.type = "png", verbose = FALSE, \dots)
 	
 pop.trajectories.pyramid(pop.pred, country, year = NULL, pi = c(80, 95), 
-    nr.traj = NULL, proportion = FALSE, main = NULL, age = 1:21)
+    nr.traj = NULL, proportion = FALSE, main = NULL, age = 1:21, draw.past.year = FALSE)
     
 pop.trajectories.pyramid.all(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.traj.pyramid'),
@@ -28,11 +28,12 @@ pop.trajectories.pyramid.all(pop.pred, year = NULL,
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
   \item{country}{Name or numerical code of a country.}
-  \item{year}{Year within the projection period to be plotted. Default is the start year of the prediction. In the functions \code{pop.pyramid.all} and \code{pop.trajectories.pyramid.all}, the \code{year} argument can be a vector of years.}
+  \item{year}{Year within the projection or estimation period to be plotted. Default is the start year of the prediction. In the functions \code{pop.pyramid.all} and \code{pop.trajectories.pyramid.all}, the \code{year} argument can be a vector of years.}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{proportion}{Logical. If \code{TRUE} the pyramid contains the distribution of rates of age-specific counts and population totals.}
   \item{main}{Titel of the plot. By default it is the country name and projection year.}
   \item{age}{Integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last available age goup is 130+ which corresponds to index 27. The purpose of this argument here is mainly to controls the top of the pyramid.}
+  \item{draw.past.year}{If \code{TRUE}, present year is shown in the pyramid. In addition to a logical value it can be a numeric value giving a past year to be drawn in the pyramid for comparison purposes.}
   \item{output.dir}{Directory into which resulting graphs are stored.}
   \item{output.type}{Type of the resulting files. It can be \dQuote{png}, \dQuote{pdf}, \dQuote{jpeg}, \dQuote{bmp}, \dQuote{tiff}, or \dQuote{postscript}.}
   \item{verbose}{Logical switching log messages on and off.}

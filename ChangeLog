@@ -1,3 +1,11 @@
+0.2-2
+-----
+Aggregation added (function pop.aggregate).
+
+In addition to projection years, population pyramids can now show a past year.
+
+Option for including another year into the population pyramids (draw.past.year).
+
 0.2-1 (04/12/2012)
 -----
 Integrated outputs from joint female-male life expectancy.
