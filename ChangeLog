@@ -1,10 +1,10 @@
-0.2-2
+1.0-1 (05/17/2012)
 -----
 Aggregation added (function pop.aggregate).
 
 In addition to projection years, population pyramids can now show a past year.
 
-Option for including another year into the population pyramids (draw.past.year).
+Option for including another year into the population pyramids (argument draw.past.year).
 
 0.2-1 (04/12/2012)
 -----
