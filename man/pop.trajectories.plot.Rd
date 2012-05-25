@@ -1,6 +1,6 @@
 \name{pop.trajectories.plot}
 \alias{pop.trajectories.plot}
-\alias{pop.trajectories.plot.all}
+\alias{pop.trajectories.plotAll}
 \alias{pop.trajectories.table}
 
 \title{
@@ -17,7 +17,7 @@ pop.trajectories.plot(pop.pred, country, pi = c(80, 95),
     main = NULL, dev.ncol = 5, lwd = c(2, 2, 2, 2, 1), 
     col = c('black', 'red', 'red', 'blue', 'gray'), show.legend = TRUE, \dots)
     
-pop.trajectories.plot.all(pop.pred, 
+pop.trajectories.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.trajectories"),
     output.type="png", verbose=FALSE, \dots)
     

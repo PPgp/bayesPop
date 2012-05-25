@@ -186,7 +186,7 @@ get.age.labels <- function(ages, collapsed=FALSE) {
 	return(result)
 }	
 
-pop.trajectories.plot.all <- function(pop.pred, 
+pop.trajectories.plotAll <- function(pop.pred, 
 									output.dir=file.path(getwd(), 'pop.trajectories'),
 									output.type="png", verbose=FALSE, ...) {
 	# plots pop trajectories for all countries
@@ -418,7 +418,7 @@ pop.trajectories.table <- function(pop.pred, country, pi=c(80, 95),
 	return(pred.table)
 }
 
-pop.pyramid.all <- function(pop.pred, year=NULL,
+pop.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.pyramid'),
 									output.type="png", verbose=FALSE, ...) {
 	# plots pyramid for all countries and all years given by 'year'
@@ -461,24 +461,29 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 	if(is.null(pop.max)) pop.max <- max(data)
 	return(structure(list(
 				label = main.label, 
-				median = list(legend=legend, data=data),
+				pyr1 = list(legend=legend, data=data),
 				is.proportion = is.proportion,
 				pop.max=pop.max), class='bayesPop.pyramid'))
 }
 
-get.bPop.pyramid.list <- function(data.list, main.label=NULL, legend='observed', legend2='comparison', ...) {
-	pyr.median <- get.bPop.pyramid(data.list[[1]], main.label=main.label, legend=legend, ...)
+get.bPop.pyramid.list <- function(data.list, main.label=NULL, legend1='observed', legend2='comparison', ...) {
+	pyr <- get.bPop.pyramid(data.list[[1]], main.label=main.label, legend=legend1, ...)
 	if(!is.null(data.list[[2]])) { # comparison dataset
-		pyr.past <- get.bPop.pyramid(data.list[[2]], legend=legend2, ...)
-		pyr.median$past.data <- pyr.past$median
-		pyr.median$pop.max <- max(pyr.median$pop.max, pyr.past$pop.max)
+		pyr2 <- get.bPop.pyramid(data.list[[2]], legend=legend2, ...)
+		pyr$pyr2 <- pyr2$pyr1
+		pyr$pop.max <- max(pyr$pop.max, pyr2$pop.max)
 	}
-	if(!is.null(data.list[[3]])) { # quantile dataset: must be in the right format (list with a data frame per PI)
-		pyr.median$quantiles <- data.list[[3]]
-		for(i in 1:length(data.list[[3]]))
-			pyr.median$pop.max <- max(pyr.median$pop.max, data.list[[3]][[i]]$high, data.list[[3]][[i]]$low)
+	if(length(data.list>2)) { # quantile dataset: must be in the right format (list with a low and high data frame per PI)
+		pyr$quantiles <- data.list[[3]]
+		if(!is.list(data.list[[3]]))
+			stop('Quantile component must be a list of high and low data frames.')
+		for(i in 1:length(data.list[[3]])) {
+			if(!all(is.element(c('high', 'low'), names(data.list[[3]][[i]]))))
+				stop('Quantile components must have componenet high and low.')
+			pyr$pop.max <- max(pyr$pop.max, data.list[[3]][[i]]$high, data.list[[3]][[i]]$low)
+		}
 	}
-	return(pyr.median)
+	return(pyr)
 } 
 
 
@@ -581,9 +586,9 @@ get.bPop.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, p
 	return(structure(list(
 				label = paste(country$name, ': ', paste((if(draw.projection[1]) pop.pred$proj.years[year.idx[1]] 
 										else as.integer(names(pop.observed)[year.idx[1]])) + c(-3, 2), collapse='-'), sep=''), 
-				median = list(legend=if(draw.projection[1] && year.idx[1] > 1) 'median' else 'observed',
+				pyr1 = list(legend=if(draw.projection[1] && year.idx[1] > 1) 'median' else 'observed',
 							  data=data.frame(female=pop.median[['female']], male=pop.median[['male']], row.names=age.labels)),
-				past.data = if(draw.observed) 
+				pyr2 = if(draw.observed) 
 								list(legend=paste((if(draw.projection[2]) pop.pred$proj.years[year.idx[2]] 
 											else as.integer(names(pop.observed)[year.idx[2]])) + c(-3, 2), collapse='-'),
 								 data=data.frame(female=pop.present[['female']], male=pop.present[['male']], row.names=age.labels))
@@ -612,15 +617,15 @@ pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, a
 	mar <- par('mar')
 	par(mfrow=c(1,2),  oma = c(0, 0, 2, 0))
 	par(mar=c(5,6,2,-0.1)+0.1, mgp=c(3,0.5,0))
-	if(is.null(pyramid$median) && is.null(pyramid$past.data) && is.null(pyramid$quantiles)) 
-		stop('Nothing to be plotted. Either median, quntiles or past.data must be given in the pyramid object.')
-	age.labels <- rownames(if(!is.null(pyramid$median)) pyramid$median$data 
-						   else {if(!is.null(pyramid$past.data)) pyramid$past.data$data else pyramid$quantiles[[1]]$low})
+	if(is.null(pyramid$pyr1) && is.null(pyramid$pyr2) && is.null(pyramid$quantiles)) 
+		stop('Nothing to be plotted. Either pyr1, quantiles or pyr2 must be given in the pyramid object.')
+	age.labels <- rownames(if(!is.null(pyramid$pyr1)) pyramid$pyr1$data 
+						   else {if(!is.null(pyramid$pyr2)) pyramid$pyr2$data else pyramid$quantiles[[1]]$low})
 	if(is.null(age.labels)) stop('Row names must be given to determine age labels.')
 	lages <- length(age.labels)
 	nquant <- length(pyramid$quantiles)
-	draw.past <- !is.null(pyramid$past.data)
-	draw.median <- !is.null(pyramid$median)
+	draw.past <- !is.null(pyramid$pyr2)
+	draw.median <- !is.null(pyramid$pyr1)
 	pyr1.par.default <- list(border='black', col=NA, density=NULL)
 	for(item in names(pyr1.par.default)) if(is.null(pyr1.par[[item]])) pyr1.par[[item]] <- pyr1.par.default[[item]]
 	pyr2.par.default <- list(border='violet', col='violet', density=20)
@@ -641,16 +646,16 @@ pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, a
 			}
 		}
 		if(draw.median) {
-			rect(-median$data[,'male']/maxx, age.axis.at-0.45, rep(0, lages), age.axis.at+0.45, #lwd=2,
+			rect(-pyr1$data[,'male']/maxx, age.axis.at-0.45, rep(0, lages), age.axis.at+0.45, #lwd=2,
 				col=pyr1.par$col, border=pyr1.par$border, density=pyr1.par$density)
 			for (i in age.axis.at)
-				lines(rep(-median$data[i+1,'male']/maxx, 2), c(i-0.45, i+0.45), lwd=3, col=pyr1.par$border)
+				lines(rep(-pyr1$data[i+1,'male']/maxx, 2), c(i-0.45, i+0.45), lwd=3, col=pyr1.par$border)
 		}		
 		if(draw.past) {
-			rect(-past.data$data[,'male']/maxx, age.axis.at-0.15, rep(0, lages), age.axis.at+0.15, #lwd=2,
+			rect(-pyr2$data[,'male']/maxx, age.axis.at-0.15, rep(0, lages), age.axis.at+0.15, #lwd=2,
 				col=pyr2.par$col, border=pyr2.par$border, density=pyr2.par$density)
 			for (i in age.axis.at)
-				lines(rep(-past.data$data[i+1,'male']/maxx, 2), c(i-0.15, i+0.15), lwd=3, col=pyr2.par$border)
+				lines(rep(-pyr2$data[i+1,'male']/maxx, 2), c(i-0.15, i+0.15), lwd=3, col=pyr2.par$border)
 		}
 		labels <- if(proportion) round(seq(maxx, 0, length=min(trunc(maxx*100)+1,11)),2) else round(signif(seq(maxx, 0, length=min(11,maxx)),2))
 		axis(1, at=-labels/maxx, labels=labels)
@@ -667,26 +672,26 @@ pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, a
 		}
 		lwd <-c()
 		if(draw.median) {
-			rect(rep(0, lages), age.axis.at-0.45, median$data[,'female']/maxx, age.axis.at+0.45, #lwd=2,
+			rect(rep(0, lages), age.axis.at-0.45, pyr1$data[,'female']/maxx, age.axis.at+0.45, #lwd=2,
 				col=pyr1.par$col, border=pyr1.par$border, density=pyr1.par$density)
 			for (i in age.axis.at)
-				lines(rep(median$data[i+1,'female']/maxx, 2), c(i-0.45, i+0.45), lwd=3, col=pyr1.par$border)
+				lines(rep(pyr1$data[i+1,'female']/maxx, 2), c(i-0.45, i+0.45), lwd=3, col=pyr1.par$border)
 			lwd <- c(lwd, 3)
 			cols <- c(pyr1.par$border, cols)
 		}
 		if(draw.past) {
-			rect(rep(0, lages), age.axis.at-0.15, past.data$data[,'female']/maxx, age.axis.at+0.15, #lwd=2,
+			rect(rep(0, lages), age.axis.at-0.15, pyr2$data[,'female']/maxx, age.axis.at+0.15, #lwd=2,
 					col=pyr2.par$col, border=pyr2.par$border, density=pyr2.par$density)
 			for (i in age.axis.at)
-				lines(rep(past.data$data[i+1,'female']/maxx, 2), c(i-0.15, i+0.15), lwd=3, col=pyr2.par$border)
+				lines(rep(pyr2$data[i+1,'female']/maxx, 2), c(i-0.15, i+0.15), lwd=3, col=pyr2.par$border)
 		}
 		axis(1, at= labels/maxx, labels=labels)
 		axis(4, at=age.axis.at, labels=age.labels, las=2)
-		legend <- if(draw.median) median$legend else c()
+		legend <- if(draw.median) pyr1$legend else c()
     	if (nquant > 0) legend <- c(legend, paste(names(quantiles), '% PI', sep=''))
     	lwd <- c(lwd, rep(5, nquant))
     	if(draw.past) {
-    		legend <- c(legend, past.data$legend)
+    		legend <- c(legend, pyr2$legend)
     		cols <- c(cols, pyr2.par$border)
     		lwd <- c(lwd, 3)
     	}
@@ -709,7 +714,7 @@ pop.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, pi=c(8
 
 
 
-pop.trajectories.pyramid.all <- function(pop.pred, year=NULL,
+pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.traj.pyramid'),
 									output.type="png", verbose=FALSE, ...) {
 	# plots pyramid for all countries and all years given by 'year'
@@ -757,16 +762,16 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 	mar <- par('mar')
 	par(mfrow=c(1,2),  oma = c(0, 0, 2, 0))
 	par(mar=c(5,6,2,-0.1)+0.1, mgp=c(3,0.5,0))
-	if(is.null(pyramid$median) && is.null(pyramid$past.data) && is.null(pyramid$quantiles) && is.null(pyramid$trajectories))
-		stop('Nothing to be plotted. Either median, quntiles, trajectories or past.data must be given in the pyramid object.')
-	age.labels <- rownames(if(!is.null(pyramid$median)) pyramid$median$data 
-						   else {if(!is.null(pyramid$past.data)) pyramid$past.data$data else {
+	if(is.null(pyramid$pyr1) && is.null(pyramid$pyr2) && is.null(pyramid$quantiles) && is.null(pyramid$trajectories))
+		stop('Nothing to be plotted. Either pyr1, quntiles, trajectories or pyr2 must be given in the pyramid object.')
+	age.labels <- rownames(if(!is.null(pyramid$pyr1)) pyramid$pyr1$data 
+						   else {if(!is.null(pyramid$pyr2)) pyramid$pyr2$data else {
 						   			if(is.null(pyramid$trajectories)) pyramid$quantiles[[1]]$low else pyramid$trajectories$male}})
 	if(is.null(age.labels)) stop('Row names must be given to determine age labels.')
 	lages <- length(age.labels)
 	nquant <- length(pyramid$quantiles)
-	draw.past <- !is.null(pyramid$past.data)
-	draw.median <- !is.null(pyramid$median)
+	draw.past <- !is.null(pyramid$pyr2)
+	draw.median <- !is.null(pyramid$pyr1)
 	draw.traj <- !is.null(pyramid$trajectories)
 	nr.traj <- ncol(pyramid$trajectories$male)
 	if(length(lwd) < 4) {
@@ -788,7 +793,7 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 		age.axis.at <- 0:(lages-1)
 		if(draw.traj) 
 			for(i in 1:nr.traj) lines(-trajectories$male[,i]/maxx, age.axis.at, col=col[4], lwd=lwd[4])
-		if(draw.median) lines(-median$data[,'male']/maxx, age.axis.at, col=col[1], lwd=lwd[1])
+		if(draw.median) lines(-pyr1$data[,'male']/maxx, age.axis.at, col=col[1], lwd=lwd[1])
 		lty=c()
 		if(nquant > 0) {
 			lty <- 2:(nquant+1)
@@ -797,7 +802,7 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 				lines(-quantiles[[i]]$high[,'male']/maxx, age.axis.at, col=col[2], lwd=lwd[2], lty=lty[i])
 			}
 		}
-		if(draw.past) lines(-past.data$data[,'male']/maxx, age.axis.at, col=col[3], lwd=lwd[3])
+		if(draw.past) lines(-pyr2$data[,'male']/maxx, age.axis.at, col=col[3], lwd=lwd[3])
 
 		labels <- if(proportion) round(seq(maxx, 0, length=min(trunc(maxx*100)+1,11)),2) else round(signif(seq(maxx, 0, length=min(11,maxx)),2))
 		axis(1, at=-labels/maxx, labels=labels)
@@ -813,11 +818,11 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 		legend <- c()
 		ltys<-lty
 		if(draw.median) {
-			lines(median$data[,'female']/maxx, age.axis.at, col=col[1], lwd=lwd[1])
+			lines(pyr1$data[,'female']/maxx, age.axis.at, col=col[1], lwd=lwd[1])
 			cols <- c(col[1], cols)
 			lwds <- c(lwd[1], lwds)
 			ltys <- c(1,ltys)
-			legend <- median$legend
+			legend <- pyr1$legend
 		}
 		if(nquant > 0) {
 			for(i in 1:nquant) {
@@ -827,8 +832,8 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 			legend <- c(legend, paste(names(quantiles), '% PI', sep=''))
 		}		
 		if(draw.past) {
-			lines(past.data$data[,'female']/maxx, age.axis.at, col=col[3], lwd=lwd[3])
-			legend <- c(legend, past.data$legend)
+			lines(pyr2$data[,'female']/maxx, age.axis.at, col=col[3], lwd=lwd[3])
+			legend <- c(legend, pyr2$legend)
 			cols <- c(cols, col[3])
 			lwds <- c(lwds, lwd[3])
 			ltys <- c(ltys, 1)

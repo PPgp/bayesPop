@@ -1,10 +1,10 @@
 \name{pop.pyramid}
 \alias{pop.pyramid}
-\alias{pop.pyramid.all}
+\alias{pop.pyramidAll}
 \alias{pop.pyramid.bayesPop.prediction}
 \alias{pop.pyramid.bayesPop.pyramid}
 \alias{pop.trajectories.pyramid}
-\alias{pop.trajectories.pyramid.all}
+\alias{pop.trajectories.pyramidAll}
 \alias{pop.trajectories.pyramid.bayesPop.prediction}
 \alias{pop.trajectories.pyramid.bayesPop.pyramid}
 \alias{plot.bayesPop.pyramid}
@@ -29,7 +29,7 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
     pyr1.par = list(border='black', col=NA, density=NULL),
 	pyr2.par = list(border='violet', col='violet', density=20), col.pi = NULL, \dots)
     
-pop.pyramid.all(pop.pred, year = NULL,
+pop.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.pyramid'),
 	output.type = "png", verbose = FALSE, \dots)
 	
@@ -39,7 +39,7 @@ pop.pyramid.all(pop.pred, year = NULL,
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pyramid, main = NULL, show.legend = TRUE, 
     ann = TRUE, col = c('red', 'red', 'black', 'gray'), lwd = c(2, 2, 2, 1), \dots)
     
-pop.trajectories.pyramid.all(pop.pred, year = NULL,
+pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.traj.pyramid'),
 	output.type = "png", verbose = FALSE, \dots)
 	
@@ -54,7 +54,7 @@ pop.trajectories.pyramid.all(pop.pred, year = NULL,
 \method{get.bPop.pyramid}{matrix}(data, \dots)
 
 \method{get.bPop.pyramid}{list}(data.list, main.label = NULL, 
-    legend = 'observed', legend2 = 'comparison', \dots)
+    legend1 = 'observed', legend2 = 'comparison', \dots)
 }
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
@@ -78,7 +78,7 @@ pop.trajectories.pyramid.all(pop.pred, year = NULL,
   \item{col, lwd}{Vector of size four giving the color/line width for 1. median, 2. quantiles, 3. comparison data, 4. trajectories.}
   \item{sort.pi}{Logical controlling if the probability intervals are sorted in decreasing order. This has an effect on the order in which they are plotted and thus on overlapping of pyramid boxes. By default the largest intervals are plotted first.}
   \item{data}{Data frame or matrix. It must have columns called \dQuote{male} and \dQuote{female}. The row names will determine the age labels, unless the \code{ages} argument is given.}
-  \item{main.label, legend, legend2}{Optional arguments for the main title, legend of the main pyramimd and the comparison pyramid.}
+  \item{main.label, legend, legend1, legend2}{Optional arguments for the main title, legend of the main pyramimd and the comparison pyramid.}
   \item{is.proportion}{Either logical, indicating if the values in \code{data} are proportions, or \code{NA} in which case the proportions are computed.}
   \item{ages}{Vector of age labels. It must be of the same length as the number of rows of \code{data}. If it is not given, the age labels are considered to be the row names of \code{data}.}
   \item{pop.max}{Maximum value to be drawn in the pyramid. If it is not given, \code{max(data)} is taken.}
@@ -96,9 +96,9 @@ The core of these functions operates on a \code{bayesPop.pyramid} object which i
 \value{
 	\code{pop.pyramid}, \code{pop.trajectories.pyramid} and \code{get.bPop.pyramid} return an object of class \code{bayesPop.pyramid} which is a list with the following components:
 	\item{label}{Label used for the main titel.}
-	\item{median}{List with elements \code{legend} (text used in the legend) and \code{data} which is a data frame with columns \dQuote{female} and \dQuote{male} and one row per age group. Row names are used for labeling the y-axis. This component is used for drawing the main pyramid.}
-	\item{past.data}{The same structure as \code{median}. It is used for drawing the comparison pyramid.}
-	\item{quantiles}{List with one element per probability interval whose names are the values of the intervals. Each element is again a list with components \code{low} and \code{high} which have the same structure as \code{median$data} and contain the lower and upper bounds of the corresponding interval.}
+	\item{pyr1}{List with elements \code{legend} (text used in the legend) and \code{data} which is a data frame with columns \dQuote{female} and \dQuote{male} and one row per age group. Row names are used for labeling the y-axis. This component is used for drawing the main pyramid.}
+	\item{pyr2}{The same structure as \code{pyr1}. It is used for drawing a comparison pyramid.}
+	\item{quantiles}{List with one element per probability interval whose names are the values of the intervals. Each element is again a list with components \code{low} and \code{high} which have the same structure as \code{pyr1$data} and contain the lower and upper bounds of the corresponding interval.}
 	\item{trajectories}{List with elements \dQuote{female} and \dQuote{male} each of which is a matrix of size number of age categories x number of trajectories. This is only used by the \code{pop.trajectories.pyramid} function.}
 	\item{is.proportion}{Logical indicating if values in the various data frames in this object are proportions or raw values.}
 	\item{pop.max}{Maximum value for the x-axis.}
@@ -121,7 +121,7 @@ dev.new()
 pop.trajectories.pyramid(pred, "Netherlands", 2045, age=1:25, draw.past.year=TRUE)
 # using manual manipulation of the data: e.g. show only the prob. intervals 
 pred.pyr <- get.bPop.pyramid(pred, country="Madagascar", year=2090, age=1:27)
-pred.pyr$median <- NULL
+pred.pyr$pyr1 <- NULL
 plot(pred.pyr)
 
 # pyramids for user-defined data
@@ -134,10 +134,10 @@ colnames(WA) <- c('male', 'female')
 King <- data[,c('King.male', 'King.female')]
 colnames(King) <- c('male', 'female')
 # create and plot a bayesPop.pyramid object
-pyramid <- get.bPop.pyramid(list(WA, King), legend='Washington', legend2='King')
+pyramid <- get.bPop.pyramid(list(WA, King), legend1='Washington', legend2='King')
 plot(pyramid, main='Population in 2011')
 # show data as proportions
-pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, legend='Washington', legend2='King')
+pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, legend1='Washington', legend2='King')
 pop.pyramid(pyramid.prop, pyr1.par=list(col='lightgreen', border='lightgreen', density=30), 
     pyr2.par=list(col='darkred', border='darkred', density=50), main='Population in 2011 (proportions)')
 }
