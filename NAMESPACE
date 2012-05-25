@@ -19,10 +19,20 @@ pop.trajectories.pyramid.all,
 get.pop.prediction,
 has.pop.prediction,
 pop.aggregate,
-get.pop.aggregation
+get.pop.aggregation,
+get.bPop.pyramid
 )
 
 # register S3 methods
 S3method(summary, bayesPop.prediction)
 S3method(print, summary.bayesPop.prediction)
 S3method(get.countries.table, bayesPop.prediction)
+S3method(pop.pyramid, bayesPop.prediction)
+S3method(pop.pyramid, bayesPop.pyramid)
+S3method(plot, bayesPop.pyramid)
+S3method(pop.trajectories.pyramid, bayesPop.prediction)
+S3method(pop.trajectories.pyramid, bayesPop.pyramid)
+S3method(get.bPop.pyramid, bayesPop.prediction)
+S3method(get.bPop.pyramid, data.frame)
+S3method(get.bPop.pyramid, matrix)
+S3method(get.bPop.pyramid, list)
