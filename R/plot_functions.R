@@ -418,30 +418,6 @@ pop.trajectories.table <- function(pop.pred, country, pi=c(80, 95),
 	return(pred.table)
 }
 
-pop.pyramidAll <- function(pop.pred, year=NULL,
-									output.dir=file.path(getwd(), 'pop.pyramid'),
-									output.type="png", verbose=FALSE, ...) {
-	# plots pyramid for all countries and all years given by 'year'
-	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
-	all.countries <- pop.pred$countries[,'name']
-	postfix <- output.type
-	if(output.type=='postscript') postfix <- 'ps'
-	if(is.null(year)) year <- pop.pred$present.year
-	for (country in all.countries) {
-		country.obj <- get.country.object(country, country.table=pop.pred$countries)
-		if(verbose)
-			cat('Creating pyramid(s) for', country, '(', country.obj$code, ')\n')
-
-		for(y in year) {
-			do.call(output.type, list(file.path(output.dir, 
-										paste('pyr', y, '_c', country.obj$code, '.', postfix, sep=''))))
-			pop.pyramid(pop.pred, country=country.obj$code, year=y, ...)
-			dev.off()
-		}
-	}
-	if(verbose)
-		cat('\nPyramids stored into', output.dir, '\n')
-}
 
 "get.bPop.pyramid" <- function(data, ...) UseMethod("get.bPop.pyramid")
 
@@ -466,29 +442,30 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 				pop.max=pop.max), class='bayesPop.pyramid'))
 }
 
-get.bPop.pyramid.list <- function(data.list, main.label=NULL, legend1='observed', legend2='comparison', ...) {
-	pyr <- get.bPop.pyramid(data.list[[1]], main.label=main.label, legend=legend1, ...)
-	if(!is.null(data.list[[2]])) { # comparison dataset
-		pyr2 <- get.bPop.pyramid(data.list[[2]], legend=legend2, ...)
+get.bPop.pyramid.list <- function(data, main.label=NULL, legend1='observed', legend2='comparison', ...) {
+	pyr <- get.bPop.pyramid(data[[1]], main.label=main.label, legend=legend1, ...)
+	if(!is.null(data[[2]])) { # comparison dataset
+		pyr2 <- get.bPop.pyramid(data[[2]], legend=legend2, ...)
 		pyr$pyr2 <- pyr2$pyr1
 		pyr$pop.max <- max(pyr$pop.max, pyr2$pop.max)
 	}
-	if(length(data.list>2)) { # quantile dataset: must be in the right format (list with a low and high data frame per PI)
-		pyr$quantiles <- data.list[[3]]
-		if(!is.list(data.list[[3]]))
+	if(length(data)>2) { # quantile dataset: must be in the right format (list with a low and high data frame per PI)
+		pyr$quantiles <- data[[3]]
+		if(!is.list(data[[3]]))
 			stop('Quantile component must be a list of high and low data frames.')
-		for(i in 1:length(data.list[[3]])) {
-			if(!all(is.element(c('high', 'low'), names(data.list[[3]][[i]]))))
+		for(i in 1:length(data[[3]])) {
+			if(!all(is.element(c('high', 'low'), names(data[[3]][[i]]))))
 				stop('Quantile components must have componenet high and low.')
-			pyr$pop.max <- max(pyr$pop.max, data.list[[3]][[i]]$high, data.list[[3]][[i]]$low)
+			pyr$pop.max <- max(pyr$pop.max, data[[3]][[i]]$high, data[[3]][[i]]$low)
 		}
 	}
 	return(pyr)
 } 
 
 
-get.bPop.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, pi=c(80, 95), proportion=FALSE, age=1:21, 
+get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(80, 95), proportion=FALSE, age=1:21, 
 												nr.traj=0, draw.past.year=FALSE, sort.pi=TRUE, ...) {
+	pop.pred <- data
 	country <- get.country.object(country, country.table=pop.pred$countries)
 	if(is.null(country$code)) stop('Country not found in the prediction object.')
 	year.idx <- c(if(is.null(year)) 1 else get.prediction.year.index(pop.pred, year), 1)
@@ -600,15 +577,15 @@ get.bPop.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, p
 }
 
 
-plot.bayesPop.pyramid <- function(pyramid, ...) {
-	if(is.null(pyramid$trajectories))
-		pop.pyramid(pyramid, ...)
-	else pop.trajectories.pyramid(pyramid, ...)
+plot.bayesPop.pyramid <- function(x, ...) {
+	if(is.null(x$trajectories))
+		pop.pyramid(x, ...)
+	else pop.trajectories.pyramid(x, ...)
 }
 
-"pop.pyramid" <- function(pyramid, ...) UseMethod("pop.pyramid")
+"pop.pyramid" <- function(pop.object, ...) UseMethod("pop.pyramid")
 
-pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, ann=TRUE, 
+pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE, ann=TRUE, 
 										pyr1.par=list(border='black', col=NA, density=NULL),
 										pyr2.par =list(border='violet', col='violet', density=20), 
 										col.pi = NULL, ...) {
@@ -617,21 +594,21 @@ pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, a
 	mar <- par('mar')
 	par(mfrow=c(1,2),  oma = c(0, 0, 2, 0))
 	par(mar=c(5,6,2,-0.1)+0.1, mgp=c(3,0.5,0))
-	if(is.null(pyramid$pyr1) && is.null(pyramid$pyr2) && is.null(pyramid$quantiles)) 
-		stop('Nothing to be plotted. Either pyr1, quantiles or pyr2 must be given in the pyramid object.')
-	age.labels <- rownames(if(!is.null(pyramid$pyr1)) pyramid$pyr1$data 
-						   else {if(!is.null(pyramid$pyr2)) pyramid$pyr2$data else pyramid$quantiles[[1]]$low})
+	if(is.null(pop.object$pyr1) && is.null(pop.object$pyr2) && is.null(pop.object$quantiles)) 
+		stop('Nothing to be plotted. Either pyr1, quantiles or pyr2 must be given in pop.object.')
+	age.labels <- rownames(if(!is.null(pop.object$pyr1)) pop.object$pyr1$data 
+						   else {if(!is.null(pop.object$pyr2)) pop.object$pyr2$data else pop.object$quantiles[[1]]$low})
 	if(is.null(age.labels)) stop('Row names must be given to determine age labels.')
 	lages <- length(age.labels)
-	nquant <- length(pyramid$quantiles)
-	draw.past <- !is.null(pyramid$pyr2)
-	draw.median <- !is.null(pyramid$pyr1)
+	nquant <- length(pop.object$quantiles)
+	draw.past <- !is.null(pop.object$pyr2)
+	draw.median <- !is.null(pop.object$pyr1)
 	pyr1.par.default <- list(border='black', col=NA, density=NULL)
 	for(item in names(pyr1.par.default)) if(is.null(pyr1.par[[item]])) pyr1.par[[item]] <- pyr1.par.default[[item]]
 	pyr2.par.default <- list(border='violet', col='violet', density=20)
 	for(item in names(pyr2.par.default)) if(is.null(pyr2.par[[item]])) pyr2.par[[item]] <- pyr2.par.default[[item]]
 	cols <- c()
-	with(pyramid, {
+	with(pop.object, {
 		maxx <- pop.max		
 		proportion <- !is.null(is.proportion) && is.proportion
 		plot(c(-1,0), c(-0.5, lages-0.5), type='n', axes=FALSE, xlab = "", ylab = "", main='Male', first.panel=grid(),
@@ -702,20 +679,18 @@ pop.pyramid.bayesPop.pyramid <- function(pyramid, main=NULL, show.legend=TRUE, a
 	par(mgp=mgp, oma=oma, mar=mar)	
 }
 
-pop.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, pi=c(80, 95), proportion=FALSE,
+pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), proportion=FALSE,
 											age=1:21, draw.past.year=FALSE, plot=TRUE, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.pred, country, year=year, pi=pi, proportion=proportion, age=age, draw.past.year=draw.past.year)
+	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, proportion=proportion, age=age, draw.past.year=draw.past.year)
 	if (plot) pop.pyramid(data, ...)
 	invisible(data)
 }
 
-
-
-pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
-									output.dir=file.path(getwd(), 'pop.traj.pyramid'),
+pop.pyramidAll <- function(pop.pred, year=NULL,
+									output.dir=file.path(getwd(), 'pop.pyramid'),
 									output.type="png", verbose=FALSE, ...) {
 	# plots pyramid for all countries and all years given by 'year'
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
@@ -726,33 +701,34 @@ pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
 	for (country in all.countries) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries)
 		if(verbose)
-			cat('Creating trajectory pyramid(s) for', country, '(', country.obj$code, ')\n')
+			cat('Creating pyramid(s) for', country, '(', country.obj$code, ')\n')
 
 		for(y in year) {
 			do.call(output.type, list(file.path(output.dir, 
 										paste('pyr', y, '_c', country.obj$code, '.', postfix, sep=''))))
-			pop.trajectories.pyramid(pop.pred, country=country.obj$code, year=y, ...)
+			pop.pyramid(pop.pred, country=country.obj$code, year=y, ...)
 			dev.off()
 		}
 	}
 	if(verbose)
-		cat('\nTrajectory pyramids stored into', output.dir, '\n')
+		cat('\nPyramids stored into', output.dir, '\n')
 }
 
-"pop.trajectories.pyramid" <- function(data, ...) UseMethod("pop.trajectories.pyramid")
 
-pop.trajectories.pyramid.bayesPop.prediction <- function(pop.pred, country, year=NULL, pi=c(80, 95), 
+"pop.trajectories.pyramid" <- function(pop.object, ...) UseMethod("pop.trajectories.pyramid")
+
+pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), 
 					nr.traj=NULL, proportion=FALSE, age=1:21, draw.past.year=FALSE, plot=TRUE, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.pred, country, year=year, pi=pi, nr.traj=nr.traj, proportion=proportion, 
+	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, nr.traj=nr.traj, proportion=proportion, 
 							age=age, draw.past.year=draw.past.year, sort.pi=FALSE)
 	if(plot) pop.trajectories.pyramid(data, ...)
 	invisible(data)
 }
 
-pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.legend=TRUE, ann=TRUE, 
+pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, show.legend=TRUE, ann=TRUE, 
 													col=c('red', 'red', 'black', 'gray'), 
 													lwd=c(2,2,2,1), ...) {
 	# col/lwd is color and line width for:
@@ -762,18 +738,18 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 	mar <- par('mar')
 	par(mfrow=c(1,2),  oma = c(0, 0, 2, 0))
 	par(mar=c(5,6,2,-0.1)+0.1, mgp=c(3,0.5,0))
-	if(is.null(pyramid$pyr1) && is.null(pyramid$pyr2) && is.null(pyramid$quantiles) && is.null(pyramid$trajectories))
-		stop('Nothing to be plotted. Either pyr1, quntiles, trajectories or pyr2 must be given in the pyramid object.')
-	age.labels <- rownames(if(!is.null(pyramid$pyr1)) pyramid$pyr1$data 
-						   else {if(!is.null(pyramid$pyr2)) pyramid$pyr2$data else {
-						   			if(is.null(pyramid$trajectories)) pyramid$quantiles[[1]]$low else pyramid$trajectories$male}})
+	if(is.null(pop.object$pyr1) && is.null(pop.object$pyr2) && is.null(pop.object$quantiles) && is.null(pop.object$trajectories))
+		stop('Nothing to be plotted. Either pyr1, quntiles, trajectories or pyr2 must be given in pop.object.')
+	age.labels <- rownames(if(!is.null(pop.object$pyr1)) pop.object$pyr1$data 
+						   else {if(!is.null(pop.object$pyr2)) pop.object$pyr2$data else {
+						   			if(is.null(pop.object$trajectories)) pop.object$quantiles[[1]]$low else pop.object$trajectories$male}})
 	if(is.null(age.labels)) stop('Row names must be given to determine age labels.')
 	lages <- length(age.labels)
-	nquant <- length(pyramid$quantiles)
-	draw.past <- !is.null(pyramid$pyr2)
-	draw.median <- !is.null(pyramid$pyr1)
-	draw.traj <- !is.null(pyramid$trajectories)
-	nr.traj <- ncol(pyramid$trajectories$male)
+	nquant <- length(pop.object$quantiles)
+	draw.past <- !is.null(pop.object$pyr2)
+	draw.median <- !is.null(pop.object$pyr1)
+	draw.traj <- !is.null(pop.object$trajectories)
+	nr.traj <- ncol(pop.object$trajectories$male)
 	if(length(lwd) < 4) {
 		llwd <- length(lwd)
 		lwd <- rep(lwd, 4)
@@ -785,7 +761,7 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 		col[(lcol+1):4] <- c('red', 'red', 'black', 'gray')[(lcol+1):4]
 	}
 
-	with(pyramid, {
+	with(pop.object, {
 		maxx <- pop.max
 		proportion <- !is.null(is.proportion) && is.proportion
 		plot(c(-1,0), c(0, lages-1), type='n', axes=FALSE, xlab = "", ylab = "", main='Male', first.panel=grid(),
@@ -847,6 +823,31 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pyramid, main=NULL, show.
 		if(show.legend && ann) legend('topright', legend=legend, lty=ltys, bty='n', col=cols, lwd=lwds)
 	})
 	par(mgp=mgp, oma=oma, mar=mar)
+}
+
+pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
+									output.dir=file.path(getwd(), 'pop.traj.pyramid'),
+									output.type="png", verbose=FALSE, ...) {
+	# plots pyramid for all countries and all years given by 'year'
+	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
+	all.countries <- pop.pred$countries[,'name']
+	postfix <- output.type
+	if(output.type=='postscript') postfix <- 'ps'
+	if(is.null(year)) year <- pop.pred$present.year
+	for (country in all.countries) {
+		country.obj <- get.country.object(country, country.table=pop.pred$countries)
+		if(verbose)
+			cat('Creating trajectory pyramid(s) for', country, '(', country.obj$code, ')\n')
+
+		for(y in year) {
+			do.call(output.type, list(file.path(output.dir, 
+										paste('pyr', y, '_c', country.obj$code, '.', postfix, sep=''))))
+			pop.trajectories.pyramid(pop.pred, country=country.obj$code, year=y, ...)
+			dev.off()
+		}
+	}
+	if(verbose)
+		cat('\nTrajectory pyramids stored into', output.dir, '\n')
 }
 
 .get.year.index <- function(year, years) {

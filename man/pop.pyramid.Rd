@@ -22,10 +22,10 @@ Probabilistic Population Pyramid
 Functions for plotting probabilistic population pyramid. \code{pop.pyramid} creates a classic pyramid using rectangles; \code{pop.trajectories.pyramid} creates a pyramid using vertical lines (possibly derived from population trajectories). They can be used for a prediction object created with this package, or for any user-defined sex- and age-specific dataset. In such a case, function \code{get.bPop.pyramid} should be used to translate user-defined data into a \code{bayesPop.pyramid} object.
 }
 \usage{
-\method{pop.pyramid}{bayesPop.prediction}(pop.pred, country, year = NULL, pi = c(80, 95), 
+\method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, pi = c(80, 95), 
     proportion = FALSE, age = 1:21, draw.past.year = FALSE, plot = TRUE, \dots)
     
-\method{pop.pyramid}{bayesPop.pyramid}(pyramid, main = NULL, show.legend = TRUE, ann = TRUE, 
+\method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, ann = TRUE, 
     pyr1.par = list(border='black', col=NA, density=NULL),
 	pyr2.par = list(border='violet', col='violet', density=20), col.pi = NULL, \dots)
     
@@ -33,19 +33,19 @@ pop.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.pyramid'),
 	output.type = "png", verbose = FALSE, \dots)
 	
-\method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.pred, country, year = NULL, pi = c(80, 95), 
+\method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, pi = c(80, 95), 
     nr.traj = NULL, proportion = FALSE, age = 1:21, draw.past.year = FALSE, plot = TRUE, \dots)
     
-\method{pop.trajectories.pyramid}{bayesPop.pyramid}(pyramid, main = NULL, show.legend = TRUE, 
+\method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     ann = TRUE, col = c('red', 'red', 'black', 'gray'), lwd = c(2, 2, 2, 1), \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.traj.pyramid'),
 	output.type = "png", verbose = FALSE, \dots)
 	
-\method{plot}{bayesPop.pyramid}(pyramid, \dots)
+\method{plot}{bayesPop.pyramid}(x, \dots)
 
-\method{get.bPop.pyramid}{bayesPop.prediction}(pop.pred, country, year = NULL, pi = c(80, 95), 
+\method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, pi = c(80, 95), 
     proportion = FALSE, age = 1:21, nr.traj = 0, draw.past.year = FALSE, sort.pi=TRUE, \dots)
     
 \method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = 'observed', 
@@ -53,11 +53,14 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
     
 \method{get.bPop.pyramid}{matrix}(data, \dots)
 
-\method{get.bPop.pyramid}{list}(data.list, main.label = NULL, 
+\method{get.bPop.pyramid}{list}(data, main.label = NULL, 
     legend1 = 'observed', legend2 = 'comparison', \dots)
 }
 \arguments{
+  \item{pop.object}{Object of class \code{\link{bayesPop.prediction}} or \code{bayesPop.pyramid} (see Value section).}
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
+  \item{x}{Object of class \code{bayesPop.pyramid}.}
+  \item{data}{Data frame, matrix, list or object of class \code{\link{bayesPop.prediction}}. For data frame and matrix, it must have columns called \dQuote{male} and \dQuote{female}. The row names will determine the age labels. For lists, it can have one to three element. The first two are data frames or matrices as described above. The first is used for the main pyramid, the second for a comparison pyramid. The third optional element is a list of quantiles. It must be in the same format as \code{bayesPop.pyramid$quantiles} (see Value section below).}
   \item{country}{Name or numerical code of a country.}
   \item{year}{Year within the projection or estimation period to be plotted. Default is the start year of the prediction. In the functions \code{pop.pyramid.all} and \code{pop.trajectories.pyramid.all}, the \code{year} argument can be a vector of years.}
   \item{pi}{Probability interval. It can be a single number or an array.}
@@ -65,7 +68,6 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{age}{Integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last available age goup is 130+ which corresponds to index 27. The purpose of this argument here is mainly to control the height of the pyramid.}
   \item{draw.past.year}{If \code{TRUE}, present year is shown in the pyramid. In addition to a logical value it can be a numeric value giving a past year to be drawn in the pyramid for comparison purposes.}
   \item{plot}{If \code{FALSE}, nothing is plotted. It can be used to retrieve the pyramid object without drawing it.}
-  \item{pyramid}{Object of class \code{bayesPop.pyramid}. See below.}
   \item{main}{Titel of the plot. By default it is the country name and projection year if known.}
   \item{show.legend}{Logical controlling if the plot legend is drawn.}
   \item{ann}{Logical controlling if any annotation (main and legend) is plotted.}
@@ -77,12 +79,10 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{col, lwd}{Vector of size four giving the color/line width for 1. median, 2. quantiles, 3. comparison data, 4. trajectories.}
   \item{sort.pi}{Logical controlling if the probability intervals are sorted in decreasing order. This has an effect on the order in which they are plotted and thus on overlapping of pyramid boxes. By default the largest intervals are plotted first.}
-  \item{data}{Data frame or matrix. It must have columns called \dQuote{male} and \dQuote{female}. The row names will determine the age labels, unless the \code{ages} argument is given.}
   \item{main.label, legend, legend1, legend2}{Optional arguments for the main title, legend of the main pyramimd and the comparison pyramid.}
   \item{is.proportion}{Either logical, indicating if the values in \code{data} are proportions, or \code{NA} in which case the proportions are computed.}
   \item{ages}{Vector of age labels. It must be of the same length as the number of rows of \code{data}. If it is not given, the age labels are considered to be the row names of \code{data}.}
   \item{pop.max}{Maximum value to be drawn in the pyramid. If it is not given, \code{max(data)} is taken.}
-  \item{data.list}{List with one to three element. The first two are data frames or matrices. The first is used for the main pyramid, the second for a comparison pyramid. The third optional element is a list of quantiles. It must be in the same format as bayesPop$quantiles (see Section Value below).}
   \item{\dots}{Arguments passed to the underlying functions.}
 }
 \details{
