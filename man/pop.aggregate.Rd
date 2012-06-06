@@ -68,14 +68,13 @@ Hana Sevcikova, Adrian Raftery
 \code{\link{pop.predict}}, \code{\link[bayesTFR]{tfr.predict.extra}}, \code{\link[bayesLife]{e0.predict.extra}}
 }
 \examples{
-\dontrun{
 sim.dir <- tempfile()
 pred <- pop.predict(countries=c(528,218,450), nr.traj = 10, output.dir=sim.dir)
 aggr <- pop.aggregate(pred, 900) # aggregating World (i.e. all countries available in pred)
 pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
 # countries over which we aggregated:
 LOCATIONS[is.element(LOCATIONS[,'country_code'], aggr$aggregated.countries[['900']]),]
-unlink(sim.dir, recursive=TRUE)}
+unlink(sim.dir, recursive=TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

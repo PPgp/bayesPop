@@ -701,7 +701,7 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
     		cols <- c(cols, pyr2.par$border)
     		lwd <- c(lwd, 3)
 		}
-		lines(c(0,0), c(age.axis.at[1]-pyr1.half.height, age.axis.at[length(age.axis.at)]+pyr1.half.height), col=pyr1.par$border)	
+		lines(c(0,0), c(age.axis.at[1]-pyr1.half.height, age.axis.at[length(age.axis.at)]+pyr1.half.height), col='black')	
 		if(show.legend && ann) legend('topright', legend=legend, bty='n', col=cols, lwd=lwd, cex=cex)
 		if(is.null(main)) main <- if(exists('label')) label else ""
 		if(ann) title(main, line=1, cex.main=cex.main)
