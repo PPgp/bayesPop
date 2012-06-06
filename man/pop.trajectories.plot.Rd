@@ -15,7 +15,8 @@ pop.trajectories.plot(pop.pred, country, pi = c(80, 95),
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory = FALSE,
     xlim = NULL, ylim = NULL, xlab = "Year", ylab = "Population projection", 
     main = NULL, dev.ncol = 5, lwd = c(2, 2, 2, 2, 1), 
-    col = c('black', 'red', 'red', 'blue', 'gray'), show.legend = TRUE, \dots)
+    col = c('black', 'red', 'red', 'blue', 'gray'), show.legend = TRUE, 
+    ann = par('ann'), \dots)
     
 pop.trajectories.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.trajectories"),
@@ -36,7 +37,7 @@ pop.trajectories.table(pop.pred, country, pi = c(80, 95),
 }
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{typical.trajectory}{Logical. If \code{TRUE} one trajectory is shown that has the smallest distance to the median.}
-  \item{xlim, ylim, xlab, ylab, main}{Graphical parameters passed to the \code{plot} function.}
+  \item{xlim, ylim, xlab, ylab, main, ann}{Graphical parameters passed to the \code{plot} function.}
   \item{dev.ncol}{Number of column for the graphics device if \code{sum.over.ages} is \code{FALSE}. If the number of age groups is smaller than \code{dev.ncol}, the number of columns is automatically decreased.}
     \item{lwd, col}{Vector of five elements giving the line width and color for: 1. observed data, 2. median, 3. quantiles, 4. half-child variant, 5. trajectories.}
     \item{show.legend}{Logical controlling whether the legend should be drawn.}

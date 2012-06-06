@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 1.0-1\cr
-Date: \tab 2012-05-17\cr
+Version: \tab 2.0-1\cr
+Date: \tab 2012-06-05\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
@@ -41,4 +41,34 @@ pop.trajectories.plot(pred, country)
 pop.pyramid(pred, country)
 pop.pyramid(pred, country, year=2100, age=1:26)
 unlink(sim.dir, recursive=TRUE)
+
+# Here are commands needed to run probabilistic projections
+# from scratch, i.e. including TFR and life expectancy.
+# Note that running the first four commands can take 
+# LONG time (several days). For a toy simulation, set 
+# the number of iterations (iter) to a small number.
+\dontrun{
+sim.dir.tfr <- 'directory/for/TFR'
+sim.dir.e0 <-  'directory/for/e0'
+sim.dir.pop <- 'directory/for/pop'
+
+# Estimate TFR parameters
+run.tfr.mcmc(iter='auto', output.dir=sim.dir.tfr, seed=1)
+
+# Predict TFR (if iter above < 4000, reduce burnin and nr.traj accordingly)
+tfr.predict(sim.dir=sim.dir.tfr, nr.traj=2000, burnin=2000)
+
+# Estimate e0 parameters (females)
+run.e0.mcmc(sex='F', iter='auto', output.dir=sim.dir.e0, seed=1)
+
+#Predict female and male e0	
+# (if iter above < 22000, reduce burnin and nr.traj accordingly)
+e0.predict(sim.dir=sim.dir.e0, nr.traj=2000, burnin=20000)
+
+#Population prediction
+pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
+    inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
+pop.trajectories.plot(pred, 'Madagascar', nr.traj=50, sum.over.ages=TRUE)
+pop.trajectories.table(pred, 'Madagascar')
+}
 }

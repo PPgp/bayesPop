@@ -3,10 +3,11 @@ has.pop.prediction <- function(sim.dir) {
 	return(FALSE)
 }
 
-get.pop.prediction <- function(sim.dir) {
+get.pop.prediction <- function(sim.dir, aggregation=NULL) {
 	############
 	# Returns an object of class bayesPop.prediction
 	############
+	if(!is.null(aggregation)) return(get.pop.aggregation(sim.dir, name=aggregation))
 	output.dir <- file.path(sim.dir, 'predictions')
 	return(.get.prediction.object(output.dir))
 }
