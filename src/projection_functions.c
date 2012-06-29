@@ -147,10 +147,11 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
-				  double *popm, double *popf, double *totp 
+				  double *popm, double *popf, double *totp, 
+				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
-	double b, bt[7], bm, bf, mmult;
+	double b, bt[7], bm, bf, mmult, srb_ratio;
 	int i,j, adim, nrow, ncol, n;
 	nrow = *migr;
 	ncol = *migc;
@@ -182,12 +183,18 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				break;
 		}
 	}
+
+
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
 		/* Compute ages >=5 */
-		for(i=1; i<(adim-1); ++i) {	
+		for(i=1; i<(adim-1); ++i) {
+			/* Index of survival ratio, migration and vital events is shifted by one in comparison to population,
+			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + (j-1)*adim] + totmigm[i][j-1];
 			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + (j-1)*adim] + totmigf[i][j-1];
+			deathsm[i + (j-1)*adim] = popm[i + j*adim] * (1-srm[i + (j-1)*adim]);
+			deathsf[i + (j-1)*adim] = popf[i + j*adim] * (1-srf[i + (j-1)*adim]);
 		}
 		
 		/* Age 100+ */
@@ -195,16 +202,19 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + (j-1)*adim] + migf[26][j-1];
 		
 		/* birth in 5-yrs */
+		srb_ratio = srb[j - 1] / (1 + srb[j - 1]);
 		for(i=3; i<10; ++i) {
 			bt[i-3] = (popf[i + (j-1)*adim] + popf[i + j*adim]) * asfr[i-3 + (j-1)*7] * 0.5;
+			btagem[i-3+(j-1)*7] = bt[i-3] * srb_ratio;
+			btagef[i-3+(j-1)*7] = bt[i-3] - btagem[i-3+(j-1)*7];
 		}
 		b = sum(bt, 7);
-		bm = b * srb[j - 1] / (1 + srb[j - 1]);
+		bm = b * srb_ratio;
 		bf = b / (1 + srb[j - 1]);
-		
+			
 		popm[j*adim] = bm * srm[(j-1)*adim] + mmult * migm[0][j-1];
 		popf[j*adim] = bf * srf[(j-1)*adim] + mmult * migf[0][j-1];
-		for(i=0; i<27; ++i) {
+		for(i=0; i<adim; ++i) {
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
 		}
 		/*Rprintf("\ntotp%d = %lf", j, totp[j]);*/
