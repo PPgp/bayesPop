@@ -327,9 +327,9 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 }
 
 
-get.age.labels <- function(ages, collapsed=FALSE) {
+get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE) {
 	all.ages <- c(seq(0, by=5, length=27), NA)
-	ages.idx <- which(is.element(all.ages, ages))
+	ages.idx <- if(age.is.index) ages else which(is.element(all.ages, ages))
 	ages.idx.shift <- ages.idx+1
 	if(collapsed) {
 		ages.idx.dif <- which(!is.element(ages.idx, ages.idx.shift))
