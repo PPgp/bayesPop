@@ -93,7 +93,18 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 						dimnames=list(country.codes, ages, quantiles.to.keep, present.and.proj.years))
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, nr_project+1), 
 						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years))
+
+	status.for.gui <- paste('out of', ncountries, 'countries.')
+	gui.options <- list()
 	for(cidx in 1:ncountries) {
+		if(getOption('bDem.Poppred', default=FALSE)) {
+			# This is to unblock the GUI, if the run is invoked from bayesDem
+			# and pass info about its status
+			# In such a case the gtk libraries are already loaded
+			gui.options$bDem.Poppred.status <- paste('finished', cidx, status.for.gui)
+			unblock.gtk('bDem.Poppred', gui.options)
+		}
+
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
@@ -188,7 +199,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#save updated meta file
 		country.row <- LOCATIONS[country.idx,c('country_code', 'name')]
 		colnames(country.row) <- c('code', 'name')
-		if(cidx == 1) { # first pass
+		if(!exists('bayesPop.prediction')) { # first pass
 			bayesPop.prediction <- if(!is.null(pred)) pred 
 					else structure(list(output.directory=outdir,
 							nr.traj = nr.traj,	

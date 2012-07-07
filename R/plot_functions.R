@@ -58,7 +58,7 @@ pop.trajectories.plot <- function(pop.pred, country, pi=c(80, 95),
 									show.legend=show.legend, ann=ann, ...)
 	else {
 		all.ages <- pop.pred$ages
-		if(age=='all') age <- 1:20
+		if(age[1]=='all') age <- 1:20
 		age.labels <- get.age.labels(pop.pred$ages)
 		if(is.null(main)) {
 			main <- country$name

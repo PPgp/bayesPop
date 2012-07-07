@@ -104,7 +104,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
  									nr.traj=NULL, typical.trajectory=FALSE) {
 	traj.file <- file.path(pop.pred$output.directory, paste('totpop_country', country, '.rda', sep=''))
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
-	load.traj <- is.null(nr.traj) || nr.traj > 0
+	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory
 	if (!file.exists(traj.file)) 
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	load(traj.file)

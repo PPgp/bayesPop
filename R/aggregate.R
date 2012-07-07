@@ -42,7 +42,19 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		inp[[item]] <- NULL
 	aggregated.countries <- list()
 	if(verbose) cat('\nAggregating inputs using regional method.')
+	status.for.gui <- paste('out of', length(regions), 'regions.')
+	gui.options <- list()
+	region.counter <- 0
 	for(id in regions) {
+		if(getOption('bDem.PopAgpred', default=FALSE)) {
+			# This is to unblock the GUI, if the run is invoked from bayesDem
+			# and pass info about its status
+			# In such a case the gtk libraries are already loaded
+			region.counter <- region.counter + 1
+			gui.options$bDem.PopAgpred.status <- paste('finished', region.counter, status.for.gui)
+			unblock.gtk('bDem.PopAgpred', gui.options)
+		}
+
 		countries <- get.countries.for.region(id, pop.pred)
 		if(length(countries)==0) next
 		inipop <- .aggregate.initial.pop(pop.pred, countries, id)
@@ -169,9 +181,9 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	if(verbose) cat('\nAggregating using independence method.')
 	nreg <- length(regions)
 	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
-	quant <- quantM <- quantF <- array(NA, c(nreg, dim(pop.pred$quantiles)[2:3]), dimnames=dimnames(pop.pred$quantiles))
+	quant <- quantM <- quantF <- array(NA, c(nreg, dim(pop.pred$quantiles)[2:3]), dimnames=c(list(regions), dimnames(pop.pred$quantiles)[2:3]))
 	quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(nreg, dim(pop.pred$quantilesMage)[2:4]),
-						dimnames=dimnames(pop.pred$quantilesMage))
+						dimnames=c(list(regions), dimnames(pop.pred$quantilesMage)[2:4]))
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(nreg,dim(pop.pred$traj.mean.sd)[2:3]))
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.pred$output.directory)
 	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
@@ -179,7 +191,16 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	aggregated.countries <- list()
 	id.idx <- 0
 	valid.regions <- rep(FALSE, length(regions))
+	status.for.gui <- paste('out of', nreg, 'regions.')
+	gui.options <- list()
 	for(reg.idx in 1:length(regions)) {
+		if(getOption('bDem.PopAgpred', default=FALSE)) {
+			# This is to unblock the GUI, if the run is invoked from bayesDem
+			# and pass info about its status
+			# In such a case the gtk libraries are already loaded
+			gui.options$bDem.PopAgpred.status <- paste('finished', reg.idx, status.for.gui)
+			unblock.gtk('bDem.PopAgpred', gui.options)
+		}
 		id <- regions[reg.idx]
 		if(verbose) cat('\nAggregating region ', id)
 		countries <- get.countries.for.region(id, pop.pred)
