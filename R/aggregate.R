@@ -177,6 +177,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	return(res)
 }
 
+
 pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose) {
 	if(verbose) cat('\nAggregating using independence method.')
 	nreg <- length(regions)
@@ -185,6 +186,8 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(nreg, dim(pop.pred$quantilesMage)[2:4]),
 						dimnames=c(list(regions), dimnames(pop.pred$quantilesMage)[2:4]))
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(nreg,dim(pop.pred$traj.mean.sd)[2:3]))
+	obs.data <- pop.pred$inputs$pop.matrix
+	aggr.obs.data <- list(male=NULL, female=NULL)
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.pred$output.directory)
 	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
 	dir.create(outdir, recursive=TRUE)
@@ -209,6 +212,7 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 		valid.regions[reg.idx] <- TRUE
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		for(cidx in 1:length(countries.index)) {
+			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
 			traj.file <- file.path(pop.pred$output.directory, paste('totpop_country', countries[cidx], '.rda', sep=''))
 			load(traj.file)
 			if(cidx == 1) {
@@ -218,6 +222,10 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 				stotp.hch <- totp.hch
 				stotpm.hch <- totpm.hch
 				stotpf.hch <- totpf.hch
+				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
+				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
+				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
+																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
 			} else {
 				stotp <- stotp + totp
 				stotpm <- stotpm + totpm
@@ -225,6 +233,8 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 				stotp.hch <- stotp.hch + totp.hch
 				stotpm.hch <- stotpm.hch + totpm.hch
 				stotpf.hch <- stotpf.hch + totpf.hch
+				aggr.obs.dataM <- aggr.obs.dataM + obs.data[['male']][country.obs.idx,]
+				aggr.obs.dataF <- aggr.obs.dataF + obs.data[['female']][country.obs.idx,]
 			}
 		}
 		totp <- stotp
@@ -253,6 +263,8 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 		mean_sdF[id.idx,1,] <- apply(sstotpf, 1, mean, na.rm = TRUE)
 		mean_sdF[id.idx,2,] = apply(sstotpf, 1, sd, na.rm = TRUE)
 		aggregated.countries[[as.character(id)]] <- countries
+		aggr.obs.data[['male']] <- rbind(aggr.obs.data[['male']], aggr.obs.dataM)
+		aggr.obs.data[['female']] <- rbind(aggr.obs.data[['female']], aggr.obs.dataF)
 	}
 	aggr.pred <- pop.pred
 	which.reg.index <- function(x, set) return(which(set == x))
@@ -271,6 +283,7 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	aggr.pred$traj.mean.sdF <- mean_sdF
 	aggr.pred$aggregation.method <- 'independence'
 	aggr.pred$aggregated.countries <- aggregated.countries
+	aggr.pred$inputs$pop.matrix <- aggr.obs.data
 	bayesPop.prediction <- aggr.pred
 	save(bayesPop.prediction, file=file.path(outdir, 'prediction.rda'))
 	cat('\nAggregations stored into', outdir, '\n')
