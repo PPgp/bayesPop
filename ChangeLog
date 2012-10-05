@@ -1,3 +1,17 @@
+3.0-1 
+-----
+Functions for plotting and tabulating indicators by age (pop.byage.plot, pop.byage.table)
+
+Functions for creating maps implemented (pop.map, pop.map.gvis). 
+
+Expression language added for visualizing and summarizing any population measure using pop.trajectories.plot/table and map functions.
+
+Caching mechanism added for time-efficient plotting of maps.
+
+Storing vital events possible via pop.predict (argument keep.vital.events).
+
+Implemented a function for writing a summary file for any population measure and stored vital events (write.pop.projection.summary).
+
 2.0-1 (06/05/2012)
 -----
 S3 object and S3 methods for plotting pyramids. The pyramid functions completly re-implemented.

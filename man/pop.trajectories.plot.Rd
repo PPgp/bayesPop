@@ -10,7 +10,7 @@ Output of Probabilistic Population Projection
 The functions plot and tabulate the distribution of population projection for a given country, or for all countries, including the median and given probability intervals.
 }
 \usage{
-pop.trajectories.plot(pop.pred, country, pi = c(80, 95), 
+pop.trajectories.plot(pop.pred, country, expression = NULL, pi = c(80, 95), 
     sex = c("both", "male", "female"), age = "all", sum.over.ages = FALSE, 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory = FALSE,
     xlim = NULL, ylim = NULL, xlab = "Year", ylab = "Population projection", 
@@ -20,18 +20,18 @@ pop.trajectories.plot(pop.pred, country, pi = c(80, 95),
     
 pop.trajectories.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.trajectories"),
-    output.type="png", verbose=FALSE, \dots)
+    output.type="png", expression = NULL, verbose=FALSE, \dots)
     
-pop.trajectories.table(pop.pred, country, pi = c(80, 95), 
-    sex = c("both", "male", "female"), age = "all",
-    half.child.variant = FALSE)
+pop.trajectories.table(pop.pred, country, expression = NULL, pi = c(80, 95), 
+    sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE)
 }
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
   \item{country}{Name or numerical code of a country.}
+  \item{expression}{Expression defining the population measure to be plotted. For syntax see \code{\link{pop.expressions}}. For \code{pop.trajectories.plot} and \code{pop.trajectories.table}, the basic components of the expression must be country-specific. For \code{pop.trajectories.plotAll}, the country part should be given as \dQuote{CXXX}.}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{sex}{One of \dQuote{both}  (default), \dQuote{male} or \dQuote{female}. By default the male and female projections are summed up.}
-  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup is \eqn{130+} which corresponds to index 27. The default value of \dQuote{all} corresponds to indices \code{1:20}, i.e. ages from 0 to 100.}
+  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. It can also be the string \dQuote{psr} (potential support ratio), in which case a ratio of population of ages 20-64 to 65+ (indices 5:13 to 14:27) is shown.}
   \item{sum.over.ages}{Logical.  If \code{TRUE}, the values are summed up over given age groups. Otherwise there is a separate plot for each age group.}
   \item{half.child.variant}{Logical. If TRUE the United Nations \dQuote{+/-0.5 child} variant computed with fertility \eqn{+/- 0.5*} TFR median and the median of life expectancy is shown.
 }

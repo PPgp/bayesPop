@@ -14,7 +14,7 @@ pop.aggregate(pop.pred, regions,
     inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL), 
     verbose = FALSE)
     
-get.pop.aggregation(sim.dir, name = NULL)
+get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL)
 }
 
 \arguments{
@@ -29,7 +29,7 @@ get.pop.aggregation(sim.dir, name = NULL)
   		\item{tfr.sim.dir}{Simulation directory with projections of total fertility rate (generated using \pkg{\link{bayesTFR}}). It must contain projections for the given regions (see functions \code{\link[bayesTFR]{run.tfr.mcmc.extra}}, \code{\link[bayesTFR]{tfr.predict.extra}}). If it is not given, the same TFR directory is taken which was used for generating the \code{pop.pred} object, in which case the TFR projections  are re-loaded from disk.}
 }}
   \item{verbose}{Logical switching log messages on and off.}
-  \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object.}
+  \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
 }
 \details{
 The dataset \code{\link{LOCATIONS}} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the area given in the \code{regions} argument. There are three location types over which one can aggregate: Type 0 means aggregating all countries of the world, type 2 is aggregating over continents, and type 3 is aggregating over regions within continents. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link{LOCATIONS}} dataset. 

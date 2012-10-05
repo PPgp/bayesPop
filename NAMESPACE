@@ -12,6 +12,8 @@ pop.predict,
 pop.trajectories.plot,
 pop.trajectories.plotAll,
 pop.trajectories.table,
+pop.byage.plot,
+pop.byage.table,
 pop.pyramid,
 pop.pyramidAll,
 pop.trajectories.pyramid,
@@ -20,7 +22,12 @@ get.pop.prediction,
 has.pop.prediction,
 pop.aggregate,
 get.pop.aggregation,
-get.bPop.pyramid
+get.bPop.pyramid,
+pop.map,
+get.pop.map.parameters,
+pop.map.gvis,
+write.pop.projection.summary,
+pop.cleanup.cache
 )
 
 # register S3 methods
@@ -37,3 +44,5 @@ S3method(get.bPop.pyramid, data.frame)
 S3method(get.bPop.pyramid, matrix)
 S3method(get.bPop.pyramid, list)
 S3method(get.data.for.worldmap, bayesPop.prediction)
+S3method(.map.main.default, bayesPop.prediction)
+S3method(bdem.map.gvis, bayesPop.prediction)
