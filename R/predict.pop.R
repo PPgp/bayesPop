@@ -637,7 +637,7 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
     }
     #stop('')
-	return(list(sr=sr, LLm=LLm, L10=L10))    
+	return(list(sr=sr, LLm=LLm, L10=L10, mx=Mx))    
 }
 
 KannistoAxBx <- function(ne, mx, yb, female.mx=NULL, male.mx=NULL)  {
