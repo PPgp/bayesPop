@@ -4,8 +4,8 @@ pop.trajectories.plotAll <- function(pop.pred,
 									output.dir=file.path(getwd(), 'pop.trajectories'),
 									output.type="png", expression=NULL, verbose=FALSE,  ...) {
 	# plots pop trajectories for all countries
-	if(!is.null(expression) && !grepl('CXXX', expression, fixed=TRUE))
-		stop('Expression must contain a mask "CXXX" to be used as country code.')
+	if(!is.null(expression) && !grepl('XXX', expression, fixed=TRUE))
+		stop('Expression must contain a mask "XXX" to be used as country code.')
 	bayesTFR:::.do.plot.all.country.loop(pop.pred$countries[,'code'], meta=NULL, country.table=pop.pred$countries,
 					output.dir=output.dir, func=.trajectories.plot.with.mask.replacement, output.type=output.type, 
 					file.prefix='pop.plot', plot.type='population graph', verbose=verbose, pop.pred=pop.pred, 
@@ -140,7 +140,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 			if(age[1] == 'psr') main <- paste(main, ' (Potential Support Ratio)', sep='')
 			else {
 				if(age[1] != 'all') {
-					age.labels <- get.age.labels(pop.pred$ages[age], collapse=TRUE)
+					age.labels <- get.age.labels(pop.pred$ages[age], collapsed=TRUE)
 					main <- paste(main, ' (Age ', paste(age.labels, collapse=','), ')', sep='')
 				}
 			}
@@ -406,7 +406,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 }
 
 pop.byage.table <- function(pop.pred, country=NULL, year=NULL, expression=NULL, pi=c(80, 95),
-								  sex=c('both', 'male', 'female'), age='all',
+								  sex=c('both', 'male', 'female'), 
 								  half.child.variant=FALSE) {
 	sex <- match.arg(sex)
 	if (is.null(country)  && is.null(expression)) 
@@ -528,7 +528,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 	lages <- length(ages.idx)
 	nquant <- length(pi)
 	if(!any(draw.projection) || !any(draw.projection & (year.idx>1))) nquant <- 0
-	if(nquant > 1 && sort.pi) pi<-sort(pi, decr=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
+	if(nquant > 1 && sort.pi) pi<-sort(pi, decreasing=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
 	quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
                        else list(male=pop.pred$quantilesMage, female=pop.pred$quantilesFage)
     is.valid.pi <- if(proportion && nquant>0) is.saved.pi(pop.pred, pi)

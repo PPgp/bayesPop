@@ -21,20 +21,20 @@ test.expressions <- function() {
 				nr.traj = 10, verbose=FALSE, output.dir=sim.dir)
 	filename <- tempfile()
 	png(filename=filename)
-	pop.trajectories.plot(pred, expression='C528_F[1]')
+	pop.trajectories.plot(pred, expression='P528_F[1]')
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
 	stopifnot(size > 0)
-	pop.trajectories.table(pred, expression='C242 / (C528 + C218 + C450 + C242 + C458)')
+	pop.trajectories.table(pred, expression='P242 / (P528 + P218 + P450 + P242 + P458)')
 	
-	write.pop.projection.summary(pred, expression="CXXX[1] / CXXX", output.dir=sim.dir)
+	write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(25,22)))
 	
 	aggr <- pop.aggregate(pred, 900)
-	pop.trajectories.table(pred, expression='C528_M / C900')
-	write.pop.projection.summary(pred, expression="CXXX_M / C900_M", output.dir=sim.dir)
+	pop.trajectories.table(pred, expression='P528_M / P900')
+	write.pop.projection.summary(pred, expression="PXXX_M / P900_M", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(25,22)))
 

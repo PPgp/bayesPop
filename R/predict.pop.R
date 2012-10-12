@@ -39,7 +39,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		.remove.cache.file(output.dir)
 	} else pop.cleanup.cache(pred)
 	
-	data(LOCATIONS)
+	data(LOCATIONS, package='bayesPop')
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
 		all.countries <- unique(inp$POPm0[,'country_code'])
 		country.codes <- if(!prediction.exist) all.countries
@@ -66,19 +66,22 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, verbose=FALSE) {
 	not.valid.countries.idx <- c()
-	countries.idx <- c()
-	for(country in country.codes) {
-		country.idx <- which(LOCATIONS[,'country_code'] == country)
+	countries.idx <- rep(NA, length(country.codes))
+
+	for(icountry in 1:length(country.codes)) {
+		country.idx <- which(LOCATIONS[,'country_code'] == country.codes[icountry])
 		if(length(country.idx) == 0) {
-			not.valid.countries.idx <- c(not.valid.countries.idx, country.idx)
+			not.valid.countries.idx <- c(not.valid.countries.idx, icountry)
 			next
 		}
-		countries.idx <- c(countries.idx, country.idx)
+		countries.idx[icountry] <- country.idx
 	}
+
 	if(length(not.valid.countries.idx) > 0) {
 		warning('Countries ', paste(country.codes[not.valid.countries.idx], collapse=', '), 
 					' not found in the LOCATIONS dataset.')
 		country.codes <- country.codes[-not.valid.countries.idx]
+		countries.idx <- countries.idx[-not.valid.countries.idx]
 	}
 	ncountries <- length(country.codes)
 	nr_project <- length(inp$proj.years)
@@ -520,6 +523,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		obs$TFRpred <- obs.tfr[,country.obj$index]
 	} 
 	inpc$TFRhalfchild <- bayesTFR:::get.half.child.variant(median=medians$TFRpred, increment=c(0.25, 0.4, 0.5))
+	if(!all(is.element(inputs$proj.years, colnames(inpc$TFRhalfchild))))
+		stop('Mismatch in projection periods of TFR and the target projection years.')
+	inpc$TFRhalfchild <- inpc$TFRhalfchild[,as.character(inputs$proj.years)]
 	
 	if(is.null(inpc$e0Mpred)) {
 		inpc$e0Mpred <- get.e0.trajectories(inputs$e0Mpred, country)
@@ -533,7 +539,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		obs.e0M <- bayesLife:::get.e0.reconstructed(inputs$e0Mpred$e0.matrix.reconstructed, inputs$e0Mpred$mcmc.set$meta)
 		obs$e0Mpred <- obs.e0M[,country.obj$index]
 	}
-	inpc$e0Mmedian <- medians$e0Mpred
+	if(!all(is.element(inputs$proj.years, names(medians$e0Mpred))))
+		stop('Mismatch in projection periods of male e0 and the target projection years.')
+	inpc$e0Mmedian <- medians$e0Mpred[as.character(inputs$proj.years)]
 	
 	if(is.null(inpc$e0Fpred)) {
 		inpc$e0Fpred <- get.e0.trajectories(inputs$e0Fpred, country)
@@ -548,7 +556,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		obs$e0Fpred <- obs.e0F[,country.obj$index]
 
 	}
-	inpc$e0Fmedian <- medians$e0Fpred
+	if(!all(is.element(inputs$proj.years, names(medians$e0Fpred))))
+		stop('Mismatch in projection periods of female e0 and the target projection years.')
+	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
 	
 	indices <- list()
 	indices$e0Mpred <- get.traj.index(nr.traj, inpc$e0Mpred)
@@ -582,8 +592,14 @@ get.traj.index <- function(nr.traj, traj) {
 
 runKannisto <- function(nest, inputs) {
 	# extend mx, get LC ax,bx,k1
-	mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
 	mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
+	mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
+	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear, male.mx=mxMKan), sex=2)
+	#stop('')
+	mxFKan$ax.orig <- mxFKan$ax
+	#mxFKan$ax[(mxMKan$ax - mxFKan$ax)<0.2] <- mxMKan$ax[(mxMKan$ax - mxFKan$ax)<0.2]-0.2
+	mxFKan$bx.orig <- mxFKan$bx
+	#mxFKan$bx <- mxMKan$bx
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
 	bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
 	lmin <- -12
@@ -605,21 +621,26 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     sr <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
     LLm <- list(matrix(0, nrow=26, ncol=npred), matrix(0, nrow=26, ncol=npred))
     L10 <- list(rep(0, npred), rep(0, npred))
+    Mx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
     #sr1 <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
     #if(debug) print('Start check ===========================')
     #Get the projected kt from eo, and make projection of Mx
-    for (mxYKan in list(mxKan$male, mxKan$female)) { # iterate over male and female
+    for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
+    	#print(c('sex: ', mxYKan$sex))
     	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxYKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
-			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), L10=as.numeric(L10[[mxYKan$sex]]))
+			constrain=as.integer(mxYKan$sex == 1), FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
+			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), L10=as.numeric(L10[[mxYKan$sex]]), Mx=as.numeric(Mx[[mxYKan$sex]]))
 		sr[[mxYKan$sex]] <- matrix(res$Sr, nrow=27)
 		LLm[[mxYKan$sex]] <- matrix(res$LLm, nrow=26)
 		L10[[mxYKan$sex]] <- res$L10
+		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
     }
+    #stop('')
 	return(list(sr=sr, LLm=LLm, L10=L10))    
 }
 
-KannistoAxBx <- function(ne, mx, yb)  {
+KannistoAxBx <- function(ne, mx, yb, female.mx=NULL, male.mx=NULL)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	# ne is the number of projections
 	Mxe <- as.matrix(mx)
@@ -638,6 +659,10 @@ KannistoAxBx <- function(ne, mx, yb)  {
 		# Ages 100-105, ..., 130+
 		expterm <- aam * exp(bbm * (hminus80))	
 		Mxe[k, j] =  expterm / (1 + expterm)
+		#if(!is.null(female.mx) && any(Mxe[k, j] < female.mx[k,j])) {
+		#	smaller.f <- which(Mxe[k, j] < female.mx[k,j])
+		#	Mxe[k[smaller.f],j] <- female.mx[k[smaller.f],j]
+		#}
 	}
     lMxe <- log(Mxe)
     
@@ -647,7 +672,8 @@ KannistoAxBx <- function(ne, mx, yb)  {
     
     x1 <- apply(lMxe[,ns:ne], 1, sum)
     ax <- x1 / (ne - ns + 1)
-
+    #if(!is.null(male.mx))
+	#	ax[(male.mx$ax - ax)<0.2] <- male.mx$ax[(male.mx$ax - ax)<0.2]-0.2
 	kt <- rep(NA, ne)
 	kt[ns:ne] = apply(lMxe[,ns:ne], 2, sum) - sum(ax)
     

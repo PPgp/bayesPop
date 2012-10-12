@@ -66,14 +66,22 @@ void LifeTableC(int sex, double *mxm,
 	
 }
 
+double get_constrained_mortality(double a, double b, double k, double constraint) {
+	double mx;
+	
+	mx = exp(a + b*k);
+	if(constraint > 0 && mx < constraint) mx = constraint;
+	return mx;
+}
+
 void LCEoKtC(int sex, double *ax, double *bx, 
-			 double eop, double kl, double ku, double *LLm, double *L10) {
+			 double eop, double kl, double ku, double *constraints, double *LLm, double *L10, double *Mx) {
 	double LTl[27], LTu[27], mxm[28], LTeo, k2;
 	int i, dim;
 	dim = 27;
 	/* check if the eop lies outside of the bounds */
 	for (i=0; i < 28; ++i) {
-		mxm[i] = exp(ax[i] + bx[i]*kl);
+		mxm[i] = get_constrained_mortality(ax[i], bx[i], kl, constraints[i]);
 	}
 	LifeTableC(sex, mxm, LTl, L10);
 	
@@ -81,7 +89,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 		LLm = LTl;
 		return;
 	}
-	for (i=0; i < 28; ++i) mxm[i] = exp(ax[i] + bx[i]*ku);
+	for (i=0; i < 28; ++i) mxm[i] = get_constrained_mortality(ax[i], bx[i], ku, constraints[i]);
 	LifeTableC(sex, mxm, LTu, L10);
 
 	if(eop > sum(LTu, dim)) {
@@ -90,21 +98,21 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	}
 	/* Bi-section method */
 	k2 = 0.5 * (kl + ku);
-	for (i=0; i < 28; ++i) mxm[i] = exp(ax[i] + bx[i]*k2);
+	for (i=0; i < 28; ++i) mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
 	LifeTableC(sex, mxm, LLm, L10);
-	/*Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm0-2=%f %f %f", LLm[2], k2, kl, ku, mxm[0], mxm[1], mxm[2]);*/
+	/*Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);*/
 	LTeo = sum(LLm, dim);
 	while(fabs(LTeo - eop) > 0.01) {
 		if(LTeo < eop) kl = k2;
 		else ku = k2;
 		k2 = 0.5 * (kl + ku);
-		for (i=0; i < 28; ++i) mxm[i] = exp(ax[i] + bx[i]*k2);
+		for (i=0; i < 28; ++i) mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
 		LifeTableC(sex, mxm, LLm, L10);
 		LTeo = sum(LLm, dim);
-		/*Rprintf("\nLTeo=%lf, dif=%lf, LLm0-2=%lf %lf %lf, k2=%f, kl=%f, ku=%f, mxm0-2=%f %f %f", LTeo, fabs(LTeo - eop), LLm[0], LLm[1], LLm[2], k2, kl, ku, mxm[0], mxm[1], mxm[2]);*/
+		/*Rprintf("\nLTeo=%lf, dif=%lf, LLm0-2=%lf %lf %lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LTeo, fabs(LTeo - eop), LLm[0], LLm[1], LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);*/
 	}
 	/*Rprintf("\nk2=%f, eop=%lf, LTeo=%lf, adif=%lf, LLm[0]=%lf", k2, eop, LTeo, fabs(LTeo - eop), LLm[0]);*/
-	
+	for (i=0; i < 28; ++i) Mx[i] = mxm[i];
 }
 
 void get_sx(double *LLm, double *sx, int n) {
@@ -138,25 +146,32 @@ void get_sx21(double *LLm, double *sx) {
 
 
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
-		double *Eop, double *Kl, double *Ku, double *LLm, double *Sr, double *L10) {
-	double eop, kl, ku, sx[27], LL10[1], Lm[26];
+		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
+		double *L10, double *Mx) {
+	double eop, kl, ku, sx[27], LL10[1], Lm[26], mxm[28], fmx[28];
 	int i, sex, npred, pred;
 	
 	npred = *Npred;
 	sex=*Sex;
 	ku=*Ku;
 	kl=*Kl;
-	
 	for (pred=0; pred < npred; ++pred) {
 		eop = Eop[pred];
+		if(*constrain>0 && FEop[pred] > eop) {
+			for (i=0; i < 28; ++i) {fmx[i] = FMx[i + pred*28];}
+		} else {
+			for (i=0; i < 28; ++i) {fmx[i] = -1;}
+		}
 		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
-		LCEoKtC(sex, ax, bx, eop, kl, ku, Lm, LL10);
+		LCEoKtC(sex, ax, bx, eop, kl, ku, fmx, Lm, LL10, mxm);
 		get_sx27(Lm, sx);
 
 		for (i=0; i < 27; ++i) {
 			Sr[i + pred*27] = sx[i];
 			/*Rprintf("\nLLm=%lf, Sr=%lf", LLm[i], Sr[i + pred*27]);*/
+			Mx[i + pred*28] = mxm[i];
 		}
+		Mx[27 + pred*28] = mxm[27];
 		for (i=0; i < 26; ++i) {
 			LLm[i + pred*26] = Lm[i];
 		}
