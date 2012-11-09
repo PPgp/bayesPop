@@ -83,37 +83,27 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	/* check if the eop lies outside of the bounds */
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], kl, constraints[i]);
-		if(mxm[i]==0) {
-			Rprintf("\nAconstrain %i: %f a=%f b=%f k=%f", i, constraints[i], ax[i], bx[i], kl);
-			debug=1;
-		}
 	}
 	LifeTableC(sex, mxm, LTl, L10);
 	
 	if(eop < sum(LTl, dim)) {
 		LLm = LTl;
-		Rprintf("\nAreturn %f", sum(LTl, dim));
 		return;
 	}
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], ku, constraints[i]);
-		if(mxm[i]==0) Rprintf("\nBconstrain %i: %f a=%f b=%f k=%f", i, constraints[i], ax[i], bx[i], ku);
 	}
 	LifeTableC(sex, mxm, LTu, L10);
 
 	if(eop > sum(LTu, dim)) {
 		LLm = LTu;
-		Rprintf("\nBreturn %f", sum(LTu, dim));
+		if(debug==1) Rprintf("\nBreturn %f", sum(LTu, dim));
 		return;
 	}
 	/* Bi-section method */
 	k2 = 0.5 * (kl + ku);
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
-		if(mxm[i]==0) {
-			Rprintf("\nCconstrain %i: %f a=%f b=%f k=%f", i, constraints[i], ax[i], bx[i], k2);
-			debug=1;
-		}
 	}
 	LifeTableC(sex, mxm, LLm, L10);
 	if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);
@@ -124,10 +114,6 @@ void LCEoKtC(int sex, double *ax, double *bx,
 		k2 = 0.5 * (kl + ku);
 		for (i=0; i < 28; ++i) {
 			mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
-			if(mxm[i]==0) {
-				Rprintf("\nDconstrain %i: %f a=%f b=%f k=%f", i, constraints[i], ax[i], bx[i], k2);
-				debug=1;
-			}
 		}
 		LifeTableC(sex, mxm, LLm, L10);
 		LTeo = sum(LLm, dim);
@@ -177,12 +163,15 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 	sex=*Sex;
 	ku=*Ku;
 	kl=*Kl;
+	for (i=0; i < 28; ++i) fmx[i] = -1;
 	for (pred=0; pred < npred; ++pred) {
 		eop = Eop[pred];
-		if(*constrain>0 && FEop[pred] > eop) {
-			for (i=0; i < 28; ++i) {fmx[i] = FMx[i + pred*28];}
-		} else {
-			for (i=0; i < 28; ++i) {fmx[i] = -1;}
+		if(*constrain>0) {		
+			if(FEop[pred] > eop) {
+				for (i=22; i < 28; ++i) {fmx[i] = FMx[i + pred*28];}
+			} else {
+				for (i=22; i < 28; ++i) {fmx[i] = -1;}
+			}
 		}
 		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
 		LCEoKtC(sex, ax, bx, eop, kl, ku, fmx, Lm, LL10, mxm);

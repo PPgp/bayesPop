@@ -592,13 +592,15 @@ get.traj.index <- function(nr.traj, traj) {
 
 runKannisto <- function(nest, inputs) {
 	# extend mx, get LC ax,bx,k1
-	mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
-	mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
-	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear, male.mx=mxMKan), sex=2)
+	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
+	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
+	Kan <- KannistoAxBx.joint(nest, inputs$MXm, inputs$MXf, inputs$MIGBaseYear)
+	mxMKan <- c(Kan$male, sex=1)
+	mxFKan <- c(Kan$female, sex=2)
 	#stop('')
-	mxFKan$ax.orig <- mxFKan$ax
+	#mxFKan$ax.orig <- mxFKan$ax
 	#mxFKan$ax[(mxMKan$ax - mxFKan$ax)<0.2] <- mxMKan$ax[(mxMKan$ax - mxFKan$ax)<0.2]-0.2
-	mxFKan$bx.orig <- mxFKan$bx
+	#mxFKan$bx.orig <- mxFKan$bx
 	#mxFKan$bx <- mxMKan$bx
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
 	bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
@@ -627,9 +629,11 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #Get the projected kt from eo, and make projection of Mx
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	#print(c('sex: ', mxYKan$sex))
-    	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxYKan$bx), 
+    	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
-			constrain=as.integer(mxYKan$sex == 1), FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
+			constrain=as.integer(mxYKan$sex == 1), 
+			#constrain=as.integer(0),
+			FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
 			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), L10=as.numeric(L10[[mxYKan$sex]]), Mx=as.numeric(Mx[[mxYKan$sex]]))
 		sr[[mxYKan$sex]] <- matrix(res$Sr, nrow=27)
 		LLm[[mxYKan$sex]] <- matrix(res$LLm, nrow=26)
@@ -639,6 +643,83 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #stop('')
 	return(list(sr=sr, LLm=LLm, L10=L10, mx=Mx))    
 }
+
+KannistoAxBx.joint <- function(ne, male.mx, female.mx, yb)  {
+	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
+	# ne is the number of projections
+	Mxe.m <- as.matrix(male.mx)
+	Mxe.m <- rbind(Mxe.m, 
+			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
+	Mxe.f <- as.matrix(female.mx)
+	Mxe.f <- rbind(Mxe.f, 
+			matrix(NA, nrow=28-nrow(female.mx), ncol=ncol(female.mx)))
+
+	k <- 22:28
+	npoints <- 4
+	#h <- 100 + 5 * (0:6)
+	#hminus80 <- h - 80
+	age.group <- (21-npoints+1):21
+	data <- data.frame(sex=c(rep(1,npoints), rep(0,npoints)), age=c(age.group, age.group))
+	mxc <- rbind(male.mx[age.group, 1:ne], female.mx[age.group, 1:ne])
+	logit.mxc <- log(mxc) - log(1-mxc)
+	#lmxr <- log(mx[18:21, 1:ne] / (1 - mx[18:21, 1:ne]))
+	#Xm1 <- apply(lmxr, 2, sum)
+	#Xm2 <- apply((5 * (1:4) - 5) * lmxr, 2, sum)
+	for(j in 1:ne) {
+		data$lmx <- logit.mxc[,j]
+		fit <- lm(lmx ~ sex + age, data=data)
+		coefs <- coefficients(fit)
+		aam.female <- exp(coefs[1]) # intercept
+		aam.male <- exp(coefs[1] + coefs['sex'])
+		bbm <- coefs['age']
+		# Ages 100-105, ..., 130+
+		expterm.m <- aam.male * exp(bbm * k)	
+		Mxe.m[k, j] =  expterm.m / (1 + expterm.m)
+		expterm.f <- aam.female * exp(bbm * k)	
+		Mxe.f[k, j] =  expterm.f / (1 + expterm.f)
+	}
+    
+	#Get Lee-Cater Ax and Bx
+	if(yb > 1980) yb <- 1980
+	ns <- (yb - 1950) / 5 + 1
+    
+    result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
+    for(sex in c('male', 'female')) {
+    	lMxe <- log(result[[sex]]$mx)
+    	x1 <- apply(lMxe[,ns:ne], 1, sum)
+    	ax <- x1 / (ne - ns + 1)
+		kt <- rep(NA, ne)
+		kt[ns:ne] = apply(lMxe[,ns:ne], 2, sum) - sum(ax)
+    
+		x2 <- sum(kt[ns:ne]*kt[ns:ne])
+		x1 <- rep(NA, nrow(lMxe))
+		for (i in 1:nrow(lMxe)) 
+			x1[i] <- sum((lMxe[i,ns:ne]-ax[i])*kt[ns:ne])
+		bx <- x1/x2
+		negbx <- which(bx <= 0)
+		lnegbx <- length(negbx)
+		if(lnegbx > 0 && negbx[1] == 1) {
+			bx[1] <- 0
+			negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
+			lnegbx <- length(negbx)
+		}
+		while(lnegbx > 0) {
+			bx[negbx] <- 0.5 * bx[negbx-1]
+			negbx <- which(bx < 0)
+			lnegbx <- length(negbx)
+		}      
+		for (i in 1:27) { # ?
+			if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
+		}
+    	bx[19:28] <- bx[18]   # bx(80) is used for all older ages to fit large Eo
+		result[[sex]]$ax <- ax
+		result[[sex]]$bx <- bx
+		result[[sex]]$k0 <- kt[ne]
+		result[[sex]]$d1 <- (kt[ne] - kt[ns]) / (ne - ns + 1)
+	}
+	return(result)
+}
+
 
 KannistoAxBx <- function(ne, mx, yb, female.mx=NULL, male.mx=NULL)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS

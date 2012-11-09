@@ -1,5 +1,12 @@
+3.0-3 (10/14/2012)
+-----
+Male Mx for ages 100-130+ constrained to be larger than female Mx. Others no constraints.
+
+
 3.0-1 (10/11/2012)
 -----
+Male Mx constrained to be larger than female Mx.
+
 Functions for plotting and tabulating indicators by age (pop.byage.plot, pop.byage.table)
 
 Functions for creating maps implemented (pop.map, pop.map.gvis). 
