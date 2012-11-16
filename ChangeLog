@@ -1,7 +1,14 @@
+3.1-1 (11/16/2012)
+-----
+Bug in get.pop fixed.
+
+In write.pop.projection.summary, argument 'alias' splitted into 'file.suffix' and expression.label.
+
+Kannisto method modified to use female-male joint estimation of its slope parameter -> therefore no crossovers in the extrapolated death rates.   
+
 3.0-3 (10/14/2012)
 -----
 Male Mx for ages 100-130+ constrained to be larger than female Mx. Others no constraints.
-
 
 3.0-1 (10/11/2012)
 -----

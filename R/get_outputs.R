@@ -532,7 +532,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		country.code <- as.integer(country.code)
 	else if(!observed) stop('Country must be specified. No XXX allowed.')
 	# remove country code from the string
-	split.object[1] <- gsub(paste(country.code, sep=''), '', split.object[1], fixed=TRUE)
+	split.object[1] <- sub(paste(country.code, sep=''), '', split.object[1], fixed=TRUE)
 	if(nchar(split.object[1])<=0) split.object <- split.object[-1]
 	
 	# Parse sex

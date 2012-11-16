@@ -955,7 +955,8 @@ write.fertilityage <- function(pop.pred, output.dir)
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='fertility', 
 			file.suffix='asfr', what.log='fertility rate')	
 	
-write.expression <- function(pop.pred, expression, output.dir, alias='expression', include.observed=FALSE, decimal=NULL) {
+write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
+								include.observed=FALSE, decimal=NULL) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
@@ -988,8 +989,8 @@ write.expression <- function(pop.pred, expression, output.dir, alias='expression
 					country.code=rep(pop.pred$countries$code, each=nr.var),
 					variant=rep(variant.names, length(pop.pred$countries$code)), result)
 	colnames(result)[colnames(result)==names(header)] <- header
-	file <- file.path(output.dir, paste('projection_summary_', alias, '.csv', sep=''))
-	write(paste('# Expression: ', expression), file)
+	file <- file.path(output.dir, paste('projection_summary_', file.suffix, '.csv', sep=''))
+	write(paste('#', expression.label), file)
 	warn <- getOption('warn')
 	options(warn=-1) # disable warning messages (it doesn't like that col.names is TRUE and append=TRUE)
 	write.table(result, file=file, sep=',', row.names=FALSE, col.names=TRUE, append=TRUE,
