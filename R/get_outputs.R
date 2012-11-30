@@ -13,6 +13,7 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	pop.pred$base.directory <- sim.dir
 	pop.pred$cache <- .load.cache(sim.dir)
 	pop.pred$write.to.cache <- write.to.cache
+	pop.pred$is.aggregation <- FALSE
 	return(pop.pred)
 }
 
@@ -71,14 +72,15 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL) {
 	names <- substr(dirs, 14, nchar(dirs))
 	if(length(names) == 1){
 		if(!is.null(name) && name != names) 
-			warning('Mismatch in aggregation names. Available aggregation is called', names)
-		return(.get.prediction.object(output.dir))
+			warning('Mismatch in aggregation names. Available aggregation is called ', names)
+		pop.aggr <- .get.prediction.object(output.dir)
+	} else {
+		idx <- which(names == name)
+		if (length(idx) == 0) idx <- menu(names, title='Available aggregations:')	
+		pop.aggr <- .get.prediction.object(output.dir[idx])
 	}
-	idx <- which(names == name)
-	if (length(idx) > 0) return(.get.prediction.object(output.dir[idx]))
-	idx <- menu(names, title='Available aggregations:')
-	pop.aggr <- .get.prediction.object(output.dir[idx])
 	pop.aggr$base.directory <- sim.dir
+	pop.aggr$is.aggregation <- TRUE
 	return(pop.aggr)	
 }
 
@@ -149,6 +151,11 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE) {
 	data.age <- get.pop.observed.with.age(pop.pred, country, sex, age)
 	data <- data.age$data
+	if(nrow(data) == 0) {
+		d <- rep(NA, ncol(data))
+		names(d) <- names(data)
+		return(d)
+	}
 	age.idx <- data.age$age.idx
 	if(age[1]=='psr')  # potential support ratio
 		return(colSums(data[get.psr.nominator.index(),])/colSums(data[get.psr.denominator.startindex():nrow(data),]))
@@ -379,7 +386,10 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	myenv <- new.env()
 	load(traj.file, envir=myenv)
-	if(is.observed) myenv <- myenv$observed
+	if(is.observed) {
+		myenv <- myenv$observed
+		nperiods <- length(get.pop.observed.periods(pop.pred))
+	}
 	sex <- match.arg(sex)
 	event <- match.arg(event)
 	alltraj <- switch(event,
@@ -418,9 +428,9 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 			if(!is.observed) hch <- alltraj[[paste(sex,'hch', sep='.')]][age.idx,,,drop=FALSE]
 		}
 	}
-	if(is.observed && dim(traj)[[2]] < length(pop.pred$estim.years))
-		traj <- abind(array(NA, dim=c(dim(traj)[[1]], length(pop.pred$estim.years)-dim(traj)[[2]], dim(traj)[[3]]), 
-						dimnames=list(NULL, pop.pred$estim.years[1:(length(pop.pred$estim.years)-dim(traj)[[2]])], NULL)),
+	if(is.observed && dim(traj)[[2]] < nperiods)
+		traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
+						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
 						traj, along=2)
 	quant <- NULL
 	if(!is.observed) {
@@ -470,7 +480,9 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	lages <- all.ages[ages.idx]
 	uages <- all.ages[ages.idx.shift]
 	l <- length(lages)
-	result <- paste(all.ages[ages.idx[1:(l-1)]], '-', all.ages[ages.idx.shift[1:(l-1)]]-1, sep='')
+	from <- all.ages[ages.idx[1:(l-1)]]
+	to <- all.ages[ages.idx.shift[1:(l-1)]]-1
+	result <- if(l==1 && is.na(to)) paste(from, '+', sep='') else paste(from, '-', to, sep='')
 	if (l > 1) result <- c(result, if(is.na(all.ages[ages.idx.shift[l]]) || last.open) paste(all.ages[ages.idx[l]], '+', sep='')
 			else paste(all.ages[ages.idx[l]], '-', all.ages[ages.idx.shift[l]]-1, sep=''))
 	return(result)
@@ -557,22 +569,29 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		if(is.null(age)) age <- 'all'
 		if(grepl("{", split.object, fixed=TRUE)) sum.over.ages <- FALSE
 	}
-	# find country (search aggregations if not found)
+	# find country (search aggregations if not found, or if it is an aggregation search base prediction object)
 	if(country.code != 'XXX') {
 		country.object <- get.country.object(country.code, country.table=pop.pred$countries)
 		if(is.null(country.object$code)) {
-			av.aggrs <- available.pop.aggregations(pop.pred)
-			indep.idx <- which(is.element('independence', av.aggrs))
-			if(length(indep.idx) > 0)  # put independence aggregation first
-				av.aggrs <- c('independence', av.aggrs[-indep.idx])
-			if(is.null(aggregation)) aggregation <- av.aggrs
-			for(aggr in aggregation) {
-				if(!is.element(aggr, av.aggrs)) {warning('Aggregation', aggr, 'not available.'); next}
-				aggr.obj <- get.pop.aggregation(pop.pred=pop.pred, name=aggr)
-				country.object <- get.country.object(country.code, country.table=aggr.obj$countries)
-				if(!is.null(country.object$code)) {pop.pred <- aggr.obj; break}
+			if(pop.pred$is.aggregation) {
+				base.pred <- get.pop.prediction(sim.dir=pop.pred$base.directory)
+				country.object <- get.country.object(country.code, country.table=base.pred$countries)
+				if(is.null(country.object$code)) stop('Invalid country code used.')
+				pop.pred <- base.pred
+			} else {
+				av.aggrs <- available.pop.aggregations(pop.pred)
+				indep.idx <- which(is.element('independence', av.aggrs))
+				if(length(indep.idx) > 0)  # put independence aggregation first
+					av.aggrs <- c('independence', av.aggrs[-indep.idx])
+				if(is.null(aggregation)) aggregation <- av.aggrs
+				for(aggr in aggregation) {
+					if(!is.element(aggr, av.aggrs)) {warning('Aggregation', aggr, 'not available.'); next}
+					aggr.obj <- get.pop.aggregation(pop.pred=pop.pred, name=aggr)
+					country.object <- get.country.object(country.code, country.table=aggr.obj$countries)
+					if(!is.null(country.object$code)) {pop.pred <- aggr.obj; break}
+				}
+				if(is.null(country.object$code)) stop('Invalid country code used.')
 			}
-			if(is.null(country.object$code)) stop('Invalid country code used.')
 		}
 	}
 	if(observed) {
@@ -586,8 +605,11 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				traj$age.idx <- traj$age.idx.raw
 				d <- traj$trajectories
 			}
+
 			if(sum.over.ages) {
-				d <- colSums(d)
+				if(!is.null(nrow(d)) && nrow(d) == 0) # country not found in the observed data
+					d <- rep(NA, ncol(d))
+				else d <- colSums(d)
 				data <- as.matrix(d) # adds trajectory dimension
 				dim(data) <- c(1, dim(data)) # adding age dimension
 				dimnames(data) <- list(NULL, colnames(traj$data), NULL)
@@ -663,8 +685,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 }
 
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, ...) {
-	new.expression <- .parse.pop.expression(expression)
-	result <- eval(parse(text=new.expression))
+	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
@@ -672,7 +693,7 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 	if(length(dim(result)) == 3 && dim(result)[[1]] == 1) result <- result[1,,] # remove age dimension
 	if(ntraj > 1) {
 		if(typical.trajectory) {
-			traj.idx <- bayesTFR:::get.typical.trajectory.index(result[1,])
+			traj.idx <- bayesTFR:::get.typical.trajectory.index(result)
 		} else {
 			thintraj <- bayesTFR:::get.thinning.index(nr.traj, dim(result)[2])
 			if (thintraj$nr.points > 0) 
@@ -691,8 +712,7 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 }
 
 get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, ...) {
-	new.expression <- .parse.pop.expression(expression)
-	result <- eval(parse(text=new.expression))
+	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL

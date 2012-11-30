@@ -12,13 +12,13 @@ pop.trajectories.plotAll <- function(pop.pred,
 					expression=expression, ...)
 }
 
-.trajectories.plot.with.mask.replacement <- function(pop.pred, country, expression=NULL, ...) {
+.trajectories.plot.with.mask.replacement <- function(pop.pred, country, expression=NULL, plotfun='pop.trajectories.plot', ...) {
 	expr.arg <- NULL
 	country.arg <- NULL
 	if(!is.null(expression))
 		expr.arg <- gsub('XXX', as.character(country), expression, fixed=TRUE)
 	else country.arg <- country
-	pop.trajectories.plot(pop.pred, country=country.arg, expression=expr.arg, ...)
+	do.call(plotfun, list(pop.pred, country=country.arg, expression=expr.arg, ...))
 }
 
 pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
@@ -106,23 +106,23 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
 										typical.trajectory=typical.trajectory)
-		pop.observed <- get.pop.observed.from.expression(expression, pop.pred)
+		pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
 	} else {
 		trajectories <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj, 
 										typical.trajectory=typical.trajectory)
-		pop.observed <- get.pop.observed(pop.pred, country$code, sex=sex, age=age)
+		pop.observed.all <- get.pop.observed(pop.pred, country$code, sex=sex, age=age)
 	}
 	cqp <- list()
 	for (i in 1:length(pi))
 		cqp[[i]] <- get.pop.traj.quantiles(trajectories$quantiles, pop.pred, country$index, country$code, 
 										trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age)
 	
-	obs.not.na <- !is.na(pop.observed)
-	pop.observed <- if(sum(obs.not.na)==0) pop.observed[length(pop.observed)] else pop.observed[obs.not.na]
-	x1 <- as.integer(names(pop.observed))
+	obs.not.na <- !is.na(pop.observed.all)
+	pop.observed.idx <- if(sum(obs.not.na)==0) length(pop.observed.all) else which(obs.not.na)
+	x1 <- as.integer(names(pop.observed.all)[pop.observed.idx])
 	x2 <- if(!is.null(dimnames(trajectories$trajectories))) as.numeric(dimnames(trajectories$trajectories)[[1]])
 			else as.numeric(dimnames(pop.pred$quantiles)[[3]])
-	y1 <- pop.observed
+	y1 <- pop.observed.all[pop.observed.idx]
 	if(is.null(xlim)) xlim <- c(min(x1, x2), max(x1, x2))
 	if(is.null(ylim)) 
 		ylim <- c(min(y1, if (!is.null(trajectories$trajectories))
@@ -150,7 +150,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	plot(x1, y1, type=type, xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
 			panel.first = grid(), lwd=lwd[1], col=col[1], ann=ann, ...)
 	# plot trajectories
-	if(!is.null(trajectories$trajectories)) {
+	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
 		for (i in 1:length(trajectories$index)) {
 			lines(x2, trajectories$trajectories[,trajectories$index[i]], type='l', col=col[5], lwd=lwd[5])
 		}
@@ -328,6 +328,19 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 					cqp=cqp, pop.median=pop.median, projection=projection, projection.index=projection.index))
 }
 
+pop.byage.plotAll <- function(pop.pred, 
+									output.dir=file.path(getwd(), 'pop.byage'),
+									output.type="png", expression=NULL, verbose=FALSE,  ...) {
+	# plots pop trajectories by age for all countries
+	if(!is.null(expression) && !grepl('XXX', expression, fixed=TRUE))
+		stop('Expression must contain a mask "XXX" to be used as country code.')
+	bayesTFR:::.do.plot.all.country.loop(pop.pred$countries[,'code'], meta=NULL, country.table=pop.pred$countries,
+					output.dir=output.dir, func=.trajectories.plot.with.mask.replacement, output.type=output.type, 
+					file.prefix='pop.byage.plot', plot.type='population graph', verbose=verbose, pop.pred=pop.pred, 
+					expression=expression, plotfun='pop.byage.plot', ...)
+}
+
+
 pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), 
 								  half.child.variant=FALSE,
@@ -366,7 +379,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 		if(ann) axis(1, at=1:length(age.idx), labels=age.labels, las=2)
 	}
 	# plot trajectories
-	if(!is.null(trajectories$trajectories)) {
+	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
 		for (i in 1:length(trajectories$index)) {
 			lines(x, trajectories$trajectories[,projection.index,trajectories$index[i]], type='l', col=col[4], lwd=lwd[4])
 		}
