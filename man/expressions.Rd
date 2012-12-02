@@ -74,6 +74,8 @@ pop.trajectories.table(pred,
 pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")
 
 # proportion of 0-4 years old to whole population - export to an ASCII file
-write.pop.projection.summary(pred, expression="PXXX[1] / PXXX")
+dir <- tempfile()
+write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=dir)
+unlink(dir)
 }
 \keyword{documentation}
