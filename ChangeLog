@@ -2,6 +2,10 @@
 -----
 Bug fixes in regional aggregation.
 
+Function pop.byage.plotAll added.
+
+Suggested packages added to DESCRIPTION.
+
 3.1-1 (11/16/2012)
 -----
 Bug in get.pop fixed.
