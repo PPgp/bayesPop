@@ -74,9 +74,9 @@ Object of class \code{bayesPop.prediction} with the following elements:
 \item{ages}{Vector of age groups.}
 \item{cache}{This component is added by \code{\link{get.pop.prediction}} and modified and used by \code{\link{pop.map}} and \code{\link{write.pop.projection.summary}}. It is an environment for caching and re-using results of expressions.}
 }
-%\references{
-%% ~put references to the literature/web site here ~
-%}
+\references{
+A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
+}
 \author{
 Hana Sevcikova, based on code of Nan Li
 }

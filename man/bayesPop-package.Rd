@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 3.1-1\cr
-Date: \tab 2012-11-16\cr
+Version: \tab 3.1-3\cr
+Date: \tab 2012-12-02\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
@@ -24,8 +24,10 @@ Hana Sevcikova, Adrian Raftery
 
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }
-%\references{
-%}
+\references{
+A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
+}
+
 
 \keyword{ package }
 \seealso{

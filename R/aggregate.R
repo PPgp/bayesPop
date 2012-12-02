@@ -41,9 +41,11 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	for (item in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MIGm', 'MIGf', 'SRB', 'PASFR', 'MIGtype'))
 		inp[[item]] <- NULL
 	aggregated.countries <- list()
+	aggr.obs.data <- list(male=NULL, female=NULL)
 	if(verbose) cat('\nAggregating inputs using regional method.')
 	status.for.gui <- paste('out of', length(regions), 'regions.')
 	gui.options <- list()
+	obs.data <- inp$pop.matrix
 	region.counter <- 0
 	for(id in regions) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
@@ -68,6 +70,21 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
 		inp$MIGtype <- rbind(inp$MIGtype, .aggregate.migtype(pop.pred, countries, countries.index, id))
 		aggregated.countries[[as.character(id)]] <- countries
+		# aggregate pop.matrix
+		for(cidx in 1:length(countries.index)) {
+			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
+			if(cidx == 1) {
+				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
+				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
+				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
+													paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
+			} else {
+				aggr.obs.dataM <- aggr.obs.dataM + obs.data[['male']][country.obs.idx,]
+				aggr.obs.dataF <- aggr.obs.dataF + obs.data[['female']][country.obs.idx,]
+			}
+		}
+		aggr.obs.data[['male']] <- rbind(aggr.obs.data[['male']], aggr.obs.dataM)
+		aggr.obs.data[['female']] <- rbind(aggr.obs.data[['female']], aggr.obs.dataF)
 	}
 	dir <- if(is.null(inputs$tfr.sim.dir)) pop.pred$inputs$TFRpred$mcmc.set$meta$parent.meta$output.dir else inputs$tfr.sim.dir
 	if(!is.null(dir)) inp$TFRpred <- get.tfr.prediction(dir)
@@ -80,7 +97,10 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose)
 	aggr.pred$aggregation.method <- 'regional'
 	aggr.pred$aggregated.countries <- aggregated.countries
-	return(aggr.pred)
+	aggr.pred$inputs$pop.matrix <- aggr.obs.data
+	bayesPop.prediction <- aggr.pred
+	save(bayesPop.prediction, file=file.path(outdir, 'prediction.rda'))
+	return(bayesPop.prediction)
 }
 
 .aggregate.by.sum <- function(pop.pred, countries, what.names, id) {
