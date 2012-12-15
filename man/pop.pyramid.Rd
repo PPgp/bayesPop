@@ -136,7 +136,7 @@ pop.pyramid(pred, "Netherlands", c(2045, 2010))
 dev.new()
 pop.trajectories.pyramid(pred, "Netherlands", c(2045, 2010, 1960), age=1:25, proportion=TRUE)
 # using manual manipulation of the data: e.g. show only the prob. intervals 
-pred.pyr <- get.bPop.pyramid(pred, country="Madagascar", year=2090, age=1:27)
+pred.pyr <- get.bPop.pyramid(pred, country="Ecuador", year=2090, age=1:27)
 pred.pyr$pyramid <- NULL
 plot(pred.pyr)
 

@@ -34,6 +34,7 @@ A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian 
 \code{\link[bayesTFR:bayesTFR-package]{bayesTFR}}, \code{\link[bayesLife:bayesLife-package]{bayesLife}}
 }
 \examples{
+\dontrun{
 sim.dir <- tempfile()
 # Generates population projection for one country
 country <- 'Netherlands'
@@ -43,6 +44,7 @@ pop.trajectories.plot(pred, country)
 pop.pyramid(pred, country)
 pop.pyramid(pred, country, year=2100, age=1:26)
 unlink(sim.dir, recursive=TRUE)
+}
 
 # Here are commands needed to run probabilistic projections
 # from scratch, i.e. including TFR and life expectancy.
@@ -74,3 +76,5 @@ pop.trajectories.plot(pred, 'Madagascar', nr.traj=50, sum.over.ages=TRUE)
 pop.trajectories.table(pred, 'Madagascar')
 }
 }
+% reproducing example data in the package:
+% pred <- pop.predict(countries=c(528,218), nr.traj=5, output.dir=sim.dir)

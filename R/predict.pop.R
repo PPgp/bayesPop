@@ -39,7 +39,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		.remove.cache.file(output.dir)
 	} else pop.cleanup.cache(pred)
 	
-	data(LOCATIONS, package='bayesPop')
+	data('LOCATIONS', package='bayesPop')
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
 		all.countries <- unique(inp$POPm0[,'country_code'])
 		country.codes <- if(!prediction.exist) all.countries

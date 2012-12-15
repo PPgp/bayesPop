@@ -88,13 +88,14 @@ Hana Sevcikova, based on code of Nan Li
 \code{\link{pop.trajectories.plot}}, \code{\link{pop.pyramid}}, \code{\link{get.pop.prediction}}
 }
 \examples{
+\dontrun{
 sim.dir <- tempfile()
 # Countries can be given as a combination of numerical codes and names
 pred <- pop.predict(countries=c("Netherlands", 218, "Madagascar"), nr.traj=10, 
            output.dir=sim.dir)
 pop.trajectories.plot(pred, "Ecuador", sum.over.ages=TRUE)
 unlink(sim.dir, recursive=TRUE)
-}
+}}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ distribution }

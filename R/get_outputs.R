@@ -19,7 +19,8 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 
 .load.cache <- function(sim.dir) {
 	if(!file.exists(file.path(sim.dir, 'cache.rda'))) return(new.env())
-	load(file.path(sim.dir, 'cache.rda'))
+	cache <- local({load(file.path(sim.dir, 'cache.rda'))
+					cache})
 	return(as.environment(cache))	
 }
 
@@ -191,41 +192,42 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory
 	if (!file.exists(traj.file)) 
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
-	load(traj.file)
+	e <- new.env()
+	load(traj.file, envir=e)
 	sex <- match.arg(sex)
-	max.age <- dim(totpf)[1] # should be 27
+	max.age <- dim(e$totpf)[1] # should be 27
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
 	if(sex == 'both' && age[1]=='all') {
-		if(load.traj) traj <- totp
+		if(load.traj) traj <- e$totp
 		quant <- pop.pred$quantiles
-		hch <- totp.hch
+		hch <- e$totp.hch
 	} else {
 		if (age[1] == 'psr') { # potential support ratio
 			if(sex == 'both' && load.traj)
-				traj <- (colSums(totpm[get.psr.nominator.index(),,,drop=FALSE]) + 
-								colSums(totpf[get.psr.nominator.index(),,,drop=FALSE]))/(
-								colSums(totpm[get.psr.denominator.startindex():max.age,,,drop=FALSE]) + 
-									colSums(totpf[get.psr.denominator.startindex():max.age,,,drop=FALSE]))
+				traj <- (colSums(e$totpm[get.psr.nominator.index(),,,drop=FALSE]) + 
+								colSums(e$totpf[get.psr.nominator.index(),,,drop=FALSE]))/(
+								colSums(e$totpm[get.psr.denominator.startindex():max.age,,,drop=FALSE]) + 
+									colSums(e$totpf[get.psr.denominator.startindex():max.age,,,drop=FALSE]))
 			if(sex == 'male' && load.traj) 
-				traj <- colSums(totpm[get.psr.nominator.index(),,,drop=FALSE])/colSums(
-											totpm[get.psr.denominator.startindex():max.age,,,drop=FALSE])
+				traj <- colSums(e$totpm[get.psr.nominator.index(),,,drop=FALSE])/colSums(
+											e$totpm[get.psr.denominator.startindex():max.age,,,drop=FALSE])
 			if(sex == 'female' && load.traj) 
-				traj <- colSums(totpf[get.psr.nominator.index(),,,drop=FALSE])/colSums(
-											totpf[get.psr.denominator.startindex():max.age,,,drop=FALSE])
+				traj <- colSums(e$totpf[get.psr.nominator.index(),,,drop=FALSE])/colSums(
+											e$totpf[get.psr.denominator.startindex():max.age,,,drop=FALSE])
 		} else {
 			if(sex == 'both') {
-				if(load.traj) traj <- colSums(totpm[age.idx,,,drop=FALSE]) + colSums(totpf[age.idx,,,drop=FALSE])
-				hch <- colSums(totpm.hch[age.idx,,,drop=FALSE]) + colSums(totpf.hch[age.idx,,,drop=FALSE])
+				if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE]) + colSums(e$totpf[age.idx,,,drop=FALSE])
+				hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE]) + colSums(e$totpf.hch[age.idx,,,drop=FALSE])
 			} else {
 				if(sex=='male') {
-					if(load.traj) traj <- colSums(totpm[age.idx,,,drop=FALSE])
-					hch <- colSums(totpm.hch[age.idx,,,drop=FALSE])
+					if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
+					hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
 					if (length(age.idx) == max.age) quant <- pop.pred$quantilesM
 					else {if (length(age.idx) == 1) quant <- pop.pred$quantilesMage[,age.idx,,]}
 				} else { # female
-					if(load.traj) traj <- colSums(totpf[age.idx,,,drop=FALSE])
-					hch <- colSums(totpf.hch[age.idx,,,drop=FALSE])
+					if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
+					hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
 					if (length(age.idx) == max.age) quant <- pop.pred$quantilesF
 					else {if (length(age.idx) == 1) quant <- pop.pred$quantilesFage[,age.idx,,]}
 				}
@@ -253,25 +255,26 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 	traj.file <- file.path(pop.pred$output.dir, paste('totpop_country', country, '.rda', sep=''))
 	age.idx <- traj.idx <- traj <- quant <- hch <- NULL
 	if (file.exists(traj.file)) {
-		load(traj.file)
+		e <- new.env()
+		load(traj.file, envir=e)
 		sex <- match.arg(sex)
-		max.age <- dim(totpm)[1] # should be 27
+		max.age <- dim(e$totpm)[1] # should be 27
 		age.idx <- if(age[1]=='all') 1:max.age else age
 		if(sex == 'both') {
-			traj <- totpm[age.idx,,,drop=FALSE] + totpf[age.idx,,,drop=FALSE]
-			hch <- totpm.hch[age.idx,,,drop=FALSE] + totpf.hch[age.idx,,,drop=FALSE]
+			traj <- e$totpm[age.idx,,,drop=FALSE] + e$totpf[age.idx,,,drop=FALSE]
+			hch <- e$totpm.hch[age.idx,,,drop=FALSE] + e$totpf.hch[age.idx,,,drop=FALSE]
 		} else {
 			if(sex=='male') {
-				traj <- totpm[age.idx,,,drop=FALSE] 
+				traj <- e$totpm[age.idx,,,drop=FALSE] 
 				quant <- pop.pred$quantilesMage[,age.idx,,]
-				hch <- totpm.hch[age.idx,,,drop=FALSE]
+				hch <- e$totpm.hch[age.idx,,,drop=FALSE]
 			} else {
-				traj <- totpf[age.idx,,,drop=FALSE]
+				traj <- e$totpf[age.idx,,,drop=FALSE]
 				quant <- pop.pred$quantilesFage[,age.idx,,]
-				hch <- totpf.hch[age.idx,,,drop=FALSE]
+				hch <- e$totpf.hch[age.idx,,,drop=FALSE]
 			}
 			if(proportion) {
-				totpop <- (apply(totpm[,,,drop=FALSE], c(2,3), sum) + apply(totpf[,,,drop=FALSE], c(2,3), sum))
+				totpop <- (apply(e$totpm[,,,drop=FALSE], c(2,3), sum) + apply(e$totpf[,,,drop=FALSE], c(2,3), sum))
 				for(iage in 1:dim(traj)[1])
 					traj[iage,,] <- traj[iage,,]/totpop
 			}

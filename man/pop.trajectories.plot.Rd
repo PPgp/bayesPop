@@ -84,8 +84,8 @@ Hana Sevcikova
 \examples{
 sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
-pop.trajectories.plot(pred, country="Malaysia", pi=c(80, 95))
-pop.trajectories.table(pred, country="Malaysia", pi=c(80, 95))
+pop.trajectories.plot(pred, country="Ecuador", pi=c(80, 95))
+pop.trajectories.table(pred, country="Ecuador", pi=c(80, 95))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
