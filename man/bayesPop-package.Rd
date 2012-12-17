@@ -12,13 +12,16 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 3.1-3\cr
-Date: \tab 2012-12-02\cr
+Version: \tab 3.1-7\cr
+Date: \tab 2012-12-16\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
 The main function is called \code{\link{pop.predict}}. It uses trajectories of TFR from the \pkg{bayesTFR} package and life expectancy from the \pkg{bayesLife} package and for each trajectory it computes a population projection using the Cohort component method. It results in probabilistic age and sex specific projections. Various plotting functions are available for results visualization (\code{\link{pop.trajectories.plot}}, \code{\link{pop.pyramid}}, \code{\link{pop.trajectories.pyramid}}), as well as a summary function (\code{\link{summary.bayesPop.prediction}}).
 }
+
+\note{For reason of data confidentiality the package only contains United Nations data for five countries. However, generating projections for other countries is possible if the user supplies necessary data (see the \code{inputs} argument to \code{\link{pop.predict}}).}
+
 \author{
 Hana Sevcikova, Adrian Raftery
 
