@@ -1,8 +1,10 @@
+if(getRversion() >= "2.15.1") utils::globalVariables("LOCATIONS")
+
 pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'),
 						name = method,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
 						verbose=FALSE) {
-	data(LOCATIONS)
+	data("LOCATIONS", package='bayesPop')
 	regions <- unique(regions)
 	method <- match.arg(method)
 	if(missing(name)) name <- method
