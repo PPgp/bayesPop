@@ -10,7 +10,7 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	if(!is.null(aggregation)) return(get.pop.aggregation(sim.dir, name=aggregation))
 	output.dir <- file.path(sim.dir, 'predictions')
 	pop.pred <- .get.prediction.object(output.dir)
-	pop.pred$base.directory <- sim.dir
+	pop.pred$base.directory <- normalizePath(sim.dir)
 	pop.pred$cache <- .load.cache(sim.dir)
 	pop.pred$write.to.cache <- write.to.cache
 	pop.pred$is.aggregation <- FALSE
@@ -80,7 +80,7 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL) {
 		if (length(idx) == 0) idx <- menu(names, title='Available aggregations:')	
 		pop.aggr <- .get.prediction.object(output.dir[idx])
 	}
-	pop.aggr$base.directory <- sim.dir
+	pop.aggr$base.directory <- normalizePath(sim.dir)
 	pop.aggr$is.aggregation <- TRUE
 	return(pop.aggr)	
 }
