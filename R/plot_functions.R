@@ -99,7 +99,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  xlim=NULL, ylim=NULL, type='b', 
 								  xlab='Year', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
-								  show.legend=TRUE, ann=par('ann'), ...
+								  show.legend=TRUE, ann=par('ann'), add=FALSE, ...
 								  ) {
 
 	sex <- match.arg(sex)
@@ -147,8 +147,10 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 		}
 	}
 	# plot historical data: observed
-	plot(x1, y1, type=type, xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
+	if(!add)
+		plot(x1, y1, type=type, xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
 			panel.first = grid(), lwd=lwd[1], col=col[1], ann=ann, ...)
+	else lines(x1, y1, type=type, lwd=lwd[1], col=col[1])
 	# plot trajectories
 	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
 		for (i in 1:length(trajectories$index)) {

@@ -149,6 +149,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
+			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			#debug <- country == 478
@@ -228,11 +229,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				quantPropFage[cidx,i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 			}
 		}
-		stotpm <- colSums(totpm)
+		stotpm <- colSums(totpm, na.rm=TRUE)
 		quantM[cidx,,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sdM[cidx,1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
 		mean_sdM[cidx,2,] = apply(stotpm, 1, sd, na.rm = TRUE)
-		stotpf <- colSums(totpf)
+		stotpf <- colSums(totpf, na.rm=TRUE)
 		quantF[cidx,,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sdF[cidx,1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
 		mean_sdF[cidx,2,] = apply(stotpf, 1, sd, na.rm = TRUE)
