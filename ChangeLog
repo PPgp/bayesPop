@@ -1,6 +1,10 @@
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
+3.1-11 (2/16/2013)
+------
+Fixed an issue with NAs in TFR trajectories. 
+
 3.1-9/10 (1/3/2013)
 -----
 .First.lib and .Last.lib changed to .onLoad and .onUnload
