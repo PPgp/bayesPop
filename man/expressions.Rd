@@ -8,10 +8,10 @@ The functions above accept an argument \code{expression} which should define a p
 
 A \bold{basic component} is a character string constituted of four parts, two of which are optional. They must be in the following order:
 \enumerate{
-\item Measure identification: One of the folowing five upper-case characters - \sQuote{P} (population), \sQuote{D} (deaths), \sQuote{B} (births), \sQuote{S} (survival rate), \sQuote{F} (fertility rate).
-\item Country part: Numerical country code (as used in {\code{\link{LOCATIONS}}}), or the characters \dQuote{XXX} which serves as a wildcard for a country code.
+\item Measure identification: One of the folowing five upper-case characters - \sQuote{P} (population), \sQuote{D} (deaths), \sQuote{B} (births), \sQuote{S} (survival ratio), \sQuote{F} (fertility rate), \sQuote{M} (mortality rate), \sQuote{Q} (probability of dying). All but the \sQuote{P} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
+\item Country part: Numerical country code (as used in {\code{\link{LOCATIONS}}}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), or two- or three-character ISO 3166 code (\url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}), or the characters \dQuote{XXX} which serves as a wildcard for a country code.
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index zero which corresponds to age 0-1.
 }
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{S4_M\{\}}.
 
@@ -77,5 +77,14 @@ pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")
 dir <- tempfile()
 write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=dir)
 unlink(dir)
+
+\dontrun{
+# These are vital events only available if keep.vital.events=TRUE in pop.predict 
+# log female mortality rate by age for Netherlands in 2050, including 0-1 age group
+pop.byage.plot(pred, expression="log(MNL_F{0:27})", year=2050)
+
+# trajectories of male 1q0 and table of 5q0 for Netherlands
+pop.trajectories.plot(pred, expression="QNLD_M[0]")
+pop.trajectories.table(pred, expression="QNLD_M[1]")}
 }
 \keyword{documentation}

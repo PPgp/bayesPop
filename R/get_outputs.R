@@ -1,3 +1,5 @@
+if(getRversion() >= "2.15.1") utils::globalVariables("iso3166")
+
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
 	return(FALSE)
@@ -379,7 +381,43 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index, coun
 	return(cqp)
 }
 
-get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('births', 'deaths', 'survival', 'fertility'), 
+get.mx <- function(mxm, sex, include01=TRUE) {
+	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
+	if(include01) mxm <- mxm[-1,,,drop=FALSE]
+	return (mxm)
+}
+
+get.qx <- function(mxm, sex, include01=TRUE) {
+	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
+	qx <- mxm
+	if(include01) {
+		qx <- qx[-1,,,drop=FALSE]
+	}
+	for (itraj in 1:dim(mxm)[3]) {
+		qx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='qx', sex=sex, include01=include01)
+	}
+	return (qx)
+}
+
+get.survival <- function(mxm, sex, include01=TRUE) {
+	sx <- mxm
+	sr <- rep(0, dim(mxm)[1])
+	if(include01) {
+		sx <- sx[-1,,,drop=FALSE]
+		sr <- sr[-1]
+	}
+	fname <- if(dim(mxm)[1] < 27) "get_sx21_21" else "get_sx27"
+	for (itraj in 1:dim(mxm)[3]) {
+		LLm <- LifeTableMxCol(mxm[,, itraj], colname='Lx', sex=sex, include01=include01)
+		sx[,, itraj] <- apply(LLm, 2, 
+							function(x, sr) {
+								res.sr <- .C(fname, as.numeric(x), sx=sr); return(res.sr$sx)
+							}, sr)
+	}
+	return (sx)
+}
+
+get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
  									nr.traj=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
  	# get trajectories and quantiles for vital events
@@ -389,30 +427,60 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	myenv <- new.env()
 	load(traj.file, envir=myenv)
+	max.age.index.allowed <- 27
+	min.age.index.allowed <- 1
 	if(is.observed) {
 		myenv <- myenv$observed
 		nperiods <- length(get.pop.observed.periods(pop.pred))
+		max.age.index.allowed <- 21
 	}
 	sex <- match.arg(sex)
 	event <- match.arg(event)
-	alltraj <- switch(event,
+	age.normal <- TRUE
+	if(is.element(event, c('survival', 'qx', 'mx'))) {
+		min.age.index.allowed <- 0
+		mx <- list(male=myenv$mxm, female=myenv$mxf, male.hch=myenv$mxm.hch, female.hch=myenv$mxf.hch)
+		sex.index <- 1:4
+		if(sex=='male') sex.index <- sex.index[-c(2,4)]
+		if(sex=='female') sex.index <- sex.index[-c(1,3)]
+		alltraj <- list(male=NULL, female=NULL, male.hch=NULL, female.hch=NULL)
+		include01 <- TRUE
+		if(age[1]!='all' && is.element(0, age)) {
+			include01 <- FALSE
+			age.normal <- FALSE
+		}
+		for(is in sex.index) {
+			if(!is.null(mx[[is]]))
+					alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
+									list(mx[[is]], sex=c("M","F","M","F")[is], include01=include01))
+		}
+	} else
+		alltraj <- switch(event,
 				births = list(male=myenv$btm, female=myenv$btf, male.hch=myenv$btm.hch, female.hch=myenv$btf.hch),
 				deaths = list(male=myenv$deathsm, female=myenv$deathsf, male.hch=myenv$deathsm.hch, female.hch=myenv$deathsf.hch),
-				survival = list(male=myenv$srm, female=myenv$srf, male.hch=myenv$srm.hch, female.hch=myenv$srf.hch),
-				fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch)
+				fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
 				)
 
-	max.age <- dim(alltraj$female)[1] # should be 7, 21 or 27
-	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age	
+	max.age <- if(!is.null(alltraj$male)) dim(alltraj$male)[1] 
+				else dim(alltraj$female)[1]  # should be 7, 21, 27, 28 (28 only if zero is explicitely included in 'age', 
+									  		# so never when age=='all')
+	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= max.age]
 	quantiles <- get.quantiles.to.keep()
+	trajdimnames <- if(!is.null(alltraj$male)) dimnames(alltraj$male) else dimnames(alltraj$female)
 	if(event == 'births' || event == 'fertility') {
 		if(age[1] != 'all') {
 			age.idx <- age.idx - 3 # translate age index into mother's child-bearing age index
-			if(max(age.idx) > max.age || min(age.idx) < 1) 
+			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1) 
 				stop('Age index for ', event, ' must be between 4 (age 15-19) and 10 (age 45-49).')
 		} else age.idx.raw <- age.idx + 3
 	} 
-	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
+	if(length(age.idx)==0 || max(age.idx) > max.age.index.allowed || (min(age.idx) < min.age.index.allowed)) 
+		stop('Age index must be between ', min.age.index.allowed, ' (first age category) and ', max.age.index.allowed,  
+						' (open-ended age category).')
+	if(!age.normal) {
+		age.idx.raw <- age.idx
+		age.idx <- age.idx+1
+	}
 	if(event == 'fertility') sex <- 'female'
 	if(sex == 'both') {
 		if(sum.over.ages) {
@@ -439,12 +507,13 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 	if(!is.observed) {
 		if(sum.over.ages) { # quantiles are 2-d arrays
 			quant <- apply(traj, 1, quantile, quantiles, na.rm = TRUE)
-			dimnames(quant) <- list(quantiles, dimnames(alltraj$female)[[2]])
+			dimnames(quant) <- list(quantiles, trajdimnames[[2]])
 			traj.for.thinning <- traj
 			year.dim <- 1
 		} else { # quantiles are 3-d arrays: age x quantiles x period
 			quant <- aperm(apply(traj, c(1,2), quantile, quantiles, na.rm = TRUE), c(2,1,3))
-			dimnames(quant) <- list(pop.pred$ages[age.idx.raw], quantiles, dimnames(alltraj$female)[[2]])
+			dimnames(quant) <- list(#pop.pred$ages[age.idx.raw], 
+								trajdimnames[[1]][age.idx], quantiles, trajdimnames[[2]])
 			traj.for.thinning <- traj[1,,]
 			if(is.vector(traj.for.thinning)) # in case of one trajectory
 				traj.for.thinning <- abind(traj.for.thinning, NULL, along=2)
@@ -463,7 +532,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 			if (thintraj$nr.points > 0) 
 		 		traj.idx <- thintraj$index
 		}
-		dimnames(traj)[[year.dim]] <- dimnames(alltraj$female)[[2]]
+		dimnames(traj)[[year.dim]] <- trajdimnames[[2]]
 	} else if(!is.observed) traj <- NULL
  	
 	return(list(trajectories=traj, index=traj.idx, quantiles=quant, 
@@ -474,6 +543,10 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country, event=c('bir
 get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE) {
 	all.ages <- c(seq(0, by=5, length=27), NA)
 	ages.idx <- if(age.is.index) ages else which(is.element(all.ages, ages))
+	if(is.element(0, ages.idx)) { # age 0-1 is included
+		all.ages <- c(-1, all.ages)
+		ages.idx <- ages.idx + 1
+	}
 	ages.idx.shift <- ages.idx+1
 	if(collapsed) {
 		ages.idx.dif <- which(!is.element(ages.idx, ages.idx.shift))
@@ -485,7 +558,12 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	l <- length(lages)
 	from <- all.ages[ages.idx[1:(l-1)]]
 	to <- all.ages[ages.idx.shift[1:(l-1)]]-1
-	result <- if(l==1 && is.na(to)) paste(from, '+', sep='') else paste(from, '-', to, sep='')
+	if(from[1] < 0) { # includes age 0-1
+		from[1] <- 0
+		if(!is.na(to[1])) to[1] <- 1
+	}
+	result <- if(l==1 && is.na(to)) paste(from, '+', sep='') # open-ended
+			  else paste(from, '-', to, sep='')
 	if (l > 1) result <- c(result, if(is.na(all.ages[ages.idx.shift[l]]) || last.open) paste(all.ages[ages.idx[l]], '+', sep='')
 			else paste(all.ages[ages.idx[l]], '-', all.ages[ages.idx.shift[l]]-1, sep=''))
 	return(result)
@@ -535,19 +613,30 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 	split.object <- strsplit(object, '_', fixed=TRUE)[[1]]
 	what <- substr(split.object[1],1,1)
 	# Is it a vital event
-	has.ve <- is.element(what, c('D', 'B', 'S', 'F'))
+	has.ve <- is.element(what, c('D', 'B', 'S', 'F', 'Q', 'M'))
 	split.object[1] <- gsub(what, '', split.object[1], fixed=TRUE)
 	
 	# Parse country
 	country.string <- regmatches(split.object[1], 
-						regexpr('^[[:digit:]]*\\[|^[[:digit:]]*\\{?|^XXX\\[|^XXX\\{?', split.object[1])) 
-	country.code <- gsub('\\[|\\{', '', country.string)
-	if(nchar(country.code) == 0) stop('No country specified.')
-	if(country.code != 'XXX') 
-		country.code <- as.integer(country.code)
-	else if(!observed) stop('Country must be specified. No XXX allowed.')
+						regexpr('^[[:alnum:]]*\\[|^[[:alnum:]]*\\{?|^XXX\\[|^XXX\\{?', split.object[1])) 
+	country.code.char <- gsub('\\[|\\{', '', country.string)
+	if(nchar(country.code.char) == 0) stop('No country specified.')
+	if(country.code.char != 'XXX') {
+		data('iso3166', package='bayesTFR')
+		charcodename <- if(nchar(country.code.char)==2) 'charcode' else 'charcode3'
+		country.code.iso <- iso3166[iso3166[,charcodename] == country.code.char,'uncode']
+		if(length(country.code.iso)>0)
+			country.code <- country.code.iso
+		else {
+			country.code <- as.integer(country.code.char)
+			if(is.na(country.code)) stop('Unknown country ', country.code.char)
+		}
+	} else {
+		if(!observed) stop('Country must be specified. No XXX allowed.')
+		country.code <- country.code.char
+	}
 	# remove country code from the string
-	split.object[1] <- sub(paste(country.code, sep=''), '', split.object[1], fixed=TRUE)
+	split.object[1] <- sub(paste(country.code.char, sep=''), '', split.object[1], fixed=TRUE)
 	if(nchar(split.object[1])<=0) split.object <- split.object[-1]
 	
 	# Parse sex
@@ -683,7 +772,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 	# Add spaces around binary operators so that expression components can be identified
 	expression <- gsub('(\\*|\\/|\\+|\\-|\\^|\\%\\%|\\%\\/\\%)', ' \\1 ', expression)
 	# Replace expression components by 'get.pop' calls
-	return (gsub('((P|D|B|F|S|M)[[:graph:]]*[[:alnum:]]|(P|D|B|F|S|M)[[:graph:]]*\\]|(P|D|B|F|S|M)[[:graph:]]*\\})', 
+	return (gsub('((P|D|B|F|S|M|Q)[[:graph:]]*[[:alnum:]]|(P|D|B|F|S|M|Q)[[:graph:]]*\\]|(P|D|B|F|S|M|Q)[[:graph:]]*\\})', 
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 

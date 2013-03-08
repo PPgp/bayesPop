@@ -13,58 +13,84 @@ double sum(double *x, int dim) {
 	return(s);
 }
 
-void LifeTableC(int sex, double *mxm,
-				double *LLm, double *L10) {
-	double am[21], lm[28], qmx[19];
+
+void doLifeTable(int sex, int nage, double *mx, 
+				double *Lx, double *lx, double *qx, double *ax) {
+	
 	int i;
 	
 	if(sex > 1) {/* female*/
-		if (mxm[0] < 0.107) {
-			am[0] = 0.053 + 2.8 * mxm[0];
-			am[1] = 1.522 - 1.518 * mxm[0];
+		if (mx[0] < 0.107) {
+			ax[0] = 0.053 + 2.8 * mx[0];
+			ax[1] = 1.522 - 1.518 * mx[0];
 		} else {
-			am[0] = 0.35;
-			am[1] = 1.361;
+			ax[0] = 0.35;
+			ax[1] = 1.361;
 		}
 	} else { /* male */
-		if (mxm[0] < 0.107) {
-			am[0] = 0.045 + 2.684 * mxm[0];
-			am[1] = 1.651 - 2.816 * mxm[0];
+		if (mx[0] < 0.107) {
+			ax[0] = 0.045 + 2.684 * mx[0];
+			ax[1] = 1.651 - 2.816 * mx[0];
 		} else {
-			am[0] = 0.33;
-			am[1] = 1.352;
+			ax[0] = 0.33;
+			ax[1] = 1.352;
 		}
 	}
-	/*Rprintf("\nam0=%f, am1=%f", am[0], am[1]);*/
-	lm[0] = 1;
-	lm[1] = 1 - mxm[0] / (1 + (1 - am[0]) * mxm[0]); /*add multiplication by lm[0] */
-	lm[2] = (1 - 4 * mxm[1] / (1 + (4 - am[1]) * mxm[1]));
-	lm[2] = lm[1] * lm[2];
-	L10[0] =  lm[1] + am[0] * (lm[0] - lm[1]); /* 0L1 */
-	LLm[0] = L10[0] + (4 * lm[2] + am[1] * (lm[1] - lm[2])); /* Life table 4L0*/
-    
+	qx[0] = mx[0] / (1 + (1 - ax[0]) * mx[0]);                    /* 1q0 */
+	qx[1] = 5 * mx[1] / (1 + (5 - ax[1]) * mx[1]);                /* 5q0 */	
+	lx[0] = 1;                                                    /* l0 */
+	lx[1] = lx[0] * (1 - qx[0]);                                  /* l1 */
+	lx[2] = lx[1] * (1 - 4 * mx[1] / (1 + (4 - ax[1]) * mx[1])); /* l5 = l1 * (1-4q1) */
+	Lx[0] =  lx[1] + ax[0] * (lx[0] - lx[1]);                     /* 1L0 */
+	Lx[1] = Lx[0] + 4 * lx[2] + ax[1] * (lx[1] - lx[2]);          /* 5L0 */
+	
+	
+    /*Rprintf("\nL0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
 	/* Age 5-9, .... 95-99 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
 	for(i = 2; i < 21; ++i) {
-		am[i] = 2.5 - (25 / 12.0) * (mxm[i] - 0.1 * log(fmax(mxm[i+1] / fmax(mxm[i-1], DBL_MIN), DBL_MIN)));
-		/*Rprintf("am%i=%f, mxm%i=%f", i, am[i], i-1, mxm[i-1]);*/
-		qmx[i-2] = 5 * mxm[i] / (1 + (5 - am[i]) * mxm[i]);
+		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
+		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
+		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
 	}
     
-    for(i = 1; i<20; ++i) {
-		lm[i+2] = lm[i+1] * (1-qmx[i-1]);
-		LLm[i] = 5 * lm[i+2] + am[i+1] * (lm[i+1] - lm[i+2]);
+    for(i = 2; i<21; ++i) {
+		lx[i+1] = lx[i] * (1-qx[i]);
+		Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
 	}
-	
-	for(i = 20; i<26; ++i) {
-		lm[i+2] = lm[i+1] * (1 - (1 - exp(-5 * mxm[i+1]))); /* Starts 104 */
-		LLm[i] = (lm[i+1] - lm[i+2]) / fmax(mxm[i+1], DBL_MIN);
+	if(nage > 21) {
+		for(i = 21; i<nage; ++i) {         /* Starts 104 */
+			qx[i] = 1 - exp(-5 * mx[i]);
+			lx[i+1] = lx[i] * (1 - qx[i]); 
+			Lx[i] = (lx[i] - lx[i+1]) / fmax(mx[i], DBL_MIN);
+			
+		}
 	}
-	
-	/* Age 130+ */
-	LLm[26] = lm[27] / fmax(mxm[27], DBL_MIN); /* Assuming Mx levels off at age 130 */
-	
+	/* Open ended age interval */
+	Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); /* Assuming Mx levels off at age 130 */
+	qx[nage] = 1.0;
+	for (i=0; i<nage; ++i){ /*shift the index of lx, so that lx[0] is number left alive at age 1 */
+		lx[i] = lx[i+1];
+	}
+	lx[nage] = 0.0;	
 }
+
+void LifeTableC(int sex, int nage, double *mxm, 
+				double *LLm, double *L10, double *lm) {
+	double ax[21], qx[28], L[28];
+	int i;
+	doLifeTable(sex, nage, mxm, L, lm, qx, ax);
+	for(i = 0; i < nage; ++i) {
+		LLm[i] = L[i+1];
+	}					
+}
+
+void LifeTable(int *sex, int *nage, double *mx, 
+				double *Lx, double *lx, double *qx, double *ax) {
+	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
+					
+}
+
 
 double get_constrained_mortality(double a, double b, double k, double constraint) {
 	double mx;
@@ -75,7 +101,7 @@ double get_constrained_mortality(double a, double b, double k, double constraint
 }
 
 void LCEoKtC(int sex, double *ax, double *bx, 
-			 double eop, double kl, double ku, double *constraints, double *LLm, double *L10, double *Mx) {
+			 double eop, double kl, double ku, double *constraints, double *LLm, double *L10, double *lm, double *Mx) {
 	double LTl[27], LTu[27], mxm[28], LTeo, k2;
 	int i, dim, debug;
 	dim = 27;
@@ -84,7 +110,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], kl, constraints[i]);
 	}
-	LifeTableC(sex, mxm, LTl, L10);
+	LifeTableC(sex, 27, mxm, LTl, L10, lm);
 	
 	if(eop < sum(LTl, dim)) {
 		LLm = LTl;
@@ -93,7 +119,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], ku, constraints[i]);
 	}
-	LifeTableC(sex, mxm, LTu, L10);
+	LifeTableC(sex, 27, mxm, LTu, L10, lm);
 
 	if(eop > sum(LTu, dim)) {
 		LLm = LTu;
@@ -105,7 +131,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	for (i=0; i < 28; ++i) {
 		mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
 	}
-	LifeTableC(sex, mxm, LLm, L10);
+	LifeTableC(sex, 27, mxm, LLm, L10, lm);
 	if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);
 	LTeo = sum(LLm, dim);
 	while(fabs(LTeo - eop) > 0.01) {
@@ -115,7 +141,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 		for (i=0; i < 28; ++i) {
 			mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
 		}
-		LifeTableC(sex, mxm, LLm, L10);
+		LifeTableC(sex, 27, mxm, LLm, L10, lm);
 		LTeo = sum(LLm, dim);
 		if(debug==1) Rprintf("\nLTeo=%lf, dif=%lf, LLm0-2=%lf %lf %lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LTeo, fabs(LTeo - eop), LLm[0], LLm[1], LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);
 	}
@@ -123,40 +149,45 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	for (i=0; i < 28; ++i) Mx[i] = mxm[i];
 }
 
-void get_sx(double *LLm, double *sx, int n) {
+void get_sx(double *LLm, double *sx, int n, int Ldim) {
 	int i, l, oei;
 	double sumLL;
-	l = 27;
 	oei=n-1;
 	/* Survival Ratios */
     sx[0] = LLm[0] / 5.0;
+    /*Rprintf("\nget_sx: LL0=%lf LL1=%lf, sx0=%lf", LLm[0], LLm[1], sx[0]);*/
 	for(i=1; i < oei; ++i) {
 		if(LLm[i-1] == 0) sx[i] = 0;
 		else sx[i] = LLm[i]/LLm[i-1];
+		/*Rprintf("\n\tLLm[%i]=%lf, sx[%i]=%lf", i, LLm[i], i, sx[i]);*/
 	}
 	/* Last age group */
 	sumLL = 0;
-	for(i=oei-1; i < (l-1); ++i) {
+	for(i=oei; i < Ldim; ++i) {
 		sumLL += LLm[i];
 	}
-	if((sumLL + LLm[l-1]) == 0 ||  sumLL == 0) sx[oei] = 0;
-	else sx[oei] = sumLL/(sumLL+LLm[l-1]);
+	if((sumLL + LLm[oei-1]) == 0 ||  sumLL == 0) sx[oei] = 0;
+	else sx[oei] = sumLL/(sumLL+LLm[oei-1]);
 	if(sx[oei] > sx[oei-1]) sx[oei] = sx[oei-1];
+	/*Rprintf("\n\tLLm[%i]=%lf, sx[%i]=%lf", oei, LLm[oei], oei, sx[oei]);*/
 }
 
 void get_sx27(double *LLm, double *sx) {
-	get_sx(LLm, sx, 27);
+	get_sx(LLm, sx, 27, 27);
 }
 
 void get_sx21(double *LLm, double *sx) {
-	get_sx(LLm, sx, 21);
+	get_sx(LLm, sx, 21, 27);
 }
 
+void get_sx21_21(double *LLm, double *sx) {
+	get_sx(LLm, sx, 21, 21);
+}
 
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
-		double *L10, double *Mx) {
-	double eop, kl, ku, sx[27], LL10[1], Lm[26], mxm[28], fmx[28];
+		double *L10, double *lx, double *Mx) {
+	double eop, kl, ku, sx[27], LL10[1], Lm[27], mxm[28], fmx[28], lm[28];
 	int i, sex, npred, pred;
 	
 	npred = *Npred;
@@ -174,40 +205,104 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 			}
 		}
 		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
-		LCEoKtC(sex, ax, bx, eop, kl, ku, fmx, Lm, LL10, mxm);
+		LCEoKtC(sex, ax, bx, eop, kl, ku, fmx, Lm, LL10, lm, mxm);
 		get_sx27(Lm, sx);
 
 		for (i=0; i < 27; ++i) {
 			Sr[i + pred*27] = sx[i];
 			/*Rprintf("\nLLm=%lf, Sr=%lf", LLm[i], Sr[i + pred*27]);*/
 			Mx[i + pred*28] = mxm[i];
+			lx[i + pred*28] = lm[i];
 		}
 		Mx[27 + pred*28] = mxm[27];
+		lx[27 + pred*28] = lm[27];
 		for (i=0; i < 26; ++i) {
-			LLm[i + pred*26] = Lm[i];
+			LLm[i + pred*27] = Lm[i];
 		}
 		L10[pred] = LL10[0];
 	}
 }
 
-void get_sr_from_LT(int *N, int *Sex, double *Mx, double *Sr, double *L10) {
-	double LLm[26], sx[21], mxm[28], LL10[1];
+void compute_deaths(double births, int adim, int jve, double *pop, double *L, double *lx, double L10, double *deaths) {
+	double Dc[27], Db, fx[27], sd;
+	int i;
+	Db = births * (1-L[0]/(5*lx[1])); /* deaths at birth */
+	/*Rprintf("\nbirths: %lf Db: %lf L10: %f", births, Db, L10);*/
+	for(i=0; i<(adim-1); ++i) {
+		/*Dc[i] = L[i] - L[i+1];*/ /* cohort deaths */
+		Dc[i] = pop[i + jve*adim] * (1-(L[i + 1]/L[i]));
+	}
+	for(i=0; i<(adim-1); ++i) {
+		fx[i] = (L[i]-5*lx[i + 2])/(L[i]-L[i+1]); /*splitting factors*/
+	}
+	/*deaths[jve*adim] = 100*(Db + Dc[0] * fx[0]);*/
+	deaths[jve*adim] = (Db + Dc[0] * (L[0]-5*lx[1])/(L[0]-L[1]));
+	for(i=1; i<(adim-1); ++i) {
+		deaths[i + jve*adim] = (Dc[i-1] * (1-fx[i-1]) + Dc[i] * fx[i]);
+	}
+	i = adim-1;
+	Dc[i] = (pop[i-1 + jve*adim]+pop[i+ jve*adim])*(1-(L[i]/(L[i]+L[i - 1])));
+	deaths[i + jve*adim] = (Dc[i-1] * fx[i-1] + Dc[i]);
+	sd = 0;
+	Rprintf("\ni\t\tLx\t\tlx\t\tsx\t\tN\t\tDc\t\tfx\t\tD");
+	for(i=0; i<(adim-1); ++i) {
+		Rprintf("\n%i:\t%f\t%f\t%f\t%f\t%f\t%f\t%f", i, L[i], lx[i], L[i+1]/L[i], pop[i+ jve*adim], Dc[i], fx[i], deaths[i + jve*adim]);
+		sd += deaths[i + jve*adim];
+	}
+	
+	Rprintf("\nsum D=%f\n", sd);
+}
+
+void get_VE_from_LT(int *N, int *Sex, double *Mx, double *Births, double *pop, double *Sr, double *Deaths) {
+	double LLm[21], sx[21], mxm[22], LL10[1], lm[22];
 	int i, j;
+	/*Rprintf("\n*********get_VE_from_LT***********");*/
 	for (j=0; j < *N; ++j) {
-		/*Rprintf("\nj=%i: mxm = ", j);*/
-		for (i=0; i < 28; ++i) {
-			mxm[i] = Mx[i + j*28];
+		/*Rprintf("\nj=%i:\nmx = ", j);*/
+		for (i=0; i < 22; ++i) {
+			mxm[i] = Mx[i + j*22];
 			/*Rprintf(" %lf", mxm[i]);*/
 		}
-		LifeTableC(*Sex, mxm, LLm, LL10);
-		get_sx21(LLm, sx);
+		LifeTableC(*Sex, 21, mxm, LLm, LL10, lm);
+		get_sx21_21(LLm, sx);
 		/*Rprintf("\n   sx = ");*/
 		for (i=0; i < 21; ++i) {
 			Sr[i + j*21] = sx[i];
 			/*Rprintf(" %lf", sx[i]);*/
 		}
-		L10[j] = LL10[0];
+		/*compute_deaths(*Births, 21, j, pop, LLm, lm, LL10[0], Deaths);*/
 	}
+}
+
+void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Deaths) {
+	double mig[21][*N], totmig[21][*N], mmult;
+	int i, j, nrow, n;
+	nrow = 21;
+	n = *N;
+	mmult = 1;
+	if(*MIGtype == 0) mmult=0.5;
+	for(j=0; j<n; ++j) {
+		/* age < 5 */
+		Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);/*this should be Pop[(j+1)*nrow] ? */
+		for(i=1; i<(nrow-1); ++i) {
+			switch (*MIGtype) {
+				case 0: /* migration evenly distributed over each interval (MigCode=0) */
+					/* age >= 5 */
+					Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]) + 0.5*MIG[i-1+j*nrow]*(1-Sr[i+j*nrow]);
+					/*Rprintf(" %i %i: %lf %lf %lf\n", j, i, Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]), 0.5*MIG[i-1+j*nrow]*(1-Sr[i+j*nrow]), Deaths[i+j*nrow]);*/
+					/*totmig[i][j] = 0.5*(MIG[i + j*nrow] + MIG[i-1 + j*nrow]*Sr[i-1 + j*nrow]);*/
+					break;
+				default: /* migration at the end of each interval (MigCode=9)*/
+					/* age >= 5 */
+					Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]);
+					/*totmig[i][j] = MIG[i + j*nrow];*/
+					break;
+			}
+		}
+		/* Last open-ended age category */
+		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[i+j*nrow]);
+	}
+
 }
 
 void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
@@ -247,11 +342,12 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
+				  double *Lm, double *Lf, double *L10, double *lxm, double *lxf,
 				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
-	double b, bt[7], bm, bf, mmult, srb_ratio, tmp;
-	int i,j, adim, nrow, ncol, n;
+	double b, bt[7], bm, bf, mmult, srb_ratio, tmp, poptmpM[27], poptmpF[27], LLm[27], LLf[27], llxm[28], llxf[28];
+	int i,j, jve, adim, nrow, ncol, n;
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
@@ -283,53 +379,57 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		}
 	}
 
-
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
-		/* Compute ages >=5 */
-		for(i=1; i<(adim-1); ++i) {
-			/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
+		jve = j-1;
+		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
-			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + (j-1)*adim] + totmigm[i][j-1];
-			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + (j-1)*adim] + totmigf[i][j-1];
+		/* Compute ages >=5 */
+		for(i=1; i<(adim-1); ++i) {		
+			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim] + totmigm[i][jve];
+			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim] + totmigf[i][jve];
 		}
-		
-		
 		/* Age 130+ */
-		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + (j-1)*adim] + migm[26][j-1];
-		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + (j-1)*adim] + migf[26][j-1];
-		
+		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim] + migm[26][jve];
+		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim] + migf[26][jve];
 		/* birth in 5-yrs */
-		srb_ratio = srb[j - 1] / (1 + srb[j - 1]);
+		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
-			bt[i-3] = (popf[i + (j-1)*adim] + popf[i + j*adim]) * asfr[i-3 + (j-1)*7] * 0.5;
-			btagem[i-3+(j-1)*7] = bt[i-3] * srb_ratio;
-			btagef[i-3+(j-1)*7] = bt[i-3] - btagem[i-3+(j-1)*7];
+			bt[i-3] = (popf[i + (j-1)*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
+			btagem[i-3+jve*7] = bt[i-3] * srb_ratio;
+			btagef[i-3+jve*7] = bt[i-3] - btagem[i-3+jve*7];
 		}
 		b = sum(bt, 7);
 		bm = b * srb_ratio;
-		bf = b / (1 + srb[j - 1]);
+		bf = b / (1 + srb[jve]);
 		/* age 0-4 */	
-		popm[j*adim] = bm * srm[(j-1)*adim] + mmult * migm[0][j-1];
-		popf[j*adim] = bf * srf[(j-1)*adim] + mmult * migf[0][j-1];
+		popm[j*adim] = bm * srm[jve*adim] + mmult * migm[0][jve];
+		popf[j*adim] = bf * srf[jve*adim] + mmult * migf[0][jve];
+		
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
-			/*deathsm[i + (j-1)*adim] = popm[i + j*adim] * (1-srm[i + (j-1)*adim]);
-			deathsf[i + (j-1)*adim] = popf[i + j*adim] * (1-srf[i + (j-1)*adim]);*/
+			poptmpM[i] = popm[i + j*adim];
+			poptmpF[i] = popf[i + j*adim];
+			LLm[i] = Lm[i + jve*adim];
+			LLf[i] = Lf[i + jve*adim];
+			llxm[i] = lxm[i + jve*(adim+1)];
+			llxf[i] = lxf[i + jve*(adim+1)];
 		}
-		deathsm[(j-1)*adim] = bm * (1-srm[(j-1)*adim]);
-		deathsf[(j-1)*adim] = bf * (1-srf[(j-1)*adim]);
-		for(i=1; i<(adim-1); ++i) {
-			deathsm[i + (j-1)*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + (j-1)*adim]);
-			deathsf[i + (j-1)*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + (j-1)*adim]);
+		/*compute_deaths(bm, adim, jve, poptmpM, LLm, llxm, L10[0], deathsm);
+		compute_deaths(bf, adim, jve, poptmpF, LLf, llxf, L10[1], deathsf);*/
+		deathsm[jve*adim] = bm * (1-srm[jve*adim]);
+        deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
+        for(i=1; i<(adim-1); ++i) {
+        	deathsm[i + jve*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
+            deathsf[i + jve*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
 		}
-		i = 26;
-		deathsm[i + (j-1)*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + (j-1)*adim]);
-		deathsf[i + (j-1)*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + (j-1)*adim]);
-
+        i = 26;
+		deathsm[i + jve*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
+		deathsf[i + jve*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
 		/*Rprintf("\ntotp%d = %lf", j, totp[j]);*/
 	}
+	
 	/*Rprintf("\n\n\n");
 	for(j=0; j<n; ++j) {
 		Rprintf("\nj=%i: ",j);

@@ -1,5 +1,3 @@
-
-
 pop.trajectories.plotAll <- function(pop.pred, 
 									output.dir=file.path(getwd(), 'pop.trajectories'),
 									output.type="png", expression=NULL, verbose=FALSE,  ...) {
@@ -25,9 +23,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 								  sex=c('both', 'male', 'female'), age='all',
 								  sum.over.ages=FALSE,
 								  half.child.variant=FALSE,
-								  nr.traj=NULL, typical.trajectory=FALSE,
-								  xlim=NULL, ylim=NULL, 
-								  xlab='Year', ylab='Population projection', main=NULL,
+								  nr.traj=NULL, typical.trajectory=FALSE, main=NULL,
 								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
 								  show.legend=TRUE, ann=par('ann'), ...
 								  ) {
@@ -55,7 +51,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 		do.pop.trajectories.plot(pop.pred, country, expression=expression, pi=pi, sex=sex, age=age,
 									half.child.variant=half.child.variant, nr.traj=nr.traj,
 									typical.trajectory=typical.trajectory,
-									xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, main=main, lwd=lwd, col=col,
+									main=main, lwd=lwd, col=col,
 									show.legend=show.legend, ann=ann, ...)
 	else {
 		all.ages <- pop.pred$ages
@@ -84,7 +80,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 			do.pop.trajectories.plot(pop.pred, country, pi=pi, sex=sex, age=iage,
 									half.child.variant=half.child.variant, nr.traj=nr.traj,
 									typical.trajectory=typical.trajectory,
-									xlim=xlim, ylim=ylim, xlab='', ylab='', main=age.labels[iage], cex.main=0.9, 
+									xlab='', ylab='', main=age.labels[iage], cex.main=0.9, 
 									lwd=lwd, col=col, show.legend=show.legend, ann=ann, ...)
 		}
 		if(ann) mtext(main, line = 0.5, outer = TRUE)
@@ -97,7 +93,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL, type='b', 
-								  xlab='Year', ylab='Population projection', main=NULL, 
+								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
 								  show.legend=TRUE, ann=par('ann'), add=FALSE, ...
 								  ) {
@@ -106,7 +102,12 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
 										typical.trajectory=typical.trajectory)
-		pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
+		if(missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years-4)))
+			pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
+		else {
+			pop.observed.all <- NA
+			names(pop.observed.all) <- min(pop.pred$proj.years)-5
+		}
 	} else {
 		trajectories <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj, 
 										typical.trajectory=typical.trajectory)
@@ -120,7 +121,8 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	obs.not.na <- !is.na(pop.observed.all)
 	pop.observed.idx <- if(sum(obs.not.na)==0) length(pop.observed.all) else which(obs.not.na)
 	x1 <- as.integer(names(pop.observed.all)[pop.observed.idx])
-	x2 <- if(!is.null(dimnames(trajectories$trajectories))) as.numeric(dimnames(trajectories$trajectories)[[1]])
+	x2 <- if(!is.null(dimnames(trajectories$trajectories)) && !is.null(dimnames(trajectories$trajectories)[[1]])) 
+				as.numeric(dimnames(trajectories$trajectories)[[1]])
 			else as.numeric(dimnames(pop.pred$quantiles)[[3]])
 	y1 <- pop.observed.all[pop.observed.idx]
 	if(is.null(xlim)) xlim <- c(min(x1, x2), max(x1, x2))
@@ -147,9 +149,11 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 		}
 	}
 	# plot historical data: observed
-	if(!add)
+	if(!add) {
+		if(missing(ylab) && !is.null(expression)) ylab <- ''
 		plot(x1, y1, type=type, xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
 			panel.first = grid(), lwd=lwd[1], col=col[1], ann=ann, ...)
+	}
 	else lines(x1, y1, type=type, lwd=lwd[1], col=col[1])
 	# plot trajectories
 	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
@@ -348,7 +352,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL,  
-								  xlab='Age', ylab='Population projection', main=NULL, 
+								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', 'gray'),
 								  show.legend=TRUE, add=FALSE, ann=par('ann'), ...
 								  ) {
@@ -362,6 +366,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 		
 	data <- get.data.byage(pop.pred, country, year, expression, pi=pi,
 							sex=sex, nr.traj=nr.traj, typical.trajectory=typical.trajectory)
+	if(missing(ylab) && !is.null(expression)) ylab <- ''
 	with(data, {
 	x <- 1:length(age.idx)
 	y <- pop.median
