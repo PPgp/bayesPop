@@ -17,6 +17,7 @@ LifeTableMxCol(mx, colname, \dots)
   \item{sex}{For which sex is the life table.}
   \item{include01}{Logical controlling if the resulting life table contains the age group 0-1.}
   \item{colname}{Name of the column of the life table that should be returned.}
+  \item{\dots}{Arguments passed to \code{LifeTableMx}.}
 }
 \details{
 Function \code{LifeTableMx} returns a life table for one set of mortality rates. Function \code{LifeTableMxCol} returns one column of the life table for (possibly) multiple sets of mortality rates.
@@ -28,25 +29,30 @@ Function \code{LifeTableMx} returns a data frame with the following elements:
 \item{lx}{lx, number left alive at age x.}
 \item{qx}{nqx, probability of dying between ages x ad x+n.}
 \item{ax}{nax, average person-years lived in the interval by those dying in the interval.}
+
+Function \code{LifeTableMxCol} returns one given column of the life table, possibly as a matrix (if \code{mx} is a matrix).
+
+If \code{include01} is \code{TRUE} the number of rows on the data frame corresponds to the size of \code{mx}. In such a case, the first row corresponds to the age group 0-1 and the second row to the age group 0-5 (not 1-5!). If \code{include01} is \code{FALSE}, the first row is eliminated.
 }
+
 \references{
 Preston, P., Heuveline, P., Guillot, M. (2001): Demography. Blackwell Publishing Ltd.
 }
 \author{
-Hana Sevcikova
+Hana Sevcikova, Nan Li
 }
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{pop.expressions}} for examples on retrieving some life table quantities.
 }
 \examples{
+sim.dir <- tempfile()
+pred <- pop.predict(countries="Ecuador", output.dir=sim.dir,
+			keep.vital.events=TRUE)
+# get male mortality rates from 2000
+mx <- pop.byage.table(pred, expression='MEC_M{0:21}')[,1]
+LifeTableMx(mx)
+unlink(sim.dir, recursive=TRUE)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+
+\keyword{ attribute }

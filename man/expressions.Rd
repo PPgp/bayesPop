@@ -8,12 +8,30 @@ The functions above accept an argument \code{expression} which should define a p
 
 A \bold{basic component} is a character string constituted of four parts, two of which are optional. They must be in the following order:
 \enumerate{
-\item Measure identification: One of the folowing five upper-case characters - \sQuote{P} (population), \sQuote{D} (deaths), \sQuote{B} (births), \sQuote{S} (survival ratio), \sQuote{F} (fertility rate), \sQuote{M} (mortality rate), \sQuote{Q} (probability of dying). All but the \sQuote{P} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
-\item Country part: Numerical country code (as used in {\code{\link{LOCATIONS}}}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), or two- or three-character ISO 3166 code (\url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}), or the characters \dQuote{XXX} which serves as a wildcard for a country code.
+\item Measure identification. One of the folowing upper-case characters:
+	\itemize{
+		\item \sQuote{P} - population, 
+		\item \sQuote{D} - deaths, 
+		\item \sQuote{B} - births, 
+		\item \sQuote{S} - survival ratio,
+		\item \sQuote{F} - fertility rate, 
+		\item \sQuote{M} - mortality rate, 
+		\item \sQuote{Q} - probability of dying,
+		\item \sQuote{G} - net migration.
+		}
+	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
+\item Country part. One of the following:
+	\itemize{
+  		\item Numerical country code (as used in {\code{\link{LOCATIONS}}}, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), 
+  		\item two- or three-character ISO 3166 code, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}, 
+  		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
+  	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
 \item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index zero which corresponds to age 0-1.
 }
-Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{S4_M\{\}}.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} can be only combined with female sex, \sQuote{B} and \sQuote{F} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
+
+Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[0]}.
 
 When the expression is evaluated on a prediction object, each basic component is substituted by an array of four dimensions:
 \enumerate{
@@ -69,6 +87,9 @@ pop.trajectories.plotAll(pred, nr.traj=50,
 # mean child-bearing age of Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
+
+# migration per capita by age
+pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
 
 # potential support ratio - map
 pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")

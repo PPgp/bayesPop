@@ -17,8 +17,10 @@ double sum(double *x, int dim) {
 void doLifeTable(int sex, int nage, double *mx, 
 				double *Lx, double *lx, double *qx, double *ax) {
 	
-	int i;
+	int i, minnage;
 	
+	minnage = 21;
+	if (nage < 21) minnage = nage;
 	if(sex > 1) {/* female*/
 		if (mx[0] < 0.107) {
 			ax[0] = 0.053 + 2.8 * mx[0];
@@ -48,18 +50,18 @@ void doLifeTable(int sex, int nage, double *mx,
     /*Rprintf("\nL0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
 	/* Age 5-9, .... 95-99 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
-	for(i = 2; i < 21; ++i) {
+	for(i = 2; i < minnage; ++i) {
 		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
 		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
 		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
 	}
     
-    for(i = 2; i<21; ++i) {
+    for(i = 2; i<minnage; ++i) {
 		lx[i+1] = lx[i] * (1-qx[i]);
 		Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
 	}
-	if(nage > 21) {
-		for(i = 21; i<nage; ++i) {         /* Starts 104 */
+	if(nage > minnage) {
+		for(i = minnage; i<nage; ++i) {         /* Starts 104 */
 			qx[i] = 1 - exp(-5 * mx[i]);
 			lx[i+1] = lx[i] * (1 - qx[i]); 
 			Lx[i] = (lx[i] - lx[i+1]) / fmax(mx[i], DBL_MIN);

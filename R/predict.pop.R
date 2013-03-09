@@ -483,20 +483,20 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 				observed=observed))
 }
 
+.get.par.from.inputs <- function(par, inputs, country) {
+	if(is.null(inputs[[par]])) return (NULL)
+	idx <- inputs[[par]][,'country_code'] == country
+	res <- inputs[[par]][idx,,drop=FALSE]
+	return (as.matrix(res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]))
+}
+
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc <- list()
 	obs <- list()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB',
 						'PASFR', 'MIGtype', 'MIGm', 'MIGf')) {
-		idx <- inputs[[par]][,'country_code'] == country
-		inpc[[par]] <- inputs[[par]][idx,,drop=FALSE]
-		inpc[[par]] <- as.matrix(inpc[[par]][, !is.element(colnames(inpc[[par]]), 
-							c('country_code', 'age')),drop=FALSE])
-		if(!is.null(inputs$observed[[par]])) {
-			obs[[par]] <- inputs$observed[[par]][idx,,drop=FALSE]
-			obs[[par]] <- as.matrix(obs[[par]][, !is.element(colnames(obs[[par]]), 
-							c('country_code', 'age')),drop=FALSE])
-		}
+		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
+		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
@@ -841,7 +841,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	npasfr <- nrow(obs$PASFR)
 	nest <- min(length(obs$TFRpred), ncol(obs$PASFR))
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
-	asfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR)]/100.
+	asfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]/100.
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
 	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
 					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
@@ -852,7 +852,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	#nmx <- ncol(mxKan$male$mx)
 	#mx <-  list(mxKan$male$mx[,(nmx-nest+1):nmx], mxKan$female$mx[,(nmx-nest+1):nmx])
 	nmx <- ncol(inputs$MXm)
-	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx], inputs$MXf[,(nmx-nest+1):nmx])
+	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
 	#srLLm <- modifiedLC(nest, mxKan, obs$e0Mpred[(length(obs$e0Mpred)-nest+1):length(obs$e0Mpred)], 
 	#								obs$e0Fpred[(length(obs$e0Fpred)-nest+1):length(obs$e0Fpred)])
 	#sr <- srLLm$sr
@@ -1137,7 +1137,8 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=FALSE){
 			Lx=Lx, lx=lx, qx=qx, ax=ax)
 	LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
 					Lx=LTC$Lx, lx=LTC$lx, qx=LTC$qx, ax=rep(NA,nage))
-	LT$ax[1:length(LTC$ax)] <- LTC$ax
+	l <- min(length(LTC$ax), nrow(LT))
+	LT$ax[1:l] <- LTC$ax[1:l]
 	if(include01) {
 		#LT$Lx[2] <- LT$Lx[1] + LT$Lx[2]
 		LT$age[2] <- 0

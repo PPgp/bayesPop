@@ -1,6 +1,14 @@
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
+3.2-0
+-----
+Added mx, qx and migration to expressions.
+
+Allowed using zero index for age group 0-1.
+
+Functions LifeTableMx and LifeTableMxCol added.
+
 3.1-11 (2/16/2013)
 ------
 Fixed an issue with NAs in TFR trajectories. 
