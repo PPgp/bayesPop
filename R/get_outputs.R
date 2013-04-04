@@ -341,11 +341,17 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 }
 
 
-get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index, country.code, 
+get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL, country.code=NULL, 
 									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
+	# quantile.array should be 3d-array (country x quantiles x time). 
+	# If country.index is NULL, the country dimension can be omitted 
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, 1-(1-pi/100)/2)
 	found <- FALSE
 	if(!is.null(quantile.array)) {
+		if(is.null(country.index) && length(dim(quantile.array))<3) {
+			quantile.array <- abind(quantile.array, along=0)
+			country.index <- 1
+		}
 		quantile.values <- as.numeric(dimnames(quantile.array)[[2]])
 		alidx<-round(quantile.values,6)==round(al[1],6)
 		cqp <- NULL
@@ -363,18 +369,19 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index, coun
 			warning('Quantiles not found')
 			return(NULL)	
 		}
-		reload <- FALSE
+		do.reload <- FALSE
 		if (is.null(trajectories)) {
-			if(pop.pred$nr.traj > 0) reload <- TRUE
+			if(pop.pred$nr.traj > 0) do.reload <- TRUE
 		} else { 
-			if (dim(trajectories)[2] < 2000 && pop.pred$nr.traj > dim(trajectories)[2]) reload <- TRUE
+			if (dim(trajectories)[2] < 2000 && pop.pred$nr.traj > dim(trajectories)[2] && reload) do.reload <- TRUE
 		}
-		if(reload) {
+		if(do.reload) {
 			#load 2000 trajectories maximum for computing quantiles
 			traj.reload <- get.pop.trajectories(pop.pred, country.code, nr.traj=2000, ...)
 			trajectories <- traj.reload$trajectories
 		}
 		if (!is.null(trajectories)) {
+			if(is.null(dim(trajectories))) trajectories <- abind(trajectories, along=2) # only one trajectory
 			cqp <- apply(trajectories, 1, 
 						quantile, al, na.rm = TRUE)
 		} else {
@@ -437,7 +444,7 @@ get.survival <- function(mxm, sex, include01=TRUE) {
 get.popVE.trajectories.and.quantiles <- function(pop.pred, country, 
 									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
- 									nr.traj=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
+ 									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
  	# get trajectories and quantiles for vital events and other indicators
  	input.indicators <- c('migration')
  	life.table.indicators <- c('survival', 'qx', 'mx')
@@ -498,8 +505,8 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	max.age <- if(!is.null(alltraj$male)) dim(alltraj$male)[1] 
 				else dim(alltraj$female)[1]  # should be 7, 21, 27, 28 (28 only if zero is explicitely included in 'age', 
 									  		# so never when age=='all')
-	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= max.age]
-	quantiles <- get.quantiles.to.keep()
+	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= (max.age + if(max.age < 21) 3 else 0)] # in case max.age==7
+	quantiles <- if(is.null(q)) get.quantiles.to.keep() else q
 	trajdimnames <- if(!is.null(alltraj$male)) dimnames(alltraj$male) else dimnames(alltraj$female)
 	if(event == 'births' || event == 'fertility') {
 		if(age[1] != 'all') {

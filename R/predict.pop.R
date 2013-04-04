@@ -94,9 +94,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	present.and.proj.years <- c(inp$estim.years[nest], inp$proj.years)
 	prediction.file <- file.path(outdir, 'prediction.rda')	
 	quantiles.to.keep <- get.quantiles.to.keep()
-	PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, length(quantiles.to.keep), nr_project+1),
+	nquant <- length(quantiles.to.keep)
+	PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, nr_project+1),
 						dimnames=list(country.codes, quantiles.to.keep, present.and.proj.years))
-	quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(ncountries, nages, length(quantiles.to.keep), nr_project+1),
+	quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(ncountries, nages, nquant, nr_project+1),
 						dimnames=list(country.codes, ages, quantiles.to.keep, present.and.proj.years))
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, nr_project+1), 
 						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years))
@@ -229,10 +230,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#stop('')
 		for (i in 1:nages) {
 			if(nr.traj == 1) {
-				quantMage[cidx,i,,] <- totpm[i,,1]
-				quantFage[cidx,i,,] <- totpf[i,,1]
-				quantPropMage[cidx,i,,] <- totpm[i,,1]/totp
-				quantPropFage[cidx,i,,] <- totpf[i,,1]/totp
+				quantMage[cidx,i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+				quantFage[cidx,i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+				quantPropMage[cidx,i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
+				quantPropFage[cidx,i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
 			} else {
 				quantMage[cidx,i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
 				quantFage[cidx,i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
@@ -534,7 +535,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		country.obj <- get.country.object(country, inputs$TFRpred$mcmc.set$meta)
 		medians$TFRpred <- bayesTFR:::get.median.from.prediction(inputs$TFRpred, country.obj$index, country.obj$code)[-1]
 		obs.tfr <- bayesTFR:::get.tfr.reconstructed(inputs$TFRpred$tfr_matrix_reconstructed, inputs$TFRpred$mcmc.set$meta)
-		obs$TFRpred <- obs.tfr[,country.obj$index]
+		obs$TFRpred <- obs.tfr[1:if(!is.null(inputs$TFRpred$present.year.index)) inputs$TFRpred$present.year.index else nrow(obs.tfr),country.obj$index]
 	} 
 	inpc$TFRhalfchild <- bayesTFR:::get.half.child.variant(median=medians$TFRpred, increment=c(0.25, 0.4, 0.5))
 	if(!all(is.element(inputs$proj.years, colnames(inpc$TFRhalfchild))))
@@ -551,7 +552,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		country.obj <- get.country.object(country, inputs$e0Mpred$mcmc.set$meta)
 		medians$e0Mpred <- bayesTFR:::get.median.from.prediction(inputs$e0Mpred, country.obj$index, country.obj$code)
 		obs.e0M <- bayesLife:::get.e0.reconstructed(inputs$e0Mpred$e0.matrix.reconstructed, inputs$e0Mpred$mcmc.set$meta)
-		obs$e0Mpred <- obs.e0M[,country.obj$index]
+		obs$e0Mpred <- obs.e0M[1:if(!is.null(inputs$e0Mpred$present.year.index)) inputs$e0Mpred$present.year.index else nrow(obs.e0M),country.obj$index]
 	}
 	if(!all(is.element(inputs$proj.years, names(medians$e0Mpred))))
 		stop('Mismatch in projection periods of male e0 and the target projection years.')
@@ -567,7 +568,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		country.obj <- get.country.object(country, inputs$e0Fpred$mcmc.set$meta)
 		medians$e0Fpred <- bayesTFR:::get.median.from.prediction(inputs$e0Fpred, country.obj$index, country.obj$code)
 		obs.e0F <- bayesLife:::get.e0.reconstructed(inputs$e0Fpred$e0.matrix.reconstructed, inputs$e0Fpred$mcmc.set$meta)
-		obs$e0Fpred <- obs.e0F[,country.obj$index]
+		obs$e0Fpred <- obs.e0F[1:if(!is.null(inputs$e0Fpred$present.year.index)) inputs$e0Fpred$present.year.index else nrow(obs.e0F),country.obj$index]
 
 	}
 	if(!all(is.element(inputs$proj.years, names(medians$e0Fpred))))

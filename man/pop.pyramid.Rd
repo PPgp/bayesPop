@@ -22,7 +22,8 @@ Probabilistic Population Pyramid
 Functions for plotting probabilistic population pyramid. \code{pop.pyramid} creates a classic pyramid using rectangles; \code{pop.trajectories.pyramid} creates one or more pyramids using vertical lines (possibly derived from population trajectories). They can be used to view a prediction object created with this package, or any user-defined sex- and age-specific dataset. For the latter, function \code{get.bPop.pyramid} should be used to translate user-defined data into a \code{bayesPop.pyramid} object.
 }
 \usage{
-\method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, pi = c(80, 95), 
+\method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
+	indicator = c("P", "B", "D"), pi = c(80, 95), 
     proportion = FALSE, age = 1:21, plot = TRUE, \dots)
     
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
@@ -48,7 +49,8 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
 	
 \method{plot}{bayesPop.pyramid}(x, \dots)
 
-\method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, pi = c(80, 95), 
+\method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, 
+	indicator = c("P", "B", "D"), pi = c(80, 95), 
     proportion = FALSE, age = 1:21, nr.traj = 0, sort.pi=TRUE, \dots)
     
 \method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = 'observed', 
@@ -67,6 +69,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{country}{Name or numerical code of a country.}
   \item{year}{Year within the projection or estimation period to be plotted. Default is the start year of the prediction. It can also be a vector of years. \code{pop.pyramid} draws the first two, \code{pop.trajectories.pyramid} draws all of them.
   	In the functions \code{pop.pyramidAll} and \code{pop.trajectories.pyramidAll}, the \code{year} argument can be a list of years, in which case the pyramids are created for all elements in the list.}
+  	\item{indicator}{One of the characters \dQuote{P} (population), \dQuote{B} (births), \dQuote{D} (deaths) determining the pyramid indicator.}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{proportion}{Logical. If \code{TRUE} the pyramid contains the distribution of rates of age-specific counts and population totals.}
   \item{age}{Integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last available age goup is 130+ which corresponds to index 27. The purpose of this argument here is mainly to control the height of the pyramid.}

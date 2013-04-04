@@ -526,8 +526,14 @@ get.bPop.pyramid.list <- function(data, main.label=NULL, legend=NULL, CI=NULL, .
 	return(pyr)
 } 
 
+.simpleCap <- function(x) {
+    s <- strsplit(x, " ")[[1]]
+    paste(toupper(substring(s, 1,1)), substring(s, 2),
+          sep="", collapse=" ")
+}
 
-get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(80, 95), proportion=FALSE, age=1:21, 
+get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indicator=c('P', 'B', 'D'),
+												pi=c(80, 95), proportion=FALSE, age=1:21, 
 												nr.traj=0, sort.pi=TRUE, ...) {
 	pop.pred <- data
 	country <- get.country.object(country, country.table=pop.pred$countries)
@@ -538,8 +544,12 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 	draw.projection[is.na(year.idx)] <- FALSE # if years not found in the prediction years, these are probably observed years
 	draw.observed <- any(!draw.projection)
 	pop.observed <- NULL
+	indicator <- match.arg(indicator)
 	if(draw.observed) {
-		pop.observed <- get.pop.observed(pop.pred, country$code, sex='both')
+		if(indicator == 'P')
+			pop.observed <- get.pop.observed(pop.pred, country$code, sex='both')
+		else
+			pop.observed <- get.pop.observed.from.expression(paste(indicator, country$code, sep=''), pop.pred)
 		year.idx[!draw.projection] <- sapply(year[!draw.projection], get.observed.year.index, pop.pred=pop.pred)
 		if(all(is.na(year.idx))) stop('Unable to find data for year ', year)
 		if(any(is.na(year.idx))) warning('Unable to find data for year ', year[is.na(year.idx)])
@@ -547,9 +557,33 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 	ages.idx <- age[age <=  length(pop.pred$ages)]
 	lages <- length(ages.idx)
 	nquant <- length(pi)
+	quantiles.table <- trajs <- list(male=NULL, female=NULL)
 	if(!any(draw.projection) || !any(draw.projection & (year.idx>1))) nquant <- 0
 	if(nquant > 1 && sort.pi) pi<-sort(pi, decreasing=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
-	quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
+	if(indicator != 'P') { # other indicators
+		trajectoriesM <- get.popVE.trajectories.and.quantiles(pop.pred, country$code, 
+								event=get.expression.indicators()[[indicator]], sex='male', 
+								sum.over.ages=FALSE, q=c(0.5, (1-pi/100)/2, 1-(1-pi/100)/2))
+		trajectoriesF <- get.popVE.trajectories.and.quantiles(pop.pred, country$code, 
+								event=get.expression.indicators()[[indicator]], sex='female', 
+								sum.over.ages=FALSE, q=c(0.5, (1-pi/100)/2, 1-(1-pi/100)/2))
+		if(proportion) {
+			sumTrajs <- apply(trajectoriesM$trajectories + trajectoriesF$trajectories, 2, sum)
+			if(is.null(dim(sumTrajs))) sumTrajs <- abind(sumTrajs, along=2)
+			trajs <- list(male=trajectoriesM$trajectories, female=trajectoriesF$trajectories)
+			for (itraj in dim(trajectoriesM$trajectories)[3]) {
+				sTm <- matrix(rep(sumTrajs[,itraj], dim(trajectoriesM$trajectories)[1]), 
+									nrow=dim(trajectoriesM$trajectories)[1], byrow=TRUE)
+				trajs[['male']][,,itraj] <- trajs[['male']][,,itraj]/sTm
+				trajs[['female']][,,itraj] <- trajs[['female']][,,itraj]/sTm
+			}
+		} else
+			quantiles.table <- list(male=trajectoriesM$quantiles, female=trajectoriesF$quantiles)
+		ages.idx <- ages.idx[is.element(ages.idx, trajectoriesM$age.idx.raw)]
+		ages.idx.q <- trajectoriesM$age.idx[is.element(trajectoriesM$age.idx.raw, ages.idx)]
+		lages <- length(ages.idx)
+	} else # population indicator
+		quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
                        else list(male=pop.pred$quantilesMage, female=pop.pred$quantilesFage)
     is.valid.pi <- if(proportion && nquant>0) is.saved.pi(pop.pred, pi)
                    else rep(TRUE, nquant)
@@ -573,14 +607,31 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 	for(sex in c('male', 'female')) {
 		dimt <- dim(quantiles.table[[sex]])
 		dimn <- dimnames(quantiles.table[[sex]])
+		this.trajs <- table <- NULL
 		for(iage in 1:lages) {
 			if(any(draw.projection)) {
-				table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
-				table <- array(table, dimt[c(1,3:4)], dimnames=c(list(NULL), dimn[3], dimn[4]))
-				med <- get.pop.traj.quantiles(table, pop.pred, country$index, country$code, 
-												q=0.5, sex=sex, age=ages.idx[iage])
+				if(length(dim(quantiles.table[[sex]]))==4) { # population
+					table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
+					table <- array(table, dimt[c(1,3:4)], dimnames=c(list(NULL), dimn[3], dimn[4]))
+					cidx <- country$index
+					ci.reload <- TRUE
+				} else { # other indicator
+					if(!is.null(quantiles.table[[sex]])) {
+						table <- drop(quantiles.table[[sex]][ages.idx.q[iage],,])
+						table <- array(table, dimt[c(2,3)], dimnames=c(dimn[2], dimn[3]))
+					} else this.trajs <- trajs[[sex]][ages.idx.q[iage],,]
+					cidx <- NULL
+					ci.reload <- FALSE
+				}
+				med <- get.pop.traj.quantiles(table, pop.pred, cidx, country$code, trajectories=this.trajs,
+												q=0.5, reload=FALSE, sex=sex, age=ages.idx[iage])
 			}
-			if(any(!draw.projection)) observed.data <- get.pop.observed(pop.pred, country$code, sex=sex, age=iage)
+			if(any(!draw.projection)) {
+				if(indicator != 'P') {
+					observed.data <- get.pop.observed.from.expression(
+							paste(indicator, country$code, '_', substr(toupper(sex), 1,1), '[', ages.idx[iage], ']', sep=''), pop.pred)
+				} else observed.data <- get.pop.observed(pop.pred, country$code, sex=sex, age=ages.idx[iage])
+			}
 			for(yi in 1:lyears) {				
 				pyr[[yi]][iage,sex] <- if(draw.projection[yi]) med[year.idx[yi]] 
 											else observed.data[year.idx[yi]]/(if(proportion) pop.observed[year.idx[yi]] else 1)
@@ -592,8 +643,8 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 				if (!is.valid.pi[i]) next
 				pi.name <- as.character(pi[i])
 				quant <- get.pop.traj.quantiles(table, 
-												pop.pred, country$index, country$code, 
-												pi=pi[i], sex=sex, age=ages.idx[iage])
+												pop.pred, cidx, country$code, trajectories=this.trajs,
+												pi=pi[i], reload=ci.reload, sex=sex, age=ages.idx[iage])
 				for(yi in 1:lyears) {
 					if(draw.projection[yi] & (year.idx[yi] > 1)) {
 						pyr.ci[[yi]][[pi.name]]$low[iage,sex] <- quant[1,year.idx[yi]]
@@ -604,6 +655,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 			}
 		}
 	}
+	#stop('')
 	trajs <- list()
 	male.trajectories <- female.trajectories <- NULL
 	if((is.null(nr.traj) || nr.traj > 0) && any(draw.projection & (year.idx > 1))) {
@@ -632,8 +684,9 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, pi=c(
 	if(lyears > 1)
 		names(pyr)[2:lyears] <- sapply(lapply(ifelse(draw.projection[2:lyears], pop.pred$proj.years[year.idx[2:lyears]],  
 											as.integer(names(pop.observed)[year.idx[2:lyears]])), '+', c(-3, 2)), paste, collapse='-')
+	indicator.name <- if(indicator=='P') 'Population' else .simpleCap(get.expression.indicators()[[indicator]])
 	return(structure(list(
-				label = paste(country$name, ': ', paste((if(draw.projection[1]) pop.pred$proj.years[year.idx[1]] 
+				label = paste(indicator.name, ' in ', country$name, ': ', paste((if(draw.projection[1]) pop.pred$proj.years[year.idx[1]] 
 										else as.integer(names(pop.observed)[year.idx[1]])) + c(-3, 2), collapse='-'), sep=''), 
 				pyramid = pyr, CI = pyr.ci,
 				trajectories = if(length(trajs) > 0) trajs else NULL,
@@ -752,12 +805,13 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 	par(mgp=mgp, mar=mar)
 }
 
-pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), proportion=FALSE,
+pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'),
+											pi=c(80, 95), proportion=FALSE,
 											age=1:21, plot=TRUE, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, proportion=proportion, age=age)
+	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, proportion=proportion, age=age)
 	if (plot) pop.pyramid(data, ...)
 	invisible(data)
 }
