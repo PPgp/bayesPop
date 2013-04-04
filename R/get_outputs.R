@@ -656,7 +656,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 	what <- substr(split.object[1],1,1)
 	# Is it a vital event
 	has.ve <- is.element(what, names(get.expression.indicators()))
-	split.object[1] <- gsub(what, '', split.object[1], fixed=TRUE)
+	split.object[1] <- sub(what, '', split.object[1], fixed=TRUE)
 	
 	# Parse country
 	country.string <- regmatches(split.object[1], 
@@ -688,7 +688,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			sx.idx <- grep(sx, split.object)
 			if(length(sx.idx) > 0) {
 				sex <- list(F='female', M='male')[[sx]]
-				split.object[sx.idx] <- gsub(sx, '', split.object[sx.idx])
+				split.object[sx.idx] <- sub(sx, '', split.object[sx.idx])
 				break
 			}
 		}
