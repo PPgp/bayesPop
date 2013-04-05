@@ -152,15 +152,19 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
+			#print(itraj)
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			#debug <- country == 478
 			#if(itraj == 2) debug <- TRUE
+			#print('A')
 			LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
+			#print('B')
 			popres <- StoPopProj(npred, inpc, LTres, asfr, inpc$MIGtype, LOCATIONS[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
+			#print('C')
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -635,7 +639,6 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 	eop  <- list(eopm, eopf)
     # Using combined bx, This differs from ModifiedLC0!    
     sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
-    L10 <- list(rep(0, npred), rep(0, npred))
     Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
     #sr1 <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
     #if(debug) print('Start check ===========================')
@@ -648,16 +651,15 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 			constrain=as.integer(mxYKan$sex == 1), 
 			#constrain=as.integer(0),
 			FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
-			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), L10=as.numeric(L10[[mxYKan$sex]]), 
+			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), 
 			lx=as.numeric(lx[[mxYKan$sex]]), Mx=as.numeric(Mx[[mxYKan$sex]]))
 		sr[[mxYKan$sex]] <- matrix(res$Sr, nrow=27)
 		LLm[[mxYKan$sex]] <- matrix(res$LLm, nrow=27)
-		L10[[mxYKan$sex]] <- res$L10
 		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
 		lx[[mxYKan$sex]] <- matrix(res$lx, nrow=28)
     }
     #stop('')
-	return(list(sr=sr, LLm=LLm, L10=L10, mx=Mx, lx=lx))    
+	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
 KannistoAxBx.joint <- function(ne, male.mx, female.mx, yb)  {
@@ -817,7 +819,6 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.type, country.name, keep.vit
 		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		srb=as.numeric(as.matrix(inputs$SRB)), popm=popm, popf=popf, totp=totp,
 		Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
-		L10=c(LT$L10[[1]], LT$L10[[1]]),
 		lxm=as.numeric(LT$lx[[1]]), lxf=as.numeric(LT$lx[[2]]), 
 		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
 		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
@@ -880,7 +881,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {
 		
-		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], include01=TRUE)[,,1]
+		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], infant.rows=c(TRUE, TRUE, FALSE))[,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
 		#res <- .C("get_VE_from_LT", nest, sex, as.numeric(mx[[sex]]), 
 		#			as.numeric(colSums(as.matrix(births[[sex]]))), as.numeric(as.matrix(pop[[sex]])), 
@@ -1121,15 +1122,17 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 }
 
 LifeTableMxCol <- function(mx, colname, ...){
-	if(is.null(dim(mx)) || dim(mx)[2] == 1) return(LifeTableMx(mx, ...)[[colname]])
+	if(is.null(dim(mx))) return(LifeTableMx(mx, ...)[[colname]])
 	#print('LifeTableMxCol')
 	#print(mx)
 	return(apply(mx, 2, function(x, ...) LifeTableMx(x, ...)[[colname]], ...))
 }
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=FALSE){
+LifeTableMx <- function(mx, sex=c('Male', 'Female'), infant.rows=c(FALSE, FALSE, TRUE)){
+	# infant.rows determines the inclusion of ages 0-1, 1-4, 0-4
 	sex <- match.arg(sex)
 	sex <- list(Male=1, Female=2)[[sex]]
+	if(!sum(infant.rows)>=1) stop('At least one element of infant.rows must be TRUE.')
 	nage <- length(mx)
 	Lx <- lx <- qx <- rep(0, nage)
 	ax <- rep(0, 21)
@@ -1137,13 +1140,30 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=FALSE){
 	LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
 			Lx=Lx, lx=lx, qx=qx, ax=ax)
 	LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					Lx=LTC$Lx, lx=LTC$lx, qx=LTC$qx, ax=rep(NA,nage))
+					Lx=LTC$Lx, lx=LTC$lx, qx=LTC$qx, ax=rep(NA,nage), mx=mx)
 	l <- min(length(LTC$ax), nrow(LT))
 	LT$ax[1:l] <- LTC$ax[1:l]
-	if(include01) {
-		#LT$Lx[2] <- LT$Lx[1] + LT$Lx[2]
-		LT$age[2] <- 0
-		LT <- LT[-1,]
+	if(infant.rows[3]) { # collapse the first two rows (0-1 and 1-4) into one (0-4) 
+		Lx05 <- LT$Lx[1] + LT$Lx[2]
+		ax05 <- (LT$ax[1]+LT$ax[2])/2. # average age of dying
+		qx05 <- LT$qx[1]*LT$qx[2]
+		mx05 <- (LT$lx[1]-LT$lx[2])/Lx05
+		if(!infant.rows[1] && !infant.rows[2]) { # remove the first row. The 0-4 group will become first row
+			LT$Lx[2] <- Lx05
+			LT$age[2] <- 0
+			LT$ax[2] <- ax05
+			LT$qx[2] <- qx05
+			LT$mx[2] <- mx05
+			LT <- LT[-1,]
+		} else {
+			# add a row with the 0-4 group
+			LT <- rbind(LT[1:2,], c(age='0-4', Lx=Lx05, lx=LT$lx[3], qx=qx05, ax=ax05, mx=mx05), LT[-(1:2),])
+			if(!infant.rows[2]) LT <- LT[-2,]
+			if(!infant.rows[1]) LT <- LT[-1,]
+		}
+	} else {
+		if(!infant.rows[2]) LT <- LT[-2,]
+		if(!infant.rows[1]) LT <- LT[-1,]
 	}
 	return(LT)
 }
