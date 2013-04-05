@@ -81,7 +81,7 @@ Hana Sevcikova
 \code{\link{bayesPop.prediction}}, \code{\link{summary.bayesPop.prediction}}, \code{\link{pop.pyramid}}
 }
 \examples{
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.trajectories.plot(pred, country="Ecuador", pi=c(80, 95))
 pop.trajectories.table(pred, country="Ecuador", pi=c(80, 95))

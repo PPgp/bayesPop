@@ -324,7 +324,7 @@ read.pop.file <- function(file)
 	return(read.delim(file=file, comment.char='#', check.names=FALSE))
 	
 read.bayesPop.file <- function(file)
-	return(read.pop.file(file.path(.find.package("bayesPop"), "data", file)))
+	return(read.pop.file(file.path(find.package("bayesPop"), "data", file)))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	observed <- list()
@@ -431,7 +431,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
 	else {
 		file.name <- if(!is.null(inputs$e0F.file)) inputs$e0F.file
-					else file.path(.find.package("bayesPop"), "ex-data", 
+					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('e0Fwpp', wpp.year, '.csv', sep=''))
 		if(!file.exists(file.name))
 			stop('File ', file.name, 
@@ -451,7 +451,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
 	} else {
 		file.name <- if(!is.null(inputs$e0M.file)) inputs$e0M.file 
-					else file.path(.find.package("bayesPop"), "ex-data", 
+					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('e0Mwpp', wpp.year, '.csv', sep=''))
 		if(!file.exists(file.name))
 			stop('File ', file.name, 
@@ -469,7 +469,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
 	else {
 		file.name <- if(!is.null(inputs$tfr.file)) inputs$tfr.file
-					else file.path(.find.package("bayesPop"), "ex-data", 
+					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('TFRwpp', wpp.year, '.csv', sep=''))
 		if(!file.exists(file.name))
 			stop('File ', file.name, 
@@ -881,7 +881,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {
 		
-		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], infant.rows=c(TRUE, TRUE, FALSE))[,,1]
+		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
 		#res <- .C("get_VE_from_LT", nest, sex, as.numeric(mx[[sex]]), 
 		#			as.numeric(colSums(as.matrix(births[[sex]]))), as.numeric(as.matrix(pop[[sex]])), 
@@ -1121,18 +1121,43 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-LifeTableMxCol <- function(mx, colname, ...){
-	if(is.null(dim(mx))) return(LifeTableMx(mx, ...)[[colname]])
-	#print('LifeTableMxCol')
-	#print(mx)
-	return(apply(mx, 2, function(x, ...) LifeTableMx(x, ...)[[colname]], ...))
+LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx'), ...){
+	colname <- match.arg(colname)
+	if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
+	return(apply(mx, 2, .doLifeTableMxCol, colname=colname, ...))
 }
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female'), infant.rows=c(FALSE, FALSE, TRUE)){
-	# infant.rows determines the inclusion of ages 0-1, 1-4, 0-4
+.collapse.Lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	Lx.start <- c(LT$Lx[1:2], LT$Lx[1] + LT$Lx[2])[age05]
+	return(c(Lx.start, LT$Lx[-(1:2)]))
+}
+
+.collapse.lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	lx.start <- LT$lx[c(1,2,2)][age05]
+	return(c(lx.start, LT$lx[-(1:2)]))
+}
+
+.collapse.qx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	qx.start <- c(LT$qx[1:2], 1-(LT$lx[3]/LT$lx[1]))[age05]
+	return(c(qx.start, LT$qx[-(1:2)]))
+}
+
+.collapse.mx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	mx.start <- c(LT$mx[1:2], (LT$lx[1] - LT$lx[3])/(LT$Lx[1] + LT$Lx[2]))[age05]
+	return(c(mx.start, LT$mx[-(1:2)]))
+}
+
+.doLifeTableMxCol <- function(mx, colname, age05=c(FALSE, FALSE, TRUE), ...) {
+	# age05 determines the inclusion of ages 0-1, 1-4, 0-4
+	LT <- LifeTableMx(mx, ...)
+	return(do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05)))
+}
+
+
+LifeTableMx <- function(mx, sex=c('Male', 'Female')){
+	
 	sex <- match.arg(sex)
 	sex <- list(Male=1, Female=2)[[sex]]
-	if(!sum(infant.rows)>=1) stop('At least one element of infant.rows must be TRUE.')
 	nage <- length(mx)
 	Lx <- lx <- qx <- rep(0, nage)
 	ax <- rep(0, 21)
@@ -1143,28 +1168,6 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), infant.rows=c(FALSE, FALSE,
 					Lx=LTC$Lx, lx=LTC$lx, qx=LTC$qx, ax=rep(NA,nage), mx=mx)
 	l <- min(length(LTC$ax), nrow(LT))
 	LT$ax[1:l] <- LTC$ax[1:l]
-	if(infant.rows[3]) { # collapse the first two rows (0-1 and 1-4) into one (0-4) 
-		Lx05 <- LT$Lx[1] + LT$Lx[2]
-		ax05 <- (LT$ax[1]+LT$ax[2])/2. # average age of dying
-		qx05 <- LT$qx[1]*LT$qx[2]
-		mx05 <- (LT$lx[1]-LT$lx[2])/Lx05
-		if(!infant.rows[1] && !infant.rows[2]) { # remove the first row. The 0-4 group will become first row
-			LT$Lx[2] <- Lx05
-			LT$age[2] <- 0
-			LT$ax[2] <- ax05
-			LT$qx[2] <- qx05
-			LT$mx[2] <- mx05
-			LT <- LT[-1,]
-		} else {
-			# add a row with the 0-4 group
-			LT <- rbind(LT[1:2,], c(age='0-4', Lx=Lx05, lx=LT$lx[3], qx=qx05, ax=ax05, mx=mx05), LT[-(1:2),])
-			if(!infant.rows[2]) LT <- LT[-2,]
-			if(!infant.rows[1]) LT <- LT[-1,]
-		}
-	} else {
-		if(!infant.rows[2]) LT <- LT[-2,]
-		if(!infant.rows[1]) LT <- LT[-1,]
-	}
 	return(LT)
 }
 

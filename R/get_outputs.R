@@ -404,40 +404,43 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE) {
 	return(abind(res, along=3))
 }
 
-get.mx <- function(mxm, sex, infant.rows=c(FALSE, FALSE, TRUE)) {
+get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	if(infant.rows[3]) {
-		res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, infant.rows=infant.rows)
+	if(age05[3]) {
+		res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05)
+		if(is.null(dim(res1))) res1 <- abind(res1, along=2)
 		res <- array(0, dim=c(dim(res1)[1], dim(res1)[2], dim(mxm)[3]))
 		res[,,1] <- res1
 		for (itraj in 2:dim(mxm)[3]) {
-			res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, infant.rows=infant.rows)
+			res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
 		}
 		return(res)
 	}
-	if(!infant.rows[2]) mxm <- mxm[-2,,,drop=FALSE]
-	if(!infant.rows[1]) mxm <- mxm[-1,,,drop=FALSE]
+	if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
+	if(!age05[1]) mxm <- mxm[-1,,,drop=FALSE]
 	return (mxm)
 }
 
-get.qx <- function(mxm, sex, infant.rows=c(FALSE, FALSE, TRUE)) {
+get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	qx1 <- LifeTableMxCol(mxm[,, 1], colname='qx', sex=sex, infant.rows=infant.rows)
+	qx1 <- LifeTableMxCol(mxm[,, 1], colname='qx', sex=sex, age05=age05)
+	if(is.null(dim(qx1))) qx1 <- abind(qx1, along=2)
 	qx <- array(0, dim=c(dim(qx1)[1], dim(qx1)[2], dim(mxm)[3]))
 	qx[,,1] <- qx1
 	if(dim(mxm)[3] <= 1) return(qx)
 	for (itraj in 2:dim(mxm)[3]) {
-		qx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='qx', sex=sex, infant.rows=infant.rows)
+		qx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='qx', sex=sex, age05=age05)
 	}
 	return (qx)
 }
 
-get.survival <- function(mxm, sex, infant.rows=c(FALSE, FALSE, TRUE)) {
+get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
 	fname <- if(dim(mxm)[1] < 27) "get_sx21_21" else "get_sx27"
 	for (itraj in 1:dim(mxm)[3]) {
-		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, infant.rows=infant.rows)
+		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
 		if(itraj == 1) {
+			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
 			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]))
 			sr <- rep(0, dim(LLm)[1])
 		}
@@ -481,15 +484,15 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if(sex=='male') sex.index <- sex.index[-c(2,4)]
 		if(sex=='female') sex.index <- sex.index[-c(1,3)]
 		alltraj <- list(male=NULL, female=NULL, male.hch=NULL, female.hch=NULL)
-		infant.rows <- c(FALSE, FALSE, TRUE)
-		if(age[1]!='all' && any(age < 1)) {
-			infant.rows <- rep(TRUE, 3)
+		age05 <- c(FALSE, FALSE, TRUE)
+		if(age[1]!='all' && (any(age < 1))) {
+			age05 <- rep(TRUE, 3)
 			age.normal <- FALSE
 		}
 		for(is in sex.index) {
 			if(!is.null(mx[[is]]))
 					alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
-									list(mx[[is]], sex=c("M","F","M","F")[is], infant.rows=infant.rows))
+									list(mx[[is]], sex=c("M","F","M","F")[is], age05=age05))
 		}
 	} else {
 		if (is.element(event, input.indicators)) { #migration
@@ -593,13 +596,18 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE) {
 	all.ages <- c(seq(0, by=5, length=27), NA)
 	ages.idx <- if(age.is.index) ages else which(is.element(all.ages, ages))
-	if(is.element(-1, ages.idx)) { # age 0-1 is included
-		all.ages <- c(-2, all.ages)
-		ages.idx <- ages.idx + 1
-	}
 	if(is.element(0, ages.idx)) { # age 1-4 is included
 		all.ages <- c(-1, all.ages)
-			ages.idx <- ages.idx + 1
+		idx14 <- which(is.element(ages.idx,0))
+		ages.idx[idx14] <- 1
+		idx01 <- which(is.element(ages.idx,-1))
+		ages.idx[-c(idx14,idx01)] <- ages.idx[-c(idx14,idx01)] + 1	
+	}
+	if(is.element(-1, ages.idx)) { # age 0-1 is included
+		all.ages <- c(-2, all.ages)
+		idx01 <- which(is.element(ages.idx,-1))
+		ages.idx[idx01] <- 1
+		ages.idx[-idx01] <- ages.idx[-idx01] + 1
 	}
 	ages.idx.shift <- ages.idx+1
 	if(collapsed) {
@@ -613,14 +621,14 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	from <- all.ages[ages.idx[1:(l-1)]]
 	to <- all.ages[ages.idx.shift[1:(l-1)]]-1
 	which.01 <- which(from < -1)
-	which.14 <- which(from < 0)
+	which.14 <- which(from < 0 & from > -2)
 	if(length(which.01)>0) { # includes age 0-1
 		from[which.01] <- 0
 		to[which.01][!is.na(to[which.01])] <- 1
 	}
 	if(length(which.14)>0) { # includes age 1-4
 		from[which.14] <- 1
-		to[which.14][!is.na(to[which.14])] <- 5
+		to[which.14][!is.na(to[which.14])] <- 4
 	}
 	result <- if(l==1 && is.na(to)) paste(from, '+', sep='') # open-ended
 			  else paste(from, '-', to, sep='')
@@ -832,7 +840,8 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 
 .parse.pop.expression <- function(expression, args='...') {
 	# Add spaces around binary operators so that expression components can be identified
-	expression <- gsub('(\\*|\\/|\\+|\\-|\\^|\\%\\%|\\%\\/\\%)', ' \\1 ', expression)
+	#expression <- gsub('(\\*|\\/|\\+|\\-|\\^|\\%\\%|\\%\\/\\%)', ' \\1 ', expression)
+	expression <- gsub('(\\*|\\/|\\+|\\^|\\%\\%|\\%\\/\\%)', ' \\1 ', expression) # removed minus 
 	indicators <- c('P', names(get.expression.indicators()))
 	indOR <- paste(indicators, collapse='|')
 	# Replace expression components by 'get.pop' calls

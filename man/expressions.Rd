@@ -27,11 +27,11 @@ A \bold{basic component} is a character string constituted of four parts, two of
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index zero which corresponds to age 0-1.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4.
 }
 Not all combinations of the four parts above make sense. For example, \sQuote{F} can be only combined with female sex, \sQuote{B} and \sQuote{F} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
 
-Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[0]}.
+Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 
 When the expression is evaluated on a prediction object, each basic component is substituted by an array of four dimensions:
 \enumerate{
@@ -75,7 +75,7 @@ Depending on the context from which the expression is called, the trajectory dim
 \author{Hana Sevcikova, Adrian Raftery}
 \seealso{\code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, {\code{\link{write.pop.projection.summary}}}.}
 \examples{
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
 # median child-bearing age of Netherlands and all countries - trajecotries
@@ -101,11 +101,11 @@ unlink(dir)
 
 \dontrun{
 # These are vital events only available if keep.vital.events=TRUE in pop.predict 
-# log female mortality rate by age for Netherlands in 2050, including 0-1 age group
-pop.byage.plot(pred, expression="log(MNL_F{0:27})", year=2050)
+# log female mortality rate by age for Netherlands in 2050, including 0-1 and 1-4 age groups
+pop.byage.plot(pred, expression="log(MNL_F{c(-1,0),2:27})", year=2050)
 
 # trajectories of male 1q0 and table of 5q0 for Netherlands
-pop.trajectories.plot(pred, expression="QNLD_M[0]")
+pop.trajectories.plot(pred, expression="QNLD_M[-1]")
 pop.trajectories.table(pred, expression="QNLD_M[1]")}
 }
 \keyword{documentation}

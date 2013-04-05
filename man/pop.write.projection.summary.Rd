@@ -47,7 +47,7 @@ Hana Sevcikova
 \examples{
 outdir <- tempfile()
 dir.create(outdir)
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
 
 # proportion of 65+ years old to the whole population

@@ -133,7 +133,7 @@ Hana Sevcikova, Adrian Raftery, using feedback from Sam Clark and the bayesPop g
 \examples{
 # pyramids for bayesPop prediction objects
 ##########################################
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.pyramid(pred, "Netherlands", c(2045, 2010))
 dev.new()
@@ -147,7 +147,7 @@ plot(pred.pyr)
 ################################
 # this example dataset contains population estimates for the Washington state and King county 
 # (Seattle area) in 2011
-data <- read.table(file.path(.find.package("bayesPop"), "ex-data", "popestimates_WAKing.txt"), 
+data <- read.table(file.path(find.package("bayesPop"), "ex-data", "popestimates_WAKing.txt"), 
     header=TRUE, row.names=1)
 # extract data for two pyramids and put it into the right format
 head(data)

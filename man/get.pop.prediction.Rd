@@ -45,7 +45,7 @@ Hana Sevcikova
 \code{\link{bayesPop.prediction}}, \code{\link{get.pop.aggregation}}
 }
 \examples{
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 summary(pred)
 }

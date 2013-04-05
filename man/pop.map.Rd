@@ -68,7 +68,7 @@ Hana Sevcikova
 # for all countries. Below, only five countries are included,
 # so the map is useless.
 ##########################
-sim.dir <- file.path(.find.package("bayesPop"), "ex-data", "Pop")
+sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
 # Uses heat colors with seven categories by default
 pop.map(pred, sex='female', age=4:10)

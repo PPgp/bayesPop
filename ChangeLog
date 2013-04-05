@@ -1,7 +1,13 @@
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
-3.2-0
+3.2-1 (4/5/2013)
+-----
+.find.package replaced by find.package.
+
+In expressions for M, Q and S, age groups 0-1, 1-4 and 0-4 are associated with indices -1, 0, 1, respectively.
+
+3.2-0 (3/9/2012)
 -----
 Added mx, qx and migration to expressions.
 
