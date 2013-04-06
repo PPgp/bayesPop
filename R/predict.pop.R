@@ -138,11 +138,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(keep.vital.events) {
 			btm <- btf <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
 			deathsm <- deathsf <- array(0, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
-			#srm <- srf <- array(0, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
 			asfert <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
 			btm.hch <- btf.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
-			#srm.hch <- srf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
 			asfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			mxm <- mxf <- array(0, dim=c(28, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
@@ -152,19 +150,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
-			#print(itraj)
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			#debug <- country == 478
-			#if(itraj == 2) debug <- TRUE
-			#print('A')
 			LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
-			#print('B')
 			popres <- StoPopProj(npred, inpc, LTres, asfr, inpc$MIGtype, LOCATIONS[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
-			#print('C')
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -177,10 +169,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				deathsm[1:dim(observed$deathsm)[1],1,itraj] <- observed$deathsm[,dim(observed$deathsm)[2],]
 				deathsf[,2:npredplus1,itraj] <- popres$fdeaths
 				deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
-				#srm[,2:npredplus1,itraj] <- LTres$sr[[1]]
-				#srm[1:dim(observed$srm)[1],1,itraj] <- observed$srm[,dim(observed$srm)[2],]
-				#srf[,2:npredplus1,itraj] <- LTres$sr[[2]]
-				#srf[1:dim(observed$srf)[1],1,itraj] <- observed$srf[,dim(observed$srf)[2],]
 				asfert[,2:npredplus1,itraj] <- asfr
 				asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 				mxm[,2:npredplus1,itraj] <- LTres$mx[[1]]
@@ -208,10 +196,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				deathsm.hch[,1,variant] <- deathsm[,1,1]
 				deathsf.hch[,2:npredplus1,variant] <- popres$fdeaths
 				deathsf.hch[,1,variant] <- deathsf[,1,1]
-				#srm.hch[,2:npredplus1,variant] <- LTres$sr[[1]]
-				#srm.hch[,1,variant] <- srm[,1,1]
-				#srf.hch[,2:npredplus1,variant] <- LTres$sr[[2]]
-				#srf.hch[,1,variant] <- srf[,1,1]
 				asfert.hch[,2:npredplus1,variant] <- asfr
 				asfert.hch[,1,variant] <- asfert[,1,1]
 				mxm.hch[,2:npredplus1,variant] <- LTres$mx[[1]]
@@ -231,7 +215,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
 		mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
-		#stop('')
 		for (i in 1:nages) {
 			if(nr.traj == 1) {
 				quantMage[cidx,i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
@@ -850,23 +833,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
 	pop <- D10 <- list()
-	#L10 <- list(rep(0, nest), rep(0, nest))
-	#nmx <- ncol(mxKan$male$mx)
-	#mx <-  list(mxKan$male$mx[,(nmx-nest+1):nmx], mxKan$female$mx[,(nmx-nest+1):nmx])
 	nmx <- ncol(inputs$MXm)
 	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
-	#srLLm <- modifiedLC(nest, mxKan, obs$e0Mpred[(length(obs$e0Mpred)-nest+1):length(obs$e0Mpred)], 
-	#								obs$e0Fpred[(length(obs$e0Fpred)-nest+1):length(obs$e0Fpred)])
-	#sr <- srLLm$sr
-	#L10 <- srLLm$L10
-	#LLm <- srLLm$LLm
-	# tmpsr <- rep(0, 27)
-	# for(sex in 1:2) {
-		# for(t in 1:nest) {
-			# ressr <- .C("get_sx21", as.numeric(LLm[[sex]][,t]), sr=as.numeric(tmpsr))
-			# sr[[sex]][,t] <- ressr$sr
-		# }
-	# }
 	srb <- obs$SRB[(length(obs$SRB)-nest+1):length(obs$SRB)]
 	srb.ratio <- srb / (1 + srb)
 	sr <- list(matrix(0, nrow=21, ncol=nest), matrix(0, nrow=21, ncol=nest))
@@ -879,39 +847,20 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	bt <- (pop[[2]][4:10,2:ncol(pop[[2]])] + pop[[2]][4:10,1:(ncol(pop[[2]])-1)]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
-	for(sex in 1:2) {
-		
+	for(sex in 1:2) {		
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
-		#res <- .C("get_VE_from_LT", nest, sex, as.numeric(mx[[sex]]), 
-		#			as.numeric(colSums(as.matrix(births[[sex]]))), as.numeric(as.matrix(pop[[sex]])), 
-		#			Sr=as.numeric(sr[[sex]]), Deaths=as.numeric(deaths[[sex]]))
-		#res <- .C("get_sr_from_N", nest, as.numeric(as.matrix(pop[[sex]])), as.numeric(mig.data[[sex]]), mig.type,
-		#			as.numeric(colSums(as.matrix(births[[sex]]))), Sr=as.numeric(sr[[sex]]), Deaths=as.numeric(deaths[[sex]]))
-		#stop('')
 		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(pop[[sex]])), 
 					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
-		#sr[[sex]] <- matrix(res$Sr, nrow=21)
-		#colnames(sr[[sex]]) <- estim.years
-		#rownames(sr[[sex]]) <- rownames(pop[[sex]])
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
-		#if(sex == 2) stop('')
-
-		#deaths[[sex]][1,] <- as.numeric(pop[[sex]][1,2:(nest+1)])*(1-sr[[sex]][1,])
-		#deaths[[sex]][2:21,] <- as.matrix(pop[[sex]][1:20,1:nest]) - as.matrix(pop[[sex]][2:21,2:(nest+1)]) + mig.data[[sex]][2:21,]
-		#deaths[[sex]][2:21,] <- as.matrix(pop[[sex]][1:20,1:nest])*(1-sr[[sex]][2:21,])
-		#sr[[sex]] <- rbind(sr[[sex]], matrix(0, nrow=6, ncol=ncol(sr[[sex]])))
-		#deaths[[sex]] <- rbind(deaths[[sex]], matrix(0, nrow=6, ncol=ncol(deaths[[sex]])))
 	}	
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
-	res <- list(#srm=sr[[1]], srf=sr[[2]], 
-				btm=births[[1]], btf=births[[2]], 
+	res <- list(btm=births[[1]], btf=births[[2]], 
 				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, mxm=mx[[1]], mxf=mx[[2]])
-	#stop('')
 	for(par in names(res))
 		res[[par]] <- abind(res[[par]], NULL, along=3) # add trajectory dimension
 	return(res)
