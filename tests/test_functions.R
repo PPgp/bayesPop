@@ -70,7 +70,7 @@ test.expressions.with.VE <- function() {
 	size <- file.info(filename)['size']
 	unlink(filename)
 	stopifnot(size > 0)
-	pop.trajectories.table(pred, expression='D528 / (D528 + D218)')
+	pop.trajectories.table(pred, expression='D528 / (DNLD + D218)')
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
@@ -84,8 +84,9 @@ test.expressions.with.VE <- function() {
 	
 	filename <- tempfile()
 	png(filename=filename)
-	pop.byage.plot(pred, expression='Q218_M{0:27}', year=2050)
-	pop.byage.plot(pred, expression='Q218_M{0:21}', year=2008) 
+	pop.byage.plot(pred, expression='log(QEC_M{age.index01(27)})', year=2050)
+	pop.byage.plot(pred, expression='log(QECU_M{age.index01(21)})', year=2008)
+	pop.byage.plot(pred, expression='M218_F{age.index05(27)}', year=2050)
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)

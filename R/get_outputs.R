@@ -4,6 +4,8 @@ get.expression.indicators <- function() {
 		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration'))
 }
 
+
+
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
 	return(FALSE)
@@ -979,6 +981,8 @@ drop.age <- function(data) {
 	return(data)
 }
 
+age.index01 <- function(end) return (c(-1,0,2:end))
+age.index05 <- function(end) return (1:end)
 
 get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles, projection.index) {
 	compressed.expr <- gsub("[[:blank:]]*", "", expression) # remove spaces

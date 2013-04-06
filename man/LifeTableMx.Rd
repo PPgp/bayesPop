@@ -8,16 +8,15 @@ Life Table Functions
 Functions for obtaining life table quantities. 
 }
 \usage{
-LifeTableMx(mx, sex = c("Male", "Female"), include01 = FALSE)
+LifeTableMx(mx, sex = c("Male", "Female"))
 
-LifeTableMxCol(mx, colname, \dots)
+LifeTableMxCol(mx, colname=c('Lx', 'lx', 'qx', 'mx'), \dots)
 }
 \arguments{
   \item{mx}{Vector of age-specific mortality rates nmx. The elements correspond to 1m0, 4m1, 5m5, 5m10, \dots. It can have no more than 28 elements which corresponds to age up to 130. In the \code{LifeTableMxCol} function, this argument can be a two-dimensional matrix with first dimension being the age.}
   \item{sex}{For which sex is the life table.}
-  \item{include01}{Logical controlling if the resulting life table contains the age group 0-1.}
   \item{colname}{Name of the column of the life table that should be returned.}
-  \item{\dots}{Arguments passed to \code{LifeTableMx}.}
+  \item{\dots}{Arguments passed to underlying functions. Argument \code{age05} is a logical vector of size three, specifying if the age groups 0-1, 1-4 and 0-5 should be included. Default value of \code{c(FALSE, FALSE, TRUE)} includes the 0-5 age group only.}
 }
 \details{
 Function \code{LifeTableMx} returns a life table for one set of mortality rates. Function \code{LifeTableMxCol} returns one column of the life table for (possibly) multiple sets of mortality rates.
@@ -49,8 +48,8 @@ Hana Sevcikova, Nan Li
 sim.dir <- tempfile()
 pred <- pop.predict(countries="Ecuador", output.dir=sim.dir,
 			keep.vital.events=TRUE)
-# get male mortality rates from 2000
-mx <- pop.byage.table(pred, expression='MEC_M{0:21}')[,1]
+# get male mortality rates from 2000 for age groups 0-1, 1-4, 5-9, ...
+mx <- pop.byage.table(pred, expression='MEC_M{c(-1,0,2:21)}')[,1]
 LifeTableMx(mx)
 unlink(sim.dir, recursive=TRUE)
 }

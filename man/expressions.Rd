@@ -27,7 +27,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4. Use the pre-defined function \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
 }
 Not all combinations of the four parts above make sense. For example, \sQuote{F} can be only combined with female sex, \sQuote{B} and \sQuote{F} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
 
@@ -67,6 +67,10 @@ Depending on the context from which the expression is called, the trajectory dim
 	Applies function \code{fun} to the age dimension of \code{data} and converts the result into the same format as returned by a basic component. This allows combining the \code{apply} function with other basic components without having to modify their dimensions. For example, \cr
 	\dQuote{pop.apply(age.func(P752\{\}), fun=sum) / P752} gives the average age in Sweden, or \cr
 	\dQuote{pop.apply(P380\{\}, gmedian, cats=seq(0, by=5, length=28))} gives the median age of Italy.
+\item \code{age.index01(end)} \cr
+	Can be used with indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
+\item \code{age.index05(end)} \cr
+	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
 }
 }
 
@@ -102,7 +106,7 @@ unlink(dir)
 \dontrun{
 # These are vital events only available if keep.vital.events=TRUE in pop.predict 
 # log female mortality rate by age for Netherlands in 2050, including 0-1 and 1-4 age groups
-pop.byage.plot(pred, expression="log(MNL_F{c(-1,0),2:27})", year=2050)
+pop.byage.plot(pred, expression="log(MNL_F{age.index01(27)})", year=2050)
 
 # trajectories of male 1q0 and table of 5q0 for Netherlands
 pop.trajectories.plot(pred, expression="QNLD_M[-1]")
