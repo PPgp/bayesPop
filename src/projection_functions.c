@@ -150,7 +150,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 }
 
 void get_sx(double *LLm, double *sx, int n, int Ldim) {
-	int i, l, oei;
+	int i, oei;
 	double sumLL;
 	oei=n-1;
 	/* Survival Ratios */
@@ -268,12 +268,9 @@ void get_VE_from_LT(int *N, int *Sex, double *Mx, double *Births, double *pop, d
 }
 
 void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Deaths) {
-	double mig[21][*N], mmult;
 	int i, j, nrow, n;
 	nrow = 21;
 	n = *N;
-	mmult = 1;
-	if(*MIGtype == 0) mmult=0.5;
 	for(j=0; j<n; ++j) {
 		/* age < 5 */
 		Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);
@@ -296,12 +293,12 @@ void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGty
 
 void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
 	/* function not used */
-	double mig[21][*N], mmult;
+	double mmult;
 	int i, j, nrow, n;
 	nrow = 21;
 	n = *N;
 	mmult = 1;
-	if(*MIGtype == 0) mmult=0.5;
+    if(*MIGtype == 0) mmult=0.5;
 	for(j=0; j<n; ++j) {
 		/* age < 5 */
 		Sr[j*nrow] = (Pop[(j+1)*nrow] - mmult * MIG[j*nrow])/Births[j];
@@ -333,7 +330,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
-	double b, bt[7], bm, bf, mmult, srb_ratio, tmp, poptmpM[27], poptmpF[27], LLm[27], LLf[27], llxm[28], llxf[28];
+	double b, bt[7], bm, bf, mmult, srb_ratio;
 	int i,j, jve, adim, nrow, ncol, n;
 	nrow = *migr;
 	ncol = *migc;
@@ -396,12 +393,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
-			poptmpM[i] = popm[i + j*adim];
-			poptmpF[i] = popf[i + j*adim];
-			LLm[i] = Lm[i + jve*adim];
-			LLf[i] = Lf[i + jve*adim];
-			llxm[i] = lxm[i + jve*(adim+1)];
-			llxf[i] = lxf[i + jve*(adim+1)];
 		}
 		deathsm[jve*adim] = bm * (1-srm[jve*adim]);
         deathsf[jve*adim] = bf * (1-srf[jve*adim]);                

@@ -1,6 +1,10 @@
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
+3.2-3/4 (4/10/2013)
+-----
+data are loaded into current environment.
+
 3.2-1/2 (4/5/2013)
 -----
 .find.package replaced by find.package.

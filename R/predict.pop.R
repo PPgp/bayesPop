@@ -1,4 +1,5 @@
 if(getRversion() >= "2.15.1") utils::globalVariables("LOCATIONS")
+data('LOCATIONS', package='bayesPop', envir=environment())
 
 pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.year=2010,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
@@ -41,7 +42,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 		.remove.cache.file(output.dir)
 	} else pop.cleanup.cache(pred)
 	
-	data('LOCATIONS', package='bayesPop')
+	#data('LOCATIONS', package='bayesPop')
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
 		all.countries <- unique(inp$POPm0[,'country_code'])
 		country.codes <- if(!prediction.exist) all.countries
@@ -307,7 +308,8 @@ read.pop.file <- function(file)
 	return(read.delim(file=file, comment.char='#', check.names=FALSE))
 	
 read.bayesPop.file <- function(file)
-	return(read.pop.file(file.path(find.package("bayesPop"), "data", file)))
+	return(get(do.call(data, list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
+	#return(read.pop.file(file.path(find.package("bayesPop"), "data", file)))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	observed <- list()

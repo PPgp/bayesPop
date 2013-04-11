@@ -1,4 +1,3 @@
-if(getRversion() >= "2.15.1") utils::globalVariables("iso3166")
 
 get.expression.indicators <- function() {
 		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration'))
@@ -692,9 +691,10 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 	country.code.char <- gsub('\\[|\\{', '', country.string)
 	if(nchar(country.code.char) == 0) stop('No country specified.')
 	if(country.code.char != 'XXX') {
-		data('iso3166', package='bayesTFR')
+		e <- new.env()
+		data('iso3166', package='bayesTFR', envir=e)
 		charcodename <- if(nchar(country.code.char)==2) 'charcode' else 'charcode3'
-		country.code.iso <- iso3166[iso3166[,charcodename] == country.code.char,'uncode']
+		country.code.iso <- e$iso3166[e$iso3166[,charcodename] == country.code.char,'uncode']
 		if(length(country.code.iso)>0)
 			country.code <- country.code.iso
 		else {

@@ -4,7 +4,7 @@ pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'
 						name = method,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
 						verbose=FALSE) {
-	data("LOCATIONS", package='bayesPop')
+	#data("LOCATIONS", package='bayesPop')
 	regions <- unique(regions)
 	method <- match.arg(method)
 	if(missing(name)) name <- method
