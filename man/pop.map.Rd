@@ -21,7 +21,7 @@ pop.map.gvis(pred, \dots)
   \item{pred}{Object of class \code{\link{bayesPop.prediction}}.}
   \item{sex}{One of \dQuote{both}  (default), \dQuote{male} or \dQuote{female}. By default the male and female counts are summed up. This argument is only used if \code{expression} is \code{NULL}.}
   \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. This argument is only used if \code{expression} is \code{NULL}.}
-  \item{expression}{Expression defining the population measure to be plotted. For syntax see \code{\link{pop.expressions}}. The country components of the expression should be given as \dQuote{CXXX}.}
+  \item{expression}{Expression defining the population measure to be plotted. For syntax see \code{\link{pop.expressions}}. The country components of the expression should be given as \dQuote{XXX}.}
   \item{range}{Range of the population measure to be displayed. It is of the form \code{c(}\var{min}, \var{max}\code{)}.}
   \item{nr.cats}{Number of color categories.}
   \item{same.scale}{Logical controlling if maps for all years of this prediction object should be on the same color scale.}
@@ -73,9 +73,9 @@ pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
 # Uses heat colors with seven categories by default
 pop.map(pred, sex='female', age=4:10)
 # Female population in child-bearing age as a proportion of totals
-pop.map(pred, expression='CXXX_F[4:10] / CXXX')
+pop.map(pred, expression='PXXX_F[4:10] / PXXX')
 # The same with more colors
-params <- get.pop.map.parameters(pred, expression='CXXX_F[4:10] / CXXX')
+params <- get.pop.map.parameters(pred, expression='PXXX_F[4:10] / PXXX')
 do.call('pop.map', params)
 # Another projection year on the same scale
 do.call('pop.map', c(list(year=2043), params))

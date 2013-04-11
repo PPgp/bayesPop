@@ -1030,7 +1030,7 @@ get.pop.all.countries <- function(pop.pred, quantiles, projection.index, sex='bo
 		}
 	}
 	if(is.null(data)) { # create expression
-		expr <- 'CXXX'
+		expr <- 'PXXX'
 		if(sex=='male') expr <- paste(expr, 'M', sep='_')
 		if(sex=='female') expr <- paste(expr, 'F', sep='_')
 		if (age[1]!='all') expr <- paste(expr, '[', expression(age), ']', sep='')
