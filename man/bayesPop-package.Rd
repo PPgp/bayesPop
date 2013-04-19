@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 3.2-2\cr
-Date: \tab 2013-4-5\cr
+Version: \tab 3.2-6\cr
+Date: \tab 2013-4-19\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }

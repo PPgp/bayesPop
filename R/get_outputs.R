@@ -1005,7 +1005,6 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], ncol=length(quantiles))
 		pop.pred$cache[[compressed.expr]] <- array(NA, dim(pop.pred$quantilesM), dimnames=dimnames(pop.pred$quantilesM))
 	}
-	require(parallel)
 	ncores <- getOption("cl.cores", detectCores())
 	if(ncores > 1 && length(countries.idx)>10) {
 		# This can take lots of time. Run it in parallel
