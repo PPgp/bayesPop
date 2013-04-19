@@ -1,6 +1,10 @@
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
+3.2-6
+-----
+pop.map can processes expressions in parallel.
+
 3.2-3/4 (4/10/2013)
 -----
 data are loaded into current environment.
