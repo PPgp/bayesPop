@@ -95,8 +95,9 @@ pop.trajectories.table(pred,
 # migration per capita by age
 pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
 
+\dontrun{
 # potential support ratio - map
-pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")
+pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")}
 
 # proportion of 0-4 years old to whole population - export to an ASCII file
 dir <- tempfile()
