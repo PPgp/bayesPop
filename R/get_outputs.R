@@ -412,8 +412,10 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		if(is.null(dim(res1))) res1 <- abind(res1, along=2)
 		res <- array(0, dim=c(dim(res1)[1], dim(res1)[2], dim(mxm)[3]))
 		res[,,1] <- res1
-		for (itraj in 2:dim(mxm)[3]) {
-			res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
+		if(dim(mxm)[3]> 1) { 
+			for (itraj in 2:dim(mxm)[3]) {
+				res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
+			}
 		}
 		return(res)
 	}
@@ -447,7 +449,10 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		}
 		sx[,, itraj] <- apply(LLm, 2, 
 							function(x, sr) {
-								res.sr <- .C(fname, as.numeric(x), sx=sr); return(res.sr$sx)
+								if(!any(is.na(x))) {
+									res.sr <- .C(fname, as.numeric(x), sx=sr)
+									return(res.sr$sx)
+								} else return(rep(NA, length(x)))
 							}, sr)
 	}
 	return (sx)

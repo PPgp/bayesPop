@@ -1,7 +1,15 @@
+
+4.0-0 (5/20/2013)
+-----
+WPP data removed and put in separate packages (wpp2008, wpp2010). The package is now dependent on those.
+
+
+
+=========
 Odd version numbers refer to versions containing full (confidential) UN data.
 Even version numbers refer to versions containing reduced (public) UN data. 
 ===================================================
-3.2-6 (4/19/2010)
+3.2-6 (4/19/2013)
 -----
 pop.map can processes expressions in parallel.
 

@@ -1,10 +1,10 @@
-if(getRversion() >= "2.15.1") utils::globalVariables("LOCATIONS")
+if(getRversion() >= "2.15.1") utils::globalVariables("UNlocations")
 
 pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'),
 						name = method,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
 						verbose=FALSE) {
-	#data("LOCATIONS", package='bayesPop')
+	bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
 	regions <- unique(regions)
 	method <- match.arg(method)
 	if(missing(name)) name <- method
@@ -16,13 +16,13 @@ pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'
 }
 
 get.countries.for.region <- function(region, pop.pred) {
-	reg.idx <- which(LOCATIONS[,'country_code'] == region)
-	all.countries <- LOCATIONS[LOCATIONS[,'location_type'] == 4,]
+	reg.idx <- which(UNlocations[,'country_code'] == region)
+	all.countries <- UNlocations[UNlocations[,'location_type'] == 4,]
 	if(length(reg.idx) <= 0) {
 		warning('No region code ', region, ' available.')
 		return(c())
 	}
-	location.type <- LOCATIONS[reg.idx,'location_type']
+	location.type <- UNlocations[reg.idx,'location_type']
 	if(!is.element(location.type, c(0,2,3))) {
 		warning('Invalid location type for region ', region,'. Allowed types: 0,2,3. But is ', location.type)
 		return(c())
@@ -290,8 +290,8 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	}
 	aggr.pred <- pop.pred
 	which.reg.index <- function(x, set) return(which(set == x))
-	reg.idx <- sapply(regions[valid.regions], which.reg.index, set=LOCATIONS[,'country_code']) 
-	aggr.pred$countries=data.frame(code=LOCATIONS[reg.idx, 'country_code'], name=LOCATIONS[reg.idx, 'name'])
+	reg.idx <- sapply(regions[valid.regions], which.reg.index, set=UNlocations[,'country_code']) 
+	aggr.pred$countries=data.frame(code=UNlocations[reg.idx, 'country_code'], name=UNlocations[reg.idx, 'name'])
 	aggr.pred$output.directory <- outdir
 	aggr.pred$quantiles <- quant
 	aggr.pred$quantilesM <- quantM

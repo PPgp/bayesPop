@@ -3,4 +3,5 @@ source('test_functions.R')
 
 test.prediction()
 test.expressions()
-test.expressions.with.VE()
+
+#test.expressions.with.VE()

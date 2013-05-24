@@ -1,1 +1,0 @@
-SexRatioAtBirth2010 <- read.delim(file='SexRatioAtBirth2010.txt', comment.char='#', check.names=FALSE)
