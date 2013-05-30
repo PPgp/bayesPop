@@ -13,7 +13,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							migM=NULL,
 							migF=NULL,	
 							e0F.file=NULL, e0M.file=NULL, 
-							tfr.file=NULL,
+							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
@@ -321,7 +321,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	num.columns <- grep('^[0-9]{4}$', colnames(POPm0), value=TRUE) # values of year-columns
 	if(!is.element(as.character(present.year), colnames(POPm0))) {
 		stop('Wrong present.year. ', present.year, ' not available in the popM file.\nAvailable years: ',
-				num.columns)
+				paste(num.columns, collapse=', '))
 	}
 	num.columns <- num.columns[which(as.integer(num.columns)<= present.year)]
 	popm.matrix <- POPm0[,num.columns]
@@ -335,7 +335,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	num.columns <- grep('^[0-9]{4}$', colnames(POPf0), value=TRUE) # values of year-columns
 	if(!is.element(as.character(present.year), colnames(POPf0))) {
 		stop('Wrong present.year. ', present.year, ' not available in the popF file.\nAvailable years: ',
-				num.columns)
+				paste(num.columns, collapse=', '))
 	}
 	num.columns <- num.columns[which(as.integer(num.columns)<= present.year)]
 	popf.matrix <- POPf0[, num.columns]
@@ -421,14 +421,17 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		file.name <- if(!is.null(inputs$e0F.file)) inputs$e0F.file
 					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('e0Fwpp', wpp.year, '.csv', sep=''))
-		if(!file.exists(file.name))
-			stop('File ', file.name, 
-				' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
-		e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-		e0Fpred <- e0Fpred[,c('LocID', 'Year', 'e0')]
+		if(file.name == '__WPPmedian__')
+			e0Fpred <- .load.wpp.median('e0F', wpp.year)
+		else {
+			if(!file.exists(file.name))
+				stop('File ', file.name, 
+					' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
+			 # comma separated trajectories file
+			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'e0')]
+		}
 		colnames(e0Fpred) <- c('country_code', 'year', 'value')
-		#observed$e0Fpred <- e0Fpred[e0Fpred[,'year']+2<present.year,]
-		#e0Fpred <- e0Fpred[e0Fpred[,'year']+2>=present.year,]
 	} 
 
 	if(!is.null(inputs$e0M.sim.dir)) { # male
@@ -441,15 +444,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		file.name <- if(!is.null(inputs$e0M.file)) inputs$e0M.file 
 					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('e0Mwpp', wpp.year, '.csv', sep=''))
-		if(!file.exists(file.name))
-			stop('File ', file.name, 
-				' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
-		e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-		e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
+		if(file.name == '__WPPmedian__')
+			e0Mpred <- .load.wpp.median('e0M', wpp.year)
+		else {
+			if(!file.exists(file.name)) 
+				stop('File ', file.name, 
+					' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
+			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
+		}
 		colnames(e0Mpred) <- c('country_code', 'year', 'value')
-		#observed$e0Mpred <- e0Mpred[e0Mpred[,'year']+2<present.year,]
-		#e0Mpred <- e0Mpred[e0Mpred[,'year']+2>=present.year,]
-
 	} 
 		
 	# Get TFR
@@ -459,15 +463,17 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 		file.name <- if(!is.null(inputs$tfr.file)) inputs$tfr.file
 					else file.path(find.package("bayesPop"), "ex-data", 
 							paste('TFRwpp', wpp.year, '.csv', sep=''))
-		if(!file.exists(file.name))
-			stop('File ', file.name, 
-				' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
-		TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-		TFRpred <- TFRpred[,c('LocID', 'Year', 'TF')]
+		if(file.name == '__WPPmedian__')
+			TFRpred <- .load.wpp.median('tfr', wpp.year)
+		else {
+			if(!file.exists(file.name))
+				stop('File ', file.name, 
+					' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
+			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+			TFRpred <- TFRpred[,c('LocID', 'Year', 'TF')]
+		}
 		colnames(TFRpred) <- c('country_code', 'year', 'value')
-		#observed$TFRpred <- TFRpred[TFRpred[,'year']+2<present.year,]
-		#TFRpred <- TFRpred[TFRpred[,'year']+2>=present.year,]
-	} 
+	}
 	return(list(POPm0=POPm0, POPf0=POPf0, MXm=MXm, MXf=MXf, SRB=SRB,
 				PASFR=PASFR, MIGtype=MIGtype, MIGm=MIGm, MIGf=MIGf,
 				e0Mpred=e0Mpred, e0Fpred=e0Fpred, TFRpred=TFRpred, 
@@ -475,6 +481,37 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 				wpp.year=wpp.year,
 				pop.matrix=list(male=popm.matrix, female=popf.matrix),
 				observed=observed))
+}
+
+.load.wpp.median <- function(type, wpp.year) {
+	dataset.obs <- NA
+	if(type %in% c('e0F', 'e0M')){
+		if(wpp.year < 2010) stop('e0 median not available for wpp 2008.')
+		if(wpp.year == 2010) dataset <- paste(type, 'proj', sep='')
+		else { # wpp 2012
+			dataset <- paste(type, 'projMed', sep='')
+		}
+		dataset.obs <- type
+	} else { # tfr
+		if(wpp.year < 2010) dataset <- type
+		else {
+			dataset <- paste(type, 'projMed', sep='')
+			dataset.obs <- type
+		}
+	}	
+	pred <- bayesTFR:::load.bdem.dataset(dataset, wpp.year)
+	if(!is.na(dataset.obs)) {
+		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year)
+		pred <- merge(pred.obs, pred[,-1], by='country_code')
+	}
+	dropname <- if('name' %in% colnames(pred)) 'name' else 'country'
+	ncols <- ncol(pred)
+	cnames <- colnames(pred)[3:ncols]
+	colnames(pred)[3:ncols] <- paste(type, cnames, sep='')
+	pred.long <- reshape(pred, direction='long', varying=3:ncols, v.names=type, times=cnames, drop=dropname)
+	pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3)
+	pred.long <- pred.long[,c('country_code', 'year', type)]
+	return(pred.long)
 }
 
 .get.par.from.inputs <- function(par, inputs, country) {
@@ -501,6 +538,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 			cidx <- inputs[[par]][,'country_code'] == country 
 			idx <- cidx & is.element(inputs[[par]][,'year'], inputs$proj.years)
 			if(sum(idx) == 0) {
+				stop('')
 				warning('No ', what.traj[[par]], ' trajectories for ', country.name, 
 					'. No population projection generated.')
 				return(NULL)
@@ -573,12 +611,17 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	indices$e0Fpred <- if (ncol(inpc$e0Mpred) != ncol(inpc$e0Fpred)) get.traj.index(nr.traj, inpc$e0Fpred)
 					else indices$e0Mpred
 	indices$TFRpred <- get.traj.index(nr.traj, inpc$TFRpred)
-	nr.traj <- min(length(indices$e0Mpred), length(indices$e0Fpred), length(indices$TFRpred))
+	nr.traj <- max(length(indices$e0Mpred), length(indices$e0Fpred), length(indices$TFRpred))
 	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) {
-		if(length(indices[[par]]) != nr.traj)
+		if(length(indices[[par]]) > nr.traj)
 			indices[[par]] <- get.traj.index(nr.traj, inpc[[par]])
+		else {
+			if(length(indices[[par]]) < nr.traj) {
+				indices[[par]] <- sample(indices[[par]], nr.traj, replace=TRUE)
+			}
+		}
 	}
-			
+
 	if(length(indices$TFRpred) != length(indices$e0Mpred) || length(indices$e0Mpred) != length(indices$e0Fpred)) {
 		warning('Mismatch in number of trajectories of TFR and/or life expactancy for ', 
 						country.name, '. No population projection generated.')
