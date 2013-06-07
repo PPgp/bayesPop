@@ -2,9 +2,14 @@ if(getRversion() >= "2.15.1") utils::globalVariables("UNlocations")
 
 pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'),
 						name = method,
-						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
+						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL),
+						my.location.file=NULL,
 						verbose=FALSE) {
-	bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
+	if(is.null(my.location.file))
+		bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
+	else {
+		assign("UNlocations", read.delim(my.location.file, comment.char='#'), envir= globalenv())
+	}
 	regions <- unique(regions)
 	method <- match.arg(method)
 	if(missing(name)) name <- method
