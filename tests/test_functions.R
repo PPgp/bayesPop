@@ -7,10 +7,10 @@ test.prediction <- function() {
 	start.test(test.name)
 	set.seed(1)
 	sim.dir <- tempfile()
-	pred <- pop.predict(countries=c(528,218,450), wpp.year=2010, present.year=2010,
-				nr.traj = 10, verbose=FALSE, output.dir=sim.dir)
+	pred <- pop.predict(countries=c(528,218,450), present.year=2010,
+				nr.traj = 3, verbose=FALSE, output.dir=sim.dir)
 	s <- summary(pred)
-	stopifnot(s$nr.traj == 10)
+	stopifnot(s$nr.traj == 3)
 	stopifnot(s$nr.countries == 3)
 	stopifnot(length(s$projection.years) == 18)
 	test.ok(test.name)
@@ -28,8 +28,8 @@ test.expressions <- function() {
 	test.name <- 'Population expressions'
 	start.test(test.name)
 	sim.dir <- tempfile()
-	pred <- pop.predict(countries=c(528,218,450, 242, 458), wpp.year=2010, present.year=2010,
-				nr.traj = 10, verbose=FALSE, output.dir=sim.dir)
+	pred <- pop.predict(countries=c(528,218,450, 242, 458), present.year=2010,
+				nr.traj = 3, verbose=FALSE, output.dir=sim.dir)
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='P528_F[1]')
@@ -61,8 +61,8 @@ test.expressions.with.VE <- function() {
 	test.name <- 'Expressions with vital events'
 	start.test(test.name)
 	sim.dir <- tempfile()
-	pred <- pop.predict(countries=c(528, 218), wpp.year=2010, present.year=2010,
-				nr.traj = 10, verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE)
+	pred <- pop.predict(countries=c(528, 218), present.year=2010,
+				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE)
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='F528_F[10]')

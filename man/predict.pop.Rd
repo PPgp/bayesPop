@@ -10,7 +10,7 @@ The function generates trajectories of probabilistic population projection for a
 }
 \usage{
 pop.predict(end.year = 2100, start.year = 1950, present.year = 2010, 
-    wpp.year = 2010, countries = NULL, 
+    wpp.year = 2012, countries = NULL, 
     output.dir = file.path(getwd(), "bayesPop.output"),
     inputs = list(popM=NULL, popF=NULL, mxM=NULL, mxF=NULL, srb=NULL,
         pasfr=NULL, mig.type=NULL, migM=NULL, migF=NULL,
@@ -24,22 +24,22 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2010,
   	\item{start.year}{First year of the historical data.}
   	\item{present.year}{Year for which initial population data is to be used.}
   	\item{wpp.year}{Year for which WPP data is used. The functions loads a package called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} and uses the various datasets as default if the corresponding \code{inputs} element is missing (see below).}
-  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2010]{UNlocations}} dataset.}
+  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2012]{UNlocations}} dataset.}
   	\item{output.dir}{Output directory of the projection. If there is an existing projection in \code{output.dir} and \code{replace.output=TRUE}, everything in the directory will be deleted.}
   	\item{inputs}{A list of file names where input data is stored. It contains the following elements (Unless otherwise noted, these are tab delimited ASCII files; Names of default datasets from the corresponding \pkg{wpp} package which are used if the corresponding element is \code{NULL} are shown in brackets):
   		\describe{
-  			\item{popM}{Initial male age-specific population (at time \code{present.year}) [\code{\link[wpp2010]{popM}}].}
-  			\item{popF}{Initial female age-specific population (at time \code{present.year}) [\code{\link[wpp2010]{popF}}].}
-  			\item{mxM}{Historical data of male age-specific death rates [\code{\link[wpp2010]{mxM}}].}
-  			\item{mxF}{Historical data of female age-specific death rates [\code{\link[wpp2010]{mxF}}].}
-  			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2010]{sexRatio}}]}
-  			\item{pasfr}{Projection of percentage age-specific fertility rate. [\code{\link[wpp2010]{percentASFR}}]}
+  			\item{popM}{Initial male age-specific population (at time \code{present.year}) [\code{\link[wpp2012]{popM}}].}
+  			\item{popF}{Initial female age-specific population (at time \code{present.year}) [\code{\link[wpp2012]{popF}}].}
+  			\item{mxM}{Historical data of male age-specific death rates [\code{\link[wpp2012]{mxM}}].}
+  			\item{mxF}{Historical data of female age-specific death rates [\code{\link[wpp2012]{mxF}}].}
+  			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2012]{sexRatio}}]}
+  			\item{pasfr}{Projection of percentage age-specific fertility rate. [\code{\link[wpp2012]{percentASFR}}]}
   			\item{mig.type}{Migration type and base year of the migration. [\code{\link{vwBaseYear}}]}
-  			\item{migM}{Projection of male age-specific migration [\code{\link[wpp2010]{migrationM}}].}
-  			\item{migF}{Projection of female age-specific migration [\code{\link[wpp2010]{migrationF}}].}
-  			\item{e0F.file}{CSV file with results of female life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, file \dQuote{e0Fwpp2010.csv} is used located in the \dQuote{ex-data} directory of the package which contains 100 trajectories.}
-  			\item{e0M.file}{CSV file containing results of male life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. If both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, file \dQuote{e0Mwpp2010.csv} is used located in the \dQuote{ex-data} directory of the package which contains 100 trajectories.}
-  			\item{tfr.file}{CSV file with results of total fertility rate (generated using \pkg{\link{bayesTFR}}, function \code{\link{convert.tfr.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{tfr.sim.dir} is ignored. If both \code{tfr.file} and \code{tfr.sim.dir} are \code{NULL}, file \dQuote{TFRwpp2010.csv} is used located in the \dQuote{ex-data} directory of the package which contains 100 trajectories.}
+  			\item{migM}{Projection of male age-specific migration [\code{\link[wpp2012]{migrationM}}].}
+  			\item{migF}{Projection of female age-specific migration [\code{\link[wpp2012]{migrationF}}].}
+  			\item{e0F.file}{CSV file with results of female life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken, namely the median projections as one trajectory and the low and high variants (if available) as second and third trajectory.}
+  			\item{e0M.file}{CSV file containing results of male life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. As in the female case, if both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken.}
+  			\item{tfr.file}{CSV file with results of total fertility rate (generated using \pkg{\link{bayesTFR}}, function \code{\link{convert.tfr.trajectories}}, file \dQuote{ascii_trajectories.csv}). If it is not \code{NULL}, the argument \code{tfr.sim.dir} is ignored. If both \code{tfr.file} and \code{tfr.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken (median and the low and high variants as three trajectories).}
   			\item{e0F.sim.dir}{Simulation directory with results of female life expectancy (generated using \pkg{\link{bayesLife}}). It is only used if \code{e0F.file} is \code{NULL}.}
   			\item{e0M.sim.dir}{Simulation directory with results of male life expectancy (generated using \pkg{\link{bayesLife}}). Alternatively, it can be the string \dQuote{joint_}, in which case it is assumed that the male life expectancy was projected jointly from the female life expectancy (see \link[bayesLife]{joint.male.predict}) and thus contained in the \code{e0F.sim.dir} directory. The argument is only used if \code{e0M.file} is \code{NULL}.}
   			\item{tfr.sim.dir}{Simulation directory with results of total fertility rate (generated using \pkg{\link{bayesTFR}}). It is only used if \code{tfr.file} is \code{NULL}.}
@@ -92,7 +92,7 @@ Hana Sevcikova, based on code of Nan Li
 \dontrun{
 sim.dir <- tempfile()
 # Countries can be given as a combination of numerical codes and names
-pred <- pop.predict(countries=c("Netherlands", 218, "Madagascar"), nr.traj=10, 
+pred <- pop.predict(countries=c("Netherlands", 218, "Madagascar"), nr.traj=3, 
            output.dir=sim.dir)
 pop.trajectories.plot(pred, "Ecuador", sum.over.ages=TRUE)
 unlink(sim.dir, recursive=TRUE)

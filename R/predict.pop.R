@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables("UNlocations")
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.year=2010,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.year=2012,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -418,18 +418,18 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	if(!is.null(inputs$e0F.sim.dir))  # female
 		e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
 	else {
-		file.name <- if(!is.null(inputs$e0F.file)) inputs$e0F.file
-					else file.path(find.package("bayesPop"), "ex-data", 
-							paste('e0Fwpp', wpp.year, '.csv', sep=''))
-		if(file.name == '__WPPmedian__')
-			e0Fpred <- .load.wpp.median('e0F', wpp.year)
-		else {
+		if(!is.null(inputs$e0F.file)) {
+			file.name <-  inputs$e0F.file
 			if(!file.exists(file.name))
 				stop('File ', file.name, 
 					' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
 			 # comma separated trajectories file
 			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'e0')]
+		} else {
+						#file.path(find.package("bayesPop"), "ex-data", 
+						 #	paste('e0Fwpp', wpp.year, '.csv', sep=''))
+			e0Fpred <- .load.wpp.traj('e0F', wpp.year)
 		}
 		colnames(e0Fpred) <- c('country_code', 'year', 'value')
 	} 
@@ -441,18 +441,17 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 			e0Mpred <- get.e0.jmale.prediction(e0Fpred)
 		} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
 	} else {
-		file.name <- if(!is.null(inputs$e0M.file)) inputs$e0M.file 
-					else file.path(find.package("bayesPop"), "ex-data", 
-							paste('e0Mwpp', wpp.year, '.csv', sep=''))
-		if(file.name == '__WPPmedian__')
-			e0Mpred <- .load.wpp.median('e0M', wpp.year)
-		else {
+		if(!is.null(inputs$e0M.file)) {
+			file.name <-  inputs$e0M.file 
+					#else file.path(find.package("bayesPop"), "ex-data", 
+					#		paste('e0Mwpp', wpp.year, '.csv', sep=''))
 			if(!file.exists(file.name)) 
 				stop('File ', file.name, 
 					' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
 			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
-		}
+		} else
+			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 		colnames(e0Mpred) <- c('country_code', 'year', 'value')
 	} 
 		
@@ -460,18 +459,17 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	if(!is.null(inputs$tfr.sim.dir)) 
 		TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
 	else {
-		file.name <- if(!is.null(inputs$tfr.file)) inputs$tfr.file
-					else file.path(find.package("bayesPop"), "ex-data", 
-							paste('TFRwpp', wpp.year, '.csv', sep=''))
-		if(file.name == '__WPPmedian__')
-			TFRpred <- .load.wpp.median('tfr', wpp.year)
-		else {
+		if(!is.null(inputs$tfr.file)) {
+			file.name <- inputs$tfr.file
+					#else file.path(find.package("bayesPop"), "ex-data", 
+					#		paste('TFRwpp', wpp.year, '.csv', sep=''))
 			if(!file.exists(file.name))
 				stop('File ', file.name, 
 					' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
 			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			TFRpred <- TFRpred[,c('LocID', 'Year', 'TF')]
-		}
+		} else 
+			TFRpred <- .load.wpp.traj('tfr', wpp.year)
 		colnames(TFRpred) <- c('country_code', 'year', 'value')
 	}
 	return(list(POPm0=POPm0, POPf0=POPf0, MXm=MXm, MXf=MXf, SRB=SRB,
@@ -483,35 +481,49 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 				observed=observed))
 }
 
-.load.wpp.median <- function(type, wpp.year) {
-	dataset.obs <- NA
+.load.wpp.traj <- function(type, wpp.year) {
+	dataset.obs <- dataset.low <- dataset.high <- NA
 	if(type %in% c('e0F', 'e0M')){
-		if(wpp.year < 2010) stop('e0 median not available for wpp 2008.')
-		if(wpp.year == 2010) dataset <- paste(type, 'proj', sep='')
-		else { # wpp 2012
-			dataset <- paste(type, 'projMed', sep='')
-		}
+		if(wpp.year < 2010) stop('e0 projections not available for wpp 2008.')
+		#if(wpp.year == 2010) 
+		dataset <- paste(type, 'proj', sep='')
+		#else { # wpp 2012
+		#	dataset <- paste(type, 'projMed', sep='')
+		#}
 		dataset.obs <- type
 	} else { # tfr
 		if(wpp.year < 2010) dataset <- type
 		else {
 			dataset <- paste(type, 'projMed', sep='')
 			dataset.obs <- type
+			dataset.low <- paste(type, 'projLow', sep='')
+			dataset.high <- paste(type, 'projHigh', sep='')
 		}
-	}	
-	pred <- bayesTFR:::load.bdem.dataset(dataset, wpp.year)
-	if(!is.na(dataset.obs)) {
-		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year)
-		pred <- merge(pred.obs, pred[,-1], by='country_code')
 	}
-	dropname <- if('name' %in% colnames(pred)) 'name' else 'country'
-	ncols <- ncol(pred)
-	cnames <- colnames(pred)[3:ncols]
-	colnames(pred)[3:ncols] <- paste(type, cnames, sep='')
-	pred.long <- reshape(pred, direction='long', varying=3:ncols, v.names=type, times=cnames, drop=dropname)
-	pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3)
-	pred.long <- pred.long[,c('country_code', 'year', type)]
-	return(pred.long)
+	if(!is.na(dataset.obs)) 
+		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year)
+		
+	pred.all <- NULL
+	for(dataset.name in c(dataset, dataset.low, dataset.high)) {
+		if(is.na(dataset.name)) next
+		pred <- bayesTFR:::load.bdem.dataset(dataset.name, wpp.year)
+		remove.cols <- which(colnames(pred) %in% c('name', 'country', 'last.observed'))
+		pred <- pred[,-remove.cols]
+		if(!is.na(dataset.obs)) {
+			remove.cols <- which(colnames(pred.obs) %in% c('name', 'country', 'last.observed', 
+								colnames(pred)[-which(colnames(pred)=='country_code')]))
+			pred <- merge(pred.obs[,-remove.cols], pred, by='country_code')
+		}
+		ncols <- ncol(pred)
+		nonnum.idx <- which(colnames(pred)=='country_code')
+		cnames <- colnames(pred)[-nonnum.idx]
+		colnames(pred)[-nonnum.idx] <- paste(type, cnames, sep='')
+		pred.long <- reshape(pred, direction='long', varying=(1:ncols)[-nonnum.idx], v.names=type, times=cnames)
+		pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3)
+		pred.long <- pred.long[,c('country_code', 'year', type)]
+		pred.all <- rbind(pred.all, pred.long)
+	}
+	return(pred.all)
 }
 
 .get.par.from.inputs <- function(par, inputs, country) {

@@ -1,3 +1,11 @@
+4.1-0 (7/22/2013)
+-----
+Setting 2012 as new default for wpp year. Adding wpp2012 into dependencies.
+
+Default input e0 and TFR in pop.predict are taken from the wpp package as three trajectories max.
+Example simulation re-computed with the new defaults.
+
+Aggregation allowed for user-defined groups (argument my.location.file in pop.aggregate).
 
 4.0-0 (5/20/2013)
 -----

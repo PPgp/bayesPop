@@ -12,7 +12,8 @@ Datasets giving information on the baseyear and type of migration for each count
 }
 \usage{
     data(vwBaseYear2008)
-    data(vwBaseYear2010)   
+    data(vwBaseYear2010) 
+    data(vwBaseYear2012)  
 }
 \format{
   A data frame containing the following variables:
@@ -34,7 +35,7 @@ Data provided by the United Nations Population Division.
 %%  ~~ possibly secondary sources and usages ~~
 %}
 \examples{
-data(vwBaseYear2010)
-str(vwBaseYear2010)
+data(vwBaseYear2012)
+str(vwBaseYear2012)
 }
 \keyword{datasets}

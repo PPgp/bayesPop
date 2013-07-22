@@ -22,7 +22,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
 	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
 \item Country part. One of the following:
 	\itemize{
-  		\item Numerical country code (as used in {\code{\link[wpp2010]{UNlocations}}}, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), 
+  		\item Numerical country code (as used in {\code{\link[wpp2012]{UNlocations}}}, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), 
   		\item two- or three-character ISO 3166 code, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}, 
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
