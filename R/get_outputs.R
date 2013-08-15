@@ -439,7 +439,7 @@ get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	fname <- if(dim(mxm)[1] < 27) "get_sx21_21" else "get_sx27"
+	sx21 <- dim(mxm)[1] < 27
 	for (itraj in 1:dim(mxm)[3]) {
 		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
 		if(itraj == 1) {
@@ -450,7 +450,8 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		sx[,, itraj] <- apply(LLm, 2, 
 							function(x, sr) {
 								if(!any(is.na(x))) {
-									res.sr <- .C(fname, as.numeric(x), sx=sr)
+									res.sr <- if(sx21) .C("get_sx21_21", as.numeric(x), sx=sr)
+												else .C("get_sx27", as.numeric(x), sx=sr)
 									return(res.sr$sx)
 								} else return(rep(NA, length(x)))
 							}, sr)
