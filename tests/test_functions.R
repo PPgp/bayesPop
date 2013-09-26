@@ -33,6 +33,7 @@ test.expressions <- function() {
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='P528_F[1]')
+	pop.byage.plot(pred, expression='P528_F{} / PNL_M{}')
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
@@ -76,17 +77,26 @@ test.expressions.with.VE <- function() {
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(10,22))) # 2 countries 5 rows each
 	
+	write.pop.projection.summary(pred, expression="pop.combine(BXXX[5], BXXX, '/')", output.dir=sim.dir)
+	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t) == c(10,22))) # 2 countries 5 rows each
+	
 	t <- pop.byage.table(pred, expression='M528_M{}')
 	stopifnot(all(dim(t) == c(27,5)))
 	write.pop.projection.summary(pred, expression="SXXX_M{0}", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(10,22)))
-	
+		
 	filename <- tempfile()
 	png(filename=filename)
 	pop.byage.plot(pred, expression='log(QEC_M{age.index01(27)})', year=2050)
 	pop.byage.plot(pred, expression='log(QECU_M{age.index01(21)})', year=2008)
 	pop.byage.plot(pred, expression='M218_F{age.index05(27)}', year=2050)
+	pop.trajectories.plot(pred, expression="pop.apply(P528_F{4:10}, gmedian, cats=seq(15, by=5, length=8))")
+	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=2050)
+	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1970)
+	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', slice.along='traj')")
+	pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', slice.along='country')", year=1980)
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
@@ -95,8 +105,14 @@ test.expressions.with.VE <- function() {
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(10,22)))
 	
+	filename <- tempfile()
+	png(filename=filename)
 	pop.pyramid(pred, 218, indicator='D')
 	pop.pyramid(pred, 218, indicator='B')
+	dev.off()
+	size <- file.info(filename)['size']
+	unlink(filename)
+	stopifnot(size > 0)
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }

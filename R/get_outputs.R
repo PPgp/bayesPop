@@ -417,6 +417,7 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 				res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
 			}
 		}
+		dimnames(res)[[2]] <- dimnames(mxm)[[2]]
 		return(res)
 	}
 	if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
@@ -430,6 +431,7 @@ get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(is.null(dim(qx1))) qx1 <- abind(qx1, along=2)
 	qx <- array(0, dim=c(dim(qx1)[1], dim(qx1)[2], dim(mxm)[3]))
 	qx[,,1] <- qx1
+	dimnames(qx)[[2]] <- dimnames(mxm)[[2]]
 	if(dim(mxm)[3] <= 1) return(qx)
 	for (itraj in 2:dim(mxm)[3]) {
 		qx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='qx', sex=sex, age05=age05)
@@ -456,6 +458,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 								} else return(rep(NA, length(x)))
 							}, sr)
 	}
+	dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
 	return (sx)
 }
 
@@ -469,6 +472,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
  	event <- match.arg(event)
  	sex <- match.arg(sex)
+ 	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
  	if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.pred$output.directory, paste('vital_events_country', country, '.rda', sep=''))
 		if (!file.exists(traj.file)) 
@@ -497,9 +501,12 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			age.normal <- FALSE
 		}
 		for(is in sex.index) {
-			if(!is.null(mx[[is]]))
+			if(!is.null(mx[[is]])) {
+					if(is.observed)
+						dimnames(mx[[is]])[[2]] <- time.labels[(length(time.labels)-dim(mx[[is]])[2]+1):length(time.labels)]
 					alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
 									list(mx[[is]], sex=c("M","F","M","F")[is], age05=age05))
+			}
 		}
 	} else {
 		if (is.element(event, input.indicators)) { #migration
@@ -862,8 +869,10 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
-	if(odim == 4 && dim(result)[[1]] == 1) result <- result[1,,,] # remove country dimension
-	if(length(dim(result)) == 3 && dim(result)[[1]] == 1) result <- result[1,,] # remove age dimension
+	if(odim == 4 && dim(result)[[1]] == 1) 
+		result <- adrop(result, drop=1) # remove country dimension
+	if(length(dim(result)) == 3 && dim(result)[[1]] == 1) 
+		result <- adrop(result, drop=1) # remove age dimension
 	if(ntraj > 1) {
 		if(typical.trajectory) {
 			traj.idx <- bayesTFR:::get.typical.trajectory.index(result)
@@ -889,7 +898,8 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
-	if(odim == 4 && dim(result)[[1]] == 1) result <- result[1,,,] # remove country dimension
+	if(odim == 4 && dim(result)[[1]] == 1) 
+		result <- adrop(result, drop=1) # remove country dimension
 	if(ntraj > 1) {
 		if(typical.trajectory) {
 			traj.idx <- bayesTFR:::get.typical.trajectory.index(result[,1,])
@@ -924,28 +934,85 @@ get.pop.observed.from.expression <- function(expression, pop.pred, as.vector=TRU
 
 get.pop.observed.from.expression.multiple.age <- function(expression, pop.pred, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='observed=TRUE, ...')))
-	return(result[1,,,1]) # remove country and trajectory dimension
+	return(adrop(result, drop=c(1,4))) # remove country and trajectory dimension
 }
 
 
 get.pop.observed.from.expression.all.countries <- function(expression, pop.pred, time.index, ...) {
 	data <- get.pop.observed.from.expression(expression, pop.pred, as.vector=FALSE, ...)
 	if(dim(data)[[1]] != nrow(pop.pred$countries)) stop('Error in first dimension of the expression.')
-	if(length(dim(data))==4 && dim(data)[[2]]==1) data <- data[,1,,] # remove age dimension
-	if(length(dim(data))==3 && dim(data)[[3]]==1) data <- data[,,1] # remove trajectory dimension
+	if(length(dim(data))==4 && dim(data)[[2]]==1) 
+		data <- adrop(data, drop=2) # remove age dimension
+	if(length(dim(data))==3 && dim(data)[[3]]==1) 
+		data <- adrop(data, drop=3) # remove trajectory dimension
 	if(!all(is.element(colnames(pop.pred$inputs$pop.matrix$male), dimnames(data)[[2]]))) 
 		stop('Error in second dimension of the expression.')
 	data <- data[,colnames(pop.pred$inputs$pop.matrix$male)]
 	return(data[,time.index])
 }
 
-pop.apply <- function(data, fun, ...) {
+pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'country')) {
+	split.along <- match.arg(split.along)
+	if(dim(data1)[3] != dim(data2)[3])
+		stop('Mismatch in time dimension.', dim(data1)[3], ' vs. ', dim(data2)[3])
+	all.splits.mrg <- c(2,4,1) 
+	all.splits <- c('age', 'traj', 'country')
+	margin <- all.splits.mrg[which(split.along == all.splits)]
+	for(imar in 1:length(all.splits.mrg)) {
+		if(split.along != all.splits[imar] && dim(data1)[all.splits.mrg[imar]] != dim(data2)[all.splits.mrg[imar]])
+		stop('Mismatch in ', all.splits[imar], ' dimension.', 
+			dim(data1)[all.splits.mrg[imar]], ' vs. ', dim(data2)[all.splits.mrg[imar]])
+	}	
+	data <- data2
+	unchanged <- data1
+	dropd <- c()
+	if(split.along != 'country' && dim(data)[1]==1) dropd <- c(dropd, 1)
+	if(dim(data)[margin]==1) dropd <- c(dropd, margin)
+	data <- adrop(data, drop=dropd)
+	return(pop.apply(unchanged, fun, split.along=split.along, data, ...))
+	
+}
+
+pop.apply <- function(data, fun, ..., split.along=c('None', 'age', 'traj', 'country')) {
 	if(is.character(fun)) fun <- .remove.trailing.spaces(fun) 
-	res <- apply(data, c(1,3,4), fun, ...)
-	# add age dimension
-	dim(res) <- c(dim(res)[[1]], 1, dim(res)[2:3])
+	split.along <- match.arg(split.along)
+	if(split.along == 'None') {
+		res <- aaply(data, c(1,3,4), fun, ..., .drop=FALSE)
+		# add age dimension
+		dim(res) <- c(dim(data)[1], 1, dim(data)[3:4])
+	} else {
+		margin <- c(2,4,1)[which(split.along == c('age', 'traj', 'country'))]
+		res <- aaply(data, margin, fun, ..., .drop=FALSE)
+		res <- .add.dropped.dims.and.perm.after.aaply(data, res, margin)
+	}
 	for(i in c(1,3,4)) if(!is.null(dimnames(data)[[i]])) dimnames(res)[[i]] <- dimnames(data)[[i]]
 	return(res)
+}
+
+.add.dropped.dims.and.perm.after.aaply <- function(data1, data2, margin) {
+	if(length(dim(data2)) < length(dim(data1))) { # this is because sometimes aaply does drop a dimension
+			# aaply puts the sliced dimension in front, so we have to find which dimensions were dropped
+		i <- j <- 1
+		ddim <- dim(data1)[-margin]
+		rdim <- c()
+		while(i <= length(ddim) && length(rdim) < length(ddim)) { 
+			if(ddim[i]==1 && (j > length(dim(data2))-1 || dim(data2)[-1][j] > 1)) {
+				rdim <- c(rdim, 1)
+			} else {
+				rdim <- c(rdim, dim(data2)[-1][j])
+				j <- j+1
+			}
+			i <- i+1
+		}
+		dim(data2) <- c(dim(data2)[1], rdim)
+	}
+	if(margin != 1) {# must be rearanged because aaply puts the sliced dimension in front
+		pos <- rep(NA, length(dim(data2)))
+		pos[margin] <- 1
+		pos[is.na(pos)] <- seq(2,length(dim(data2)))
+		data2 <- aperm(data2, pos)
+	}
+	return(data2)
 }
 
 gmedian <- function(f, cats=NULL) {
@@ -963,7 +1030,7 @@ gmean <- function(f, cats=NULL) {
 	if(all(is.na(f))) return(NA)
 	# group mean
 	if(is.null(cats)) cats <- seq(0, by=5, length=length(f)+1)
-	l <- length(cats)
+	l <- min(length(cats), length(f)+1)
 	mid.points <- cats[1:(l-1)] + (cats[2:l] - cats[1:(l-1)])/2.
 	counts <- f*mid.points
 	return(sum(counts)/sum(f))

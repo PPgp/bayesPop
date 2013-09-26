@@ -63,10 +63,15 @@ Depending on the context from which the expression is called, the trajectory dim
 	\dQuote{apply(age.func(P752\{\}), c(1,3,4), sum) / drop.age(P752)} \cr
 	is an expression for the average age in Sweden. (See \code{pop.apply} below for a simplified version.)
 
-\item \code{pop.apply(data, fun, \dots)} \cr
-	Applies function \code{fun} to the age dimension of \code{data} and converts the result into the same format as returned by a basic component. This allows combining the \code{apply} function with other basic components without having to modify their dimensions. For example, \cr
+\item \code{pop.apply(data, fun, \dots, split.along=c("None", "age", "traj", "country"))} \cr
+	By default applies function \code{fun} to the age dimension of \code{data} and converts the result into the same format as returned by a basic component. This allows combining the \code{apply} function with other basic components without having to modify their dimensions. For example, \cr
 	\dQuote{pop.apply(age.func(P752\{\}), fun=sum) / P752} gives the average age in Sweden, or \cr
 	\dQuote{pop.apply(P380\{\}, gmedian, cats=seq(0, by=5, length=28))} gives the median age of Italy.
+	If \code{slice.along} is not \sQuote{None}, it can be used as an \code{apply} function where the data is sliced along one axis. 
+\item \code{pop.combine(data1, data2, fun, ..., split.along=c("age", "traj", "country"))} \cr
+	Can be used if two basic components should be combined that result in different shapes. It tries to put data into the right format and calls \code{pop.apply}. For example, \cr
+	\dQuote{pop.combine(PIND\{\}, PIND, '/')} give population by age per total population in India, or \cr
+	\dQuote{pop.combine(BFR - DFR, GFR, '+', split.along='traj')} gives births minus deaths plus net migration in France. Here, \code{pop.combine} is necessary, because \sQuote{GFR} is a deterministic component and thus, has only one trajectory, whereas births and deaths are probabilistic.
 \item \code{age.index01(end)} \cr
 	Can be used with indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
 \item \code{age.index05(end)} \cr

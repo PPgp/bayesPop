@@ -1,7 +1,10 @@
 library(bayesPop)
 source('test_functions.R')
 
+warn <- options('warn')
+options(warn=2)
 test.prediction()
 test.expressions()
 
-#test.expressions.with.VE()
+test.expressions.with.VE()
+options(warn=warn)

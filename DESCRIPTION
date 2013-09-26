@@ -5,7 +5,8 @@ Version: 4.1-1
 Date: 2013-7-22
 Author: Hana Sevcikova, Adrian Raftery
 Maintainer: Hana Sevcikova <hanas@uw.edu>
-Depends: R (>= 2.14.2), abind, bayesTFR (>= 4.0-0), bayesLife (>= 2.0-0), parallel, wpp2012
+Depends: R (>= 2.14.2), bayesTFR (>= 4.0-0), bayesLife (>= 2.0-0), plyr
 Suggests: rworldmap, fields, wpp2008, wpp2010
+Imports: parallel, abind, wpp2012
 Description: The package allows to generate population projections for all countries of the world using several probabilistic components, such as total fertility rate (TFR) and life expectancy.
 License: GPL (>=2)
