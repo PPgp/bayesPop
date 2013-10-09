@@ -960,8 +960,8 @@ pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'co
 	margin <- all.splits.mrg[which(split.along == all.splits)]
 	for(imar in 1:length(all.splits.mrg)) {
 		if(split.along != all.splits[imar] && dim(data1)[all.splits.mrg[imar]] != dim(data2)[all.splits.mrg[imar]])
-		stop('Mismatch in ', all.splits[imar], ' dimension.', 
-			dim(data1)[all.splits.mrg[imar]], ' vs. ', dim(data2)[all.splits.mrg[imar]])
+			stop('Mismatch in ', all.splits[imar], ' dimension.', 
+				dim(data1)[all.splits.mrg[imar]], ' vs. ', dim(data2)[all.splits.mrg[imar]])
 	}	
 	data <- data2
 	unchanged <- data1

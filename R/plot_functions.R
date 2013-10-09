@@ -1047,7 +1047,7 @@ get.data.for.worldmap.bayesPop.prediction <- function(pred, quantile=0.5, year=N
 
 
 pop.map <- function(pred, sex=c('both', 'male', 'female'), age='all', expression=NULL, ...) {
-	return(bayesTFR:::tfr.map(pred, par.name=expression, data.args=list(sex=sex, age=age, expression=expression), ...))
+	return(bayesTFR::tfr.map(pred, par.name=expression, data.args=list(sex=sex, age=age, expression=expression), ...))
 }
 
 .map.main.default.bayesPop.prediction <- function(pred, dp, ...) {

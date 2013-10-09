@@ -58,7 +58,7 @@ test.expressions <- function() {
 	unlink(sim.dir, recursive=TRUE)
 }
 
-test.expressions.with.VE <- function() {
+test.expressions.with.VE <- function(map=TRUE) {
 	test.name <- 'Expressions with vital events'
 	start.test(test.name)
 	sim.dir <- tempfile()
@@ -95,8 +95,8 @@ test.expressions.with.VE <- function() {
 	pop.trajectories.plot(pred, expression="pop.apply(P528_F{4:10}, gmedian, cats=seq(15, by=5, length=8))")
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=2050)
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1970)
-	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', slice.along='traj')")
-	pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', slice.along='country')", year=1980)
+	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', split.along='traj')")
+	if(map) pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)

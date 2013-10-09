@@ -6,5 +6,5 @@ options(warn=2)
 test.prediction()
 test.expressions()
 
-test.expressions.with.VE()
-options(warn=warn)
+test.expressions.with.VE(map=FALSE)
+try(options(warn=warn), silent=TRUE)
