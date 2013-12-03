@@ -33,7 +33,7 @@ Not all combinations of the four parts above make sense. For example, \sQuote{F}
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 
-When the expression is evaluated on a prediction object, each basic component is substituted by an array of four dimensions:
+When the expression is evaluated on a prediction object, each basic component is substituted by an array of four dimensions (using the \code{\link{get.pop}} function):
 \enumerate{
 \item Country dimension: Equals to one if a specific country code is given, or it equals the number of countries in the prediction object if a wildcard is used.
 \item Age dimension: Equals to one if the third component above is missing or the age is defined within square brackets. If the age is defined within curly braces, this dimension corresponds to the length of the age array.
@@ -82,7 +82,7 @@ Depending on the context from which the expression is called, the trajectory dim
 \note{The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.}
 
 \author{Hana Sevcikova, Adrian Raftery}
-\seealso{\code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, {\code{\link{write.pop.projection.summary}}}.}
+\seealso{\code{\link{get.pop}}, \code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, {\code{\link{write.pop.projection.summary}}}.}
 \examples{
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)

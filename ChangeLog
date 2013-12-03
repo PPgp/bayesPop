@@ -1,4 +1,8 @@
-4.1-2 ()
+4.2-2 (12/2/2013)
+-----
+Function get.pop exposed to outside.
+
+4.2-0/1 (10/10/2013)
 -----
 New expression function - pop.combine.
 

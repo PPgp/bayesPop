@@ -30,7 +30,8 @@ pop.map.gvis,
 write.pop.projection.summary,
 pop.cleanup.cache,
 LifeTableMx,
-LifeTableMxCol
+LifeTableMxCol,
+get.pop
 )
 
 # register S3 methods

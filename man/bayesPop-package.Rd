@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 4.1-1\cr
-Date: \tab 2013-7-22\cr
+Version: \tab 4.2-2\cr
+Date: \tab 2013-12-2\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
@@ -50,28 +50,31 @@ unlink(sim.dir, recursive=TRUE)
 
 # Here are commands needed to run probabilistic projections
 # from scratch, i.e. including TFR and life expectancy.
-# Note that running the first four commands can take 
-# LONG time (several days). For a toy simulation, set 
-# the number of iterations (iter) to a small number.
+# Note that running the first four commands 
+# (i.e. predicting TFR and life expectancy) can take 
+# LONG time (up to several days; see below for possible speed-up). 
+# For a toy simulation, set the number of iterations (iter) 
+# to a small number.
 \dontrun{
 sim.dir.tfr <- 'directory/for/TFR'
 sim.dir.e0 <-  'directory/for/e0'
 sim.dir.pop <- 'directory/for/pop'
 
-# Estimate TFR parameters
+# Estimate TFR parameters (speed-up by including parallel=TRUE)
 run.tfr.mcmc(iter='auto', output.dir=sim.dir.tfr, seed=1)
 
 # Predict TFR (if iter above < 4000, reduce burnin and nr.traj accordingly)
 tfr.predict(sim.dir=sim.dir.tfr, nr.traj=2000, burnin=2000)
 
-# Estimate e0 parameters (females)
+# Estimate e0 parameters (females) (speed-up by including parallel=TRUE)
+# Can be run independently of the two commands above
 run.e0.mcmc(sex='F', iter='auto', output.dir=sim.dir.e0, seed=1)
 
-#Predict female and male e0	
+# Predict female and male e0	
 # (if iter above < 22000, reduce burnin and nr.traj accordingly)
 e0.predict(sim.dir=sim.dir.e0, nr.traj=2000, burnin=20000)
 
-#Population prediction
+# Population prediction
 pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
     inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
 pop.trajectories.plot(pred, 'Madagascar', nr.traj=50, sum.over.ages=TRUE)

@@ -1085,7 +1085,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		cl <- makeCluster(ncores)
 		clusterEvalQ(cl, {library(bayesPop)})
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
-		quant.list <- parLapplyLB(cl, countries.idx, function(i) bayesPop:::.solve.expression.for.country(i, pop.pred, expression))
+		quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression))
 		stopCluster(cl)
 		for(icountry in countries.idx) {
 			pop.pred$cache[[compressed.expr]][icountry,,] <- quant.list[[icountry]]
