@@ -23,21 +23,21 @@ pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'
 
 get.countries.for.region <- function(region, pop.pred) {
 	reg.idx <- which(UNlocations[,'country_code'] == region)
-	all.countries <- UNlocations[UNlocations[,'location_type'] == 4,]
 	if(length(reg.idx) <= 0) {
 		warning('No region code ', region, ' available.')
 		return(c())
 	}
+	all.countries <- UNlocations[UNlocations[,'location_type'] == 4,]
 	location.type <- UNlocations[reg.idx,'location_type']
-	if(!is.element(location.type, c(0,2,3))) {
-		warning('Invalid location type for region ', region,'. Allowed types: 0,2,3. But is ', location.type)
-		return(c())
-	}
 	if(location.type == 0)  # corresponds to world, i.e. all countries
 		countries <- all.countries[,'country_code']
 	else {
-		what.code <- if(location.type == 2) 'area_code' else 'reg_code'
-		countries <- all.countries[is.element(all.countries[,what.code], region),'country_code']
+		code.column <- switch(as.character(location.type), '2'='area_code', '3'='reg_code', paste0('agcode_', location.type))
+		if(!is.element(code.column, colnames(UNlocations))) {
+			warning('Invalid location type ', location.type, ' for region ', region,'. Location file must contain column ', code.column, '.')
+			return(c())
+		}	
+		countries <- all.countries[is.element(all.countries[,code.column], region), 'country_code']
 	}
 	return(countries[is.element(countries, pop.pred$countries[,'code'])])
 }

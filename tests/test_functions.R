@@ -21,6 +21,22 @@ test.prediction <- function() {
 	aggr <- pop.aggregate(pred, c(900,904))
 	stopifnot(nrow(aggr$countries) == 2)
 	test.ok(test.name)
+	
+	# aggregate with user-defined groupings
+	test.name <- 'Running aggregation with user-defined groupings'
+	start.test(test.name)	
+	UNlocs <- cbind(UNlocations, agcode_10=99)
+	UNlocs[UNlocs$country_code %in% c(218,528), 'agcode_10'] <- 9000
+	UNlocs <- rbind(UNlocs, 
+				data.frame(name='my_aggregation', country_code=9000, reg_code=-1, reg_name='', area_code=-1, area_name='', 
+							location_type=10, agcode_10=-1))
+	locfile <- tempfile()
+	write.table(UNlocs, file=locfile, sep='\t')
+	aggr1 <- pop.aggregate(pred, 9000, my.location.file=locfile)
+	unlink(locfile)
+	stopifnot(length(aggr1$aggregated.countries[['9000']]) == 2)
+	stopifnot(all(is.element(c(218, 528), aggr1$aggregated.countries[['9000']]))) 
+	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
 

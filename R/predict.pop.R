@@ -310,7 +310,7 @@ load.wpp.dataset <- function(...)
 	bayesTFR:::load.bdem.dataset(...)
 	
 read.bayesPop.file <- function(file)
-	return(get(do.call(data, list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
+	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year) {
 	observed <- list()

@@ -1,3 +1,7 @@
+4.3-0 (4/4/2014)
+-----
+pop.aggregate can handle any number of overlapping aggregations in the location file.
+
 4.2-2 (12/2/2013)
 -----
 Function get.pop exposed to outside.
