@@ -393,16 +393,27 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL,
 	return(cqp)
 }
 
-get.migration <- function(pop.pred, country, sex, is.observed=FALSE) {
+get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL) {
 	par <- if(sex == 'M') 'MIGm' else 'MIGf'
-	inputs <- if(!is.observed) pop.pred$inputs else pop.pred$inputs$observed
-	res <- .get.par.from.inputs(par, inputs, country)
-	if(!is.observed) { #add present year 
+	res <- NULL	
+	if(is.observed) {
+		inputs <- pop.pred$inputs$observed
+	} else {
 		obs <- .get.par.from.inputs(par, pop.pred$inputs$observed, country)
-		res <- cbind(obs[,ncol(obs)], res)
-		colnames(res) <- pop.pred$proj.years
+		parpred <- paste0('mig',tolower(sex))
+		if(!is.null(VEenv) && !is.null(VEenv[[parpred]]))
+			res <- VEenv[[parpred]]
+		else inputs <- pop.pred$inputs
 	}
-	return(abind(res, along=3))
+	if(is.null(res)) {
+		res <- .get.par.from.inputs(par, inputs, country)
+		if(!is.observed) { #add present year 
+			res <- cbind(obs[,ncol(obs)], res)
+			colnames(res) <- pop.pred$proj.years
+		}
+		res <- abind(res, along=3)
+	}
+	return(res)
 }
 
 get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
@@ -468,19 +479,21 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
  	# get trajectories and quantiles for vital events and other indicators
  	input.indicators <- c('migration')
+ 	#input.indicators <- c()
  	life.table.indicators <- c('survival', 'qx', 'mx')
  	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
  	event <- match.arg(event)
  	sex <- match.arg(sex)
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
- 	if (!is.element(event, input.indicators)) {
+ 	
+ 	#if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.pred$output.directory, paste('vital_events_country', country, '.rda', sep=''))
-		if (!file.exists(traj.file)) 
+		if (!file.exists(traj.file) && !is.element(event, input.indicators)) 
 			return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 		myenv <- new.env()
-		load(traj.file, envir=myenv)
+		if (file.exists(traj.file)) load(traj.file, envir=myenv)
 		if(is.observed) myenv <- myenv$observed
-	}
+	#}
 	max.age.index.allowed <- 27
 	min.age.index.allowed <- 1
 	if(is.observed) {
@@ -516,7 +529,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			if(sex=='female') sex.index <- sex.index[2]
 			for(is in sex.index) {
 				alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
-									list(pop.pred, country, sex=c("M","F","M","F")[is], is.observed=is.observed))
+									list(pop.pred, country, sex=c("M","F","M","F")[is], is.observed=is.observed, VEenv=myenv))
 			}
  		} else {
 			alltraj <- switch(event,
@@ -781,12 +794,11 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				traj$age.idx <- traj$age.idx.raw
 				d <- traj$trajectories
 			}
-
 			if(sum.over.ages) {
 				if(!is.null(nrow(d)) && nrow(d) == 0) # country not found in the observed data
 					d <- rep(NA, ncol(d))
 				else d <- colSums(d)
-				data <- as.matrix(d) # adds trajectory dimension
+				data <- as.matrix(d) # adds trajectory dimension if missing
 				dim(data) <- c(1, dim(data)) # adding age dimension
 				dimnames(data) <- list(NULL, colnames(traj$data), NULL)
 			} else {# only if it was not summed up, because then the as.matrix command adds a dimension
@@ -840,7 +852,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		data <- traj$trajectories
 		dim(data) <- c(1,dim(data)) # adding country  dimension
 		if(sum.over.ages) {
-			dim(data) <- c(1,dim(data)) # adding country age dimension
+			dim(data) <- c(1,dim(data)) # adding age dimension
 			dimnames(data) <- list(NULL, NULL, dimnames(traj$trajectories)[[1]], NULL)
 		} else dimnames(data) <- list(NULL, dimnames(traj$trajectories)[[1]], dimnames(traj$trajectories)[[2]], NULL)
 	}
@@ -866,6 +878,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
+	#stop('')
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
@@ -883,11 +896,9 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 		}
 	} else  {# only 1 trajectory
 		traj.idx <- 1
-		if(is.null(dim(result))) along <- 2
-		else {
-			l<-length(dim(result))
-			along <- if(odim > l) l+1 else l 
-		}
+		l<-length(dim(result))
+		if(is.null(dim(result)) || (l==2 && dim(result)[2]==1)) along <- 2
+		else along <- if(odim > l) l+1 else l 
 		result <- abind(result, NULL, along=along)
 	}
 	return(list(trajectories=result, index=traj.idx))

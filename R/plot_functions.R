@@ -99,6 +99,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  ) {
 
 	sex <- match.arg(sex)
+	reload.traj.if.needed <- TRUE
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
 										typical.trajectory=typical.trajectory)
@@ -108,6 +109,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 			pop.observed.all <- NA
 			names(pop.observed.all) <- min(pop.pred$proj.years)-5
 		}
+		reload.traj.if.needed <- FALSE
 	} else {
 		trajectories <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj, 
 										typical.trajectory=typical.trajectory)
@@ -116,7 +118,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	cqp <- list()
 	for (i in 1:length(pi))
 		cqp[[i]] <- get.pop.traj.quantiles(trajectories$quantiles, pop.pred, country$index, country$code, 
-										trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age)
+										trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age, reload=reload.traj.if.needed)
 	
 	obs.not.na <- !is.na(pop.observed.all)
 	pop.observed.idx <- if(sum(obs.not.na)==0) length(pop.observed.all) else which(obs.not.na)
@@ -163,7 +165,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	}
 	# plot median
 	pop.median <- get.pop.traj.quantiles(trajectories$quantiles, pop.pred, country$index, country$code, 
-										trajectories=trajectories$trajectories, q=0.5, sex=sex, age=age)
+										trajectories=trajectories$trajectories, q=0.5, sex=sex, age=age, reload=reload.traj.if.needed)
 	lines(x2, pop.median, type='l', col=col[2], lwd=lwd[2]) 
 	
 	# plot given CIs
