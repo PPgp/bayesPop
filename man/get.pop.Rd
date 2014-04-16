@@ -12,7 +12,7 @@ get.pop(object, pop.pred, aggregation = NULL, observed = FALSE, ...)
 \arguments{
   \item{object}{Character string giving the basic component of an expression (see \link{pop.expressions}).}
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
-  \item{aggregation}{If the basic component is to be evaluated on an aggregated prediction object, this argument gives the name of the aggregation (corresponds argument \code{name} in \code{\link{pop.aggregate}}). By default, the function searches for available aggregations and gives priority to the one called \dQuote{independence}.}
+  \item{aggregation}{If the basic component is to be evaluated on an aggregated prediction object, this argument gives the name of the aggregation (corresponds argument \code{name} in \code{\link{pop.aggregate}}). By default, the function searches for available aggregations and gives priority to the one called \dQuote{country}.}
   \item{observed}{Logical. Determines if the evaluation uses observed data (\code{TRUE}) or predictions (\code{FALSE}).}
   \item{\dots}{Additional argument passed to the underlying functions. Currently, this is only used for a \dQuote{P}opulation component and \code{observed=FALSE}. It can be either \code{nr.traj} giving the number of trajectories or logical \code{typical.trajectory}.}
 }

@@ -768,9 +768,9 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				pop.pred <- base.pred
 			} else {
 				av.aggrs <- available.pop.aggregations(pop.pred)
-				indep.idx <- which(is.element('independence', av.aggrs))
-				if(length(indep.idx) > 0)  # put independence aggregation first
-					av.aggrs <- c('independence', av.aggrs[-indep.idx])
+				indep.idx <- which(is.element('country', av.aggrs))
+				if(length(indep.idx) > 0)  # put country-type aggregation first
+					av.aggrs <- c('country', av.aggrs[-indep.idx])
 				if(is.null(aggregation)) aggregation <- av.aggrs
 				for(aggr in aggregation) {
 					if(!is.element(aggr, av.aggrs)) {warning('Aggregation', aggr, 'not available.'); next}

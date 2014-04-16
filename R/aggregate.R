@@ -1,7 +1,7 @@
 if(getRversion() >= "2.15.1") utils::globalVariables("UNlocations")
 
-pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'),
-						name = method,
+pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
+						name = input.type,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL),
 						my.location.file=NULL,
 						verbose=FALSE) {
@@ -12,11 +12,11 @@ pop.aggregate <- function(pop.pred, regions, method=c('independence', 'regional'
 		assign("UNlocations", read.delim(my.location.file, comment.char='#'), envir=env)
 	}
 	regions <- unique(regions)
-	method <- match.arg(method)
+	method <- match.arg(input.type)
 	if(missing(name)) name <- method
-	if(method == 'independence') 
-		aggr.pred <- pop.aggregate.independence(pop.pred, regions, name, verbose=verbose)
-	if(method == 'regional')
+	if(method == 'country') 
+		aggr.pred <- pop.aggregate.countries(pop.pred, regions, name, verbose=verbose)
+	if(method == 'region')
 		aggr.pred <- pop.aggregate.regional(pop.pred, regions, name, inputs=inputs, verbose=verbose)
 	invisible(aggr.pred)
 }
@@ -50,7 +50,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		inp[[item]] <- NULL
 	aggregated.countries <- list()
 	aggr.obs.data <- list(male=NULL, female=NULL)
-	if(verbose) cat('\nAggregating inputs using regional method.')
+	if(verbose) cat('\nAggregating inputs using regional TFR and e0.')
 	status.for.gui <- paste('out of', length(regions), 'regions.')
 	gui.options <- list()
 	obs.data <- inp$pop.matrix
@@ -103,7 +103,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	} else inp$e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir)
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.pred$output.directory)
 	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose)
-	aggr.pred$aggregation.method <- 'regional'
+	aggr.pred$aggregation.method <- 'region'
 	aggr.pred$aggregated.countries <- aggregated.countries
 	aggr.pred$inputs$pop.matrix <- aggr.obs.data
 	bayesPop.prediction <- aggr.pred
@@ -206,8 +206,8 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 }
 
 
-pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose) {
-	if(verbose) cat('\nAggregating using independence method.')
+pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose) {
+	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
 	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
 	quant <- quantM <- quantF <- array(NA, c(nreg, dim(pop.pred$quantiles)[2:3]), dimnames=c(list(regions), dimnames(pop.pred$quantiles)[2:3]))
@@ -309,7 +309,7 @@ pop.aggregate.independence <- function(pop.pred, regions, name, verbose=verbose)
 	aggr.pred$traj.mean.sd <- mean_sd
 	aggr.pred$traj.mean.sdM <- mean_sdM
 	aggr.pred$traj.mean.sdF <- mean_sdF
-	aggr.pred$aggregation.method <- 'independence'
+	aggr.pred$aggregation.method <- 'country'
 	aggr.pred$aggregated.countries <- aggregated.countries
 	aggr.pred$inputs$pop.matrix <- aggr.obs.data
 	bayesPop.prediction <- aggr.pred
