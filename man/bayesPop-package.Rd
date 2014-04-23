@@ -82,4 +82,4 @@ pop.trajectories.table(pred, 'Madagascar')
 }
 }
 % reproducing example data in the package:
-% pred <- pop.predict(countries=c(528,218), nr.traj=5, output.dir=sim.dir)
+% pred <- pop.predict(countries=c(528,218), nr.traj=5, output.dir=sim.dir, replace.output=TRUE)

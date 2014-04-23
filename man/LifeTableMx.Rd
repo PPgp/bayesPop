@@ -47,9 +47,9 @@ Hana Sevcikova, Nan Li
 \examples{
 sim.dir <- tempfile()
 pred <- pop.predict(countries="Ecuador", output.dir=sim.dir,
-			keep.vital.events=TRUE)
+    keep.vital.events=TRUE)
 # get male mortality rates from 2000 for age groups 0-1, 1-4, 5-9, ...
-mx <- pop.byage.table(pred, expression='MEC_M{c(-1,0,2:21)}')[,1]
+mx <- pop.byage.table(pred, expression="MEC_M{c(-1,0,2:21)}")[,1]
 LifeTableMx(mx)
 unlink(sim.dir, recursive=TRUE)
 }

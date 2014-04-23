@@ -1,3 +1,19 @@
+5.0-0
+-----
+Allows probabilistic migration: trajectories of net counts can be passed in an csv file to pop.predict
+(no re-balancing implemented yet).
+
+If keep.vital.events is TRUE, the migration trajectories are stored with all the other country-specific data
+and can be accessed using the "G" expression.
+ 
+Aggregation 'method's changed to 'input.type' in pop.aggregate. Default input types are now 
+'country' (former independence method) and 'region' (former regional method). 
+Thus, default names of aggregation directories are aggregations_country and aggregations_region.
+
+Stored bayesPop.prediction object slightly changed.
+
+A column 'Trajectory' is now required for trajectories files of TFR, e0 and migration (if used).
+
 4.3-0 (4/4/2014)
 -----
 pop.aggregate can handle any number of overlapping aggregations in the location file.

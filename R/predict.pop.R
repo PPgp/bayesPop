@@ -15,20 +15,24 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
-							tfr.sim.dir=NULL	
+							tfr.sim.dir=NULL,
+							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						replace.output=FALSE, 
 						verbose=TRUE) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
+	unblock.gtk.if.needed('reading inputs')
+
 	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
 	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, verbose=verbose)
 	else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
-			inp <- load.inputs(pred$function.inputs, pred$estim.years[1], pred$proj.years[1],pred$proj.years[length(pred$proj.years)], 
+			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
 								pred$wpp.year, verbose=verbose)
-			warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
+			if(!missing(inputs)) 
+				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
@@ -105,18 +109,12 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	mx.ages <- c(0,1,ages[2:nages])
 	status.for.gui <- paste('out of', ncountries, 'countries.')
 	gui.options <- list()
-	inp.to.save <- new.env()
-	for(item in ls(inp)[!grepl('^migMpred|^migFpred',ls(inp))]) assign(item, get(item, inp), inp.to.save)
-
+	inp.to.save <- list()
+	# remove big items redundant items from inputs to be saved
+	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
+		inp.to.save[[item]] <- get(item, inp)
 	for(cidx in 1:ncountries) {
-		if(getOption('bDem.Poppred', default=FALSE)) {
-			# This is to unblock the GUI, if the run is invoked from bayesDem
-			# and pass info about its status
-			# In such a case the gtk libraries are already loaded
-			gui.options$bDem.Poppred.status <- paste('finished', cidx, status.for.gui)
-			unblock.gtk('bDem.Poppred', gui.options)
-		}
-
+		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
@@ -265,9 +263,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#save updated meta file
 		country.row <- UNlocations[country.idx,c('country_code', 'name')]
 		colnames(country.row) <- c('code', 'name')
+		
 		if(!exists('bayesPop.prediction')) { # first pass
-			bayesPop.prediction <- if(!is.null(pred)) pred 
-					else structure(list(output.directory=outdir,
+			bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= country %in% pred$countries[,'code']) 
+					else structure(list(
 							nr.traj = nr.traj,	
 							# assign empty arrays
 							quantiles = PIs_cqp[c(),,,drop=FALSE],
@@ -284,10 +283,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
                				proj.years=c(inp$estim.years[length(inp$estim.years)], 
                									inp$proj.years), # includes present period
                				wpp.year = inp$wpp.year,
-			   				inputs = inp.to.save,
+			   				inputs = inp.to.save, # save as list because environment takes much more space
+			   				function.inputs=function.inputs,
 			   				countries=as.data.frame(matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name')))),
 			   				ages=ages), class='bayesPop.prediction')
-		}	
+		}
 		idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
 		if(length(idx.in.pred.overwrite)>0) {
 			bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- PIs_cqp[cidx,,,drop=FALSE]
@@ -452,12 +452,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		if(verbose) cat('\nLoading ', file.name, '\n')
 		migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 		migpred <- migpred.raw[,c('LocID', 'Year', 'Trajectory', 'Age', 'Migration')]
-		#migpred$Age <- sapply(seq(0,95,by=5), function(x) gsub(paste0(x, '-', x+4), x, migpred$Age))
-		#migpred$Age <- gsub('100+', 100, migpred$Age)
-		#migpred$Age <- as.integer(migpred$Age)
-		# sort by country, trajectories, year and age
-		#sort.cols <- c('LocID', if('Trajectory' %in% ncolnames(migpred.raw)) 'Trajectory' else c(), 'Year', 'Age')		
-		#migpred <- migpred[order(unlist(split(migpred.raw[,sort.cols], col(migpred.raw[,sort.cols])))),]
 		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
 		assign(var.name, migpred)
 	}
@@ -474,9 +468,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			 # comma separated trajectories file
 			 if(verbose) cat('\nLoading ', file.name, '\n')
 			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'e0')]
+			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year)		
-		colnames(e0Fpred) <- c('country_code', 'year', 'value')
+		colnames(e0Fpred) <- c('country_code', 'year', 'trajectory', 'value')
 	} 
 
 	if(!is.null(inputs$e0M.sim.dir)) { # male
@@ -487,18 +481,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
 	} else {
 		if(!is.null(inputs$e0M.file)) {
-			file.name <-  inputs$e0M.file 
-					#else file.path(find.package("bayesPop"), "ex-data", 
-					#		paste('e0Mwpp', wpp.year, '.csv', sep=''))
+			file.name <-  inputs$e0M.file
 			if(!file.exists(file.name)) 
 				stop('File ', file.name, 
 					' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
 			if(verbose) cat('\nLoading ', file.name, '\n')
 			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'e0')]
+			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
-		colnames(e0Mpred) <- c('country_code', 'year', 'value')
+		colnames(e0Mpred) <- c('country_code', 'year', 'trajectory', 'value')
 	} 
 		
 	# Get TFR
@@ -507,21 +499,20 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	else {
 		if(!is.null(inputs$tfr.file)) {
 			file.name <- inputs$tfr.file
-					#else file.path(find.package("bayesPop"), "ex-data", 
-					#		paste('TFRwpp', wpp.year, '.csv', sep=''))
 			if(!file.exists(file.name))
 				stop('File ', file.name, 
 					' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
 			if(verbose) cat('\nLoading ', file.name, '\n')
 			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-			TFRpred <- TFRpred[,c('LocID', 'Year', 'TF')]
+			TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
 		} else 
 			TFRpred <- .load.wpp.traj('tfr', wpp.year)
-		colnames(TFRpred) <- c('country_code', 'year', 'value')
+		colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
 	}
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
-				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 'observed'))
+				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
+				'start.year', 'present.year', 'end.year', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=popm.matrix, female=popf.matrix)
 	return(inp)
@@ -550,6 +541,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year)
 		
 	pred.all <- NULL
+	itraj <- 1
 	for(dataset.name in c(dataset, dataset.low, dataset.high)) {
 		if(is.na(dataset.name)) next
 		pred <- bayesTFR:::load.bdem.dataset(dataset.name, wpp.year)
@@ -565,9 +557,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		cnames <- colnames(pred)[-nonnum.idx]
 		colnames(pred)[-nonnum.idx] <- paste(type, cnames, sep='')
 		pred.long <- reshape(pred, direction='long', varying=(1:ncols)[-nonnum.idx], v.names=type, times=cnames)
-		pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3)
-		pred.long <- pred.long[,c('country_code', 'year', type)]
+		pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3, trajectory=itraj)
+		pred.long <- pred.long[,c('country_code', 'year', 'trajectory', type)]
 		pred.all <- rbind(pred.all, pred.long)
+		itraj <- itraj + 1
 	}
 	return(pred.all)
 }
@@ -584,7 +577,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*21), trajectory=rep(rep(utrajs, each=21), times=lyears),
 									age=c(paste(seq(0,95,by=5), seq(4,99,by=5), sep='-'), '100+'))
 		# this is to get rows of the data frame in a particular order
-		migdf <- merge(sorted.df, migdf)
+		migdf <- merge(sorted.df, migdf, sort=FALSE)
 		res <- array(migdf$value, dim=c(21, ntrajs, lyears))
 		dimnames(res) <- list(1:21,  NULL, pred$inputs$proj.years)
 		return(res)	
@@ -610,27 +603,33 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	what.traj <- list(TFRpred='TFR', e0Mpred='male e0', e0Fpred='female e0')
 	medians <- list()
+	lyears <- length(inputs$proj.years)
 	for(par in names(what.traj)) {
-		if (is.data.frame(inputs[[par]])) {
-			cidx <- inputs[[par]][,'country_code'] == country 
-			idx <- cidx & is.element(inputs[[par]][,'year'], inputs$proj.years)
-			if(sum(idx) == 0) {
-				stop('')
-				warning('No ', what.traj[[par]], ' trajectories for ', country.name, 
-					'. No population projection generated.')
-				return(NULL)
-			}
-			inpc[[par]] <- inputs[[par]][idx,]
-			inpc[[par]] <- matrix(inpc[[par]][, 'value'], nrow=length(inputs$proj.years))
-			rownames(inpc[[par]]) <- as.character(inputs$proj.years)
-			medians[[par]] <- apply(inpc[[par]], 1, quantile, 0.5, na.rm = TRUE)
-			obsidx <- cidx & inputs[[par]][,'year'] < min(inputs$proj.years)
-			if(sum(obsidx) > 0) {
-				obs[[par]] <- inputs[[par]][obsidx,]
-				obs.years <- unique(obs[[par]][, 'year'])
-				obs[[par]] <- matrix(obs[[par]][, 'value'], nrow=length(obs.years))[,1]
-				names(obs[[par]]) <- as.character(obs.years)
-			}
+		if (!is.data.frame(inputs[[par]])) next
+		cidx <- inputs[[par]][,'country_code'] == country 
+		idx <- cidx & is.element(inputs[[par]][,'year'], inputs$proj.years)
+		if(sum(idx) == 0) {
+			warning('No ', what.traj[[par]], ' trajectories for ', country.name, 
+				'. No population projection generated.')
+			return(NULL)
+		}
+		df <- inputs[[par]][idx,-1]
+		utrajs <- sort(unique(df$trajectory))
+		ntrajs <- length(utrajs)
+		if(ntrajs > 1){
+			sorted.df <- data.frame(year=rep(inputs$proj.years, times=ntrajs), trajectory=rep(utrajs, each=lyears))
+			# this is to get rows of the data frame in a particular order (align years and trajectories)
+			df <- merge(sorted.df, df, sort=FALSE)
+		}
+		inpc[[par]] <- matrix(df[, 'value'], nrow=lyears)
+		rownames(inpc[[par]]) <- as.character(inputs$proj.years)
+		medians[[par]] <- apply(inpc[[par]], 1, quantile, 0.5, na.rm = TRUE)
+		obsidx <- cidx & inputs[[par]][,'year'] < min(inputs$proj.years)
+		if(sum(obsidx) > 0) {
+			obs[[par]] <- inputs[[par]][obsidx,]
+			obs.years <- unique(obs[[par]][, 'year'])
+			obs[[par]] <- matrix(obs[[par]][, 'value'], nrow=length(obs.years))[,1]
+			names(obs[[par]]) <- as.character(obs.years)
 		}
 	}
 	e <- new.env()
@@ -694,33 +693,46 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		stop('Mismatch in projection periods of female e0 and the target projection years.')
 	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
 	
+	# select trajectories
 	indices <- list()
-	indices$e0Mpred <- get.traj.index(nr.traj, inpc$e0Mpred)
-	indices$e0Fpred <- if (ncol(inpc$e0Mpred) != ncol(inpc$e0Fpred)) get.traj.index(nr.traj, inpc$e0Fpred)
-					else indices$e0Mpred
-	indices$TFRpred <- get.traj.index(nr.traj, inpc$TFRpred)
-	nr.traj <- max(length(indices$e0Mpred), length(indices$e0Fpred), length(indices$TFRpred))
-	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) {
-		if(length(indices[[par]]) > nr.traj)
-			indices[[par]] <- get.traj.index(nr.traj, inpc[[par]])
-		else {
-			if(length(indices[[par]]) < nr.traj) {
-				indices[[par]] <- sample(indices[[par]], nr.traj, replace=TRUE)
-			}
+	nr.traj <- min(nr.traj, max(ncol(inpc$e0Mpred), ncol(inpc$e0Fpred), ncol(inpc$TFRpred), 
+							    ncol(inpc$migMpred), ncol(inpc$migFpred)))
+	for (par in c('TFRpred', 'e0Mpred', 'migMpred')) {
+		if(is.null(inpc[[par]])) next
+		traj.available <- ncol(inpc[[par]])
+		if(traj.available == nr.traj) {
+			indices[[par]] = 1:nr.traj
+			next
 		}
+		if(traj.available > nr.traj) # select equidistantly
+			indices[[par]] <- get.traj.index(nr.traj, inpc[[par]]) 
+		else # re-sample
+			indices[[par]] <- sample(1:traj.available, nr.traj, replace=TRUE)
 	}
-	if(length(indices$TFRpred) != length(indices$e0Mpred) || length(indices$e0Mpred) != length(indices$e0Fpred)) {
-		warning('Mismatch in number of trajectories of TFR and/or life expectancy for ', 
-						country.name, '. No population projection generated.')
-		return(NULL)	
+	# dependent trajectories
+	dependencies <- list(e0Fpred='e0Mpred', migFpred='migMpred')
+	for(par in names(dependencies)) {
+		if(is.null(inpc[[par]])) {
+			if(par == 'migFpred' && (is.null(inpc[[dependencies[[par]]]]) || ncol(inpc[[dependencies[[par]]]])==1)) next
+			stop('Female migration trajectories must match male migration.')
+		}
+		traj.available <- ncol(inpc[[par]])
+		if(par == 'migFpred' && is.null(inpc[[dependencies[[par]]]]) && traj.available==1) {
+			indices[[par]] <- rep(1, nr.traj)
+			next # using one trajectory , male is default
+		}
+		if (traj.available == ncol(inpc[[dependencies[[par]]]])) # same number of trajectories, therefore same indices
+			indices[[par]] <- indices[[dependencies[[par]]]]
+		else
+			stop('Trajectories for female ', list(e0Fpred='life expectancy', migFpred='migration')[[par]], ' does not match the male ones: ',
+				traj.available, ' <> ', ncol(inpc[[dependencies[[par]]]]), ' for ', country.name, '. No population projection generated.')
 	}
-	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) {
+	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) { # these are matrices
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
-	for(par in c('migMpred', 'migFpred')) {
+	for(par in c('migMpred', 'migFpred')) { # age-specific, thus 3-d arrays
 		if(is.null(inpc[[par]])) next
-		indices[[par]] <- get.traj.index(nr.traj, inpc[[par]], traj.dim=2, sample=TRUE)
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE]
 	}
 	inpc$observed <- obs
@@ -1016,7 +1028,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 }
 
 write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, output.dir=NULL, ...) {
-	if (is.null(output.dir)) output.dir <- pop.pred$output.directory
+	if (is.null(output.dir)) output.dir <- pop.output.directory(pop.pred)
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.what <- c('pop', 'popsex', 'popsexage', 'popage', 'births', 'birthssex', 'birthsage', 'birthssexage', 
 			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage')
@@ -1272,6 +1284,16 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
 					Lx=nas, lx=nas, qx=nas, ax=nas, mx=mx)
 	return(LT)
+}
+
+unblock.gtk.if.needed <- function(status, gui.opts=list()) {
+	# This is to unblock the GUI, if the run is invoked from bayesDem
+	# and pass info about its status
+	# In such a case the gtk libraries are already loaded
+	if(getOption('bDem.Poppred', default=FALSE)) {
+		gui.opts$bDem.Poppred.status <- status
+		unblock.gtk('bDem.Poppred', gui.opts)
+	}
 }
 
 unblock.gtk <- function(...) bayesTFR:::unblock.gtk(...)

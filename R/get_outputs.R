@@ -3,12 +3,12 @@ get.expression.indicators <- function() {
 		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration'))
 }
 
-
-
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
 	return(FALSE)
 }
+
+pop.output.directory <- function(pop.pred) return(file.path(pop.pred$base.directory, pop.pred$output.directory))
 
 get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	############
@@ -16,14 +16,22 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	############
 	if(!is.null(aggregation)) return(get.pop.aggregation(sim.dir, name=aggregation))
 	output.dir <- file.path(sim.dir, 'predictions')
-	pop.pred <- .get.prediction.object(output.dir)
+	pop.pred <- .get.prediction.object(output.dir, 'predictions')
 	pop.pred$base.directory <- normalizePath(sim.dir)
 	pop.pred$cache <- .load.cache(sim.dir)
 	pop.pred$write.to.cache <- write.to.cache
 	pop.pred$is.aggregation <- FALSE
 	return(pop.pred)
 }
-
+.cleanup.pop.before.save <- function(pop.pred, remove.cache=FALSE) {
+	# remove items that do not have to be saved because they are added using get.pop.prediction
+	names.to.remove <- c('output.directory', 'base.directory', 'write.to.cache', 'is.aggregation', 
+							if(remove.cache) 'cache' else NULL)
+	names.to.remove <- names.to.remove[names.to.remove %in% names(pop.pred)]
+	pred <- pop.pred[-which(names(pop.pred) %in% names.to.remove)] # this removes the class attribute
+	class(pred) <- class(pop.pred)
+	return(pred)
+}
 .load.cache <- function(sim.dir) {
 	if(!file.exists(file.path(sim.dir, 'cache.rda'))) return(new.env())
 	cache <- local({load(file.path(sim.dir, 'cache.rda'))
@@ -81,25 +89,28 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL) {
 	if(length(names) == 1){
 		if(!is.null(name) && name != names) 
 			warning('Mismatch in aggregation names. Available aggregation is called ', names)
-		pop.aggr <- .get.prediction.object(output.dir)
+		pop.aggr <- .get.prediction.object(output.dir, paste('aggregations', names, sep='_'))
 	} else {
 		idx <- which(names == name)
 		if (length(idx) == 0) idx <- menu(names, title='Available aggregations:')	
-		pop.aggr <- .get.prediction.object(output.dir[idx])
+		pop.aggr <- .get.prediction.object(output.dir[idx], paste('aggregations', names[idx], sep='_'))
 	}
 	pop.aggr$base.directory <- normalizePath(sim.dir)
 	pop.aggr$is.aggregation <- TRUE
 	return(pop.aggr)	
 }
 
-.get.prediction.object <- function(directory) {
+.get.prediction.object <- function(directory, name=directory) {
 	pred.file <- file.path(directory, 'prediction.rda')
 	if(!file.exists(pred.file)) {
 		warning('File ', pred.file, ' does not exist.')
 		return(NULL)
 	}
 	load(file=pred.file)
-	bayesPop.prediction$output.directory <- directory
+	bayesPop.prediction$output.directory <- name
+	# convert inputs to environment
+	if(!is.environment(bayesPop.prediction$inputs))
+		bayesPop.prediction$inputs <- list2env(bayesPop.prediction$inputs)
 	return(bayesPop.prediction)
 }
 
@@ -194,7 +205,7 @@ get.psr.denominator.startindex <- function() return(14)
 
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
  									nr.traj=NULL, typical.trajectory=FALSE) {
-	traj.file <- file.path(pop.pred$output.directory, paste('totpop_country', country, '.rda', sep=''))
+	traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', country, '.rda', sep=''))
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
 	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory
 	if (!file.exists(traj.file)) 
@@ -259,7 +270,7 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 												age='all', nr.traj=NULL, proportion=FALSE, typical.trajectory=FALSE) {
 	# Like get.pop.trajectories() but it doesn't sum up over ages.
 	# Called when creating pop pyramid and pop.byage.*. Doesn't handle potential support ratio.
-	traj.file <- file.path(pop.pred$output.dir, paste('totpop_country', country, '.rda', sep=''))
+	traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', country, '.rda', sep=''))
 	age.idx <- traj.idx <- traj <- quant <- hch <- NULL
 	if (file.exists(traj.file)) {
 		e <- new.env()
@@ -487,7 +498,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
  	
  	#if (!is.element(event, input.indicators)) {
-		traj.file <- file.path(pop.pred$output.directory, paste('vital_events_country', country, '.rda', sep=''))
+		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
 		if (!file.exists(traj.file) && !is.element(event, input.indicators)) 
 			return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 		myenv <- new.env()
@@ -1141,4 +1152,11 @@ get.pop.all.countries <- function(pop.pred, quantiles, projection.index, sex='bo
 		data <- get.pop.from.expression.all.countries(expr, pop.pred, quantiles, projection.index)
 	}
 	return(data)
+}
+
+litem <- function(x, i, default=NULL) { 
+	# return element of the list x if it exists otherwise default
+	i <- match(i, names(x)) # this is suppose to be faster than i %in% names(x)
+	if (is.na(i)) return(default) 
+	x[[i]]
 }

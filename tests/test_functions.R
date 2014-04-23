@@ -132,3 +132,71 @@ test.expressions.with.VE <- function(map=TRUE) {
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
+
+test.prediction.with.prob.migration <- function() {
+	test.name <- 'Running prediction with probabilstic migration'
+	start.test(test.name)
+	set.seed(1)
+	# create migration files with two countries and two trajectories
+	migMfile <- tempfile()
+	migFfile <- tempfile()
+	sim.dir <- tempfile()
+	nr.traj <- 1
+	time <- 5
+	ncountries <- 2
+	
+	write.migration <- function(nr.traj) {
+		nrows.country <- nr.traj*21*time
+		mig <- data.frame(LocID=rep(c(528,218), each=nrows.country), Year=rep(rep(seq(2013, by=5, length=time), each=21), times=nr.traj*ncountries),
+						Trajectory=rep(rep(1:nr.traj, each=21*time), times=ncountries), 
+						Age=c(paste(seq(0,95,by=5), seq(4,99,by=5), sep='-'), '100+'), Migration=0)
+		migM <- migF <- mig
+		migM$Migration <- rnorm(nrow(mig), mean=rep(c(3,0), each=nrows.country), sd=rep(c(2, 1), each=nrows.country))
+		migF$Migration <- rnorm(nrow(mig), mean=rep(c(3,0), each=nrows.country), sd=rep(c(2, 1), each=nrows.country))
+		write.csv(migM, file=migMfile, row.names=FALSE)
+		write.csv(migF, file=migFfile, row.names=FALSE)
+	}
+	write.migration(nr.traj=2)
+	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile))
+	s <- summary(pred)
+	# should have 3 trajectories because TFR has 3
+	stopifnot(s$nr.traj == 3)
+	stopifnot(s$nr.countries == 2)
+	stopifnot(length(s$projection.years) == 5)
+	mgr <- get.pop("G528", pred)
+	stopifnot(dim(mgr)[4] == 3) # migration is re-sampled to 3 trajs
+	
+	write.migration(nr.traj=5)
+	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile))
+	stopifnot(pred$nr.traj == 5)
+	stopifnot(dim(get.pop("G218", pred))[4] == 5)
+	
+	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile), nr.traj=1)
+	stopifnot(pred$nr.traj == 1)
+	stopifnot(dim(get.pop("G218", pred))[4] == 1)
+	
+	write.migration(nr.traj=1)
+	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				inputs=list(migMtraj=migMfile)) # female is taken the default one (only works if male has 1 trajectory)
+	stopifnot(pred$nr.traj == 3)
+	stopifnot(dim(get.pop("G218_M", pred))[4] == 3)
+	
+	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				inputs=list(migFtraj=migFfile)) # female is taken the default one (only works if male has 1 trajectory)
+	stopifnot(pred$nr.traj == 3)
+	stopifnot(dim(get.pop("G218_F", pred))[4] == 3)
+
+	
+	test.ok(test.name)
+	unlink(sim.dir, recursive=TRUE)
+	unlink(migMfile)
+	unlink(migFfile)
+}

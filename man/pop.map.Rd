@@ -67,7 +67,7 @@ Hana Sevcikova
 \dontrun{
 ##########################
 # This example only makes sense if there is a simulation 
-# for all countries. Below, only five countries are included,
+# for all countries. Below, only two countries are included,
 # so the map is useless.
 ##########################
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")

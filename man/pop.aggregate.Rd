@@ -97,8 +97,8 @@ aggr <- pop.aggregate(pred, 900) # aggregating World (i.e. all countries availab
 pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
 # countries over which we aggregated:
 UNlocations[is.element(UNlocations[,'country_code'], aggr$aggregated.countries[['900']]),]
-unlink(sim.dir, recursive=TRUE)
-}}
+unlink(sim.dir, recursive=TRUE)}
+}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ distribution }
