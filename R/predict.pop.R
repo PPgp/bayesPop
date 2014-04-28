@@ -457,30 +457,36 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	}
 	
 	# Get life expectancy
-	if(!is.null(inputs$e0F.sim.dir))  # female
-		e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
-	else {
-		if(!is.null(inputs$e0F.file)) {
+	e0F.wpp.median.loaded <- FALSE
+	if(!is.null(inputs$e0F.file)) { # female
+		if(inputs$e0F.file == 'median_') {
+			e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE)
+			e0F.wpp.median.loaded <- TRUE
+		} else {
 			file.name <-  inputs$e0F.file
 			if(!file.exists(file.name))
 				stop('File ', file.name, 
 					' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
-			 # comma separated trajectories file
-			 if(verbose) cat('\nLoading ', file.name, '\n')
+		 	# comma separated trajectories file
+		 	if(verbose) cat('\nLoading ', file.name, '\n')
 			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
-		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year)		
-		colnames(e0Fpred) <- c('country_code', 'year', 'trajectory', 'value')
-	} 
-
-	if(!is.null(inputs$e0M.sim.dir)) { # male
-		if(inputs$e0M.sim.dir == 'joint_') {
-			if(!has.e0.jmale.prediction(e0Fpred))
-				stop('No joint prediction for female and male available. Correct the e0M.sim.dir argument.' )
-			e0Mpred <- get.e0.jmale.prediction(e0Fpred)
-		} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA)
+			colnames(e0Fpred) <- c('country_code', 'year', 'trajectory', 'value')
+		}
 	} else {
-		if(!is.null(inputs$e0M.file)) {
+		if(!is.null(inputs$e0F.sim.dir)) { 
+			if(inputs$e0F.sim.dir == 'median_') {
+				e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE)
+				e0F.wpp.median.loaded <- TRUE
+			} else 
+				e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
+		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year)			
+	}
+	
+	if(!is.null(inputs$e0M.file)) { # male
+		if(inputs$e0M.file == 'median_')
+			e0Mpred <- .load.wpp.traj('e0M', wpp.year, median.only=TRUE)
+		else {
 			file.name <-  inputs$e0M.file
 			if(!file.exists(file.name)) 
 				stop('File ', file.name, 
@@ -488,16 +494,26 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			if(verbose) cat('\nLoading ', file.name, '\n')
 			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
+			colnames(e0Mpred) <- c('country_code', 'year', 'trajectory', 'value')
+		}
+	} else {
+		if(!is.null(inputs$e0M.sim.dir)) { 
+			if(inputs$e0M.sim.dir == 'joint_') {
+				if(e0F.wpp.median.loaded) e0Mpred <- .load.wpp.traj('e0M', wpp.year)
+				else {
+					if(!has.e0.jmale.prediction(e0Fpred))
+						stop('No joint prediction for female and male available. Correct the e0M.sim.dir argument.' )
+					e0Mpred <- get.e0.jmale.prediction(e0Fpred)
+				}
+			} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA) # independent from female
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
-		colnames(e0Mpred) <- c('country_code', 'year', 'trajectory', 'value')
 	} 
-		
 	# Get TFR
-	if(!is.null(inputs$tfr.sim.dir)) 
-		TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
-	else {
-		if(!is.null(inputs$tfr.file)) {
+	if(!is.null(inputs$tfr.file)) {
+		if(inputs$tfr.file == 'median_')
+			TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
+		else {
 			file.name <- inputs$tfr.file
 			if(!file.exists(file.name))
 				stop('File ', file.name, 
@@ -505,10 +521,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			if(verbose) cat('\nLoading ', file.name, '\n')
 			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
-		} else 
-			TFRpred <- .load.wpp.traj('tfr', wpp.year)
-		colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+			colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+		} 
+	} else {
+		if(!is.null(inputs$tfr.sim.dir)) 
+			TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
+		else TFRpred <- .load.wpp.traj('tfr', wpp.year)
 	}
+	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
@@ -518,7 +538,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	return(inp)
 }
 
-.load.wpp.traj <- function(type, wpp.year) {
+.load.wpp.traj <- function(type, wpp.year, median.only=FALSE) {
 	dataset.obs <- dataset.low <- dataset.high <- NA
 	if(type %in% c('e0F', 'e0M')){
 		if(wpp.year < 2010) stop('e0 projections not available for wpp 2008.')
@@ -533,8 +553,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		else {
 			dataset <- paste(type, 'projMed', sep='')
 			dataset.obs <- type
-			dataset.low <- paste(type, 'projLow', sep='')
-			dataset.high <- paste(type, 'projHigh', sep='')
+			if(!median.only) {
+				dataset.low <- paste(type, 'projLow', sep='')
+				dataset.high <- paste(type, 'projHigh', sep='')
+			}
 		}
 	}
 	if(!is.na(dataset.obs)) 
@@ -562,6 +584,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		pred.all <- rbind(pred.all, pred.long)
 		itraj <- itraj + 1
 	}
+	colnames(pred.all) <- c('country_code', 'year', 'trajectory', 'value')
 	return(pred.all)
 }
 
@@ -697,7 +720,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	indices <- list()
 	nr.traj <- min(nr.traj, max(ncol(inpc$e0Mpred), ncol(inpc$e0Fpred), ncol(inpc$TFRpred), 
 							    ncol(inpc$migMpred), ncol(inpc$migFpred)))
-	for (par in c('TFRpred', 'e0Mpred', 'migMpred')) {
+	for (par in c('TFRpred', 'e0Fpred', 'migMpred')) {
 		if(is.null(inpc[[par]])) next
 		traj.available <- ncol(inpc[[par]])
 		if(traj.available == nr.traj) {
@@ -710,21 +733,24 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 			indices[[par]] <- sample(1:traj.available, nr.traj, replace=TRUE)
 	}
 	# dependent trajectories
-	dependencies <- list(e0Fpred='e0Mpred', migFpred='migMpred')
+	dependencies <- list(e0Fpred='e0Mpred', migMpred='migFpred')
 	for(par in names(dependencies)) {
-		if(is.null(inpc[[par]])) {
-			if(par == 'migFpred' && (is.null(inpc[[dependencies[[par]]]]) || ncol(inpc[[dependencies[[par]]]])==1)) next
-			stop('Female migration trajectories must match male migration.')
-		}
-		traj.available <- ncol(inpc[[par]])
-		if(par == 'migFpred' && is.null(inpc[[dependencies[[par]]]]) && traj.available==1) {
-			indices[[par]] <- rep(1, nr.traj)
+		if(is.null(inpc[[dependencies[[par]]]])) {
+			if(par == 'migMpred') {
+				if((is.null(inpc[[par]]) || ncol(inpc[[par]])==1)) next
+				stop('Female migration trajectories must match male migration.')
+			}
+			next
+		}		
+		if(par == 'migMpred' && (is.null(inpc[[par]]) || (!is.null(inpc[[par]]) && ncol(inpc[[par]])==1))) {
+			indices[[dependencies[[par]]]] <- rep(1, nr.traj)
 			next # using one trajectory , male is default
 		}
+		traj.available <- ncol(inpc[[par]])
 		if (traj.available == ncol(inpc[[dependencies[[par]]]])) # same number of trajectories, therefore same indices
-			indices[[par]] <- indices[[dependencies[[par]]]]
+			indices[[dependencies[[par]]]] <- indices[[par]]
 		else
-			stop('Trajectories for female ', list(e0Fpred='life expectancy', migFpred='migration')[[par]], ' does not match the male ones: ',
+			stop('Trajectories for female ', list(e0Fpred='life expectancy', migFpred='migration')[[par]], ' do not match the male ones: ',
 				traj.available, ' <> ', ncol(inpc[[dependencies[[par]]]]), ' for ', country.name, '. No population projection generated.')
 	}
 	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) { # these are matrices

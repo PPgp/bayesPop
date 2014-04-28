@@ -1,4 +1,4 @@
-5.0-0
+5.0-0 (4/28/2014)
 -----
 Allows probabilistic migration: trajectories of net counts can be passed in an csv file to pop.predict
 (no re-balancing implemented yet).
@@ -10,9 +10,14 @@ Aggregation 'method's changed to 'input.type' in pop.aggregate. Default input ty
 'country' (former independence method) and 'region' (former regional method). 
 Thus, default names of aggregation directories are aggregations_country and aggregations_region.
 
+Updated dataset on migration type and year (vwBaseYear2012) [Patrick Gerland].
+
 Stored bayesPop.prediction object slightly changed.
 
 A column 'Trajectory' is now required for trajectories files of TFR, e0 and migration (if used).
+
+In pop.predict the input elements [tfr|e0F|e0M].file accept the keyword "median_" to use the median WPP projection.
+(Note that if nothing is given it takes the median, low and high as default.)
 
 4.3-0 (4/4/2014)
 -----

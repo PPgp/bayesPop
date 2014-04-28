@@ -28,9 +28,12 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	names.to.remove <- c('output.directory', 'base.directory', 'write.to.cache', 'is.aggregation', 
 							if(remove.cache) 'cache' else NULL)
 	names.to.remove <- names.to.remove[names.to.remove %in% names(pop.pred)]
-	pred <- pop.pred[-which(names(pop.pred) %in% names.to.remove)] # this removes the class attribute
-	class(pred) <- class(pop.pred)
-	return(pred)
+	if(length(names.to.remove) > 0) {
+		pred <- pop.pred[-which(names(pop.pred) %in% names.to.remove)] # this removes the class attribute
+		class(pred) <- class(pop.pred)
+		return(pred)
+	}
+	return(pop.pred)
 }
 .load.cache <- function(sim.dir) {
 	if(!file.exists(file.path(sim.dir, 'cache.rda'))) return(new.env())

@@ -2,7 +2,7 @@ Package: bayesPop
 Type: Package
 Title: Probabilistic Population Projection
 Version: 5.0-0
-Date: 2014-4-17
+Date: 2014-4-28
 Author: Hana Sevcikova, Adrian Raftery
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 Depends: R (>= 2.14.2), bayesTFR (>= 4.0-0), bayesLife (>= 2.0-0)

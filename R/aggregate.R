@@ -45,7 +45,8 @@ get.countries.for.region <- function(region, pop.pred) {
 pop.aggregate.regional <- function(pop.pred, regions, name,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
 						verbose=FALSE) {
-	inp <- pop.pred$inputs
+	inp <- load.inputs(pop.pred$function.inputs, pop.pred$inputs$start.year, pop.pred$inputs$present.year, pop.pred$inputs$end.year, 
+								pop.pred$wpp.year, verbose=verbose)
 	for (item in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MIGm', 'MIGf', 'SRB', 'PASFR', 'MIGtype'))
 		inp[[item]] <- NULL
 	aggregated.countries <- list()
@@ -149,8 +150,11 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		pop.colidx <- which(is.element(as.integer(colnames(popmatrix))-3, unlist(strsplit(colnames(pop.pred$inputs[[item]])[3:ncol(pop.pred$inputs[[item]])], '-'))))
 		res[[item]] <- as.data.frame(matrix(NA, nrow=22, ncol=ncol(pop.pred$inputs[[item]]), 
 						dimnames=list(c(0, 1, seq(5, 95, by=5), '100+'), colnames(pop.pred$inputs[[item]]))))
+		trim.age <- gsub(' ', '', pop.pred$inputs[[item]][,'age'])
+		trim.age.unique <- unique(trim.age)
 		for(age in rownames(res[[item]])) {
-			mort.age.idx <- mort.idx & gsub(' ', '', pop.pred$inputs[[item]][,'age']) == age
+			mort.age <- if(age == '100+' && !(age %in%  trim.age.unique)) '100' else age # in wpp2012 there is no '100+'
+			mort.age.idx <- mort.idx & trim.age == mort.age
 			pop.age.idx <- rep(0, nrow(pop.countries.ages))
 			if(age == "0" || age =="1") pattern <- '^0-4'
 			else {

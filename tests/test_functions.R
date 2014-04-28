@@ -6,7 +6,7 @@ test.prediction <- function() {
 	test.name <- 'Running prediction'
 	start.test(test.name)
 	set.seed(1)
-	sim.dir <- tempfile()
+	sim.dir <- tempfile()	
 	pred <- pop.predict(countries=c(528,218,450), present.year=2010,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir)
 	s <- summary(pred)
@@ -16,7 +16,7 @@ test.prediction <- function() {
 	test.ok(test.name)
 
 	# aggregate
-	test.name <- 'Running aggregation'
+	test.name <- 'Running aggregation (country type)'
 	start.test(test.name)
 	aggr <- pop.aggregate(pred, c(900,904))
 	stopifnot(nrow(aggr$countries) == 2)
@@ -36,6 +36,21 @@ test.prediction <- function() {
 	unlink(locfile)
 	stopifnot(length(aggr1$aggregated.countries[['9000']]) == 2)
 	stopifnot(all(is.element(c(218, 528), aggr1$aggregated.countries[['9000']]))) 
+	
+	test.name <- 'Running prediction with 1 trajectory'
+	start.test(test.name)
+	pred <- pop.predict(countries=528, present.year=2010, keep.vital.events=TRUE,
+				nr.traj = 1, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040)
+	# check that it took the median TFR and not high or low
+	tfr <- get.pop("F528", pred)
+	stopifnot(all(round(tfr[1,1,,1],2) == c(1.75, 1.77, 1.79, 1.81, 1.82, 1.84, 1.85))) # WPP 2012 data
+	
+	pred <- pop.predict(countries=528, present.year=2010, keep.vital.events=TRUE,
+				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
+				inputs=list(tfr.file='median_', e0M.file='median_'))
+	tfr <- get.pop("F528", pred)
+	stopifnot(all(round(tfr[1,1,,1],2) == c(1.75, 1.77, 1.79, 1.81, 1.82, 1.84, 1.85))) # WPP 2012 data
+	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one available, because we take TFR median
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
@@ -190,7 +205,7 @@ test.prediction.with.prob.migration <- function() {
 	
 	pred <- pop.predict(countries=c(528,218), present.year=2010, end.year=2033,
 				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-				inputs=list(migFtraj=migFfile)) # female is taken the default one (only works if male has 1 trajectory)
+				inputs=list(migFtraj=migFfile)) # male is taken the default one (only works if male has 1 trajectory)
 	stopifnot(pred$nr.traj == 3)
 	stopifnot(dim(get.pop("G218_F", pred))[4] == 3)
 
@@ -199,4 +214,34 @@ test.prediction.with.prob.migration <- function() {
 	unlink(sim.dir, recursive=TRUE)
 	unlink(migMfile)
 	unlink(migFfile)
+}
+
+test.regional.aggregation <-function() {
+	test.name <- 'Regional aggregation'
+	start.test(test.name)
+	regions <- c(900, 908, 904)
+	sim.dir.tfr <- tempfile()
+	sim.dir.e0 <- tempfile()
+	sim.dir.pop <- tempfile()
+	# Estimate TFR parameters
+	run.tfr.mcmc(iter=25, nr.chains=1, output.dir=sim.dir.tfr, seed=1)
+	run.tfr.mcmc.extra(sim.dir=sim.dir.tfr, countries=regions, burnin=0)
+	# Predict TFR 
+	tfr.predict(sim.dir=sim.dir.tfr, burnin=5, save.as.ascii=0, use.tfr3=FALSE)
+	# Estimate e0 parameters 
+	run.e0.mcmc(sex='F', iter=25, nr.chains=1, thin=1, output.dir=sim.dir.e0, seed=1)
+	run.e0.mcmc.extra(sim.dir=sim.dir.e0, countries=regions, burnin=0)
+	# Predict female and male e0
+	warn <- options('warn'); options(warn=-1) # the joined estimation and pop projection has some warnings which can be ignored
+	e0.predict(sim.dir=sim.dir.e0, burnin=5, save.as.ascii=0)
+	# Population prediction
+	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
+    			inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
+    options(warn=warn$warn)
+	stopifnot(pred$nr.traj==20)
+	aggr <- pop.aggregate(pred, regions=regions, input.type="region", verbose=TRUE)
+	stopifnot(setequal(aggr$countries$code, regions))
+	unlink(sim.dir.tfr, recursive=TRUE)
+	unlink(sim.dir.e0, recursive=TRUE)
+	unlink(sim.dir.pop, recursive=TRUE)
 }

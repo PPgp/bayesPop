@@ -3,9 +3,12 @@ source('test_functions.R')
 
 warn <- options('warn')
 options(warn=2)
-test.prediction()
-test.prediction.with.prob.migration()
 test.expressions()
 
-test.expressions.with.VE(map=FALSE)
-try(options(warn=warn), silent=TRUE)
+# longer tests (comment out for submission)
+#test.prediction()
+#test.prediction.with.prob.migration()
+#test.expressions.with.VE(map=FALSE)
+#test.regional.aggregation()
+
+options(warn=warn$warn)

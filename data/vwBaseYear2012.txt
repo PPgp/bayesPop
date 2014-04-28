@@ -99,7 +99,7 @@
 372	"Ireland"	"LN"	0	1950	9
 376	"Israel"	"PG"	0	1950	0
 380	"Italy"	"LN"	0	1950	9
-384	"Côte d'Ivoire"	"PG"	0	1950	9
+384	"Cote d'Ivoire"	"PG"	0	1950	9
 388	"Jamaica"	"DG"	0	1950	9
 392	"Japan"	"LN"	0	1950	9
 398	"Kazakhstan"	"KA"	0	1950	9
@@ -141,7 +141,7 @@
 520	"Nauru"	"LN"	1	1950	9
 524	"Nepal"	"PG"	0	1950	0
 528	"Netherlands"	"TS"	0	1950	9
-531	"Curaçao"	"DG"	0	1950	9
+531	"Curacao"	"DG"	0	1950	9
 533	"Aruba"	"DG"	0	1950	0
 534	"Sint Maarten (Dutch part)"	"DG"	1	1950	9
 535	"Caribbean Netherlands"	"DG"	1	1950	9
@@ -169,7 +169,7 @@
 626	"Timor-Leste"	"LN"	0	1950	0
 630	"Puerto Rico"	"DG"	0	1950	9
 634	"Qatar"	"PG"	0	1950	0
-638	"Réunion"	"LN"	0	1950	0
+638	"Reunion"	"LN"	0	1950	0
 642	"Romania"	"TS"	0	1950	9
 643	"Russian Federation"	"KA"	0	1950	9
 646	"Rwanda"	"TS"	0	1950	9
