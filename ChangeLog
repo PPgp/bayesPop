@@ -1,3 +1,9 @@
+5.1-0 (5/7/2014)
+-----
+Time points for population indicators changed to end of time periods instead of the middle year.
+
+Allowing adjustments to wpp2012. 
+
 5.0-0 (4/28/2014)
 -----
 Allows probabilistic migration: trajectories of net counts can be passed in an csv file to pop.predict

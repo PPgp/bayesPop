@@ -25,7 +25,7 @@ pop.trajectories.plotAll(pop.pred,
     output.type="png", expression = NULL, verbose=FALSE, \dots)
     
 pop.trajectories.table(pop.pred, country = NULL, expression = NULL, pi = c(80, 95), 
-    sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE)
+    sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE, \dots)
     
 pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL, 
     pi = c(80, 95), sex = c('both', 'male', 'female'), 

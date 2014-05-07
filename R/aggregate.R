@@ -147,7 +147,8 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		popmatrix <- popmatrix.all[[item]]
 		pop.countries.ages <- matrix(unlist(strsplit(rownames(popmatrix), '_')), ncol=2, byrow=TRUE)
 		pop.idx <- is.element(pop.countries.ages[,1], countries)
-		pop.colidx <- which(is.element(as.integer(colnames(popmatrix))-3, unlist(strsplit(colnames(pop.pred$inputs[[item]])[3:ncol(pop.pred$inputs[[item]])], '-'))))
+		years.mx <- unlist(strsplit(colnames(pop.pred$inputs[[item]])[3:ncol(pop.pred$inputs[[item]])], '-'))
+		pop.colidx <- which(is.element(as.integer(colnames(popmatrix)), years.mx[seq(2,length(years.mx),by=2)]))
 		res[[item]] <- as.data.frame(matrix(NA, nrow=22, ncol=ncol(pop.pred$inputs[[item]]), 
 						dimnames=list(c(0, 1, seq(5, 95, by=5), '100+'), colnames(pop.pred$inputs[[item]]))))
 		trim.age <- gsub(' ', '', pop.pred$inputs[[item]][,'age'])
@@ -315,6 +316,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose) {
 	aggr.pred$traj.mean.sdF <- mean_sdF
 	aggr.pred$aggregation.method <- 'country'
 	aggr.pred$aggregated.countries <- aggregated.countries
+	aggr.pred$inputs <- as.environment(as.list(pop.pred$inputs, all.names=TRUE)) # clone environment
 	aggr.pred$inputs$pop.matrix <- aggr.obs.data
 	bayesPop.prediction <- .cleanup.pop.before.save(aggr.pred, remove.cache=TRUE)
 	save(bayesPop.prediction, file=file.path(outdir, 'prediction.rda'))

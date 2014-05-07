@@ -17,7 +17,7 @@ write.pop.projection.summary(pop.pred, what = NULL, expression = NULL,
   \item{what}{A character vector specifying what kind of projection to write. Total population is specified by \dQuote{pop}. Vital events are specified by \dQuote{births}, \dQuote{deaths}, \dQuote{sr} (survival rate) and \dQuote{fertility}. Each of these strings can have a suffix \dQuote{sex} and/or \dQuote{age} if sex- and/or age-specific measure is desired. For example, \dQuote{popage}, \dQuote{birthssexage}, \dQuote{deaths}, \dQuote{deathssex}, are all valid values. Note that for survival, only \dQuote{srsexage} is allowed and fertility does not allow the \dQuote{sex} suffix. If the argument is \code{NULL}, all valid combinations are used.  The argument is not used if \code{expression} is given. Note that vital events can be only used if the prediction object contains vital events, i.e. if it was generated with the \code{keep.vital.events} argument being \code{TRUE} (see \code{\link{pop.predict}}).}
   \item{expression}{Expression defining the measure to be written. If it is not \code{NULL}, argument \code{what} is ignored. For expression syntax see \code{\link{pop.expressions}}. The country components of the expression should be given as \dQuote{XXX}.}
   \item{output.dir}{Directory in which the resulting files will be stored. If \code{NULL} \code{pop.pred$output.directory} is used.}
-  \item{\dots}{These are arguments used if \code{expression} is given: \code{file.suffix} defines the file suffix; \code{expression.label} (defaults to the expression) is put as the first line in the resulting file; logical \code{include.observed} determines if observed data should be included; integer \code{decimal} defines the number of decimal places in the resulting file.}
+  \item{\dots}{These are arguments used if \code{expression} is given: \code{file.suffix} defines the file suffix; \code{expression.label} (defaults to the expression) is put as the first line in the resulting file; logical \code{include.observed} determines if observed data should be included; integer \code{digits} defines the number of decimal places in the resulting file.}
 }
 \details{
 There is one file created per value of \code{what}, or \code{expression}, called \file{projection_summary_}\emph{suffix}\file{.csv}, where \emph{suffix} is either \code{what} or \code{alias} of the expression. It is a comma-separated table with the following columns:
@@ -52,7 +52,7 @@ pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
 
 # proportion of 65+ years old to the whole population
 write.pop.projection.summary(pred, expression="PXXX[14:27] / PXXX", file.suffix='age65plus', 
-    output.dir=outdir, include.observed=TRUE, decimal=2)
+    output.dir=outdir, include.observed=TRUE, digits=2)
     
 # various measures
 write.pop.projection.summary(pred, what=c('pop', 'popsexage', 'popsex'),

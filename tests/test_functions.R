@@ -144,6 +144,13 @@ test.expressions.with.VE <- function(map=TRUE) {
 	size <- file.info(filename)['size']
 	unlink(filename)
 	stopifnot(size > 0)
+	
+	write.pop.projection.summary(pred, output.dir=sim.dir)
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpop.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t) == c(10,22)))
+	t <- read.table(file.path(sim.dir, 'projection_summary_asfrage.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t) == c(70,23)))
+	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
