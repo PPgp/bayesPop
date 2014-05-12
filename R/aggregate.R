@@ -4,7 +4,7 @@ pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
 						name = input.type,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL),
 						my.location.file=NULL,
-						verbose=FALSE) {
+						verbose=FALSE, ...) {
 	if(is.null(my.location.file))
 		bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
 	else {
@@ -15,7 +15,7 @@ pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
 	method <- match.arg(input.type)
 	if(missing(name)) name <- method
 	if(method == 'country') 
-		aggr.pred <- pop.aggregate.countries(pop.pred, regions, name, verbose=verbose)
+		aggr.pred <- pop.aggregate.countries(pop.pred, regions, name, verbose=verbose, ...)
 	if(method == 'region')
 		aggr.pred <- pop.aggregate.regional(pop.pred, regions, name, inputs=inputs, verbose=verbose)
 	invisible(get.pop.aggregation(pop.pred=pop.pred, name=name))
@@ -212,7 +212,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 }
 
 
-pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose) {
+pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, adjust=FALSE) {
 	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
 	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
@@ -245,28 +245,31 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose) {
 		id.idx <- id.idx + 1
 		valid.regions[reg.idx] <- TRUE
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
+		e <- new.env()
+		if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 		for(cidx in 1:length(countries.index)) {
 			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
 			traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', countries[cidx], '.rda', sep=''))
-			load(traj.file)
+			load(traj.file, envir=e)
+			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env)
 			if(cidx == 1) {
-				stotp <- totp
-				stotpm <- totpm
-				stotpf <- totpf
-				stotp.hch <- totp.hch
-				stotpm.hch <- totpm.hch
-				stotpf.hch <- totpf.hch
+				stotp <- e$totp
+				stotpm <- e$totpm
+				stotpf <- e$totpf
+				stotp.hch <- e$totp.hch
+				stotpm.hch <- e$totpm.hch
+				stotpf.hch <- e$totpf.hch
 				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
 				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
 				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
 																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
 			} else {
-				stotp <- stotp + totp
-				stotpm <- stotpm + totpm
-				stotpf <- stotpf + totpf
-				stotp.hch <- stotp.hch + totp.hch
-				stotpm.hch <- stotpm.hch + totpm.hch
-				stotpf.hch <- stotpf.hch + totpf.hch
+				stotp <- stotp + e$totp
+				stotpm <- stotpm + e$totpm
+				stotpf <- stotpf + e$totpf
+				stotp.hch <- stotp.hch + e$totp.hch
+				stotpm.hch <- stotpm.hch + e$totpm.hch
+				stotpf.hch <- stotpf.hch + e$totpf.hch
 				aggr.obs.dataM <- aggr.obs.dataM + obs.data[['male']][country.obs.idx,]
 				aggr.obs.dataF <- aggr.obs.dataF + obs.data[['female']][country.obs.idx,]
 			}

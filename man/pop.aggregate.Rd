@@ -12,7 +12,7 @@ Aggregation of existing countries' population projections into projections of gi
 pop.aggregate(pop.pred, regions, 
     input.type = c('country', 'region'), name = input.type,
     inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL), 
-    my.location.file = NULL, verbose = FALSE)
+    my.location.file = NULL, verbose = FALSE, \dots)
     
 get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL)
 }
@@ -31,6 +31,7 @@ get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL)
 \item{my.location.file}{User-defined location file that can contain other agreggation groups than the default UN location file. It should have the same structure as the \code{\link[wpp2012]{UNlocations}} dataset, see below.}
 \item{verbose}{Logical switching log messages on and off.}
 \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
+\item{\dots}{Additional arguments.}
 }
 \details{
 The dataset \code{\link[wpp2012]{UNlocations}} or \code{my.location.file} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the entries with \dQuote{country_code} given in the \code{regions} argument. One can aggregate over the following location types: Type 0 means aggregating all countries of the world (or in the file), type 2 is aggregating over continents, type 3 is aggregating over regions within continents, and any other integer (except 4) correponds to user-defined aggregations. Note that type 4 is reserved as a location type of countries and thus, all aggregations are performed over entries of this type. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link[wpp2012]{UNlocations}} dataset. E.g., if \code{regions=908} (Europe) which has location type 2 in the default \code{\link[wpp2012]{UNlocations}} dataset, all countries are aggregated for which values of 908 are found in the \dQuote{area_code} column. If the location type is other than 0, 2, 3 and 4, there must be a column in the file called \dQuote{agcode_\eqn{x}} with \eqn{x} being the location type. This column is then used to match the countries to be aggregated. 

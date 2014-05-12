@@ -1,8 +1,8 @@
-5.1-0 (5/7/2014)
+5.1-1 (5/9/2014)
 -----
 Time points for population indicators changed to end of time periods instead of the middle year.
 
-Allowing adjustments to wpp2012. 
+Allowing adjustments to wpp2012 (in output functions as well as in pop.aggregate)
 
 5.0-0 (4/28/2014)
 -----
