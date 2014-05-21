@@ -45,10 +45,10 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			stop('Prediction in ', outdir,
 			' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		unlink(outdir, recursive=TRUE)
-		.remove.cache.file(output.dir)
+		.remove.cache.file(outdir)
 	} else pop.cleanup.cache(pred)
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
-		all.countries <- unique(inp$POPm0[,'country_code'])
+		all.countries <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 		country.codes <- if(!prediction.exist) all.countries
 						else all.countries[!is.element(all.countries, pred$countries[,'code'])]
 	} else {
@@ -64,7 +64,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			}
 			country.codes <- as.integer(countries)
 		} else
-			country.codes <- unique(inp$MXm[,'country_code'])
+			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	}
 	do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
 					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose)
@@ -1048,20 +1048,21 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 }
 
 write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, output.dir=NULL, ...) {
-	if (is.null(output.dir)) output.dir <- pop.output.directory(pop.pred)
+	pred <- as.environment(pop.pred) # to avoid lots of copying and allowing attaching cache
+	if (is.null(output.dir)) output.dir <- pop.output.directory(pred)
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.what <- c('pop', 'popsex', 'popsexage', 'popage', 'births', 'birthssex', 'birthsage', 'birthssexage', 
 			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage')
 	what <- if(is.null(what)) all.what else match.arg(what, all.what, several.ok=TRUE)
 	params <- list()
 	if(!is.null(expression)) {
+		#write.expression(pop.pred, expression=expression, output.dir=output.dir, ...)
 		what <- 'expression'
 		params <- list(expression=expression)
-	}
-	for(summary.type in what) {
-		if(is.element(summary.type, what))
-			do.call(paste('write.', summary.type, sep=''), c(list(pop.pred, output.dir=output.dir), params, ...))
-	}
+	} #else {
+		for(summary.type in what) 
+			do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
+	#}
 }
 
 write.pop <- function(pop.pred, output.dir, ...) 
@@ -1121,7 +1122,7 @@ write.fertilityage <- function(pop.pred, output.dir, ...)
 			file.suffix='asfr', what.log='fertility rate', digits=litem('digits', list(...), 4))
 	
 write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
-								include.observed=FALSE, digits=NULL, adjust=FALSE, end.time.only=FALSE) {
+								include.observed=FALSE, digits=NULL, adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
@@ -1147,7 +1148,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 	for(iyear in 1:nr.proj) {	
 		result <- cbind(result, as.vector(t(get.pop.from.expression.all.countries(expression, pop.pred, 
-						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), projection.index=iyear, adjust=adjust))))
+						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), projection.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
 	}
 	if(!is.null(digits)) result <- round(result, digits)
 	colnames(result) <- col.names

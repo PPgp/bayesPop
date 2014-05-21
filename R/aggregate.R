@@ -103,6 +103,8 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		inp$e0Mpred <- get.e0.jmale.prediction(inp$e0Fpred)
 	} else inp$e0Mpred <- get.e0.prediction(if(is.null(inputs$e0M.sim.dir)) pop.pred$function.inputs$e0M.sim.dir else inputs$e0M.sim.dir)
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.output.directory(pop.pred))
+	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
+	dir.create(outdir, recursive=TRUE)
 	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose)
 	aggr.pred <- .cleanup.pop.before.save(aggr.pred, remove.cache=TRUE)
 	aggr.pred$aggregation.method <- 'region'
@@ -154,7 +156,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		trim.age <- gsub(' ', '', pop.pred$inputs[[item]][,'age'])
 		trim.age.unique <- unique(trim.age)
 		for(age in rownames(res[[item]])) {
-			mort.age <- if(age == '100+' && !(age %in%  trim.age.unique)) '100' else age # in wpp2012 there is no '100+'
+			mort.age <- if(age == '100+') '100' else age # in wpp2012 there is no '100+' (in the new one there is) [&& !(age %in%  trim.age.unique)]
 			mort.age.idx <- mort.idx & trim.age == mort.age
 			pop.age.idx <- rep(0, nrow(pop.countries.ages))
 			if(age == "0" || age =="1") pattern <- '^0-4'
