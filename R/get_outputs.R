@@ -17,7 +17,7 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	output.dir <- file.path(sim.dir, 'predictions')
 	pop.pred <- .get.prediction.object(output.dir, 'predictions')
 	pop.pred$base.directory <- normalizePath(sim.dir)
-	pop.pred$cache <- .load.cache(sim.dir)
+	pop.pred$cache <- .load.cache(output.dir)
 	pop.pred$write.to.cache <- write.to.cache
 	pop.pred$is.aggregation <- FALSE
 	return(pop.pred)
@@ -44,7 +44,7 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 .save.cache <- function(pop.pred) {
 	if(is.null(pop.pred$cache) || (!is.null(pop.pred$write.to.cache) && !pop.pred$write.to.cache)) return()
 	cache <- pop.pred$cache
-	save(cache, file=file.path(pop.pred$base.directory, 'cache.rda'))
+	save(cache, file=file.path(pop.output.directory(pop.pred), 'cache.rda'))
 }
 
 .remove.cache.file <- function(dir) {
@@ -54,11 +54,13 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 
 pop.cleanup.cache <- function(pop.pred) {
 	if(!is.null(pop.pred$write.to.cache) && !pop.pred$write.to.cache) {
-		warning('No cache manipulation allowed for this prediction object.')
+		if(!is.null(pop.pred$cache))
+			warning('No cache manipulation allowed for this prediction object.')
 		return()
 	}
-	.remove.cache.file(pop.pred$base.directory)
-	rm(list=ls(pop.pred$cache), envir=pop.pred$cache)
+	.remove.cache.file(pop.output.directory(pop.pred))
+	if(!is.null(pop.pred$cache))
+		rm(list=ls(pop.pred$cache), envir=pop.pred$cache)
 	gc()
 	return()
 }
@@ -76,7 +78,7 @@ available.pop.aggregations <- function(pop.pred){
 	return(substr(dirs, 14, nchar(dirs)))
 }
 
-get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL) {
+get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL, write.to.cache=TRUE) {
 	############
 	# Returns an object of class bayesPop.prediction created by aggregation
 	############
@@ -99,6 +101,9 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL) {
 	}
 	pop.aggr$base.directory <- normalizePath(sim.dir)
 	pop.aggr$is.aggregation <- TRUE
+	pop.aggr$cache <- .load.cache(pop.output.directory(pop.aggr))
+	pop.aggr$write.to.cache <- write.to.cache
+
 	return(pop.aggr)	
 }
 
@@ -910,7 +915,8 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 
-get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, ...) {
+get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, 
+													adj.to.file=NULL, adj.country=NULL, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
 	#stop('')
 	odim <- length(dim(result))
@@ -935,6 +941,8 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 		else along <- if(odim > l) l+1 else l 
 		result <- abind(result, NULL, along=along)
 	}
+	if(!is.null(adj.to.file))
+		result <- adjust.to.dataset(adj.country, result, adj.file=adj.to.file, use='trajectories')
 	return(list(trajectories=result, index=traj.idx))
 }
 
@@ -1125,24 +1133,41 @@ age.index05 <- function(end) return (1:end)
 						trajectories=trajectories$trajectories,	q=get.quantiles.to.keep()))
 }
 
-get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles, projection.index, adjust=FALSE) {
+get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles, projection.index, adjust=FALSE, adj.to.file=NULL) {
 	compressed.expr <- gsub("[[:blank:]]*", "", expression) # remove spaces
+	if(!is.null(adj.to.file)) {
+		adjust <- FALSE
+		adjdata <- read.table(adj.to.file, header=TRUE, check.names=FALSE)
+	}
+	.adjust.to.dataset.if.needed <- function(dat, cidx) {
+		if(is.null(adj.to.file)) return(dat)
+		res <- dat
+		for(i in 1:nrow(dat)) {
+			cntry <- pop.pred$countries$code[cidx[i]]
+			tmp <- adjust.to.dataset(country=cntry, q=dat[rownames(dat)==cntry,], adj.dataset=adjdata, years=get.pop.prediction.periods(pop.pred, end.time.only=TRUE)[projection.index], use="write")
+			if(length(tmp)==0) next # no adjustment
+			res[i,] <- tmp
+		}
+		return(res)
+	}
 	if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
 		data <- pop.pred$cache[[compressed.expr]][,,projection.index]
 		data <- data[,as.character(quantiles), drop=FALSE]
 		.all.is.na <- function(x) return(all(is.na(x)))
 		countries.idx <- which(apply(data, 1, .all.is.na))
-		if(length(countries.idx) <= 0) return(data)
+		if(length(countries.idx) <= 0) return(.adjust.to.dataset.if.needed(data, 1:nrow(pop.pred$countries)))
 	} else {
 		countries.idx <- 1:nrow(pop.pred$countries)
 		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], ncol=length(quantiles))
+		rownames(data) <- dimnames(pop.pred$quantiles)[[1]]
+		colnames(data) <- quantiles
 		pop.pred$cache[[compressed.expr]] <- array(NA, dim(pop.pred$quantilesM), dimnames=dimnames(pop.pred$quantilesM))
 	}
 	ncores <- getOption("cl.cores", detectCores())
 	if(ncores > 1 && length(countries.idx)>10) {
 		# This can take lots of time. Run it in parallel
-		cat('Evaluating expression for all countries in paralel on', ncores, 'cores.\n')
+		cat('Evaluating expression for all countries in parallel on', ncores, 'cores.\n')
 		cl <- makeCluster(ncores)
 		clusterEvalQ(cl, {library(bayesPop)})
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
@@ -1152,16 +1177,17 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 			pop.pred$cache[[compressed.expr]][icountry,,] <- quant.list[[icountry]]
 			data[icountry,] <- quant.list[[icountry]][paste(quantiles*100, '%', sep=''), projection.index]
 		}
-	} else { # run sequantially
+	} else { # run sequentially
 		if(length(countries.idx)>10) cat('Evaluating expression for all countries sequentially. Please be patient.\n')
 		for(icountry in countries.idx) {
 			quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust)
-			if(!adjust) pop.pred$cache[[compressed.expr]][icountry,,] <- quant
+			pop.pred$cache[[compressed.expr]][icountry,,] <- quant
 			data[icountry,] <- quant[paste(quantiles*100, '%', sep=''), projection.index]
 		}
 	}
 	.save.cache(pop.pred)
-	return(data)	
+	res <- .adjust.to.dataset.if.needed(data, countries.idx)
+	return(res)	
 }
 
 get.pop.observed.all.countries <- function(pop.pred, time.index, sex='both', age='all') {
@@ -1199,3 +1225,13 @@ litem <- function(i, x, default=NULL) {
 	if (is.na(i)) return(default) 
 	x[[i]]
 }
+
+as.environment.bayesPop.prediction <- function(pop.pred){
+	epred <- list2env(pop.pred)
+	class(epred) <- c(class(pop.pred), class(epred))
+	return(epred)
+}
+
+UNcountries <- function()
+	return(UNlocations$country_code[UNlocations$location_type==4])
+	

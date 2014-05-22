@@ -14,7 +14,7 @@ pop.aggregate(pop.pred, regions,
     inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL), 
     my.location.file = NULL, verbose = FALSE, \dots)
     
-get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL)
+get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, write.to.cache = TRUE)
 }
 
 \arguments{
@@ -31,6 +31,7 @@ get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL)
 \item{my.location.file}{User-defined location file that can contain other agreggation groups than the default UN location file. It should have the same structure as the \code{\link[wpp2012]{UNlocations}} dataset, see below.}
 \item{verbose}{Logical switching log messages on and off.}
 \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
+\item{write.to.cache}{Logical controlling if other functions are allowed to write the cache of this prediction object (see Details of \code{\link{get.pop.prediction}}).}
 \item{\dots}{Additional arguments.}
 }
 \details{

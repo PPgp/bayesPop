@@ -162,4 +162,25 @@ sumMFbycountry <- function(datasetM, datasetF, e) {
 	cbind(country_code=tpopM[,'country_code'], tpopM[,2:ncol(tpopM)] + tpopF[,2:ncol(tpopF)])
 }
 
+adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years=NULL, use=c('write', 'trajectories')) {
+	if(is.null(adj.dataset)) {
+		adj.dataset <- read.table(adj.file, header=TRUE, check.names=FALSE)
+	}
+	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country'))] else as.character(years)
+	idx1 <- which(adj.dataset$country_code == country)
+	if(use=='write') {
+		med <- q['0.5']
+		dif <- med - adj.dataset[idx1,colidx]
+		return(q-dif)
+	}
+	if(use=='trajectories') {
+		med <- apply(q, 1, 'median')[colnames(adj.dataset[,colidx])]
+		dif <- as.matrix(med - adj.dataset[idx1,colidx])
+		res <- aaply(q[colnames(adj.dataset[,colidx]),], 2, '-', dif)
+		res <- rbind(q[1,], aperm(res, c(2,1)))
+		rownames(res) <- rownames(q)
+		return(res)
+	}
+	return(NULL)
+}
 

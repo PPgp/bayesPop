@@ -95,14 +95,19 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  xlim=NULL, ylim=NULL, type='b', 
 								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
-								  show.legend=TRUE, ann=par('ann'), add=FALSE, adjust=FALSE, ...
+								  show.legend=TRUE, ann=par('ann'), add=FALSE, adjust=FALSE, adj.to.file=NULL, ...
 								  ) {
 
 	sex <- match.arg(sex)
+	if(!is.null(adj.to.file)) {
+		adjust <- FALSE
+		if (is.null(country))
+			stop('Argument "country" must be given for the adjustment.')
+	}
 	reload.traj.if.needed <- !adjust
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
-										typical.trajectory=typical.trajectory, adjust=adjust)
+										typical.trajectory=typical.trajectory, adjust=adjust, adj.to.file=adj.to.file, adj.country=country$code)
 		if(missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years-4)))
 			pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
 		else {
@@ -200,15 +205,28 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 		legend('topleft', legend=legend, lty=lty, bty='n', col=cols, lwd=lwds)
 }
 
-
 pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), age='all',
 								  half.child.variant=FALSE, ...) {
+	do.pop.trajectories.table(pop.pred, country=country, expression=expression, pi=pi,
+								  sex=sex, age=age, half.child.variant=half.child.variant, ...)					  	
+}
+
+do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
+								  sex=c('both', 'male', 'female'), age='all',
+								  half.child.variant=FALSE, adjust=FALSE, adj.to.file=NULL, ...) {
 	if (is.null(country)  && is.null(expression)) 
 		stop('Argument "country" or "expression" must be given.')
-		
+				
+	if(!is.null(adj.to.file)) {
+		adjust <- FALSE
+		if (is.null(country))
+			stop('Argument "country" must be given for the adjustment.')
+	}
+	
 	if(!is.null(country))
 		country <- get.country.object(country, country.table=pop.pred$countries)
+	
 	max.age.idx <- length(pop.pred$ages)
 	sex <- match.arg(sex)
 	quant <- NULL
@@ -219,15 +237,15 @@ pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c
 	}
 	lage <- length(age.idx)
 	if(!is.null(expression)) {
-		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
+		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, adjust=adjust, adj.to.file=adj.to.file, adj.country=country$code, ...)
 		pop.observed <- get.pop.observed.from.expression(expression, pop.pred)
 		quant <- NULL
 	} else {
 		trajectories <- list(trajectories=NULL)
 		pop.observed <- get.pop.observed(pop.pred, country$code, sex=sex, age=age.idx)
 		if(lage==max.age.idx) {
-			if(sex == 'both') quant <- .get.pop.quantiles(pop.pred, '', ...)
-			else quant <- .get.pop.quantiles(pop.pred, if(sex=='male') 'M' else 'F', ...)
+			if(sex == 'both') quant <- .get.pop.quantiles(pop.pred, '', adjust=adjust, ...)
+			else quant <- .get.pop.quantiles(pop.pred, if(sex=='male') 'M' else 'F', adjust=adjust, ...)
 		}
 	}
 	x1 <- names(pop.observed)[-length(pop.observed)]
@@ -240,6 +258,7 @@ pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c
 	pred.table[x2,1] <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
 							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression))
 	#if(is.na(pred.table[x2[1],1])) pred.table[x2[1],1] <- pop.observed[length(pop.observed)]
+	
 	colnames(pred.table) <- c('median', rep(NA,ncol(pred.table)-1))
 	idx <- 2
 	for (i in 1:length(pi)) {
@@ -265,6 +284,9 @@ pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c
 			colnames(pred.table)[(ncol(pred.table)-1):ncol(pred.table)] <- c('-0.5child', '+0.5child')
 		}
 	}
+#	if(!is.null(adj.to.file)) {
+#		pred.table[x2,] <- adjust.to.dataset(country$code, pred.table, adj.file=adj.to.file, years=x2, use='table')
+#	}
 	return(pred.table)
 }
 
