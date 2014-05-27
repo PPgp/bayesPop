@@ -349,10 +349,11 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npred <- nr_project
 	countries.input <- new.env()
 	# Extract the country-specific stuff from the inputs
+	if(verbose) cat('Loading inputs for ', ncountries, ' countries.')
 	for(cidx in 1:ncountries) {
 		ccode <- as.character(country.codes[cidx])
 		inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name'])
-		if(is.null(inpc)) next
+		if(is.null(inpc) || length(inpc$POPm0)==0) next
 		countries.input[[ccode]] <- inpc 
 		nr.traj <- min(ncol(countries.input[[ccode]]$TFRpred), nr.traj)
 		npred <- min(nrow(countries.input[[ccode]]$TFRpred), npred)
@@ -361,8 +362,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npredplus1 <- npred+1
 	npasfr <- nrow(countries.input[[as.character(country.codes[1])]]$PASFR)
 	nvariants <- nrow(countries.input[[as.character(country.codes[1])]]$TFRhalfchild)
-	if(verbose)
-		cat('Processing ', nr.traj, ' trajectories for each country.')
+	if(verbose) cat('Processing ', nr.traj, ' trajectories for each country.')
 	if(length(countries.input) < ncountries) {
 		ncountries <- length(countries.input)
 		country.codes <- as.integer(ls(countries.input))
