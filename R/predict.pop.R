@@ -398,8 +398,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
 			mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
-			migMntraj <- if(is.null(inpc[['migMpred']])) 1 else dim(inpc[['migMpred']])[2]
-			migFntraj <- if(is.null(inpc[['migFpred']])) 1 else dim(inpc[['migFpred']])[2]  
+			migMntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migMpred']])) 1 
+						else dim(countries.input[[as.character(country.codes[1])]][['migMpred']])[2]
+			migFntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migFpred']])) 1 
+						else dim(countries.input[[as.character(country.codes[1])]][['migFpred']])[2]  
 			migm <- array(0, dim=c(27, ncountries, migMntraj), dimnames=list(ages, country.codes, NULL))
 			migf <- array(0, dim=c(27, ncountries, migFntraj), dimnames=list(ages, country.codes, NULL))
 		}
@@ -854,14 +856,15 @@ rebalance.population.by.migration <- function(e) {
 	country.codes <- rownames(envs[[1]]$totp)
 	nr.traj <- ncol(envs[[1]]$totp)
 	nvariants <- ncol(envs[[1]]$totp.hch)
-	migMntraj <- ncol(envs[[1]]$migm)
-	migFntraj <- ncol(envs[[1]]$migf)
 	ages <- dimnames(envs[[1]]$totpm)[[1]]
 	nages <- length(ages)
 	mx.ages <- c(0,1,ages[2:nages])
 	npredplus1 <- npred + 1
 	present.and.proj.years.pop <- present.and.proj.years + 2
-	
+	if(keep.vital.events) {
+		migMntraj <- dim(envs[[1]]$migm)[length(dim(envs[[1]]$migm))]
+		migFntraj <- dim(envs[[1]]$migf)[length(dim(envs[[1]]$migf))]
+	}
 	quantiles.to.keep <- get.quantiles.to.keep()
 	nquant <- length(quantiles.to.keep)
 	quant.env <- new.env()
