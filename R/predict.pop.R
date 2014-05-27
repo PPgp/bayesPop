@@ -499,7 +499,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	} # end time
 	if(verbose) cat('\nRe-formatting data ...')
 	quant.env <- .restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, countries.input, observed, kannisto, 
-					present.and.proj.years, keep.vital.events)
+					present.and.proj.years, keep.vital.events, verbose=verbose)
 	if(verbose) cat(' done.\n')
 	unlink(outdir.tmp, recursive=TRUE)
 	#save meta file
@@ -844,7 +844,7 @@ rebalance.population.by.migration <- function(e) {
 }
 
 .restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, inputs, observed, kannisto, 
-									present.and.proj.years, keep.vital.events=FALSE){
+									present.and.proj.years, keep.vital.events=FALSE, verbose=FALSE){
 	envs <- list()
 	for(time in 1:npred) {
 		envs[[time]] <- new.env()
@@ -876,7 +876,10 @@ rebalance.population.by.migration <- function(e) {
 		mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, npredplus1), 
 						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years.pop))
 	})
+	if(verbose)
+			cat('\nRe-formatting country '
 	for(cidx in 1:ncountries) {
+		if(verbose) cat(cidx, ', ')
 		inpc <- inputs[[country.codes[cidx]]]
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, dimnames=list(present.and.proj.years.pop, NULL))
 		totpm <- totpf <- array(NA, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years.pop, NULL))
