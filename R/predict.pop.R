@@ -895,8 +895,8 @@ rebalance.population.by.migration <- function(e) {
 			asfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			mxm <- mxf <- array(0, dim=c(28, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
-			migm <- array(0, dim=c(21, npredplus1, migMntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
-			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
+			migm <- array(0, dim=c(27, npredplus1, migMntraj), dimnames=list(ages, present.and.proj.years, NULL))
+			migf <- array(0, dim=c(27, npredplus1, migFntraj), dimnames=list(ages, present.and.proj.years, NULL))
 			# values from current year
 			obs <- observed[[country.codes[cidx]]]
 			MxKan <- kannisto[[country.codes[cidx]]]
