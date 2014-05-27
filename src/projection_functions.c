@@ -327,7 +327,8 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
 				  double *Lm, double *Lf, double *lxm, double *lxf,
-				  double *btagem, double *btagef, double *deathsm, double *deathsf
+				  double *btagem, double *btagef, double *deathsm, double *deathsf,
+				  double *finmigrm, double *finmigrf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
@@ -368,9 +369,13 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 		/* Compute ages >=5 */
-		for(i=1; i<(adim-1); ++i) {		
-			popm[i + j*adim] = fmax(popm[i-1 + (j-1)*adim] * srm[i + jve*adim] + totmigm[i][jve], 0);		
-			popf[i + j*adim] = fmax(popf[i-1 + (j-1)*adim] * srf[i + jve*adim] + totmigf[i][jve], 0);
+		for(i=1; i<(adim-1); ++i) {	
+			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
+			totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]);
+			popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
+			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];
+			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
+			popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
 		/* Age 130+ */
 		popm[26 + j*adim] = fmax((popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim] + migm[26][jve], 0);
@@ -402,6 +407,11 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
         i = 26;
 		deathsm[i + jve*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
 		deathsf[i + jve*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
+		
+		for(i=1; i<(adim-1); ++i) {			
+			finmigrm[i, jve] = totmigm[i][jve];
+			finmigrf[i, jve] = totmigf[i][jve];
+		}
 	}	
 }	
 
