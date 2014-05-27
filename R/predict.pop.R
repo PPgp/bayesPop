@@ -876,8 +876,6 @@ rebalance.population.by.migration <- function(e) {
 		mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, npredplus1), 
 						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years.pop))
 	})
-	if(verbose)
-			cat('\nRe-formatting country '
 	for(cidx in 1:ncountries) {
 		if(verbose) cat(cidx, ', ')
 		inpc <- inputs[[country.codes[cidx]]]
