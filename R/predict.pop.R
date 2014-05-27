@@ -153,8 +153,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			migMntraj <- if(is.null(inpc[['migMpred']])) 1 else dim(inpc[['migMpred']])[2]
 			migFntraj <- if(is.null(inpc[['migFpred']])) 1 else dim(inpc[['migFpred']])[2]  
-			migm <- array(0, dim=c(21, npredplus1, migMntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
-			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
+			migm <- array(0, dim=c(27, npredplus1, migMntraj), dimnames=list(ages, present.and.proj.years, NULL))
+			migf <- array(0, dim=c(27, npredplus1, migFntraj), dimnames=list(ages, present.and.proj.years, NULL))
 		}
 		debug <- FALSE
 		MxKan <- runKannisto(nest, inpc)
@@ -400,8 +400,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
 			migMntraj <- if(is.null(inpc[['migMpred']])) 1 else dim(inpc[['migMpred']])[2]
 			migFntraj <- if(is.null(inpc[['migFpred']])) 1 else dim(inpc[['migFpred']])[2]  
-			migm <- array(0, dim=c(21, ncountries, migMntraj), dimnames=list(ages21, country.codes, NULL))
-			migf <- array(0, dim=c(21, ncountries, migFntraj), dimnames=list(ages21, country.codes, NULL))
+			migm <- array(0, dim=c(27, ncountries, migMntraj), dimnames=list(ages, country.codes, NULL))
+			migf <- array(0, dim=c(27, ncountries, migFntraj), dimnames=list(ages, country.codes, NULL))
 		}
 		for(cidx in 1:ncountries) {
 			country <- country.codes[cidx]
