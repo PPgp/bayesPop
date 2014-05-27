@@ -362,7 +362,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				break;
 		}
 	}
-
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
 		jve = j-1;
@@ -370,12 +369,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 		/* Compute ages >=5 */
 		for(i=1; i<(adim-1); ++i) {		
-			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim] + totmigm[i][jve];
-			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim] + totmigf[i][jve];
+			popm[i + j*adim] = fmax(popm[i-1 + (j-1)*adim] * srm[i + jve*adim] + totmigm[i][jve], 0);		
+			popf[i + j*adim] = fmax(popf[i-1 + (j-1)*adim] * srf[i + jve*adim] + totmigf[i][jve], 0);
 		}
 		/* Age 130+ */
-		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim] + migm[26][jve];
-		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim] + migf[26][jve];
+		popm[26 + j*adim] = fmax((popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim] + migm[26][jve], 0);
+		popf[26 + j*adim] = fmax((popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim] + migf[26][jve], 0);
 		/* birth in 5-yrs */
 		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
@@ -387,8 +386,8 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		bm = b * srb_ratio;
 		bf = b / (1 + srb[jve]);
 		/* age 0-4 */	
-		popm[j*adim] = bm * srm[jve*adim] + mmult * migm[0][jve];
-		popf[j*adim] = bf * srf[jve*adim] + mmult * migf[0][jve];
+		popm[j*adim] = fmax(bm * srm[jve*adim] + mmult * migm[0][jve], 0);
+		popf[j*adim] = fmax(bf * srf[jve*adim] + mmult * migf[0][jve], 0);
 		
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {
