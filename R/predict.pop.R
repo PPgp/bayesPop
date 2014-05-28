@@ -19,7 +19,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						replace.output=FALSE, balance=FALSE,
-						verbose=TRUE) {
+						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
@@ -40,13 +40,18 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
-	if(!prediction.exist) {
-		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
-			stop('Prediction in ', outdir,
-			' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
+	if(balance && replace.output) {
 		unlink(outdir, recursive=TRUE)
 		.remove.cache.file(outdir)
-	} else pop.cleanup.cache(pred)
+	} else {
+		if(!prediction.exist) {
+			if(!replace.output && has.pop.prediction(sim.dir=output.dir))
+				stop('Prediction in ', outdir,
+					' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
+			unlink(outdir, recursive=TRUE)
+			.remove.cache.file(outdir)
+		} else pop.cleanup.cache(pred)
+	}
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
 		all.countries <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 		country.codes <- if(!prediction.exist) all.countries
@@ -68,10 +73,10 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	}
 	if(balance)
 		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose)
+					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose, ...)
 	else
 		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose)
+					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose, ...)
 	invisible(get.pop.prediction(output.dir))
 }
 
@@ -327,7 +332,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	return(bayesPop.prediction)
 }
 
-do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, verbose=FALSE) {
+do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, verbose=FALSE) {
 	countries.idx <- which(UNlocations$location_type==4)
 	country.codes <- UNlocations$country_code[countries.idx]
 	ncountries <- length(country.codes)
@@ -349,7 +354,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npred <- nr_project
 	countries.input <- new.env()
 	# Extract the country-specific stuff from the inputs
-	if(verbose) cat('Loading inputs for ', ncountries, ' countries.')
+	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries.')
 	for(cidx in 1:ncountries) {
 		ccode <- as.character(country.codes[cidx])
 		inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name'])
@@ -362,7 +367,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npredplus1 <- npred+1
 	npasfr <- nrow(countries.input[[as.character(country.codes[1])]]$PASFR)
 	nvariants <- nrow(countries.input[[as.character(country.codes[1])]]$TFRhalfchild)
-	if(verbose) cat('Processing ', nr.traj, ' trajectories for each country.')
+	if(verbose) cat('\nProcessing ', nr.traj, ' trajectories for each country.')
 	if(length(countries.input) < ncountries) {
 		ncountries <- length(countries.input)
 		country.codes <- as.integer(ls(countries.input))
@@ -379,9 +384,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	}
 	debug <- FALSE
 	outdir.tmp <- file.path(outdir, '_tmp_')
-	if(file.exists(outdir.tmp)) unlink(outdir.tmp, recursive=TRUE)
-	dir.create(outdir.tmp)
-	for(time in 1:npred) {	
+	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
+	if(start.time.index==1) dir.create(outdir.tmp)
+	for(time in start.time.index:npred) {	
 		unblock.gtk.if.needed(paste('finished', time, status.for.gui), gui.options)
 		if(verbose)
 			cat('\nProcessing time period ', time)
@@ -473,7 +478,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			}
 		} # end countries
 		# Rebalancing (by trajectories)
-		if(verbose) cat('\nRe-balance migration ...')
+		if(verbose) cat('\nRe-balance migration.')
 		balance.env <- new.env()
 		vars <- c('totp', 'totpm', 'totpf', 'migrationm', 'migrationf')
 		for(par in vars) balance.env[[par]] <- get(par)
@@ -483,7 +488,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		for(par in vars) balance.env[[par]] <- get(paste0(par, '.hch'))
 		rebalance.population.by.migration(balance.env)	
 		for(par in vars) assign(paste0(par, '.hch'), balance.env[[par]])
-		if(verbose) cat(' done.\n')
 		#stop('')
 		popM.prev <- totpm
 		popF.prev <- totpf
@@ -646,7 +650,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			stop('File ', file.name, ' does not exist.')
 		# comma separated trajectories file
 		var.name <- paste0('mig',sex, 'pred')
-		if(verbose) cat('\nLoading ', file.name, '\n')
+		if(verbose) cat('\nLoading ', file.name)
 		migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 		migpred <- migpred.raw[,c('LocID', 'Year', 'Trajectory', 'Age', 'Migration')]
 		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
@@ -665,7 +669,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 				stop('File ', file.name, 
 					' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
 		 	# comma separated trajectories file
-		 	if(verbose) cat('\nLoading ', file.name, '\n')
+		 	if(verbose) cat('\nLoading ', file.name)
 			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 			colnames(e0Fpred) <- c('country_code', 'year', 'trajectory', 'value')
