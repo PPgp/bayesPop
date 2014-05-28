@@ -354,6 +354,17 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
 	npred <- nr_project
+	
+	if(start.time.index > 1) { # reload initial population
+		env.tmp <- new.env()
+		load(file.path(outdir.tmp, paste0('pop_time_', start.time.index-1, '.rda')), envir=env.tmp)
+		popM.prev <- env.tmp$totpm
+		popF.prev <- env.tmp$totpf
+		popM.hch.prev <- env.tmp$totpm.hch
+		popF.hch.prev <- env.tmp$totpf.hch
+	}
+
+	
 	countries.input <- new.env()
 	# Extract the country-specific stuff from the inputs
 	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries.')
@@ -538,6 +549,74 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	return(bayesPop.prediction)
 }
 
+do.pop.predict.balance.one.country <- function(cidx, time, country.codes, countries.idx, countries.input, 
+												kannisto, nr.traj, npasfr, popM.prev, popF.prev, verbose=FALSE) {
+	country <- country.codes[cidx]
+	country.idx <- countries.idx[cidx]
+	ccountry <- as.character(country)
+	inpc <- countries.input[[ccountry]]
+	pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
+	for(itraj in 1:nr.traj) {
+		asfr <- inpc$PASFR[,time,drop=FALSE]/100.
+		for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
+			LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mpred[time,itraj], 
+									inpc$e0Fpred[time,itraj], verbose=verbose)
+			migpred <- .get.migration.one.trajectory(inpc, itraj, time)			
+			if(time > 1) { # reset initial population to the one at the previous time step
+				pop.ini$M <- popM.prev[,,itraj]
+				pop.ini$F <- popF.prev[,,itraj]
+			}
+				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
+									keep.vital.events=keep.vital.events)
+				totp[cidx,itraj] <- popres$totpop[2]
+				totpm[,cidx,itraj] <- popres$mpop[,2]
+				totpf[,cidx,itraj] <- popres$fpop[,2]
+				migrationm[,cidx,itraj] <- popres$mmigr # migpred$M
+				migrationf[,cidx,itraj] <- popres$fmigr # migpred$F
+				if(keep.vital.events) {
+					btm[,cidx,itraj] <- popres$mbt
+					btf[,cidx,itraj] <- popres$fbt
+					deathsm[,cidx,itraj] <- popres$mdeaths
+					deathsf[,cidx,itraj] <- popres$fdeaths
+					asfert[,cidx,itraj] <- asfr
+					mxm[,cidx,itraj] <- LTres$mx[[1]]
+					mxf[,cidx,itraj] <- LTres$mx[[2]]
+					migtraj <- min(itraj, migMntraj)
+					migm[,cidx,migtraj] <- popres$mmigr # migpred[['M']]
+					migtraj <- min(itraj, migFntraj)
+					migf[,cidx,migtraj] <- popres$fmigr # migpred[['F']]
+				}
+			}
+			pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
+			for (variant in 1:nvariants) { # compute the two half child variants
+				asfr <- inpc$PASFR[,time,drop=FALSE]/100.
+				for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,time] * asfr[i,]
+				LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mmedian[time], 
+									inpc$e0Fmedian[time], verbose=verbose, debug=debug)
+				migpred.hch <- .get.migration.one.trajectory(inpc, itraj=NULL, time=time)
+				if(time > 1) {
+					pop.ini$M <- popM.hch.prev[,cidx, variant]
+					pop.ini$F <- popF.hch.prev[,cidx, variant]
+				}
+				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred.hch, inpc$MIGtype, 
+							country.name=UNlocations[country.idx,'name'], 
+							keep.vital.events=keep.vital.events)
+				totp.hch[cidx,variant] <- popres$totpop[2]
+				totpm.hch[,cidx,variant] <- popres$mpop[,2]
+				totpf.hch[,cidx,variant] <- popres$fpop[,2]
+				migrationm.hch[,cidx,variant] <- popres$mmigr # migpred.hch$M
+				migrationf.hch[,cidx,variant] <- popres$fmigr # migpred.hch$F
+				if(keep.vital.events) {
+					btm.hch[,cidx,variant] <- popres$mbt
+					btf.hch[,cidx,variant] <- popres$fbt
+					deathsm.hch[,cidx,variant] <- popres$mdeaths
+					deathsf.hch[,cidx,variant] <- popres$fdeaths
+					asfert.hch[,cidx,variant] <- asfr
+					mxm.hch[,cidx,variant] <- LTres$mx[[1]]
+					mxf.hch[,cidx,variant] <- LTres$mx[[2]]
+				}
+			}
+}
 
 read.pop.file <- function(file) 
 	return(read.delim(file=file, comment.char='#', check.names=FALSE))
