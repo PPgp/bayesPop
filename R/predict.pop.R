@@ -562,13 +562,28 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	return(bayesPop.prediction)
 }
 
-do.pop.predict.balance.one.country <- function(cidx, time, country.codes, countries.idx, countries.input, 
-												kannisto, nr.traj, npasfr, popM.prev, popF.prev, verbose=FALSE) {
-	country <- country.codes[cidx]
-	country.idx <- countries.idx[cidx]
+do.pop.predict.balance.one.country <- function(cidx, time, country, country.idx, country.name, inpc, kannisto, nr.traj, npasfr, 
+												popM.prev, popF.prev, ages, nvariants, keep.vital.events, verbose=FALSE) {
 	ccountry <- as.character(country)
-	inpc <- countries.input[[ccountry]]
 	pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
+	totp <- rep(NA, ncol=nr.traj)
+	totpm <- totpf <- migrationm <- migrationf <- matrix(NA, nrow=27, ncol=nr.traj, dimnames=list(ages, NULL))
+	totp.hch <- rep(NA, ncol=nvariants)
+	totpm.hch <- totpf.hch <- migrationm.hch <- migrationf.hch <- matrix(NA, nrow=27, ncol=nvariants, dimnames=list(ages, NULL))
+	if(keep.vital.events) {
+		btm <- btf <- asfert <- matrix(0, nrow=7, ncol=nr.traj)
+		deathsm <- deathsf <- matrix(0, nrow=27, ncol=nr.traj, dimnames=list(ages, NULL))
+		btm.hch <- btf.hch <- asfert.hch <- matrix(0, nrow=7, ncol=nvariants)
+		deathsm.hch <- deathsf.hch <- matrix(0, nrow=27, ncol=nvariants, dimnames=list(ages, NULL))
+		mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
+			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
+			migMntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migMpred']])) 1 
+						else dim(countries.input[[as.character(country.codes[1])]][['migMpred']])[2]
+			migFntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migFpred']])) 1 
+						else dim(countries.input[[as.character(country.codes[1])]][['migFpred']])[2]  
+			migm <- array(0, dim=c(27, ncountries, migMntraj), dimnames=list(ages, country.codes, NULL))
+			migf <- array(0, dim=c(27, ncountries, migFntraj), dimnames=list(ages, country.codes, NULL))
+		}
 	for(itraj in 1:nr.traj) {
 		asfr <- inpc$PASFR[,time,drop=FALSE]/100.
 		for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
@@ -579,7 +594,7 @@ do.pop.predict.balance.one.country <- function(cidx, time, country.codes, countr
 				pop.ini$M <- popM.prev[,,itraj]
 				pop.ini$F <- popF.prev[,,itraj]
 			}
-				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
+			popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred, inpc$MIGtype, country.name=country.name,
 									keep.vital.events=keep.vital.events)
 				totp[cidx,itraj] <- popres$totpop[2]
 				totpm[,cidx,itraj] <- popres$mpop[,2]
@@ -612,7 +627,7 @@ do.pop.predict.balance.one.country <- function(cidx, time, country.codes, countr
 					pop.ini$F <- popF.hch.prev[,cidx, variant]
 				}
 				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred.hch, inpc$MIGtype, 
-							country.name=UNlocations[country.idx,'name'], 
+							country.name=country.name, 
 							keep.vital.events=keep.vital.events)
 				totp.hch[cidx,variant] <- popres$totpop[2]
 				totpm.hch[,cidx,variant] <- popres$mpop[,2]

@@ -114,6 +114,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	
 	if(eop < sum(LTl, dim)) {
 		LLm = LTl;
+		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
 		return;
 	}
 	for (i=0; i < 28; ++i) {
@@ -123,6 +124,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 
 	if(eop > sum(LTu, dim)) {
 		LLm = LTu;
+		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
 		if(debug==1) Rprintf("\nBreturn %f", sum(LTu, dim));
 		return;
 	}
