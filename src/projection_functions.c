@@ -113,8 +113,9 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	LifeTableC(sex, 27, mxm, LTl, lm);
 	
 	if(eop < sum(LTl, dim)) {
-		LLm = LTl;
+		for (i=0; i < dim; ++i) LLm[i]=LTl[i];
 		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
+		if(debug==1) Rprintf("\nAreturn %f", sum(LTl, dim));
 		return;
 	}
 	for (i=0; i < 28; ++i) {
@@ -123,7 +124,7 @@ void LCEoKtC(int sex, double *ax, double *bx,
 	LifeTableC(sex, 27, mxm, LTu, lm);
 
 	if(eop > sum(LTu, dim)) {
-		LLm = LTu;
+		for (i=0; i < dim; ++i) LLm[i]=LTu[i]; 
 		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
 		if(debug==1) Rprintf("\nBreturn %f", sum(LTu, dim));
 		return;

@@ -177,6 +177,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migpred <- .get.migration.one.trajectory(inpc, itraj)			
 			popres <- StoPopProj(npred, pop.ini, LTres, asfr, inpc$SRB, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
+			
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -336,7 +337,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, 
 									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, ...) {
-	countries.idx <- which(UNlocations$location_type==4)
+	#countries.idx <- which(UNlocations$location_type==4)
+	countries.idx <- which(UNlocations$country_code %in% c(716, 250))
 	country.codes <- UNlocations$country_code[countries.idx]
 	ncountries <- length(country.codes)
 	nr_project <- length(inp$proj.years)
@@ -445,6 +447,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			for(itraj in 1:nr.traj) {
 				asfr <- inpc$PASFR[,time,drop=FALSE]/100.
 				for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
+				#if(country==716 && itraj==61) debug <- TRUE
+				#cat('\n\n\nTrajectory: ', itraj, '\n========\n\n')
 				LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mpred[time,itraj], 
 									inpc$e0Fpred[time,itraj], verbose=verbose, debug=debug)
 				migpred <- .get.migration.one.trajectory(inpc, itraj, time)			
@@ -1297,7 +1301,7 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #stop('')
     nproj <- npred
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
-    	#print(c('sex: ', mxYKan$sex))
+    	#cat('\n\nSex: ', mxYKan$sex, '\n-----\n\n')
     	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
 			constrain=as.integer(mxYKan$sex == 1), 
@@ -1310,7 +1314,6 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
 		lx[[mxYKan$sex]] <- matrix(res$lx, nrow=28)
     }
-    #stop('')
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
