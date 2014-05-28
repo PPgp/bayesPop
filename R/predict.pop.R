@@ -335,7 +335,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 }
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, 
-									verbose=FALSE, parallel=FALSE, nr.nodes=NULL) {
+									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, ...) {
 	countries.idx <- which(UNlocations$location_type==4)
 	country.codes <- UNlocations$country_code[countries.idx]
 	ncountries <- length(country.codes)
@@ -374,11 +374,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries ')
 	if(parallel) {
 		if(verbose) cat('(in parallel on ', nr.nodes, ' nodes).')
-		cl <- create.pop.cluster(nr.nodes)
-		# cl <- makeCluster(nr.nodes)
-		# lib.paths <- .libPaths()
-		# clusterExport(cl, c("lib.paths"), envir=environment())
-		# clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
+		cl <- create.pop.cluster(nr.nodes, ...)
 		clusterExport(cl, c("inp", "nr.traj", "country.codes", "countries.idx", "UNlocations"), envir=environment())
 		inpc.list <- parLapplyLB(cl, 1:ncountries, 
 						function(cidx) get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name']))
@@ -1284,9 +1280,10 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #if(debug) print('Start check ===========================')
     #Get the projected kt from eo, and make projection of Mx
     #stop('')
+    nproj <- npred
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	#print(c('sex: ', mxYKan$sex))
-    	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
+    	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
 			constrain=as.integer(mxYKan$sex == 1), 
 			#constrain=as.integer(0),
@@ -1802,8 +1799,8 @@ unblock.gtk.if.needed <- function(status, gui.opts=list()) {
 
 unblock.gtk <- function(...) bayesTFR:::unblock.gtk(...)
 
-create.pop.cluster <- function(nr.nodes) {
-	cl <- makeCluster(nr.nodes)
+create.pop.cluster <- function(nr.nodes, ...) {
+	cl <- makeCluster(nr.nodes, ...)
 	lib.paths <- .libPaths()
 	clusterExport(cl, c("lib.paths"), envir=environment())
 	clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
