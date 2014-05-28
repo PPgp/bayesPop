@@ -368,18 +368,35 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		popM.hch.prev <- env.tmp$totpm.hch
 		popF.hch.prev <- env.tmp$totpf.hch
 	}
+	if(parallel && is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores())
 	countries.input <- new.env()
 	# Extract the country-specific stuff from the inputs
-	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries.')
-	for(cidx in 1:ncountries) {
-		ccode <- as.character(country.codes[cidx])
-		inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name'])
-		if(is.null(inpc) || length(inpc$POPm0)==0) next
-		countries.input[[ccode]] <- inpc 
-		nr.traj <- min(ncol(countries.input[[ccode]]$TFRpred), nr.traj)
-		npred <- min(nrow(countries.input[[ccode]]$TFRpred), npred)
-		
+	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries ')
+	if(parallel) {
+		if(verbose) cat('(in parallel on ', nr.nodes, ' nodes).')
+		cl <- create.pop.cluster(nr.nodes)
+		# cl <- makeCluster(nr.nodes)
+		# lib.paths <- .libPaths()
+		# clusterExport(cl, c("lib.paths"), envir=environment())
+		# clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
+		clusterExport(cl, c("inp", "nr.traj", "country.codes", "countries.idx", "UNlocations"), envir=environment())
+		inpc.list <- parLapplyLB(cl, 1:ncountries, 
+						function(cidx) get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name']))
+		stopCluster(cl)
+		for(cidx in 1:ncountries) {	
+			if(is.null(inpc.list[[cidx]]) || length(inpc.list[[cidx]]$POPm0)==0) next
+			countries.input[[as.character(country.codes[cidx])]] <- inpc.list[[cidx]]
+		}
+	} else { # load inputs sequentially
+		if(verbose) cat('(sequentially).')
+		for(cidx in 1:ncountries) {
+			inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name'])
+			if(is.null(inpc) || length(inpc$POPm0)==0) next
+			countries.input[[as.character(country.codes[cidx])]] <- inpc
+		}
 	}
+	nr.traj <- min(nr.traj, sapply(ls(countries.input), function(ccode) return(ncol(countries.input[[ccode]]$TFRpred))))
+	npred <- min(npred, sapply(ls(countries.input), function(ccode) return(nrow(countries.input[[ccode]]$TFRpred))))
 	npredplus1 <- npred+1
 	npasfr <- nrow(countries.input[[as.character(country.codes[1])]]$PASFR)
 	nvariants <- nrow(countries.input[[as.character(country.codes[1])]]$TFRhalfchild)
@@ -1784,3 +1801,11 @@ unblock.gtk.if.needed <- function(status, gui.opts=list()) {
 }
 
 unblock.gtk <- function(...) bayesTFR:::unblock.gtk(...)
+
+create.pop.cluster <- function(nr.nodes) {
+	cl <- makeCluster(nr.nodes)
+	lib.paths <- .libPaths()
+	clusterExport(cl, c("lib.paths"), envir=environment())
+	clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
+	return(cl)
+}

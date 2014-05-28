@@ -1168,8 +1168,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	if(ncores > 1 && length(countries.idx)>10) {
 		# This can take lots of time. Run it in parallel
 		cat('Evaluating expression for all countries in parallel on', ncores, 'cores.\n')
-		cl <- makeCluster(ncores)
-		clusterEvalQ(cl, {library(bayesPop)})
+		cl <- create.pop.cluster(ncores)
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
 		quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust))
 		stopCluster(cl)
