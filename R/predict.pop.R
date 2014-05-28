@@ -334,7 +334,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	return(bayesPop.prediction)
 }
 
-do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, verbose=FALSE) {
+do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, 
+									verbose=FALSE, parallel=FALSE, nr.nodes=NULL) {
 	countries.idx <- which(UNlocations$location_type==4)
 	country.codes <- UNlocations$country_code[countries.idx]
 	ncountries <- length(country.codes)
@@ -355,6 +356,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		inp.to.save[[item]] <- get(item, inp)
 	npred <- nr_project
 	
+	outdir.tmp <- file.path(outdir, '_tmp_')
+	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
+	if(start.time.index==1) dir.create(outdir.tmp)
+	
 	if(start.time.index > 1) { # reload initial population
 		env.tmp <- new.env()
 		load(file.path(outdir.tmp, paste0('pop_time_', start.time.index-1, '.rda')), envir=env.tmp)
@@ -363,8 +368,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		popM.hch.prev <- env.tmp$totpm.hch
 		popF.hch.prev <- env.tmp$totpf.hch
 	}
-
-	
 	countries.input <- new.env()
 	# Extract the country-specific stuff from the inputs
 	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries.')
@@ -396,9 +399,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 										as.integer(country), inp$estim.years)
 	}
 	debug <- FALSE
-	outdir.tmp <- file.path(outdir, '_tmp_')
-	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
-	if(start.time.index==1) dir.create(outdir.tmp)
 	for(time in start.time.index:npred) {	
 		unblock.gtk.if.needed(paste('finished', time, status.for.gui), gui.options)
 		if(verbose)
