@@ -40,9 +40,11 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
-	if(balance && replace.output) {
-		unlink(outdir, recursive=TRUE)
-		.remove.cache.file(outdir)
+	if(balance) {
+		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher time point
+			unlink(outdir, recursive=TRUE)
+			.remove.cache.file(outdir)
+		}
 	} else {
 		if(!prediction.exist) {
 			if(!replace.output && has.pop.prediction(sim.dir=output.dir))
