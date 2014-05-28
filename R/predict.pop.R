@@ -337,8 +337,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, 
 									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, ...) {
-	#countries.idx <- which(UNlocations$location_type==4)
-	countries.idx <- which(UNlocations$country_code %in% c(716, 250))
+	countries.idx <- which(UNlocations$location_type==4)
+	#countries.idx <- which(UNlocations$country_code %in% c(716, 250))
 	country.codes <- UNlocations$country_code[countries.idx]
 	ncountries <- length(country.codes)
 	nr_project <- length(inp$proj.years)
