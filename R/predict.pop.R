@@ -18,7 +18,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						replace.output=FALSE, balance=FALSE,
+						replace.output=FALSE, use.migration.model=FALSE, rebalance.migration=FALSE,
 						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
@@ -38,9 +38,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, verbose=verbose)
 	}
-
 	outdir <- file.path(output.dir, 'predictions')
-	if(balance) {
+	if(use.migration.model || rebalance.migration) {
 		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher time point
 			unlink(outdir, recursive=TRUE)
 			.remove.cache.file(outdir)
@@ -72,21 +71,22 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			country.codes <- as.integer(countries)
 		} else
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
-	}
-	if(balance)
+	} 
+	if(use.migration.model || rebalance.migration)
 		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose, ...)
-	else
+					keep.vital.events=keep.vital.events, function.inputs=inputs, rebalance=rebalance.migration, verbose=verbose, ...)
+	else 
 		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose, ...)
+					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose)
+	
 	invisible(get.pop.prediction(output.dir))
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, verbose=FALSE) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
-
 	for(icountry in 1:length(country.codes)) {
+		print(icountry)
 		country.idx <- which(UNlocations[,'country_code'] == country.codes[icountry])
 		if(length(country.idx) == 0) {
 			not.valid.countries.idx <- c(not.valid.countries.idx, icountry)
@@ -94,7 +94,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		countries.idx[icountry] <- country.idx
 	}
-
 	if(length(not.valid.countries.idx) > 0) {
 		warning('Countries ', paste(country.codes[not.valid.countries.idx], collapse=', '), 
 					' not found in the UNlocations dataset.')
@@ -335,320 +334,19 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	return(bayesPop.prediction)
 }
 
-do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, start.time.index=1, 
-									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, ...) {
-	countries.idx <- which(UNlocations$location_type==4)
-	#countries.idx <- which(UNlocations$country_code %in% c(716, 250))
-	country.codes <- UNlocations$country_code[countries.idx]
-	ncountries <- length(country.codes)
-	nr_project <- length(inp$proj.years)
-	nages <- length(ages)
-	mx.ages <- c(0,1,ages[2:nages])
-	ages21 <- ages[ages<=100]
-	nest <- length(inp$estim.years)
-	if(!file.exists(outdir)) 
-		dir.create(outdir, recursive=TRUE)
-	present.and.proj.years <- c(inp$estim.years[nest], inp$proj.years)
-	
-	status.for.gui <- paste('out of', nr_project, 'time periods.')
-	gui.options <- list()
-	inp.to.save <- list()
-	# remove big or redundant items from inputs to be saved
-	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
-		inp.to.save[[item]] <- get(item, inp)
-	npred <- nr_project
-	
-	outdir.tmp <- file.path(outdir, '_tmp_')
-	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
-	if(start.time.index==1) dir.create(outdir.tmp)
-	
-	if(start.time.index > 1) { # reload initial population
-		env.tmp <- new.env()
-		load(file.path(outdir.tmp, paste0('pop_time_', start.time.index-1, '.rda')), envir=env.tmp)
-		popM.prev <- env.tmp$totpm
-		popF.prev <- env.tmp$totpf
-		popM.hch.prev <- env.tmp$totpm.hch
-		popF.hch.prev <- env.tmp$totpf.hch
-	}
-	if(parallel && is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores())
-	countries.input <- new.env()
-	# Extract the country-specific stuff from the inputs
-	if(verbose) cat('\nLoading inputs for ', ncountries, ' countries ')
-	if(parallel) {
-		if(verbose) cat('(in parallel on ', nr.nodes, ' nodes).')
-		cl <- create.pop.cluster(nr.nodes, ...)
-		clusterExport(cl, c("inp", "nr.traj", "country.codes", "countries.idx", "UNlocations"), envir=environment())
-		inpc.list <- parLapplyLB(cl, 1:ncountries, 
-						function(cidx) get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name']))
-		stopCluster(cl)
-		for(cidx in 1:ncountries) {	
-			if(is.null(inpc.list[[cidx]]) || length(inpc.list[[cidx]]$POPm0)==0) next
-			countries.input[[as.character(country.codes[cidx])]] <- inpc.list[[cidx]]
-		}
-	} else { # load inputs sequentially
-		if(verbose) cat('(sequentially).')
-		for(cidx in 1:ncountries) {
-			inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNlocations[countries.idx[cidx],'name'])
-			if(is.null(inpc) || length(inpc$POPm0)==0) next
-			countries.input[[as.character(country.codes[cidx])]] <- inpc
-		}
-	}
-	nr.traj <- min(nr.traj, sapply(ls(countries.input), function(ccode) return(ncol(countries.input[[ccode]]$TFRpred))))
-	npred <- min(npred, sapply(ls(countries.input), function(ccode) return(nrow(countries.input[[ccode]]$TFRpred))))
-	npredplus1 <- npred+1
-	npasfr <- nrow(countries.input[[as.character(country.codes[1])]]$PASFR)
-	nvariants <- nrow(countries.input[[as.character(country.codes[1])]]$TFRhalfchild)
-	if(verbose) cat('\nProcessing ', nr.traj, ' trajectories for each country.')
-	if(length(countries.input) < ncountries) {
-		ncountries <- length(countries.input)
-		country.codes <- as.integer(ls(countries.input))
-		countries.idx <- sapply(country.codes, function(x) which(UNlocations[,'country_code'] == x))
-	}
-	kannisto <- list()
-	observed <- new.env()
-	for(country in ls(countries.input)) {
-		kannisto[[country]] <- runKannisto(nest, countries.input[[country]])
-		if(keep.vital.events) 
-			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
-										countries.input[[country]]$MIGtype, kannisto[[country]], 
-										as.integer(country), inp$estim.years)
-	}
-	debug <- FALSE
-	for(time in start.time.index:npred) {	
-		unblock.gtk.if.needed(paste('finished', time, status.for.gui), gui.options)
-		if(verbose)
-			cat('\nProcessing time period ', time)
-		totp <- matrix(NA, nrow=ncountries, ncol=nr.traj, dimnames=list(country.codes, NULL))
-		totpm <- totpf <- array(NA, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-		migrationm <- migrationf <- array(NA, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-		totp.hch <- matrix(NA, nrow=ncountries, ncol=nvariants, dimnames=list(country.codes, NULL))
-		totpm.hch <- totpf.hch <- array(NA, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
-		migrationm.hch <- migrationf.hch <- array(NA, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
-		if(keep.vital.events) {
-			btm <- btf <- asfert <- array(0, dim=c(7, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
-			deathsm <- deathsf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-			btm.hch <- btf.hch <- asfert.hch <- array(0, dim=c(7, ncountries, nvariants), dimnames=list(NULL, country.codes, NULL))
-			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
-			mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
-			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
-			migMntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migMpred']])) 1 
-						else dim(countries.input[[as.character(country.codes[1])]][['migMpred']])[2]
-			migFntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migFpred']])) 1 
-						else dim(countries.input[[as.character(country.codes[1])]][['migFpred']])[2]  
-			migm <- array(0, dim=c(27, ncountries, migMntraj), dimnames=list(ages, country.codes, NULL))
-			migf <- array(0, dim=c(27, ncountries, migFntraj), dimnames=list(ages, country.codes, NULL))
-		}
-		for(cidx in 1:ncountries) {
-			country <- country.codes[cidx]
-			country.idx <- countries.idx[cidx]
-			ccountry <- as.character(country)
-			inpc <- countries.input[[ccountry]]
-			pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
-			for(itraj in 1:nr.traj) {
-				asfr <- inpc$PASFR[,time,drop=FALSE]/100.
-				for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
-				#if(country==716 && itraj==61) debug <- TRUE
-				#cat('\n\n\nTrajectory: ', itraj, '\n========\n\n')
-				LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mpred[time,itraj], 
-									inpc$e0Fpred[time,itraj], verbose=verbose, debug=debug)
-				migpred <- .get.migration.one.trajectory(inpc, itraj, time)			
-				if(time > 1) { # reset initial population to the one at the previous time step
-					pop.ini$M <- popM.prev[,cidx, itraj]
-					pop.ini$F <- popF.prev[,cidx, itraj]
-				}
-				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
-									keep.vital.events=keep.vital.events)
-				totp[cidx,itraj] <- popres$totpop[2]
-				totpm[,cidx,itraj] <- popres$mpop[,2]
-				totpf[,cidx,itraj] <- popres$fpop[,2]
-				migrationm[,cidx,itraj] <- popres$mmigr # migpred$M
-				migrationf[,cidx,itraj] <- popres$fmigr # migpred$F
-				if(keep.vital.events) {
-					btm[,cidx,itraj] <- popres$mbt
-					btf[,cidx,itraj] <- popres$fbt
-					deathsm[,cidx,itraj] <- popres$mdeaths
-					deathsf[,cidx,itraj] <- popres$fdeaths
-					asfert[,cidx,itraj] <- asfr
-					mxm[,cidx,itraj] <- LTres$mx[[1]]
-					mxf[,cidx,itraj] <- LTres$mx[[2]]
-					migtraj <- min(itraj, migMntraj)
-					migm[,cidx,migtraj] <- popres$mmigr # migpred[['M']]
-					migtraj <- min(itraj, migFntraj)
-					migf[,cidx,migtraj] <- popres$fmigr # migpred[['F']]
-				}
-			}
-			pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
-			for (variant in 1:nvariants) { # compute the two half child variants
-				asfr <- inpc$PASFR[,time,drop=FALSE]/100.
-				for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,time] * asfr[i,]
-				LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mmedian[time], 
-									inpc$e0Fmedian[time], verbose=verbose, debug=debug)
-				migpred.hch <- .get.migration.one.trajectory(inpc, itraj=NULL, time=time)
-				if(time > 1) {
-					pop.ini$M <- popM.hch.prev[,cidx, variant]
-					pop.ini$F <- popF.hch.prev[,cidx, variant]
-				}
-				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred.hch, inpc$MIGtype, 
-							country.name=UNlocations[country.idx,'name'], 
-							keep.vital.events=keep.vital.events)
-				totp.hch[cidx,variant] <- popres$totpop[2]
-				totpm.hch[,cidx,variant] <- popres$mpop[,2]
-				totpf.hch[,cidx,variant] <- popres$fpop[,2]
-				migrationm.hch[,cidx,variant] <- popres$mmigr # migpred.hch$M
-				migrationf.hch[,cidx,variant] <- popres$fmigr # migpred.hch$F
-				if(keep.vital.events) {
-					btm.hch[,cidx,variant] <- popres$mbt
-					btf.hch[,cidx,variant] <- popres$fbt
-					deathsm.hch[,cidx,variant] <- popres$mdeaths
-					deathsf.hch[,cidx,variant] <- popres$fdeaths
-					asfert.hch[,cidx,variant] <- asfr
-					mxm.hch[,cidx,variant] <- LTres$mx[[1]]
-					mxf.hch[,cidx,variant] <- LTres$mx[[2]]
-				}
-			}
-		} # end countries
-		# Rebalancing (by trajectories)
-		if(verbose) cat('\nRe-balance migration.')
-		balance.env <- new.env()
-		vars <- c('totp', 'totpm', 'totpf', 'migrationm', 'migrationf')
-		for(par in vars) balance.env[[par]] <- get(par)
-		rebalance.population.by.migration(balance.env)
-		for(par in vars) # overwrite the objects in this environment
-			assign(par, balance.env[[par]])
-		for(par in vars) balance.env[[par]] <- get(paste0(par, '.hch'))
-		rebalance.population.by.migration(balance.env)	
-		for(par in vars) assign(paste0(par, '.hch'), balance.env[[par]])
-		#stop('')
-		popM.prev <- totpm
-		popF.prev <- totpf
-		popM.hch.prev <- totpm.hch
-		popF.hch.prev <- totpf.hch
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
-				 file = file.path(outdir.tmp, paste0('pop_time_', time, '.rda')))
-		if(keep.vital.events) 
-			save(btm, btf, deathsm, deathsf, asfert, mxm, mxf, migm, migf,
-					btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, 
-					mxm.hch, mxf.hch, 
-					file=file.path(outdir.tmp, paste0('vital_events_time_', time, '.rda')))
-	} # end time
-	if(verbose) cat('\nRe-formatting data ...')
-	quant.env <- .restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, countries.input, observed, kannisto, 
-					present.and.proj.years, keep.vital.events, verbose=verbose)
-	if(verbose) cat(' done.\n')
-	unlink(outdir.tmp, recursive=TRUE)
-	#save meta file
-	country.rows <- UNlocations[countries.idx,c('country_code', 'name')]
-	colnames(country.rows) <- c('code', 'name')
-	bayesPop.prediction <- structure(list(
-							nr.traj = nr.traj,	
-							quantiles = quant.env$PIs_cqp,
-               				traj.mean.sd = quant.env$mean_sd,
-               				quantilesM = quant.env$quantM, 
-               				traj.mean.sdM = quant.env$mean_sdM,
-               				quantilesF = quant.env$quantF, 
-               				traj.mean.sdF = quant.env$mean_sdF,
-               				quantilesMage = quant.env$quantMage, 
-               				quantilesFage = quant.env$quantFage, 
-               				quantilesPropMage = quant.env$quantPropMage, 
-               				quantilesPropFage = quant.env$quantPropFage,
-               				estim.years=inp$estim.years, 
-               				proj.years=present.and.proj.years, # includes present period (middle of periods)
-               				proj.years.pop=present.and.proj.years+2, # end of periods
-               				wpp.year = inp$wpp.year,
-			   				inputs = inp.to.save, # save as list because environment takes much more space
-			   				function.inputs=function.inputs,
-			   				countries=country.rows,
-			   				ages=ages), class='bayesPop.prediction')
 
-	prediction.file <- file.path(outdir, 'prediction.rda')
-	save(bayesPop.prediction, file=prediction.file)
-	cat('\nPrediction stored into', outdir, '\n')
-	return(bayesPop.prediction)
+.ini.pop.res.env <- function(e, vital.events=FALSE) {
+	e$vital.events <- vital.events
+	with(e, {
+		totp[] <- totpm[] <- totpf[] <- totp.hch[] <- totpm.hch[] <- totpf.hch[] <- NA
+		migrationm[] <- migrationf[] <- migrationm.hch[] <- migrationf.hch[] <- NA
+		if(vital.events) {
+			btm[] <- btf[] <- deathsm[] <- deathsf[] <- btm.hch[] <- btf.hch[] <- asfert.hch[] <- 0
+			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- migm[] <- migf[] <- 0 
+		}
+	})
 }
 
-do.pop.predict.balance.one.country <- function(cidx, time, country, country.idx, country.name, inpc, kannisto, nr.traj, npasfr, 
-												popM.prev, popF.prev, ages, nvariants, keep.vital.events, verbose=FALSE) {
-	ccountry <- as.character(country)
-	pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
-	totp <- rep(NA, ncol=nr.traj)
-	totpm <- totpf <- migrationm <- migrationf <- matrix(NA, nrow=27, ncol=nr.traj, dimnames=list(ages, NULL))
-	totp.hch <- rep(NA, ncol=nvariants)
-	totpm.hch <- totpf.hch <- migrationm.hch <- migrationf.hch <- matrix(NA, nrow=27, ncol=nvariants, dimnames=list(ages, NULL))
-	if(keep.vital.events) {
-		btm <- btf <- asfert <- matrix(0, nrow=7, ncol=nr.traj)
-		deathsm <- deathsf <- matrix(0, nrow=27, ncol=nr.traj, dimnames=list(ages, NULL))
-		btm.hch <- btf.hch <- asfert.hch <- matrix(0, nrow=7, ncol=nvariants)
-		deathsm.hch <- deathsf.hch <- matrix(0, nrow=27, ncol=nvariants, dimnames=list(ages, NULL))
-		mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
-			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
-			migMntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migMpred']])) 1 
-						else dim(countries.input[[as.character(country.codes[1])]][['migMpred']])[2]
-			migFntraj <- if(is.null(countries.input[[as.character(country.codes[1])]][['migFpred']])) 1 
-						else dim(countries.input[[as.character(country.codes[1])]][['migFpred']])[2]  
-			migm <- array(0, dim=c(27, ncountries, migMntraj), dimnames=list(ages, country.codes, NULL))
-			migf <- array(0, dim=c(27, ncountries, migFntraj), dimnames=list(ages, country.codes, NULL))
-		}
-	for(itraj in 1:nr.traj) {
-		asfr <- inpc$PASFR[,time,drop=FALSE]/100.
-		for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
-			LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mpred[time,itraj], 
-									inpc$e0Fpred[time,itraj], verbose=verbose)
-			migpred <- .get.migration.one.trajectory(inpc, itraj, time)			
-			if(time > 1) { # reset initial population to the one at the previous time step
-				pop.ini$M <- popM.prev[,,itraj]
-				pop.ini$F <- popF.prev[,,itraj]
-			}
-			popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred, inpc$MIGtype, country.name=country.name,
-									keep.vital.events=keep.vital.events)
-				totp[cidx,itraj] <- popres$totpop[2]
-				totpm[,cidx,itraj] <- popres$mpop[,2]
-				totpf[,cidx,itraj] <- popres$fpop[,2]
-				migrationm[,cidx,itraj] <- popres$mmigr # migpred$M
-				migrationf[,cidx,itraj] <- popres$fmigr # migpred$F
-				if(keep.vital.events) {
-					btm[,cidx,itraj] <- popres$mbt
-					btf[,cidx,itraj] <- popres$fbt
-					deathsm[,cidx,itraj] <- popres$mdeaths
-					deathsf[,cidx,itraj] <- popres$fdeaths
-					asfert[,cidx,itraj] <- asfr
-					mxm[,cidx,itraj] <- LTres$mx[[1]]
-					mxf[,cidx,itraj] <- LTres$mx[[2]]
-					migtraj <- min(itraj, migMntraj)
-					migm[,cidx,migtraj] <- popres$mmigr # migpred[['M']]
-					migtraj <- min(itraj, migFntraj)
-					migf[,cidx,migtraj] <- popres$fmigr # migpred[['F']]
-				}
-			}
-			pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
-			for (variant in 1:nvariants) { # compute the two half child variants
-				asfr <- inpc$PASFR[,time,drop=FALSE]/100.
-				for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,time] * asfr[i,]
-				LTres <- modifiedLC(1, kannisto[[ccountry]], inpc$e0Mmedian[time], 
-									inpc$e0Fmedian[time], verbose=verbose, debug=debug)
-				migpred.hch <- .get.migration.one.trajectory(inpc, itraj=NULL, time=time)
-				if(time > 1) {
-					pop.ini$M <- popM.hch.prev[,cidx, variant]
-					pop.ini$F <- popF.hch.prev[,cidx, variant]
-				}
-				popres <- StoPopProj(1, pop.ini, LTres, asfr, inpc$SRB[time], migpred.hch, inpc$MIGtype, 
-							country.name=country.name, 
-							keep.vital.events=keep.vital.events)
-				totp.hch[cidx,variant] <- popres$totpop[2]
-				totpm.hch[,cidx,variant] <- popres$mpop[,2]
-				totpf.hch[,cidx,variant] <- popres$fpop[,2]
-				migrationm.hch[,cidx,variant] <- popres$mmigr # migpred.hch$M
-				migrationf.hch[,cidx,variant] <- popres$fmigr # migpred.hch$F
-				if(keep.vital.events) {
-					btm.hch[,cidx,variant] <- popres$mbt
-					btf.hch[,cidx,variant] <- popres$fbt
-					deathsm.hch[,cidx,variant] <- popres$mdeaths
-					deathsf.hch[,cidx,variant] <- popres$fdeaths
-					asfert.hch[,cidx,variant] <- asfr
-					mxm.hch[,cidx,variant] <- LTres$mx[[1]]
-					mxf.hch[,cidx,variant] <- LTres$mx[[2]]
-				}
-			}
-}
 
 read.pop.file <- function(file) 
 	return(read.delim(file=file, comment.char='#', check.names=FALSE))
@@ -723,7 +421,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	}
 	SRB <- SRB[,c('country_code', proj.periods)]
 	proj.years <- cols.starty[start.index:end.index] + 3
-	
+
 	# Get percentage age-specific fertility rate
 	if(is.null(inputs$pasfr)) 
 		PASFR <- load.wpp.dataset('percentASFR', wpp.year)
@@ -733,7 +431,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		observed$PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
 	}
 	PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
-	
+
 	# Get migration type and base year
 	if(is.null(inputs$mig.type)) 
 		MIGtype <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
@@ -753,7 +451,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	}
 	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
-	
+
 	# Get migration trajectories if available
 	migMpred <- migFpred <- NULL
 	for(sex in c('M', 'F')) {
@@ -769,7 +467,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
 		assign(var.name, migpred)
 	}
-	
+
 	# Get life expectancy
 	e0F.wpp.median.loaded <- FALSE
 	if(!is.null(inputs$e0F.file)) { # female
@@ -796,7 +494,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 				e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
 		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year)			
 	}
-	
+
 	if(!is.null(inputs$e0M.file)) { # male
 		if(inputs$e0M.file == 'median_')
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year, median.only=TRUE)
@@ -822,7 +520,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA) # independent from female
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
-	} 
+	}
+
 	# Get TFR
 	if(!is.null(inputs$tfr.file)) {
 		if(inputs$tfr.file == 'median_')
@@ -842,7 +541,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
 		else TFRpred <- .load.wpp.traj('tfr', wpp.year)
 	}
-	
+
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
@@ -902,206 +601,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	return(pred.all)
 }
 
-.get.migration.traj <- function(pred, par, country) {
-		cidx <- pred$inputs[[par]][,'country_code'] == country 
-		idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
-		if(sum(idx) == 0) return(NULL)
-		migdf <- pred$inputs[[par]][idx,-1]
-		utrajs <- sort(unique(migdf$trajectory))
-		ntrajs <- length(utrajs)
-		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
-		lyears <- length(pred$inputs$proj.years)
-		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*21), trajectory=rep(rep(utrajs, each=21), times=lyears),
-									age=c(paste(seq(0,95,by=5), seq(4,99,by=5), sep='-'), '100+'))
-		# this is to get rows of the data frame in a particular order
-		migdf <- merge(sorted.df, migdf, sort=FALSE)
-		res <- array(migdf$value, dim=c(21, ntrajs, lyears))
-		dimnames(res) <- list(1:21,  NULL, pred$inputs$proj.years)
-		return(res)	
-}
-
-.get.migration.one.trajectory <- function(inpc, itraj=NULL, time=NULL) {
-	migpred <- list(M=NULL, F=NULL)
-	for(sex in c('M', 'F')) {
-		par <- paste0('mig', sex, 'pred')
-		if(is.null(inpc[[par]]))
-			migpred[[sex]] <- inpc[[paste0('MIG', tolower(sex))]]
-		else {
-			if(is.null(itraj)) {
-				if(length(dim(inpc[[par]])) > 2) # has trajectory dimension, therefore need to take median
-					migpred[[sex]] <- apply(inpc[[par]], c(1,3), 'median')
-				else migpred[[sex]] <- inpc[[par]]
-			} else migpred[[sex]] <- inpc[[par]][,itraj,]
-		}
-		migpred[[sex]] <- as.matrix(migpred[[sex]])
-		if(!is.null(time)) migpred[[sex]] <- migpred[[sex]][,time]
-	}
-	return(migpred)
-}
-
-rebalance.population.by.migration <- function(e) {
-	nr.traj <- ncol(e$totp)
-	for(itraj in 1:nr.traj) {
-		countries.totals <- e$totp[,itraj]
-		sumpop <- sum(countries.totals)
-		sumadj <- rep(0, nrow(e$totp))
-		for(sex in c('m', 'f')) {
-			for(age in dimnames(e$migrationm)[[1]]) {
-				par <- paste0('migration',sex)
-				dif <- sum(e[[par]][age,,itraj])
-				dif.countries <- dif/sumpop * countries.totals
-				e[[par]][age,,itraj] <- e[[par]][age,,itraj] - dif.countries
-				e[[paste0('totp',sex)]][age,,itraj] <- e[[paste0('totp',sex)]][age,,itraj] + dif.countries
-				sumadj <- sumadj + dif.countries
-			}
-		}
-		e$totp[,itraj] <- e$totp[,itraj] + sumadj
-		
-	}
-}
-
-.restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, inputs, observed, kannisto, 
-									present.and.proj.years, keep.vital.events=FALSE, verbose=FALSE){
-	envs <- list()
-	for(time in 1:npred) {
-		envs[[time]] <- new.env()
-		load(file.path(source.dir, paste0('pop_time_', time, '.rda')), envir=envs[[time]])
-		if(keep.vital.events) 
-			load(file.path(source.dir, paste0('vital_events_time_', time, '.rda')), envir=envs[[time]])
-	}
-	ncountries <- nrow(envs[[1]]$totp)
-	country.codes <- rownames(envs[[1]]$totp)
-	nr.traj <- ncol(envs[[1]]$totp)
-	nvariants <- ncol(envs[[1]]$totp.hch)
-	ages <- dimnames(envs[[1]]$totpm)[[1]]
-	nages <- length(ages)
-	mx.ages <- c(0,1,ages[2:nages])
-	npredplus1 <- npred + 1
-	present.and.proj.years.pop <- present.and.proj.years + 2
-	if(keep.vital.events) {
-		migMntraj <- dim(envs[[1]]$migm)[length(dim(envs[[1]]$migm))]
-		migFntraj <- dim(envs[[1]]$migf)[length(dim(envs[[1]]$migf))]
-	}
-	quantiles.to.keep <- get.quantiles.to.keep()
-	nquant <- length(quantiles.to.keep)
-	quant.env <- new.env()
-	with(quant.env, {
-		PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, npredplus1),
-						dimnames=list(country.codes, quantiles.to.keep, present.and.proj.years.pop))
-		quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(ncountries, nages, nquant, npredplus1),
-						dimnames=list(country.codes, ages, quantiles.to.keep, present.and.proj.years.pop))
-		mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, npredplus1), 
-						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years.pop))
-	})
-	for(cidx in 1:ncountries) {
-		if(verbose) cat(cidx, ', ')
-		inpc <- inputs[[country.codes[cidx]]]
-		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, dimnames=list(present.and.proj.years.pop, NULL))
-		totpm <- totpf <- array(NA, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years.pop, NULL))
-		totp.hch <- matrix(NA, nrow=npredplus1, ncol=nvariants, dimnames=list(present.and.proj.years.pop, NULL))
-		totpm.hch <- totpf.hch <- array(NA, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years.pop, NULL))
-		# values from current year
-		totp[1,] <- sum(inpc$POPm0) + sum(inpc$POPf0)
-		totpm[1:length(inpc$POPm0),1,] <- as.matrix(inpc$POPm0)[,rep(1,nr.traj)]
-		totpf[1:length(inpc$POPf0),1,] <- as.matrix(inpc$POPf0)[,rep(1,nr.traj)]
-		totp.hch[1,] <- totp[1,1]
-		totpm.hch[,1,] <- totpm[,1,rep(1,nvariants)]
-		totpf.hch[,1,] <- totpf[,1,rep(1,nvariants)]
-		if(keep.vital.events) {
-			btm <- btf <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
-			deathsm <- deathsf <- array(0, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
-			asfert <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
-			btm.hch <- btf.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
-			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
-			asfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
-			mxm <- mxf <- array(0, dim=c(28, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
-			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
-			migm <- array(0, dim=c(27, npredplus1, migMntraj), dimnames=list(ages, present.and.proj.years, NULL))
-			migf <- array(0, dim=c(27, npredplus1, migFntraj), dimnames=list(ages, present.and.proj.years, NULL))
-			# values from current year
-			obs <- observed[[country.codes[cidx]]]
-			MxKan <- kannisto[[country.codes[cidx]]]
-			repi <- rep(1,nr.traj) # index for repeating columns
-			btm[1:dim(obs$btm)[1],1,] <- obs$btm[,dim(obs$btm)[2],repi]
-			btf[1:dim(obs$btf)[1],1,] <- obs$btf[,dim(obs$btf)[2],repi]
-			deathsm[1:dim(obs$deathsm)[1],1,] <- obs$deathsm[,dim(obs$deathsm)[2],repi]
-			deathsf[1:dim(obs$deathsf)[1],1,] <- obs$deathsf[,dim(obs$deathsf)[2],repi]
-			asfert[1:dim(obs$asfert)[1],1,] <- obs$asfert[,dim(obs$asfert)[2],repi]
-			mxm[1:dim(MxKan[[1]]$mx)[1],1,] <- as.matrix(MxKan[[1]]$mx[,dim(MxKan[[1]]$mx)[2]])[repi]
-			mxf[1:dim(MxKan[[2]]$mx)[1],1,] <- as.matrix(MxKan[[2]]$mx[,dim(MxKan[[2]]$mx)[2]])[repi]
-			migm[1:dim(inpc$observed$MIGm)[1],1,] <- as.matrix(inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]])[,rep(1,migMntraj)]
-			migf[1:dim(inpc$observed$MIGf)[1],1,] <- as.matrix(inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]])[,rep(1,migFntraj)]
-			btm.hch[,1,] <- btm[,1,rep(1,nvariants)]
-			btf.hch[,1,] <- btf[,1,rep(1,nvariants)]
-			deathsm.hch[,1,] <- deathsm[,1,rep(1,nvariants)]
-			deathsf.hch[,1,] <- deathsf[,1,rep(1,nvariants)]
-			asfert.hch[,1,] <- asfert[,1,rep(1,nvariants)]
-			mxm.hch[,1,] <- mxm[,1,rep(1,nvariants)]
-			mxf.hch[,1,] <- mxf[,1,rep(1,nvariants)]
-		}
-		for(time in 1:npred) {
-			totp[time+1,] <- envs[[time]]$totp[cidx,]
-			totpm[,time+1,] <- envs[[time]]$totpm[,cidx,]
-			totpf[,time+1,] <- envs[[time]]$totpf[,cidx,]
-			totp.hch[time+1,] <- envs[[time]]$totp.hch[cidx,]
-			totpm.hch[,time+1,] <- envs[[time]]$totpm.hch[,cidx,]
-			totpf.hch[,time+1,] <- envs[[time]]$totpf.hch[,cidx,]
-			if(keep.vital.events) {
-				btm[,time+1,] <- envs[[time]]$btm[,cidx,]
-				btf[,time+1,] <- envs[[time]]$btf[,cidx,]
-				deathsm[,time+1,] <- envs[[time]]$deathsm[,cidx,]
-				deathsf[,time+1,] <- envs[[time]]$deathsf[,cidx,]
-				asfert[,time+1,] <- envs[[time]]$asfert[,cidx,]
-				mxm[,time+1,] <- envs[[time]]$mxm[,cidx,]
-				mxf[,time+1,] <- envs[[time]]$mxf[,cidx,]
-				migm[,time+1,] <- envs[[time]]$migm[,cidx,]
-				migf[,time+1,] <- envs[[time]]$migf[,cidx,]
-				btm.hch[,time+1,] <- envs[[time]]$btm.hch[,cidx,]
-				btf.hch[,time+1,] <- envs[[time]]$btf.hch[,cidx,]
-				deathsm.hch[,time+1,] <- envs[[time]]$deathsm.hch[,cidx,]
-				deathsf.hch[,time+1,] <- envs[[time]]$deathsf.hch[,cidx,]
-				asfert.hch[,time+1,] <- envs[[time]]$asfert.hch[,cidx,]
-				mxm.hch[,time+1,] <- envs[[time]]$mxm.hch[,cidx,]
-				mxf.hch[,time+1,] <- envs[[time]]$mxf.hch[,cidx,]
-			}
-		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
-			 file = file.path(dest.dir, paste('totpop_country', country.codes[cidx], '.rda', sep='')))
-		if(keep.vital.events) 
-			save(btm, btf, deathsm, deathsf, asfert, mxm, mxf, migm, migf,
-				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, 
-				mxm.hch, mxf.hch, observed,
-				file=file.path(dest.dir, paste('vital_events_country', country.codes[cidx], '.rda', sep='')))
-		with(quant.env, {
-			PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
-			mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
-			for (i in 1:nages) {
-				if(nr.traj == 1) {
-					quantMage[cidx,i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-					quantFage[cidx,i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-					quantPropMage[cidx,i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-					quantPropFage[cidx,i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-				} else {
-					quantMage[cidx,i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-					quantFage[cidx,i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-					quantPropMage[cidx,i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-					quantPropFage[cidx,i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				}
-			}
-			stotpm <- colSums(totpm, na.rm=TRUE)
-			quantM[cidx,,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			mean_sdM[cidx,1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
-			mean_sdM[cidx,2,] = apply(stotpm, 1, sd, na.rm = TRUE)
-			stotpf <- colSums(totpf, na.rm=TRUE)
-			quantF[cidx,,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			mean_sdF[cidx,1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
-			mean_sdF[cidx,2,] = apply(stotpf, 1, sd, na.rm = TRUE)
-		})
-	}
-	return(quant.env)
-}
-
 
 .get.par.from.inputs <- function(par, inputs, country) {
 	if(is.null(inputs[[par]])) return (NULL)
@@ -1153,7 +652,8 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	e <- new.env()
 	e$inputs <- inputs
-	for(par in c('migMpred', 'migFpred')) {
+	for(sex in c('M', 'F')) {
+		par <- paste0('mig', sex, 'pred')
 		if(is.null(inputs[[par]])) next
 		inpc[[par]] <- .get.migration.traj(e, par, country)
 		if(is.null(inpc[[par]])) next
@@ -1240,7 +740,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		}		
 		if(par == 'migMpred' && (is.null(inpc[[par]]) || (!is.null(inpc[[par]]) && ncol(inpc[[par]])==1))) {
 			indices[[dependencies[[par]]]] <- rep(1, nr.traj)
-			next # using one trajectory , male is default
+			next # using one trajectory, male is default
 		}
 		traj.available <- ncol(inpc[[par]])
 		if (traj.available == ncol(inpc[[dependencies[[par]]]])) # same number of trajectories, therefore same indices
@@ -1253,11 +753,29 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
+	inpc$mig.nr.traj <- 1
 	for(par in c('migMpred', 'migFpred')) { # age-specific, thus 3-d arrays
 		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE]
+		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	inpc$observed <- obs
+	
+	if(!is.null(inputs$migration.parameters)) {
+		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country == country, c('mu', 'phi', 'sigma')]
+		# select trajectories
+		if(nrow(inpc$migration.parameters) > nr.traj)  # select equidistantly
+			migpar.idx <- get.traj.index(nr.traj, inpc$migration.parameters, traj.dim = 1)
+		else # resample
+			migpar.idx <- sample(1:nrow(inpc$migration.parameters), nr.traj, replace=TRUE)
+		inpc$migration.parameters <- inpc$migration.parameters[migpar.idx,]
+		inpc$mig.nr.traj <- length(migpar.idx)
+		inpc$migration.age.schedule <- migration.age.schedule(country, length(inputs$proj.years), inputs)
+		#if(any(inpc$migration.age.schedule[['M']][,1] > 0) && any(inpc$migration.age.schedule[['M']][,1] < 0)) {
+		#	cat('\nCross-overs in migration age schedules for ', country.obj$name)
+		#	print(inpc$migration.age.schedule[['M']][,1])
+		#}
+	}
 	return(inpc)
 }
 
@@ -1265,7 +783,7 @@ get.traj.index <- function(nr.traj, traj, traj.dim=2, sample=FALSE) {
 	traj.tot <- dim(traj)[traj.dim]
 	if(nr.traj >= traj.tot) 
 		return(if(sample) sample(1:traj.tot, nr.traj, replace=TRUE) else 1:traj.tot)
-	return(if(sample) sample(1:traj.tot, nr.traj) else seq(1, traj.tot, length=nr.traj))
+	return(if(sample) sample(1:traj.tot, nr.traj) else as.integer(seq(1, traj.tot, length=nr.traj)))
 }
 
 
@@ -1464,6 +982,40 @@ KannistoAxBx <- function(ne, mx, yb, female.mx=NULL, male.mx=NULL)  {
 }
 
 
+StoPopProjBak <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL, country.name=NULL, keep.vital.events=FALSE) {
+	popm <- popf <- matrix(0, nrow=27, ncol=npred+1)
+	popm[,1] <- c(pop0$M, rep(0, 27-length(pop0$M)))
+	popf[,1] <- c(pop0$F, rep(0, 27-length(pop0$F)))
+	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))
+	btageM <- btageF <- matrix(0, nrow=7, ncol=npred) # births by age of mother and sex of child
+	deathsM <- deathsF <- finmigrM <- finmigrF <- matrix(0, nrow=27, ncol=npred)
+	nproj <- npred
+	migM <- as.matrix(mig.pred[['M']])
+	returnIfNegative <- 0
+	res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), 
+		as.numeric(as.matrix(mig.pred[['F']])), nrow(migM), ncol(migM), mig.type,
+		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
+		srb=as.numeric(as.matrix(srb)), returnIfNegative=returnIfNegative, 
+		popm=popm, popf=popf, totp=totp,
+		Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
+		lxm=as.numeric(LT$lx[[1]]), lxf=as.numeric(LT$lx[[2]]), 
+		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
+		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
+		finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF)
+		)
+ 	#if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
+	#if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
+
+	vital.events <- list()
+	if(keep.vital.events) {
+		vital.events$mbt <- res$btagem
+		vital.events$fbt <- res$btagef
+		vital.events$mdeaths <- res$deathsm
+		vital.events$fdeaths <- res$deathsf
+	}
+	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmigr=res$finmigrm, fmigr=res$finmigrf), vital.events))
+}
+
 StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL, country.name=NULL, keep.vital.events=FALSE) {
 	popm <- popf <- matrix(0, nrow=27, ncol=npred+1)
 	popm[,1] <- c(pop0$M, rep(0, 27-length(pop0$M)))
@@ -1473,20 +1025,25 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 	deathsM <- deathsF <- finmigrM <- finmigrF <- matrix(0, nrow=27, ncol=npred)
 	nproj <- npred
 	migM <- as.matrix(mig.pred[['M']])
-	
-	res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), 
-		as.numeric(as.matrix(mig.pred[['F']])), nrow(migM), ncol(migM), mig.type,
-		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
-		srb=as.numeric(as.matrix(srb)), popm=popm, popf=popf, totp=totp,
-		Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
-		lxm=as.numeric(LT$lx[[1]]), lxf=as.numeric(LT$lx[[2]]), 
-		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
-		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
-		finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF)
-		)
- 	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
-	if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
-
+	returnIfNegative <- 1
+	isNegative <- 0
+	while(TRUE) {
+		res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), 
+			as.numeric(as.matrix(mig.pred[['F']])), nrow(migM), ncol(migM), as.integer(mig.type),
+			srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
+			srb=as.numeric(as.matrix(srb)), returnNothingIfNegative=as.integer(returnIfNegative), 
+			popm=popm, popf=popf, totp=totp,
+			Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
+			lxm=as.numeric(LT$lx[[1]]), lxf=as.numeric(LT$lx[[2]]), 
+			btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
+			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
+			finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF), isNegative=as.integer(isNegative)
+			)
+		if(returnIfNegative==1 && res$isNegative < 0) {
+			warning('Negative population for ', country.name, '. Counts adjusted.')
+			returnIfNegative <- 0
+		} else break
+	}
 	vital.events <- list()
 	if(keep.vital.events) {
 		vital.events$mbt <- res$btagem
@@ -1542,6 +1099,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		res[[par]] <- abind(res[[par]], NULL, along=3) # add trajectory dimension
 	return(res)
 }
+
+
 
 write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, output.dir=NULL, ...) {
 	pred <- as.environment(pop.pred) # to avoid lots of copying and allowing attaching cache
