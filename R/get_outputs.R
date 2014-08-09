@@ -951,8 +951,11 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
-	if(odim == 4 && dim(result)[[1]] == 1) 
+	country.dropped <- FALSE
+	if(odim == 4 && dim(result)[[1]] == 1) {
 		result <- adrop(result, drop=1) # remove country dimension
+		country.dropped <- TRUE
+	}
 	if(ntraj > 1) {
 		if(typical.trajectory) {
 			traj.idx <- bayesTFR:::get.typical.trajectory.index(result[,1,])
@@ -966,7 +969,7 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 		if(is.null(dim(result))) along <- 3
 		else {
 			l<-length(dim(result))
-			along <- if(odim > l) l+1 else l 
+			along <- if(odim > l && !country.dropped) l+1 else l 
 		}
 		result <- abind(result, NULL, along=along)
 	}
@@ -1074,11 +1077,14 @@ pop.apply <- function(data, fun, ..., split.along=c('None', 'age', 'traj', 'coun
 		}
 		dim(data2) <- c(dim(data2)[1], rdim)
 	}
-	if(margin != 1) {# must be rearanged because aaply puts the sliced dimension in front
-		pos <- rep(NA, length(dim(data2)))
-		pos[margin] <- 1
-		pos[is.na(pos)] <- seq(2,length(dim(data2)))
-		data2 <- aperm(data2, pos)
+	if(margin != 1) {# must be rearanged because aaply sometimes puts the sliced dimension in front
+		which.not.equal <- which(dim(data1)!=dim(data2))
+		if(length(which.not.equal)>1 || (length(which.not.equal)==1 && which.not.equal==1)) {
+			pos <- rep(NA, length(dim(data2)))
+			pos[margin] <- 1
+			pos[is.na(pos)] <- seq(2,length(dim(data2)))
+			data2 <- aperm(data2, pos)
+		}
 	}
 	return(data2)
 }
@@ -1168,8 +1174,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	if(ncores > 1 && length(countries.idx)>10) {
 		# This can take lots of time. Run it in parallel
 		cat('Evaluating expression for all countries in parallel on', ncores, 'cores.\n')
-		cl <- makeCluster(ncores)
-		clusterEvalQ(cl, {library(bayesPop)})
+		cl <- create.pop.cluster(ncores)
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
 		quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust))
 		stopCluster(cl)

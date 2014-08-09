@@ -83,7 +83,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		countries.idx[icountry] <- country.idx
 	}
-
 	if(length(not.valid.countries.idx) > 0) {
 		warning('Countries ', paste(country.codes[not.valid.countries.idx], collapse=', '), 
 					' not found in the UNlocations dataset.')
@@ -229,13 +228,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			}
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
-			 file = file.path(outdir, paste('totpop_country', country, '.rda', sep='')))
+			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, mxm, mxf, migm, migf,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, 
 				mxm.hch, mxf.hch, 
 				observed,
-					file=file.path(outdir, paste('vital_events_country', country, '.rda', sep='')))
+					file=file.path(outdir, paste0('vital_events_country', country, '.rda')))
 		PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
 		mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
@@ -443,7 +442,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			stop('File ', file.name, ' does not exist.')
 		# comma separated trajectories file
 		var.name <- paste0('mig',sex, 'pred')
-		if(verbose) cat('\nLoading ', file.name, '\n')
+		if(verbose) cat('\nLoading ', file.name)
 		migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 		migpred <- migpred.raw[,c('LocID', 'Year', 'Trajectory', 'Age', 'Migration')]
 		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
@@ -462,7 +461,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 				stop('File ', file.name, 
 					' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
 		 	# comma separated trajectories file
-		 	if(verbose) cat('\nLoading ', file.name, '\n')
+		 	if(verbose) cat('\nLoading ', file.name)
 			e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Fpred <- e0Fpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 			colnames(e0Fpred) <- c('country_code', 'year', 'trajectory', 'value')
@@ -485,7 +484,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			if(!file.exists(file.name)) 
 				stop('File ', file.name, 
 					' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
-			if(verbose) cat('\nLoading ', file.name, '\n')
+			if(verbose) cat('\nLoading ', file.name)
 			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 			colnames(e0Mpred) <- c('country_code', 'year', 'trajectory', 'value')
@@ -502,7 +501,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA) # independent from female
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
-	} 
+	}
+	
 	# Get TFR
 	if(!is.null(inputs$tfr.file)) {
 		if(inputs$tfr.file == 'median_')
@@ -651,7 +651,8 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	e <- new.env()
 	e$inputs <- inputs
-	for(par in c('migMpred', 'migFpred')) {
+	for(sex in c('M', 'F')) {
+		par <- paste0('mig', sex, 'pred')
 		if(is.null(inputs[[par]])) next
 		inpc[[par]] <- .get.migration.traj(e, par, country)
 		if(is.null(inpc[[par]])) next
@@ -738,7 +739,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		}		
 		if(par == 'migMpred' && (is.null(inpc[[par]]) || (!is.null(inpc[[par]]) && ncol(inpc[[par]])==1))) {
 			indices[[dependencies[[par]]]] <- rep(1, nr.traj)
-			next # using one trajectory , male is default
+			next # using one trajectory, male is default
 		}
 		traj.available <- ncol(inpc[[par]])
 		if (traj.available == ncol(inpc[[dependencies[[par]]]])) # same number of trajectories, therefore same indices
@@ -751,9 +752,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
+	inpc$mig.nr.traj <- 1
 	for(par in c('migMpred', 'migFpred')) { # age-specific, thus 3-d arrays
 		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE]
+		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	inpc$observed <- obs
 	return(inpc)
@@ -763,7 +766,7 @@ get.traj.index <- function(nr.traj, traj, traj.dim=2, sample=FALSE) {
 	traj.tot <- dim(traj)[traj.dim]
 	if(nr.traj >= traj.tot) 
 		return(if(sample) sample(1:traj.tot, nr.traj, replace=TRUE) else 1:traj.tot)
-	return(if(sample) sample(1:traj.tot, nr.traj) else seq(1, traj.tot, length=nr.traj))
+	return(if(sample) sample(1:traj.tot, nr.traj) else as.integer(seq(1, traj.tot, length=nr.traj))
 }
 
 
@@ -802,9 +805,10 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #if(debug) print('Start check ===========================')
     #Get the projected kt from eo, and make projection of Mx
     #stop('')
+    nproj <- npred
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	#print(c('sex: ', mxYKan$sex))
-    	res <- .C("LC", as.integer(npred), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
+    	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
 			constrain=as.integer(mxYKan$sex == 1), 
 			#constrain=as.integer(0),
@@ -816,7 +820,6 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
 		lx[[mxYKan$sex]] <- matrix(res$lx, nrow=28)
     }
-    #stop('')
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
@@ -974,12 +977,13 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
 	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))
 	btageM <- btageF <- matrix(0, nrow=7, ncol=npred) # births by age of mother and sex of child
 	deathsM <- deathsF <- matrix(0, nrow=27, ncol=npred)
+	nproj <- npred
 	migM <- as.matrix(if(!is.null(mig.pred[['M']])) mig.pred[['M']] else inputs[['MIGm']])
 	migF <- as.matrix(if(!is.null(mig.pred[['F']])) mig.pred[['F']] else inputs[['MIGf']])
 	#migM <- as.matrix(if(!is.null(mig.pred[['M']])) apply(mig.pred[['M']], 2, '/', popm[1:21,1]) else inputs[['MIGm']])
 	#migF <- as.matrix(if(!is.null(mig.pred[['F']])) apply(mig.pred[['F']], 2, '/', popf[1:21,1]) else inputs[['MIGf']])
 	#stop('')
-	res <- .C("TotalPopProj", npred, as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), mig.type,
+	res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		srb=as.numeric(as.matrix(inputs$SRB)), popm=popm, popf=popf, totp=totp,
 		Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
@@ -1320,3 +1324,11 @@ unblock.gtk.if.needed <- function(status, gui.opts=list()) {
 }
 
 unblock.gtk <- function(...) bayesTFR:::unblock.gtk(...)
+
+create.pop.cluster <- function(nr.nodes, ...) {
+	cl <- makeCluster(nr.nodes, ...)
+	lib.paths <- .libPaths()
+	clusterExport(cl, c("lib.paths"), envir=environment())
+	clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
+	return(cl)
+}
