@@ -766,7 +766,7 @@ get.traj.index <- function(nr.traj, traj, traj.dim=2, sample=FALSE) {
 	traj.tot <- dim(traj)[traj.dim]
 	if(nr.traj >= traj.tot) 
 		return(if(sample) sample(1:traj.tot, nr.traj, replace=TRUE) else 1:traj.tot)
-	return(if(sample) sample(1:traj.tot, nr.traj) else as.integer(seq(1, traj.tot, length=nr.traj))
+	return(if(sample) sample(1:traj.tot, nr.traj) else as.integer(seq(1, traj.tot, length=nr.traj)))
 }
 
 
