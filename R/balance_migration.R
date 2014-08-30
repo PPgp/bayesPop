@@ -240,7 +240,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	e <- new.env()
 	labor.codes <- labor.countries()
 	e$migrm <- e$migrf <- matrix(NA, nrow=nr.countries, ncol=21, dimnames=list(country.codes, ages[1:21]))
-	e$migrm.labor <- e$migrf.labor <- matrix(0, nrow=length(labor.codes), ncol=21, dimnames=list(labor.codes, ages[1:21]))
+	e$migrm.labor <- e$migrf.labor <- matrix(0, nrow=nr.countries, ncol=21, dimnames=list(country.codes, ages[1:21]))
 	migrationm <- migrationf <- array(NA, c(nr.countries, 21, nr.traj), dimnames=list(country.codes, ages[1:21], NULL))
 	mig.rate <- matrix(NA, nrow=nr.countries, ncol=nr.traj, dimnames=list(country.codes,NULL))
 	
@@ -266,11 +266,11 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			mig.rate[cidx, itraj] <- migpred$rate
 			pop[cidx] <- pop.ini
 		}
-		before <- sum(e$migrm + e$migrf + e$migrm.labor + e$migrf.labor)
+		before <- sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor)
 		if(rebalance) {
 			rebalance.migration2groups(e, pop)
-			if(abs(sum(e$migrm + e$migrf + e$migrm.labor + e$migrf.labor) - before) > 1e6) 
-				cat('\n', itraj, ' rebalancing migration: ', sum(e$migrm + e$migrf + e$migrm.labor + e$migrf.labor) - before)
+			if(abs(sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - before) > 1e6) 
+				cat('\n', itraj, ' rebalancing migration: ', sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - before)
 		}
 		migrationm[,,itraj] <- e$migrm + e$migrm.labor
 		migrationf[,,itraj] <- e$migrf + e$migrf.labor
@@ -439,7 +439,7 @@ is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
 
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop.prev=NULL, 
-													pop.prev.group=NULL, country.code=NULL, migr.prop=1) {
+													pop.prev.group=NULL, country.code=NULL) {
 														
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
@@ -450,7 +450,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, mig.rate.prev)
 		if(is.na(rate)) stop('')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
-		mig.count <- rate * pop.prev * migr.prop
+		mig.count <- rate * pop.prev
 		schedMname <- 'M'
 		schedFname <- 'F'
 		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
@@ -461,13 +461,13 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
 		if(is.gcc(country.code)) { # cap to historical maximum
 			#if(country.code == 634) stop('')
-			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf))*migr.prop)
+			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
 		}
 	 	# cat('****Mig rate:', rate, ' ', ((1+rate)^5 - 1), '  ****')
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 		#break
-		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land_area > 45) { # check density
+		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45) { # check density
 			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land_area, ')')
 			next 
 		}
@@ -503,16 +503,16 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			warning('Unable to modify age schedule to get positive population for country ', country.code)
 			break
 		}
-		migM.labor <- migF.labor <- NULL
-		if(country.code %in% labor.countries()) {
-			prop <- prop.labor.migration.for.country(country.code)
-			mig.count.labor <- mig.count * prop
-			migM.labor <- mig.count.labor*msched
-			migF.labor <- mig.count.labor*fsched
-			mig.count.rest <- mig.count * (1-prop)
-			migM <- mig.count.rest*msched
-			migF <- mig.count.rest*fsched
-		}
+	}
+	migM.labor <- migF.labor <- NULL
+	if(country.code %in% labor.countries()) {
+		prop <- prop.labor.migration.for.country(country.code)
+		mig.count.labor <- mig.count * prop
+		migM.labor <- mig.count.labor*msched
+		migF.labor <- mig.count.labor*fsched
+		mig.count.rest <- mig.count * (1-prop)
+		migM <- mig.count.rest*msched
+		migF <- mig.count.rest*fsched
 	}
 	return(list(M=migM, F=migF, rate=rate, laborM=migM.labor, laborF=migF.labor))
 }
@@ -555,7 +555,7 @@ rebalance.migration <- function(e, pop, what='') {
 }
 
 rebalance.migration2groups <- function(e, pop) {
-	if(!is.null(e$migrm.labor)) {
+	if(!is.null(e$migrm.labor) && sum(e$migrm.labor) != 0) {
 		pop.labor <- pop * (as.integer(names(pop)) %in% labor.countries())
 		rebalance.migration(e, pop.labor, what='.labor')
 	}
@@ -576,6 +576,7 @@ prop.labor.migration <- function()
 			 50,  # Bangladesh
 			 818, # Egypt
 			 360, # Indonesia
+			 356, # India
 			 586, # Pakistan
 			 608 # Philippines
 			),
