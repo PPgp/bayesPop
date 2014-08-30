@@ -1,0 +1,269 @@
+"name"	"country_code"	"land_area"
+"World"	900	136161663.93
+"More developed regions"	901	53214147.93
+"Less developed regions"	902	82947516
+"Least developed countries"	941	20797542
+"Other less developed countries"	934	62149974
+"Less developed regions, excluding China"	948	73313239
+"Sub-Saharan Africa"	947	22431071
+"Africa"	903	30311445
+"Eastern Africa"	910	7005480
+"Burundi"	108	27834
+"Comoros"	174	1861
+"Djibouti"	262	23200
+"Eritrea"	232	117600
+"Ethiopia"	231	1104300
+"Kenya"	404	580367
+"Madagascar"	450	587041
+"Malawi"	454	118484
+"Mauritius"	480	2040
+"Mayotte"	175	374
+"Mozambique"	508	801590
+"Réunion"	638	2510
+"Rwanda"	646	26338
+"Seychelles"	690	455
+"Somalia"	706	637657
+"South Sudan"	728	644329
+"Uganda"	800	241038
+"United Republic of Tanzania"	834	945087
+"Zambia"	894	752618
+"Zimbabwe"	716	390757
+"Middle Africa"	911	6612667
+"Angola"	24	1246700
+"Cameroon"	120	475442
+"Central African Republic"	140	622984
+"Chad"	148	1284000
+"Congo"	178	342000
+"Dem. Republic of the Congo"	180	2344858
+"Equatorial Guinea"	226	28051
+"Gabon"	266	267668
+"Sao Tome and Principe"	678	964
+"Northern Africa"	912	7880374
+"Algeria"	12	2381741
+"Egypt"	818	1001449
+"Libya"	434	1759540
+"Morocco"	504	446550
+"Sudan"	729	1861484
+"Tunisia"	788	163610
+"Western Sahara"	732	266000
+"Southern Africa"	913	2674778
+"Botswana"	72	581730
+"Lesotho"	426	30355
+"Namibia"	516	824292
+"South Africa"	710	1221037
+"Swaziland"	748	17364
+"Western Africa"	914	6138146
+"Benin"	204	112622
+"Burkina Faso"	854	274000
+"Cabo Verde"	132	4033
+"Côte d'Ivoire"	384	322463
+"Gambia"	270	11295
+"Ghana"	288	238533
+"Guinea"	324	245857
+"Guinea-Bissau"	624	36125
+"Liberia"	430	111369
+"Mali"	466	1240192
+"Mauritania"	478	1025520
+"Niger"	562	1267000
+"Nigeria"	566	923768
+"Saint Helena"	654	122
+"Senegal"	686	196722
+"Sierra Leone"	694	71740
+"Togo"	768	56785
+"Asia"	935	31915398
+"Eastern Asia"	906	11798726
+"China"	156	9596961
+"China, Hong Kong SAR"	344	1099
+"China, Macao SAR"	446	26
+"Dem. People's Rep. of Korea"	408	120538
+"Japan"	392	377873
+"Mongolia"	496	1566500
+"Republic of Korea"	410	99538
+"China, Taiwan Province of China"	158	36191
+"South-Central Asia"	921	10791130
+"Central Asia"	5500	4003400
+"Kazakhstan"	398	2724900
+"Kyrgyzstan"	417	199900
+"Tajikistan"	762	143100
+"Turkmenistan"	795	488100
+"Uzbekistan"	860	447400
+"Southern Asia"	5501	6787730
+"Afghanistan"	4	652090
+"Bangladesh"	50	143998
+"Bhutan"	64	47000
+"India"	356	3287263
+"Iran (Islamic Republic of)"	364	1648195
+"Maldives"	462	298
+"Nepal"	524	147181
+"Pakistan"	586	796095
+"Sri Lanka"	144	65610
+"South-Eastern Asia"	920	4494955
+"Brunei Darussalam"	96	5765
+"Cambodia"	116	181035
+"Indonesia"	360	1904569
+"Lao People's Dem. Republic"	418	236800
+"Malaysia"	458	329847
+"Myanmar"	104	676578
+"Philippines"	608	300000
+"Singapore"	702	683
+"Thailand"	764	513115
+"Timor-Leste"	626	14874
+"Viet Nam"	704	331689
+"Western Asia"	922	4830587
+"Armenia"	51	29800
+"Azerbaijan"	31	86600
+"Bahrain"	48	694
+"Cyprus"	196	9251
+"Georgia"	268	69700
+"Iraq"	368	438317
+"Israel"	376	22145
+"Jordan"	400	89342
+"Kuwait"	414	17818
+"Lebanon"	422	10400
+"Oman"	512	309500
+"Qatar"	634	11000
+"Saudi Arabia"	682	2149690
+"State of Palestine"	275	6020
+"Syrian Arab Republic"	760	185180
+"Turkey"	792	783562
+"United Arab Emirates"	784	83600
+"Yemen"	887	527968
+"Europe"	908	23048924.93
+"Eastern Europe"	923	18814035
+"Belarus"	112	207600
+"Bulgaria"	100	110912
+"Czech Republic"	203	78866
+"Hungary"	348	93032
+"Poland"	616	323250
+"Republic of Moldova"	498	33851
+"Romania"	642	238391
+"Russian Federation"	643	17075400
+"Slovakia"	703	49033
+"Ukraine"	804	603700
+"Northern Europe"	924	1809697
+"Channel Islands"	830	195
+"Denmark"	208	43094
+"Estonia"	233	45100
+"Faeroe Islands"	234	1399
+"Finland"	246	338145
+"Iceland"	352	103000
+"Ireland"	372	70273
+"Isle of Man"	833	572
+"Latvia"	428	64600
+"Lithuania"	440	65300
+"Norway"	578	385155
+"Sweden"	752	449964
+"United Kingdom"	826	242900
+"Southern Europe"	925	1316725.44
+"Albania"	8	28748
+"Andorra"	20	468
+"Bosnia and Herzegovina"	70	51197
+"Croatia"	191	56538
+"Gibraltar"	292	6
+"Greece"	300	131957
+"Holy See"	336	0.44
+"Italy"	380	301318
+"Malta"	470	316
+"Montenegro"	499	13812
+"Portugal"	620	91982
+"San Marino"	674	61
+"Serbia"	688	88361
+"Slovenia"	705	20256
+"Spain"	724	505992
+"TFYR Macedonia"	807	25713
+"Western Europe"	926	1108467.49
+"Austria"	40	83858
+"Belgium"	56	30528
+"France"	250	551500
+"Germany"	276	357022
+"Liechtenstein"	438	160
+"Luxembourg"	442	2586
+"Monaco"	492	1.49
+"Netherlands"	528	41528
+"Switzerland"	756	41284
+"Latin America and the Caribbean"	904	20546256
+"Caribbean"	915	234329
+"Anguilla"	660	91
+"Antigua and Barbuda"	28	442
+"Aruba"	533	180
+"Bahamas"	44	13878
+"Barbados"	52	430
+"British Virgin Islands"	92	151
+"Caribbean Netherlands"	535	328
+"Cayman Islands"	136	264
+"Cuba"	192	110861
+"Curaçao"	531	444
+"Dominica"	212	751
+"Dominican Republic"	214	48511
+"Grenada"	308	344
+"Guadeloupe"	312	1705
+"Haiti"	332	27750
+"Jamaica"	388	10991
+"Martinique"	474	1102
+"Montserrat"	500	102
+"Puerto Rico"	630	8875
+"Saint Kitts and Nevis"	659	261
+"Saint Lucia"	662	539
+"St. Vincent and the Grenadines"	670	388
+"Sint Maarten (Dutch part)"	534	34
+"Trinidad and Tobago"	780	5130
+"Turks and Caicos Islands"	796	430
+"United States Virgin Islands"	850	347
+"Central America"	916	2479802
+"Belize"	84	22966
+"Costa Rica"	188	51100
+"El Salvador"	222	21041
+"Guatemala"	320	108889
+"Honduras"	340	112088
+"Mexico"	484	1958201
+"Nicaragua"	558	130000
+"Panama"	591	75517
+"South America"	931	17832125
+"Argentina"	32	2780400
+"Bolivia (Plurinational State of)"	68	1098581
+"Brazil"	76	8514047
+"Chile"	152	756626
+"Colombia"	170	1138914
+"Ecuador"	218	283561
+"Falkland Islands (Malvinas)"	238	12173
+"French Guiana"	254	90000
+"Guyana"	328	214969
+"Paraguay"	600	406752
+"Peru"	604	1285216
+"Suriname"	740	163820
+"Uruguay"	858	175016
+"Venezuela (Bolivarian Republic of)"	862	912050
+"Northern America"	905	21775596
+"Bermuda"	60	53
+"Canada"	124	9970610
+"Greenland"	304	2175600
+"Saint Pierre and Miquelon"	666	242
+"United States of America"	840	9629091
+"Oceania"	909	8564044
+"Australia/New Zealand"	927	8011754
+"Australia"	36	7741220
+"New Zealand"	554	270534
+"Melanesia"	928	540774
+"Fiji"	242	18274
+"New Caledonia"	540	18575
+"Papua New Guinea"	598	462840
+"Solomon Islands"	90	28896
+"Vanuatu"	548	12189
+"Micronesia"	954	3102
+"Guam"	316	549
+"Kiribati"	296	726
+"Marshall Islands"	584	181
+"Micronesia (Fed. States of)"	583	702
+"Nauru"	520	21
+"Northern Mariana Islands"	580	464
+"Palau"	585	459
+"Polynesia"	957	8414
+"American Samoa"	16	199
+"Cook Islands"	184	236
+"French Polynesia"	258	4000
+"Niue"	570	260
+"Samoa"	882	2831
+"Tokelau"	772	12
+"Tonga"	776	650
+"Tuvalu"	798	26
+"Wallis and Futuna Islands"	876	200
