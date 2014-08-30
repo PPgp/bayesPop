@@ -446,6 +446,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	if(country.code %in% land_area_wpp2012$country_code)
 		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
 	i <- 1
+	k <- 1
 	while(TRUE) { 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, mig.rate.prev)
 		if(is.na(rate)) stop('')
@@ -467,9 +468,13 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 		#break
-		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45) { # check density
-			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land_area, ')')
-			next 
+		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45000) { # check density
+			if(k<100) {
+				k <- k+1
+				warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ') - resample rate')
+				next 
+			}
+			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ')')
 		}
 		if(all(pop.prev.group$M[1:21] + migM >= -1e-1) && all(pop.prev.group$F[1:21] + migF >= -1e-1))  break # assure positive count (just an approximation to the real pop count)
 		i <- i+1
