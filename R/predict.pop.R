@@ -503,7 +503,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 			if(!file.exists(file.name)) 
 				stop('File ', file.name, 
 					' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
-			if(verbose) cat('\nLoading ', file.name, '\n')
+			if(verbose) cat('\nLoading ', file.name)
 			e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
 			e0Mpred <- e0Mpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
 			colnames(e0Mpred) <- c('country_code', 'year', 'trajectory', 'value')
@@ -521,7 +521,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 	}
-
 	# Get TFR
 	if(!is.null(inputs$tfr.file)) {
 		if(inputs$tfr.file == 'median_')
@@ -819,7 +818,6 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     #stop('')
     nproj <- npred
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
-    	#cat('\n\nSex: ', mxYKan$sex, '\n-----\n\n')
     	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), as.numeric(mxKan$bx), 
 			as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
 			constrain=as.integer(mxYKan$sex == 1), 
@@ -1384,3 +1382,4 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	clusterEvalQ(cl, {.libPaths(lib.paths); library(bayesPop)})
 	return(cl)
 }
+

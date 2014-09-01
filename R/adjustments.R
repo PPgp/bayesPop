@@ -57,12 +57,12 @@ adjust.quantiles <- function(q, what, env=NULL) {
 		}
 	}
 	if(length(dim(q))>3) {
-		res21 <- aaply(q[,1:21,,], 3, '-', dif)
+		res21 <- aaply(q[,1:21,,], 3, '-', dif, .drop=FALSE)
 		res21 <- aperm(res21, c(2,3,1,4))
 		res <- q
 		res[,1:21,,] <- res21
 	} else {
-		res <- aaply(q, 2, '-', dif)
+		res <- aaply(q, 2, '-', dif, .drop=FALSE)
 		res <- aperm(res, c(2,1,3))
 	}
 	env[[paste0('AdjDpop', what)]] <- dif
