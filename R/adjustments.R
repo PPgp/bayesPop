@@ -45,11 +45,15 @@ adjust.quantiles <- function(q, what, env=NULL) {
 			years <- as.numeric(dimnames(q)[[4]])
 			if((years[1] %% 5) != 0) years <- years+2 
 			med.raw <- q[,,'0.5',as.character(years)%in%dimnames(wpp)[[3]]]
-			med <- med.raw[,1:21,] # collapse to 21 age categories
-			med[,21,] <- med.raw[,21,] + apply(med.raw[,22:27,], c(1,3), sum) 
-			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=21), med-wpp, along=3)
-
-		} else {
+			if(length(dim(med.raw))>2) { # multiple countries
+				med <- med.raw[,1:21,] # collapse to 21 age categories
+				med[,21,] <- med.raw[,21,] + apply(med.raw[,22:27,], c(1,3), sum) 
+			} else { #1 country
+				med <- med.raw[1:21,]
+				med[21,] <- med.raw[21,] + apply(med.raw[22:27,], 2, sum) 
+				med <- abind(med, along=0) # add dimension
+			}
+			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=21), med-wpp, along=3)		} else {
 			years <- as.numeric(dimnames(q)[[3]])
 			if((years[1] %% 5) != 0) years <- years+2 
 			med <- q[,'0.5',as.character(years)%in%colnames(wpp)]
