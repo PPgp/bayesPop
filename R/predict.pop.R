@@ -1040,7 +1040,7 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 			finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF), isNegative=as.integer(isNegative)
 			)
 		if(returnIfNegative==1 && res$isNegative < 0) {
-			warning('Negative population for ', country.name, '. Counts adjusted.')
+			warning('Negative population for ', country.name, '. Counts adjusted.', immediate.=TRUE)
 			returnIfNegative <- 0
 		} else break
 	}

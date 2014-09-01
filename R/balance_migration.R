@@ -266,11 +266,13 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			mig.rate[cidx, itraj] <- migpred$rate
 			pop[cidx] <- pop.ini
 		}
-		before <- sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor)
+		before <- sum(e$migrm + e$migrf)
+		before.labor <- sum(e$migrm.labor + e$migrf.labor)
 		if(rebalance) {
 			rebalance.migration2groups(e, pop)
-			if(abs(sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - before) > 1e6) 
-				cat('\n', itraj, ' rebalancing migration: ', sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - before)
+			if(abs(sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - (before+before.labor)) > 1e6) 
+				cat('\n', itraj, ' rebalancing migration: total=', sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - (before+before.labor),
+							', labor=', sum(e$migrm.labor + e$migrf.labor)-before.labor)
 		}
 		migrationm[,,itraj] <- e$migrm + e$migrm.labor
 		migrationf[,,itraj] <- e$migrf + e$migrf.labor
@@ -468,13 +470,16 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 		#break
-		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45000) { # check density
+		#print(c(land.area, mig.count, (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area))
+		#stop('')
+		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45) { # check density
 			if(k<100) {
 				k <- k+1
-				warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ') - resample rate')
+				warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ') - resample rate', 
+							immediate.=TRUE)
 				next 
 			}
-			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ')')
+			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ')', immediate.=TRUE)
 		}
 		if(all(pop.prev.group$M[1:21] + migM >= -1e-1) && all(pop.prev.group$F[1:21] + migF >= -1e-1))  break # assure positive count (just an approximation to the real pop count)
 		i <- i+1
@@ -500,12 +505,12 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				if(j > 20) stop('')
 			}
 			if(!resample.rate) {
-				warning('Migration age schedule modified for ', country.code, ' to assure positive population.')
+				warning('Migration age schedule modified for ', country.code, ' to assure positive population.', immediate.=TRUE)
 				break
 			}
 		}
 		if(i > 10000) {
-			warning('Unable to modify age schedule to get positive population for country ', country.code)
+			warning('Unable to modify age schedule to get positive population for country ', country.code, immediate.=TRUE)
 			break
 		}
 	}
