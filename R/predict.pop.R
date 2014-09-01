@@ -1054,6 +1054,7 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmigr=res$finmigrm, fmigr=res$finmigrf), vital.events))
 }
 
+
 compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years) {
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
