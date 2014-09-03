@@ -45,26 +45,38 @@ adjust.quantiles <- function(q, what, env=NULL) {
 			years <- as.numeric(dimnames(q)[[4]])
 			if((years[1] %% 5) != 0) years <- years+2 
 			med.raw <- q[,,'0.5',as.character(years)%in%dimnames(wpp)[[3]]]
-			med <- med.raw[,1:21,] # collapse to 21 age categories
-			med[,21,] <- med.raw[,21,] + apply(med.raw[,22:27,], c(1,3), sum) 
-			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=21), med-wpp, along=3)
-
+			if(length(dim(med.raw))>2) { # multiple countries
+				med <- med.raw[,1:21,] # collapse to 21 age categories
+				med[,21,] <- med.raw[,21,] + apply(med.raw[,22:27,], c(1,3), sum) 
+			} else { #1 country
+				med <- med.raw[1:21,]
+				med[21,] <- med.raw[21,] + apply(med.raw[22:27,], 2, sum) 
+				med <- abind(med, along=0) # add dimension
+			}
+			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=21), med-wpp, along=3)		
 		} else {
 			years <- as.numeric(dimnames(q)[[3]])
 			if((years[1] %% 5) != 0) years <- years+2 
 			med <- q[,'0.5',as.character(years)%in%colnames(wpp)]
 			dif <- as.matrix(cbind(0, med-wpp))
 		}
-	}
+	} else countries <- dimnames(dif)
 	if(length(dim(q))>3) {
-		res21 <- aaply(q[,1:21,,], 3, '-', dif, .drop=FALSE)
-		res21 <- aperm(res21, c(2,3,1,4))
+		if(dim(q)[1]==1){ # one country - the generic aaply fails because of some dimension dropping 
+			res21 <- aaply(q[,1:21,,], 2, '-', dif[1,,], .drop=FALSE)
+			res21 <- aperm(res21, c(2,1,3))
+		} else {
+			res21 <- aaply(q[,1:21,,], 3, '-', dif, .drop=FALSE)
+			res21 <- aperm(res21, c(2,3,1,4))
+		}
 		res <- q
 		res[,1:21,,] <- res21
-	} else {
+	} else { # no age dimension
 		res <- aaply(q, 2, '-', dif, .drop=FALSE)
 		res <- aperm(res, c(2,1,3))
 	}
+	if(is.null(dimnames(dif)[[1]])) dimnames(dif)[[1]] <- countries
+	if(is.null(dimnames(res)[[1]])) dimnames(res)[[1]] <- countries
 	env[[paste0('AdjDpop', what)]] <- dif
 	env[[paste0('AdjQpop', what)]] <- res
 	return(res)
