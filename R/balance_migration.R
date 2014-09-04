@@ -130,7 +130,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			clusterExport(cl, c("time", "mig.rate.prev"), envir=environment())
 			if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev", "popM.hch.prev", "popF.hch.prev"), envir=environment())
 			res.list <- parLapplyLB(cl, 1:ncountries, 
-							function(cidx) do.pop.predict.balance.one.country(time, 
+							function(cidx) do.pop.predict.one.country.no.migration(time, 
 												UNnames[cidx], countries.input[[as.character(country.codes[cidx])]], 
 												kannisto[[as.character(country.codes[cidx])]], nr.traj, npasfr, 
 												if(time>1)popM.prev[,cidx, ,drop=FALSE] else NULL, 
@@ -144,7 +144,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		} else { # process sequentially
 			res.list <- list()
 			for(cidx in 1:ncountries) {
-				res.list[[cidx]] <- do.pop.predict.balance.one.country(time, 
+				res.list[[cidx]] <- do.pop.predict.one.country.no.migration(time, 
 												UNnames[cidx], countries.input[[as.character(country.codes[cidx])]], 
 												kannisto[[as.character(country.codes[cidx])]], nr.traj, npasfr, 
 												if(time>1)popM.prev[,cidx, ,drop=FALSE] else NULL, 
@@ -169,18 +169,27 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		}
 		migpred <- get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, mig.rate.prev,
 							if(time>1)popM.prev[,, ,drop=FALSE] else NULL, 
-							if(time>1)popF.prev[,, ,drop=FALSE] else NULL, ages, res.env, verbose=verbose)	
+							if(time>1)popF.prev[,, ,drop=FALSE] else NULL, ages, res.env, verbose=verbose)
+		# TODO: what should be migrationm.hch?
+		migpred$migrationm.hch <- migpred$migrationm
+		migpred$migrationf.hch <- migpred$migrationf
 		res.env$mig.rate <- migpred$rate
-		#stop('')
-		# Rebalancing (by trajectories)
-		#if(verbose) cat('\nRe-balance migration.')
-		#rebalance.population.by.migration(res.env)
-		#hch.env <- new.env()
-		#vars <- c('totp', 'totpm', 'totpf', 'migrationm', 'migrationf')
-		#for(par in vars) hch.env[[par]] <- res.env[[(paste0(par, '.hch'))]]
-		#rebalance.population.by.migration(hch.env)	
-		#for(par in vars) res.env[[paste0(par, '.hch')]] <- hch.env[[par]]
-		
+		# New population counts
+		res.env$totpm <- res.env$totpm+migpred$migrationm
+		res.env$totpf <- res.env$totpf+migpred$migrationf
+		res.env$totp <- apply(res.env$totpm + res.env$totpf, c(1,3), sum)
+		res.env$totpm.hch <- res.env$totpm.hch+migpred$migrationm
+		res.env$totpf.hch <- res.env$totpf.hch+migpred$migrationf
+		res.env$totp.hch <- apply(res.env$totpm.hch + res.env$totpf.hch, c(1,3), sum)
+		for(par in c('migrationm', 'migrationf', 'migrationm.hch', 'migrationf.hch'))
+			res.env[[par]][,cidx,] <- migpred[[par]]
+		if(keep.vital.events) {
+			# TODO: Are these really the same? Do we need both?
+			res.env$migm <- migpred$migrationm
+			res.env$migf <- migpred$migrationf
+		}
+		if (any(res.env$totpm < 0) || any(res.env$totpf < 0))
+			stop('Population negative for some countries.')
 		popM.prev <- res.env$totpm
 		popF.prev <- res.env$totpf
 		popM.hch.prev <- res.env$totpm.hch
@@ -235,7 +244,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 }
 
 get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalance, mig.rate.prev,
-												popM.prev, popF.prev, ages, verbose=FALSE) {
+												popM.prev, popF.prev, ages, env, verbose=FALSE) {
 	nr.countries <- length(country.codes)
 	e <- new.env()
 	labor.codes <- labor.countries()
@@ -247,16 +256,17 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	pop <- rep(NA, nr.countries)
 	names(pop) <- country.codes
 	data(land_area_wpp2012)	
-	
+	warns <- list()
 	for(itraj in 1:nr.traj){
 		for(cidx in 1:nr.countries) {
 			inpc <- inputs[[as.character(country.codes[cidx])]]
-			pop.ini.by.group <- if(time > 1) list(M=popM.prev[,cidx,itraj], F=popF.prev[,cidx,itraj])
-								else list(M=inpc$POPm0, F=inpc$POPf0)
+			#pop.ini.by.group <- if(time > 1) list(M=popM.prev[,cidx,itraj], F=popF.prev[,cidx,itraj])
+			#					else list(M=inpc$POPm0, F=inpc$POPf0)
+			pop.ini.by.group <- list(M=env$totpm[,cidx,itraj], F=env$totpf[,cidx,itraj])
 			pop.ini <- sum(pop.ini.by.group$M + pop.ini.by.group$F)
 			migpred <- .get.migration.one.trajectory(inpc, itraj, time, 
 								if(!is.null(mig.rate.prev)) mig.rate.prev[cidx, itraj] else NULL, pop.ini, 
-								pop.prev.group=pop.ini.by.group, country.code=country.codes[cidx])
+								pop.group=pop.ini.by.group, country.code=country.codes[cidx])
 			e$migrm[cidx,] <- migpred$M
 			e$migrf[cidx,] <- migpred$F
 			if(!is.null(migpred$laborM)) {
@@ -265,7 +275,9 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			}
 			mig.rate[cidx, itraj] <- migpred$rate
 			pop[cidx] <- pop.ini
+			warns[[as.character(country.codes[cidx])]] <- unique(c(warns[[as.character(country.codes[cidx])]], migpred$warns))
 		}
+		e$pop.by.age <- list(m=env$totpm[,,itraj], f=env$totpf[,,itraj])
 		before <- sum(e$migrm + e$migrf)
 		before.labor <- sum(e$migrm.labor + e$migrf.labor)
 		if(rebalance) {
@@ -273,14 +285,19 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			if(abs(sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - (before+before.labor)) > 1e6) 
 				cat('\n', itraj, ' rebalancing migration: total=', sum(e$migrm + e$migrf) + sum(e$migrm.labor + e$migrf.labor) - (before+before.labor),
 							', labor=', sum(e$migrm.labor + e$migrf.labor)-before.labor)
+			negatives <- country.codes[unique(e$negatives)]
+			for(country in negatives)
+				warns[[as.character(country)]] <- unique(c(warns[[as.character(country)]], 'population negative while balancing'))
 		}
 		migrationm[,,itraj] <- e$migrm + e$migrm.labor
 		migrationf[,,itraj] <- e$migrf + e$migrf.labor
 	}
+	for(country in names(warns))
+		if(warning('Country ', country, warns[[country]], immediate.=TRUE)
 	return(list(M=migrationm, F=migrationf, rate=mig.rate))
 }
 
-do.pop.predict.balance.one.country <- function(time, country.name, inpc, kannisto, nr.traj, npasfr, 
+do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, kannisto, nr.traj, npasfr, 
 												popM.prev, popF.prev, popM.hch.prev, popF.hch.prev, migpred,
 												ages, nvariants, keep.vital.events, verbose=FALSE) {
 	pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
@@ -395,10 +412,10 @@ do.pop.predict.balance.one.country <- function(time, country.name, inpc, kannist
 		return(res)	
 }
 
-.get.migration.one.trajectory <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop.prev=NULL, ...) {
+.get.migration.one.trajectory <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop=NULL, ...) {
 	migpred <- list(M=NULL, F=NULL)
 	if(!is.null(inpc$migration.parameters) && !is.null(itraj)) #TODO: what should it be for half child variants?
-		return(sample.migration.trajectory.from.model(inpc, itraj, time, mig.rate.prev, pop.prev, ...))
+		return(sample.migration.trajectory.from.model(inpc, itraj, time, mig.rate.prev, pop, ...))
 	for(sex in c('M', 'F')) {
 		par <- paste0('mig', sex, 'pred')
 		if(is.null(inpc[[par]]))
@@ -444,8 +461,8 @@ project.migration.one.country.one.step <- function(mu,phi,sigma,oldRate){
 is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
 
-sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop.prev=NULL, 
-													pop.prev.group=NULL, country.code=NULL) {
+sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop=NULL, 
+													pop.group=NULL, country.code=NULL) {
 														
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
@@ -453,11 +470,15 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
 	i <- 1
 	k <- 1
+	warns <- c()
 	while(TRUE) { 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, mig.rate.prev)
 		if(is.na(rate)) stop('')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop.prev
+		if(is.gcc(country.code)) { # cap to historical maximum
+			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
+		}
 		schedMname <- 'M'
 		schedFname <- 'F'
 		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
@@ -466,34 +487,24 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		if(is.gcc(country.code)) { # cap to historical maximum
-			#if(country.code == 634) stop('')
-			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
-		}
-	 	# cat('****Mig rate:', rate, ' ', ((1+rate)^5 - 1), '  ****')
+		# age-specific migration counts		
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
-		#break
-		#print(c(land.area, mig.count, (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area))
-		#stop('')
-		if(!is.na(land.area) && (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area > 45) { # check density
+		if(!is.na(land.area) && (pop + mig.count)/land.area > 44) { # check density
 			if(k<100) {
 				k <- k+1
-				warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ') - resample rate', 
-							immediate.=TRUE)
 				next 
 			}
-			warning('Density too high for ', country.code, ' (', (sum(pop.prev.group$M+pop.prev.group$F) + mig.count)/land.area, ')', immediate.=TRUE)
+			warning('Density too high for ', country.code, ' (', (pop + mig.count)/land.area, ')', immediate.=TRUE)
 		}
-		if(all(pop.prev.group$M[1:21] + migM >= -1e-1) && all(pop.prev.group$F[1:21] + migF >= -1e-1))  break # assure positive count (just an approximation to the real pop count)
+		if(all(pop.group$M[1:21] + migM >= 0) && all(pop.group$F[1:21] + migF >= 0))  break # assure positive count
 		i <- i+1
-		if(i>100 && (sum(pop.prev.group$M[1:21][msched>0]) + sum(pop.prev.group$F[1:21][fsched>0]) + mig.count) > 0) { # adjust age schedules
+		if(i>100 && (sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > 0) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
-			resample.rate <- FALSE
-			while(any(c(pop.prev.group$M[1:21] + migM, pop.prev.group$F[1:21] + migF) < -1e-1)) { 
-				isneg <- prev.isneg | (c(pop.prev.group$M[1:21] + migM, pop.prev.group$F[1:21] + migF) < -1e-1)
-				shifts <- -c(migM + pop.prev.group$M[1:21], migF + pop.prev.group$F[1:21])
+			while(any(c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < 0)) { 
+				isneg <- prev.isneg | (c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < 0)
+				shifts <- -c(migM + pop.group$M[1:21], migF + pop.group$F[1:21])
 				shifts[!isneg] <- 0
 				shifts[prev.isneg] <- 0
 				msched <- msched + shifts[1:21]/mig.count
@@ -508,10 +519,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				j <- j+1
 				if(j > 20) stop('')
 			}
-			if(!resample.rate) {
-				warning('Migration age schedule modified for ', country.code, ' to assure positive population.', immediate.=TRUE)
-				break
-			}
+			warns <- c(warns, 'migration age-schedule modified')
+			break
 		}
 		if(i > 10000) {
 			warning('Unable to modify age schedule to get positive population for country ', country.code, immediate.=TRUE)
@@ -528,7 +537,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migM <- mig.count.rest*msched
 		migF <- mig.count.rest*fsched
 	}
-	return(list(M=migM, F=migF, rate=rate, laborM=migM.labor, laborF=migF.labor))
+	return(list(M=migM, F=migF, rate=rate, laborM=migM.labor, laborF=migF.labor, warns=warns))
 }
 
 rebalance.population.by.migration <- function(e) { # not used
@@ -558,14 +567,26 @@ rebalance.population.by.migration <- function(e) { # not used
 
 rebalance.migration <- function(e, pop, what='') {
 	sumpop <- sum(pop)
+	which.negative <- c()
 	for(sex in c('m', 'f')) {
 		par <- paste0('migr',sex, what)
-		for(age in dimnames(e$migrm)[[2]]) {			
-			dif <- sum(e[[par]][,age])
-			dif.countries <- dif/sumpop * pop
-			e[[par]][,age] <- e[[par]][,age] - dif.countries
+		for(age in dimnames(e$migrm)[[2]]) {
+			i <- 1
+			while(i < 100) {		
+				dif <- sum(e[[par]][,age])
+				dif.countries <- dif/sumpop * pop
+				e[[par]][,age] <- e[[par]][,age] - dif.countries
+				if(what != '') break
+				wneg <- which(e[[par]][,age] + e$pop.by.age[[sex]][,age] < 0)
+				if(length(wneg)>0) {				
+					e[[par]][,age] <- pmax(e[[par]][,age], -e$pop.by.age[[sex]][,age])
+					i <- i+1
+					which.negative <- c(which.negative, wneg)
+				} else break
+			}
 		}
 	}
+	e$negatives <- which.negative
 }
 
 rebalance.migration2groups <- function(e, pop) {
