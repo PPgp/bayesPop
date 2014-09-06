@@ -338,8 +338,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 .ini.pop.res.env <- function(e, vital.events=FALSE) {
 	e$vital.events <- vital.events
 	with(e, {
-		totp[] <- totpm[] <- totpf[] <- totp.hch[] <- totpm.hch[] <- totpf.hch[] <- NA
-		migrationm[] <- migrationf[] <- migrationm.hch[] <- migrationf.hch[] <- NA
+		totp[] <- totpm[] <- totpf[] <- totp.hch[] <- totpm.hch[] <- totpf.hch[] <- 0
+		migrationm[] <- migrationf[] <- migrationm.hch[] <- migrationf.hch[] <- 0
 		if(vital.events) {
 			btm[] <- btf[] <- deathsm[] <- deathsf[] <- btm.hch[] <- btf.hch[] <- asfert.hch[] <- 0
 			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- migm[] <- migf[] <- 0 

@@ -449,7 +449,7 @@ void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, doub
 				  int *isNegative
 					) {
 	double b, bt[7], bm, bf, srb_ratio;
-	int i,j, jve, adim, nrow, ncol, n;
+	int i,j, jve, adim, n;
 	n = *npred;
 	adim=27;
 	/* Population projection for one trajectory excluding migration */
