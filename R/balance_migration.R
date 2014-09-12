@@ -197,7 +197,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			warning(warn, ': ', paste(unlist(cntrs), collapse=', '), immediate.=TRUE)
 		}
 		if (any(res.env$totpm < -1e-4) || any(res.env$totpf < -1e-4))
-			warning('Final population negative for some countries and age groups.')
+			warning('Final population negative for some countries and age groups.', immediate.=TRUE)
 		popM.prev <- res.env$totpm
 		popF.prev <- res.env$totpf
 		popM.hch.prev <- res.env$totpm.hch
