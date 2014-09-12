@@ -197,7 +197,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			warning(warn, ': ', paste(unlist(cntrs), collapse=', '), immediate.=TRUE)
 		}
 		if (any(res.env$totpm < -1e-4) || any(res.env$totpf < -1e-4))
-			stop('Population negative for some countries.')
+			warning('Final population negative for some countries and age groups.')
 		popM.prev <- res.env$totpm
 		popF.prev <- res.env$totpf
 		popM.hch.prev <- res.env$totpm.hch
@@ -505,7 +505,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 
 		if(all(pop.group$M[1:21] + migM >= 0) && all(pop.group$F[1:21] + migF >= -1e-4))  break # assure positive count
 		i <- i+1
-		if(i>100 && (sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > -1e-4) { # adjust age schedules
+		if(i>100 && ((sum(pop.group$M) + sum(pop.group$F) + mig.count) > -1e-4) && (
+				(sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > -1e-4)) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
@@ -680,6 +681,7 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	if(max(dif) > 1000) {
 		wc <- ceiling(which.max(dif)/21)
 		cat('\n', itraj, ' assuring positive pop: dif=', max(dif), ' country ', names(pop)[wc])
+		#if(max(dif) > 100000) stop('')
 	}
 	e$migrm.labor[] <- 0
 	e$migrf.labor[] <- 0
