@@ -509,7 +509,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 		data <- data/sum(data)
 		is.proportion <- TRUE
 	}
-	if(is.null(pop.max)) pop.max <- max(data)
+	maxx <- if(is.null(pop.max)) max(data) else pop.max
 	pyr <- list(data)
 	names(pyr) <- legend
 	if(!is.null(CI)) {
@@ -520,7 +520,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 				stop('CI components must have elements high and low.')
 			if(any(!is.element(LRcolnames, colnames(CI[[i]]$high))) || any(!is.element(LRcolnames, colnames(CI[[i]]$low))))
 				stop('High and low CI must contain columns called ', paste(LRcolnames, collapse=', '), '.')
-			pop.max <- max(pyr$pop.max, CI[[i]]$high, CI[[i]]$low)
+			if(is.null(pop.max)) maxx <- max(maxx, CI[[i]]$high, CI[[i]]$low)
 		}
 
 	}
@@ -528,7 +528,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 				label = main.label, 
 				pyramid = pyr, CI = list(CI),
 				is.proportion = is.proportion,
-				pop.max=pop.max,
+				pop.max=maxx,
 				LRmain=LRmain,
 				LRcolnames = LRcolnames), class='bayesPop.pyramid'))
 }
@@ -562,7 +562,7 @@ get.bPop.pyramid.list <- function(data, main.label=NULL, legend=NULL, CI=NULL, .
 
 get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indicator=c('P', 'B', 'D'),
 												pi=c(80, 95), proportion=FALSE, age=1:21, 
-												nr.traj=0, sort.pi=TRUE, ...) {
+												nr.traj=0, sort.pi=TRUE, pop.max=NULL, ...) {
 	pop.pred <- data
 	country <- get.country.object(country, country.table=pop.pred$countries)
 	if(is.null(country$code)) stop('Country not found in the prediction object.')
@@ -683,7 +683,6 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 			}
 		}
 	}
-	#stop('')
 	trajs <- list()
 	male.trajectories <- female.trajectories <- NULL
 	if((is.null(nr.traj) || nr.traj > 0) && any(draw.projection & (year.idx > 1))) {
@@ -731,7 +730,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 				pyramid = pyr, CI = pyr.ci,
 				trajectories = if(length(trajs) > 0) trajs else NULL,
 				is.proportion = proportion,
-				pop.max=maxx,
+				pop.max=if(is.null(pop.max)) maxx else pop.max,
 				LRmain=c('Male', 'Female'),
 				LRcolnames = c('male', 'female')
 				), class='bayesPop.pyramid'))
@@ -847,11 +846,11 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 
 pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'),
 											pi=c(80, 95), proportion=FALSE,
-											age=1:21, plot=TRUE, ...) {
+											age=1:21, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, proportion=proportion, age=age)
+	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, proportion=proportion, age=age, pop.max=pop.max)
 	if (plot) pop.pyramid(data, ...)
 	invisible(data)
 }
@@ -896,12 +895,12 @@ pop.pyramidAll <- function(pop.pred, year=NULL,
 "pop.trajectories.pyramid" <- function(pop.object, ...) UseMethod("pop.trajectories.pyramid")
 
 pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), 
-					nr.traj=NULL, proportion=FALSE, age=1:21, plot=TRUE, ...) {
+					nr.traj=NULL, proportion=FALSE, age=1:21, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
 	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, nr.traj=nr.traj, proportion=proportion, 
-							age=age, sort.pi=FALSE)
+							age=age, sort.pi=FALSE, pop.max=pop.max)
 	if(plot) pop.trajectories.pyramid(data, ...)
 	invisible(data)
 }
