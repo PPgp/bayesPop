@@ -670,9 +670,12 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	e$migrf.labor.after <- e$migrf.labor
 	after <- sum(e$migrm + e$migrf)
 	after.labor <- sum(e$migrm.labor + e$migrf.labor)
-	if(abs(after + after.labor - (before+before.labor)) > 1e6) 
+	if(abs(after + after.labor - (before+before.labor)) > 1e6) {
 				cat('\n', itraj, ' rebalancing migration: total=', after + after.labor - (before+before.labor),
 							', labor=', after.labor-before.labor)
+				dif <- colSums(e$migrm.after + e$migrf.after + e$migrm.labor.after + e$migrf.labor.after - (e$migrm.before + e$migrf.before + e$migrm.labor.before + e$migrf.labor.before))
+				cat('\nMax in ', names(pop)[which.max(abs(dif))], ':', dif[which.max(abs(dif))])
+	}
 	# set migr to sum in order to deal with negatives
 	e$migrm <- e$migrm + e$migrm.labor
 	e$migrf <- e$migrf + e$migrf.labor
@@ -681,7 +684,7 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	if(max(dif) > 1000) {
 		wc <- ceiling(which.max(dif)/21)
 		cat('\n', itraj, ' assuring positive pop: dif=', max(dif), ' country ', names(pop)[wc])
-		#if(max(dif) > 100000) stop('')
+		if(max(dif) > 100000) stop('')
 	}
 	e$migrm.labor[] <- 0
 	e$migrf.labor[] <- 0

@@ -509,7 +509,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 		data <- data/sum(data)
 		is.proportion <- TRUE
 	}
-	if(is.null(pop.max)) pop.max <- max(data)
+	maxx <- if(is.null(pop.max)) max(data) else pop.max
 	pyr <- list(data)
 	names(pyr) <- legend
 	if(!is.null(CI)) {
@@ -520,7 +520,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 				stop('CI components must have elements high and low.')
 			if(any(!is.element(LRcolnames, colnames(CI[[i]]$high))) || any(!is.element(LRcolnames, colnames(CI[[i]]$low))))
 				stop('High and low CI must contain columns called ', paste(LRcolnames, collapse=', '), '.')
-			pop.max <- max(pyr$pop.max, CI[[i]]$high, CI[[i]]$low)
+			if(is.null(pop.max)) maxx <- max(maxx, CI[[i]]$high, CI[[i]]$low)
 		}
 
 	}
@@ -528,7 +528,7 @@ get.bPop.pyramid.data.frame <- function(data, main.label=NULL, legend='observed'
 				label = main.label, 
 				pyramid = pyr, CI = list(CI),
 				is.proportion = is.proportion,
-				pop.max=pop.max,
+				pop.max=maxx,
 				LRmain=LRmain,
 				LRcolnames = LRcolnames), class='bayesPop.pyramid'))
 }
