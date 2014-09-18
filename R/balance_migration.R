@@ -21,7 +21,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		inp.to.save[[item]] <- get(item, inp)
 	npred <- nr_project
 	
-	mig.rate.prev <- NULL
+	mig.rate.prev <- mig.rate <- NULL
 	if(!is.null(.migration.pars)) {
 		inp[['migration.parameters']] <- .migration.pars$posterior
 		mig.rate.prev <- .migration.pars$ini.rates#/5.
@@ -37,7 +37,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		popF.prev <- env.tmp$totpf
 		popM.hch.prev <- env.tmp$totpm.hch
 		popF.hch.prev <- env.tmp$totpf.hch
-		mig.rate.prev <- env.tmp$mig.rate
+		mig.rate <- env.tmp$mig.rate
+		mig.rate.prev <- mig.rate[start.time.index-1,,]
 	}
 	UNnames <- UNlocations[countries.idx,'name']
 	if(parallel) {
@@ -82,6 +83,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	if(!is.null(mig.rate.prev)) {
 		mig.rate.prev <- mig.rate.prev[as.character(country.codes)]
 		mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
+		if(is.null(mig.rate)) 
+			mig.rate <- array(NA, c(npred, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
+		mig.rate[start.time.index,,] <- mig.rate.prev
 	}
 	kannisto <- list()
 	observed <- new.env()
@@ -113,6 +117,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		}
 	})
 	debug <- FALSE
+	res.env$mig.rate <- mig.rate
 	if(parallel) {
 		if(verbose) cat(' (in parallel on ', nr.nodes, ' nodes).')
 		cl <- create.pop.cluster(nr.nodes, ...)
@@ -166,7 +171,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 					res.env[[par]][,cidx,] <- res.list[[cidx]][[par]]
 			}
 		}
-		migpred <- get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, mig.rate.prev,
+		migpred <- get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, 
 							if(time>1)popM.prev[,, ,drop=FALSE] else NULL, 
 							if(time>1)popF.prev[,, ,drop=FALSE] else NULL, ages, res.env, verbose=verbose)
 		lage <- dim(migpred$M)[1]
@@ -202,7 +207,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		popF.prev <- res.env$totpf
 		popM.hch.prev <- res.env$totpm.hch
 		popF.hch.prev <- res.env$totpf.hch
-		mig.rate.prev <- res.env$mig.rate
+		#mig.rate.prev <- res.env$mig.rate
 		
 		with(res.env, {
 			save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, mig.rate,
@@ -251,7 +256,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	return(bayesPop.prediction)
 }
 
-get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalance, mig.rate.prev,
+get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalance, 
 												popM.prev, popF.prev, ages, env, verbose=FALSE) {
 	nr.countries <- length(country.codes)
 	e <- new.env()
@@ -261,7 +266,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	e$migrm <- e$migrf <- matrix(NA, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
 	e$migrm.labor <- e$migrf.labor <- matrix(0, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
 	migrationm <- migrationf <- array(NA, c(lages, nr.countries, nr.traj), dimnames=list(ages, country.codes, NULL))
-	mig.rate <- matrix(NA, nrow=nr.countries, ncol=nr.traj, dimnames=list(country.codes,NULL))
+	#mig.rate <- matrix(NA, nrow=nr.countries, ncol=nr.traj, dimnames=list(country.codes,NULL))
 	
 	pop <- rep(NA, nr.countries)
 	names(pop) <- country.codes
@@ -274,16 +279,16 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			#					else list(M=inpc$POPm0, F=inpc$POPf0)
 			pop.ini.by.group <- list(M=env$totpm[,cidx,itraj], F=env$totpf[,cidx,itraj])
 			pop.ini <- sum(pop.ini.by.group$M + pop.ini.by.group$F)
-			migpred <- .get.migration.one.trajectory(inpc, itraj, time, 
-								if(!is.null(mig.rate.prev)) mig.rate.prev[cidx, itraj] else NULL, pop.ini, 
-								pop.group=pop.ini.by.group, country.code=country.codes[cidx])
+			migpred <- .get.migration.one.trajectory(inpc, itraj, time, pop.ini, 
+								pop.group=pop.ini.by.group, country.code=country.codes[cidx], 
+								mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[,cidx,itraj] else NULL)
 			e$migrm[,cidx] <- migpred$M
 			e$migrf[,cidx] <- migpred$F
 			if(!is.null(migpred$laborM)) {
 				e$migrm.labor[,cidx] <- migpred$laborM
 				e$migrf.labor[,cidx] <- migpred$laborF
 			}
-			mig.rate[cidx, itraj] <- migpred$rate
+			env$mig.rate[time, cidx, itraj] <- migpred$rate
 			pop[cidx] <- pop.ini
 			warns[[as.character(country.codes[cidx])]] <- unique(c(warns[[as.character(country.codes[cidx])]], migpred$warns))
 		}
@@ -415,10 +420,10 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 		return(res)	
 }
 
-.get.migration.one.trajectory <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop=NULL, ...) {
+.get.migration.one.trajectory <- function(inpc, itraj=NULL, time=NULL,  pop=NULL, ...) {
 	migpred <- list(M=NULL, F=NULL)
 	if(!is.null(inpc$migration.parameters) && !is.null(itraj)) #TODO: what should it be for half child variants?
-		return(sample.migration.trajectory.from.model(inpc, itraj, time, mig.rate.prev, pop, ...))
+		return(sample.migration.trajectory.from.model(inpc, itraj, time, pop, ...))
 	for(sex in c('M', 'F')) {
 		par <- paste0('mig', sex, 'pred')
 		if(is.null(inpc[[par]]))
@@ -464,8 +469,8 @@ project.migration.one.country.one.step <- function(mu,phi,sigma,oldRate){
 is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
 
-sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, mig.rate.prev=NULL, pop=NULL, 
-													pop.group=NULL, country.code=NULL) {													
+sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
+													pop.group=NULL, country.code=NULL, mig.rates=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
 	if(country.code %in% land_area_wpp2012$country_code)
