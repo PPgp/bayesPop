@@ -20,11 +20,17 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
 	npred <- nr_project
-	
+		
 	mig.rate.prev <- mig.rate <- NULL
 	if(!is.null(.migration.pars)) {
 		inp[['migration.parameters']] <- .migration.pars$posterior
-		mig.rate.prev <- .migration.pars$ini.rates#/5.
+		if(!is.null(.migration.pars$ini.rates)) {
+			mig.rate.prev <- .migration.pars$ini.rates#/5.
+		} else {
+			mig.rate.prev <- inp$migration.rates[,ncol(inp$migration.rates)]
+			names(mig.rate.prev) <- inp$migration.rates$country_code
+		}
+		inp$migration.rates <- inp$migration.rates[,-ncol(inp$migration.rates)] # remove the present year column as it is in mig.rate.prev
 	}
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
@@ -84,7 +90,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		mig.rate.prev <- mig.rate.prev[as.character(country.codes)]
 		mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
 		if(is.null(mig.rate)) 
-			mig.rate <- array(NA, c(npred, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
+			mig.rate <- array(NA, c(npred+1, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
 		mig.rate[start.time.index,,] <- mig.rate.prev
 	}
 	kannisto <- list()
@@ -180,7 +186,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		# TODO: what should be migrationm.hch?
 		res.env$migrationm.hch[1:lage,,] <- apply(migpred$M, c(1,2), mean)
 		res.env$migrationf.hch[1:lage,,] <- apply(migpred$F, c(1,2), mean)
-		res.env$mig.rate <- migpred$rate
+		#res.env$mig.rate <- migpred$rate
 		# New population counts
 		res.env$totpm <- res.env$totpm + res.env$migrationm
 		res.env$totpf <- res.env$totpf + res.env$migrationf
@@ -270,7 +276,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	
 	pop <- rep(NA, nr.countries)
 	names(pop) <- country.codes
-	data(land_area_wpp2012)	
+	data(land_area_wpp2012)
 	warns <- list()
 	for(itraj in 1:nr.traj){
 		for(cidx in 1:nr.countries) {
@@ -288,7 +294,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 				e$migrm.labor[,cidx] <- migpred$laborM
 				e$migrf.labor[,cidx] <- migpred$laborF
 			}
-			env$mig.rate[time, cidx, itraj] <- migpred$rate
+			env$mig.rate[time+1, cidx, itraj] <- migpred$rate
 			pop[cidx] <- pop.ini
 			warns[[as.character(country.codes[cidx])]] <- unique(c(warns[[as.character(country.codes[cidx])]], migpred$warns))
 		}
@@ -302,7 +308,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 		migrationm[,,itraj] <- e$migrm + e$migrm.labor
 		migrationf[,,itraj] <- e$migrf + e$migrf.labor
 	}
-	return(list(M=migrationm, F=migrationf, rate=mig.rate, warns=warns))
+	return(list(M=migrationm, F=migrationf, warns=warns))
 }
 
 do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, kannisto, nr.traj, npasfr, 
@@ -442,7 +448,7 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 }
 
 
-project.migration.one.country.one.step <- function(mu,phi,sigma,oldRate){
+project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code){
 # Based on Jon Azose code 
 #######################
 #Project migration for a single country one time point into the future
@@ -460,15 +466,50 @@ project.migration.one.country.one.step <- function(mu,phi,sigma,oldRate){
   #
   #         The units on the pop inputs are similarly assumed to be total person-years across the five-year period [not thousands]
   #         The units on the output will projection will also be a total five-year count [not thousands]
-  newRate <- 1
-  while(newRate < -0.33 || newRate > 0.665)
-  	newRate <- mu + phi*(oldRate-mu) + rnorm(n=1,mean=0,sd=sigma)
-  return(newRate)
+	nrates <- length(oldRates)
+	oldRate <- oldRates[nrates]
+	isGCC <- is.gcc(country.code)
+	fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
+	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
+  #while(newRate < -0.33 || newRate > 0.665)
+	r <- 1
+	while(r < 1000000) {
+		newRate <- mu + phi*(oldRate-mu) + rnorm(n=1,mean=0,sd=sigma)
+		if(is.migrate.within.permissible.range(c(oldRates, newRate), nrates+1, isGCC, fun.min, fun.max)) return(newRate)
+		r <- r+1
+	}
+	stop("Can't simulate new migration rate for country ", country.code)
+	return(newRate)
 }
+
+is.migrate.within.permissible.range <- function(rates, n, is.gcc, fun.min, fun.max){
+	for(i in 1:min(12,n)) {
+		s <- sum(rates[(n-i+1):n])
+		if(s < do.call(fun.min, list(i)) || s > do.call(fun.max, list(i))) return (FALSE)
+	}
+	return(TRUE)
+}
+
 
 is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
 
+cummulative.max.rate.no.gcc <- function(l)
+	switch(l, 0.538465, 0.628720, 0.927310, 1.195605, 1.266020, 1.586800, 
+			1.648005, 1.701605, 1.745850, 1.841215, 2.086650, 2.187455)
+
+cummulative.min.rate.no.gcc <- function(l)
+	switch(l, -0.283625, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
+			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
+	
+cummulative.max.rate <- function(l)
+	switch(l, 0.666770, 1.159820, 1.448865, 1.761840, 1.909545, 2.074115, 
+			2.231875, 2.649090, 2.938135, 3.251110, 3.228510, 3.207015)
+			
+cummulative.min.rate <- function(l)
+	switch(l, -0.330165, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
+			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
+	
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
 													pop.group=NULL, country.code=NULL, mig.rates=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
@@ -479,7 +520,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	k <- 1
 	warns <- c()
 	while(TRUE) { 
-		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, mig.rate.prev)
+		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code)
 		if(is.na(rate)) stop('Migration rate is NA')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop

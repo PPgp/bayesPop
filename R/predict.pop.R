@@ -467,7 +467,17 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
 		assign(var.name, migpred)
 	}
-
+	# Get historical migration rates
+	migration.rates <- read.bayesPop.file(paste('migration_rates_wpp', wpp.year, '.txt', sep=''))
+	names.migr.data <- names(migration.rates)
+	num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.migr.data) # index of year-columns
+	cols.starty <- as.integer(substr(names.migr.data[num.columns], 1,4))
+    cols.endy <- as.integer(substr(names.migr.data[num.columns], 6,9))
+	start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
+	present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
+	estim.periods <- names.migr.data[num.columns[start.index:present.index]]  
+	migration.rates <- migration.rates[,c('country_code', estim.periods)]
+	
 	# Get life expectancy
 	e0F.wpp.median.loaded <- FALSE
 	if(!is.null(inputs$e0F.file)) { # female
@@ -543,7 +553,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
-				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
+				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migration.rates', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
@@ -774,6 +784,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		#	cat('\nCross-overs in migration age schedules for ', country.obj$name)
 		#	print(inpc$migration.age.schedule[['M']][,1])
 		#}
+		if(country %in% inputs$migration.rates$country_code)
+			inpc$migration.rates <- inputs$migration.rates[inputs$migration.rates$country_code == country, 
+										-which(colnames(inputs$migration.rates)=='country_code')]
 	}
 	return(inpc)
 }
