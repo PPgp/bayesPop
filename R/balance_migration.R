@@ -476,7 +476,7 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
-  	newRate <- rtruncnorm(n=1,a=xmin+determ.part, b=xmax+determ.part, mean=0, sd=sigma) + determ.part
+  	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
   	#if (isGCC) stop('')
 	# r <- 1
 	# while(r < 1000000) {
