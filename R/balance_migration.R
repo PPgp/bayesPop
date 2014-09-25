@@ -471,15 +471,30 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	isGCC <- is.gcc(country.code)
 	fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
 	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
+	xmin <- .get.rate.limit(oldRates, nrates, fun.min, max)
+	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min)
+	
   #while(newRate < -0.33 || newRate > 0.665)
-	r <- 1
-	while(r < 1000000) {
-		newRate <- mu + phi*(oldRate-mu) + rnorm(n=1,mean=0,sd=sigma)
-		if(is.migrate.within.permissible.range(c(oldRates, newRate), nrates+1, isGCC, fun.min, fun.max)) return(newRate)
-		r <- r+1
-	}
-	stop("Can't simulate new migration rate for country ", country.code)
+  	determ.part <- mu + phi*(oldRate-mu)
+  	newRate <- rtruncnorm(n=1,a=xmin+determ.part, b=xmax+determ.part, mean=0, sd=sigma) + determ.part
+  	#if (isGCC) stop('')
+	# r <- 1
+	# while(r < 1000000) {
+		# newRate <- mu + phi*(oldRate-mu) + rnorm(n=1,mean=0,sd=sigma)
+		# if(is.migrate.within.permissible.range(c(oldRates, newRate), nrates+1, isGCC, fun.min, fun.max)) return(newRate)
+		# r <- r+1
+	# }
+	# stop("Can't simulate new migration rate for country ", country.code)
 	return(newRate)
+}
+
+.get.rate.limit <- function(rates, n, cumfun, fun) {
+	res <- do.call(cumfun, list(1))
+	for(i in 2:min(12,n+1)) {
+		s <- sum(rates[(n-i+2):n])
+		res <- c(res, do.call(cumfun, list(i)) - s)
+	}
+	return(do.call(fun, list(res)))
 }
 
 is.migrate.within.permissible.range <- function(rates, n, is.gcc, fun.min, fun.max){
