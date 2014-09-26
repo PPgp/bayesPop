@@ -476,7 +476,8 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
-  	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+  	#newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+  	newRate <- rnorm(n=1,mean=0, sd=sigma) + determ.part
   	#if (isGCC) stop('')
 	# r <- 1
 	# while(r < 1000000) {
@@ -536,12 +537,13 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	warns <- c()
 	while(TRUE) { 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code)
+		write(c(time, rate), 'Kuwait_rates.txt', ncolumns=2, append=TRUE)
 		if(is.na(rate)) stop('Migration rate is NA')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
-		if(is.gcc(country.code)) { # cap to historical maximum
-			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
-		}
+		#if(is.gcc(country.code)) { # cap to historical maximum
+		#	mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
+		#}
 		if(!is.na(land.area) && (pop + mig.count)/land.area > 44) { # check density
 			if(k<100) {
 				k <- k+1
