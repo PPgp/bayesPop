@@ -226,6 +226,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		})
 		gc()
 	} # end time
+	
 	if(parallel) stopCluster(cl)
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, countries.input, observed, kannisto, 
@@ -470,14 +471,15 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	oldRate <- oldRates[nrates]
 	isGCC <- is.gcc(country.code)
 	fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
-	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
-	xmin <- .get.rate.limit(oldRates, nrates, fun.min, max)
+	#fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
+	#xmin <- .get.rate.limit(oldRates, nrates, fun.min, max)
 	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min)
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
   	#newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
-  	newRate <- rnorm(n=1,mean=0, sd=sigma) + determ.part
+  	newRate <- rtruncnorm(n=1, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+  	#newRate <- rnorm(n=1,mean=0, sd=sigma) + determ.part
   	#if (isGCC) stop('')
 	# r <- 1
 	# while(r < 1000000) {
@@ -537,13 +539,12 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	warns <- c()
 	while(TRUE) { 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code)
-		write(c(time, rate), 'Kuwait_rates.txt', ncolumns=2, append=TRUE)
 		if(is.na(rate)) stop('Migration rate is NA')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
-		#if(is.gcc(country.code)) { # cap to historical maximum
-		#	mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
-		#}
+		if(is.gcc(country.code)) { # cap to historical maximum
+			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
+		}
 		if(!is.na(land.area) && (pop + mig.count)/land.area > 44) { # check density
 			if(k<100) {
 				k <- k+1
@@ -568,6 +569,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 
 		if(all(pop.group$M[1:21] + migM >= 0) && all(pop.group$F[1:21] + migF >= -1e-4))  break # assure positive count
 		i <- i+1
+		#break
 		if(i>100 && ((sum(pop.group$M) + sum(pop.group$F) + mig.count) > -1e-4) && (
 				(sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > -1e-4)) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
@@ -1167,18 +1169,18 @@ migration.age.schedule <- function(country, npred, inputs) {
     	negM[negM<0] <- 0
     	negF <- femaleArray
     	negF[negF<0] <- 0
-    	tot <- sum(negM+negF)
-    	negM <- negM/tot
-    	negF <- negF/tot
+    	tot <- apply(negM+negF, 2, sum)
+    	negM <- t(apply(negM, 1, '/', tot))
+    	negF <- t(apply(negF, 1, '/', tot))
     }
     if(country == 818) { # Egypt (special handling when rate positive)
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0
     	negF <- femaleArray
     	femaleArray[femaleArray<0] <- 0
-    	tot <- sum(maleArray + femaleArray)
-    	maleArray <- maleArray/tot
-    	femaleArray <- femaleArray/tot
+    	tot <- apply(maleArray + femaleArray, 2, sum)
+    	maleArray <- t(apply(maleArray, 1, '/', tot))
+    	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
     if(country %in% c(528, 756)) { # Netherlands and Switzerland (get Czech schedule)
     	maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, "2010-2015"]
