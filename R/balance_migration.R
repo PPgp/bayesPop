@@ -471,14 +471,14 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	oldRate <- oldRates[nrates]
 	isGCC <- is.gcc(country.code)
 	fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
-	#fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
-	#xmin <- .get.rate.limit(oldRates, nrates, fun.min, max)
-	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min)
+	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
+	xmin <- .get.rate.limit(oldRates, nrates, fun.min, max, nperiods=6)
+	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
-  	#newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
-  	newRate <- rtruncnorm(n=1, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+  	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+  	#newRate <- rtruncnorm(n=1, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
   	#newRate <- rnorm(n=1,mean=0, sd=sigma) + determ.part
   	#if (isGCC) stop('')
 	# r <- 1
@@ -491,9 +491,9 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	return(newRate)
 }
 
-.get.rate.limit <- function(rates, n, cumfun, fun) {
+.get.rate.limit <- function(rates, n, cumfun, fun, nperiods=12) {
 	res <- do.call(cumfun, list(1))
-	for(i in 2:min(12,n+1)) {
+	for(i in 2:min(nperiods,n+1)) {
 		s <- sum(rates[(n-i+2):n])
 		res <- c(res, do.call(cumfun, list(i)) - s)
 	}
@@ -513,6 +513,10 @@ is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
 
 cummulative.max.rate.no.gcc <- function(l)
+	switch(l, 0.318445, 0.380350, 0.432385, 0.599260, 0.582940, 0.620895, 
+			0.655665, 0.699100, 0.780100, 0.811745, 0.839445, 0.847995)
+
+cummulative.max.rate.no.gcc.with.outliers <- function(l)
 	switch(l, 0.538465, 0.628720, 0.927310, 1.195605, 1.266020, 1.586800, 
 			1.648005, 1.701605, 1.745850, 1.841215, 2.086650, 2.187455)
 
