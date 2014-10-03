@@ -449,7 +449,7 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 }
 
 
-project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code){
+project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rmax=NULL){
 # Based on Jon Azose code 
 #######################
 #Project migration for a single country one time point into the future
@@ -474,6 +474,7 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
 	xmin <- .get.rate.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
+	if(!is.null(rmax)) xmax <- min(xmax, rmax)
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
@@ -540,15 +541,18 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
 	i <- 1
 	k <- 1
+	zero.constant <- -1e-4
 	warns <- c()
 	while(TRUE) { 
-		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code)
+		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
+					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
+					rmax=if(is.gcc(country.code)) max(colSums(inpc$observed$MIGm + inpc$observed$MIGf))/pop else NULL)
 		if(is.na(rate)) stop('Migration rate is NA')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
-		if(is.gcc(country.code)) { # cap to historical maximum
-			mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
-		}
+		#if(is.gcc(country.code)) { # cap to historical maximum
+		#	mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
+		#}
 		if(!is.na(land.area) && (pop + mig.count)/land.area > 44) { # check density
 			if(k<100) {
 				k <- k+1
@@ -571,16 +575,16 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 
-		if(all(pop.group$M[1:21] + migM >= 0) && all(pop.group$F[1:21] + migF >= -1e-4))  break # assure positive count
+		if(all(pop.group$M[1:21] + migM >= zero.constant) && all(pop.group$F[1:21] + migF >= zero.constant))  break # assure positive count
 		i <- i+1
 		#break
-		if(i>100 && ((sum(pop.group$M) + sum(pop.group$F) + mig.count) > -1e-4) && (
-				(sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > -1e-4)) { # adjust age schedules
+		if(i>1000 && ((sum(pop.group$M) + sum(pop.group$F) + mig.count) > zero.constant) && (
+				(sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > zero.constant)) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
-			while(any(c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < -1e-4)) { 
-				isneg <- prev.isneg | (c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < -1e-4)
+			while(any(c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < zero.constant)) { 
+				isneg <- prev.isneg | (c(pop.group$M[1:21] + migM, pop.group$F[1:21] + migF) < zero.constant)
 				shifts <- -c(migM + pop.group$M[1:21], migF + pop.group$F[1:21])
 				shifts[!isneg] <- 0
 				shifts[prev.isneg] <- 0
@@ -607,6 +611,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			break
 		}
 	}
+	#if(time == 18) stop('')
 	migM.labor <- migF.labor <- NULL
 	if(country.code %in% labor.countries()) {
 		prop <- prop.labor.migration.for.country(country.code)
