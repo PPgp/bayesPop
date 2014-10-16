@@ -546,7 +546,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	while(TRUE) { 
 		rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
-					rmax=if(is.gcc(country.code)) max(colSums(inpc$observed$MIGm + inpc$observed$MIGf))/pop else NULL)
+					#rmax=if(is.gcc(country.code) && pop>0) max(colSums(inpc$observed$MIGm + inpc$observed$MIGf))/pop else NULL
+					)
 		if(is.na(rate)) stop('Migration rate is NA')
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
@@ -578,8 +579,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		if(all(pop.group$M[1:21] + migM >= zero.constant) && all(pop.group$F[1:21] + migF >= zero.constant))  break # assure positive count
 		i <- i+1
 		#break
-		if(i>1000 && ((sum(pop.group$M) + sum(pop.group$F) + mig.count) > zero.constant) && (
-				(sum(pop.group$M[1:21][msched>0]) + sum(pop.group$F[1:21][fsched>0]) + mig.count) > zero.constant)) { # adjust age schedules
+		if(i>1 && ((sum(pop.group$M[1:21][abs(msched)>0]) + sum(pop.group$F[1:21][abs(fsched)>0]) + mig.count) > zero.constant)
+				) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
@@ -589,12 +590,15 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				shifts[!isneg] <- 0
 				shifts[prev.isneg] <- 0
 				if(sum(shifts)==0) {sample.new.rate <- TRUE; break}
-				msched <- msched + shifts[1:21]/mig.count
-				fsched <- fsched + shifts[22:length(shifts)]/mig.count
-				tsched.neg <- sum(c(msched,fsched)[isneg])
-				tsched.notneg <- sum(c(msched,fsched)[!isneg])
-				msched[!isneg[1:21]] <- (1-tsched.neg) * msched[!isneg[1:21]]/tsched.notneg
-				fsched[!isneg[22:length(shifts)]] <- (1-tsched.neg) * fsched[!isneg[22:length(shifts)]]/tsched.notneg
+				sched.new <- c(msched, fsched) + shifts/mig.count
+				delta <- sum(c(msched, fsched) - sched.new)
+				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
+				msched <- sched.new[1:21]
+				fsched <- sched.new[22:length(sched.new)]	
+				#tsched.neg <- sum(c(msched,fsched)[isneg])
+				#tsched.notneg <- sum(c(msched,fsched)[!isneg])
+				#msched[!isneg[1:21]] <- (1-tsched.neg) * msched[!isneg[1:21]]/tsched.notneg
+				#fsched[!isneg[22:length(shifts)]] <- (1-tsched.neg) * fsched[!isneg[22:length(shifts)]]/tsched.notneg
 				migM <- mig.count * msched
 				migF <- mig.count * fsched
 				prev.isneg <- isneg
@@ -602,14 +606,18 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				#if(j > 21) stop('Age schedule cannot be adjusted.')
 			}
 			if(!sample.new.rate) {
-				warns <- c(warns, 'migration age-schedule modified')
+				#warns <- c(warns, 'migration age-schedule modified')
 				break
 			}
+			if(((migM+migF)/(pop.group$M[1:21] + migM + pop.group$F[1:21] + migF))[15] < -1) stop('')
 		}
 		if(i > 10000) {
 			warning('Unable to modify age schedule to get positive population for country ', country.code, immediate.=TRUE)
 			break
 		}
+	}
+	if(i>2){
+		warns <- c(warns, paste('migration rate resampled', i, 'times'))	
 	}
 	#if(time == 18) stop('')
 	migM.labor <- migF.labor <- NULL
@@ -1146,12 +1154,28 @@ migration.age.schedule <- function(country, npred, inputs) {
 		croatiaF <- matrix(rep(femaleVec/tot, npred), nrow=nAgeGroups)		
 		return(list(M=croatiaM, F=croatiaF))
 	}
-	cidxM <- which(inputs$MIGm$country_code==country)
-	cidxF <- which(inputs$MIGf$country_code==country)
-	start.idx <- which(substr(colnames(inputs$MIGm), 1,4)==as.character(inputs$present.year))
-	maleVec <- as.matrix(inputs$MIGm[cidxM,start.idx:ncol(inputs$MIGm)])
-    femaleVec <- as.matrix(inputs$MIGf[cidxF,start.idx:ncol(inputs$MIGf)])
-    colnames(maleVec) <- colnames(femaleVec) <- colnames(inputs$MIGm)[start.idx:ncol(inputs$MIGm)]
+	sched.country <- country
+	first.year <- FALSE
+	# Replace Bahrain and Saudi Arabia with schedule from Qatar 
+	if(country %in% c(682, 48)) {
+		   sched.country <- 634
+	}
+	if(country %in% c(28, 531, 364, 376, 462, 562, 630, 662)) { # Antigua and Barbuda, Curacao, Iran, Israel, Maldives, Niger, Puerto Rico, and Saint Lucia
+		   sched.country <- 156 # China
+		   first.year <- TRUE
+	}
+	cidxM <- which(inputs$MIGm$country_code==sched.country)
+	cidxF <- which(inputs$MIGf$country_code==sched.country)
+	col.idx <- which(substr(colnames(inputs$MIGm), 1,4)==as.character(inputs$present.year)):ncol(inputs$MIGm)
+	if(first.year) {
+		       cix <- rep(which(colnames(inputs$MIGm)=="2010-2015"), length(col.idx))
+		       maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
+		       femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
+	} else {
+	  maleVec <- as.matrix(inputs$MIGm[cidxM,col.idx])
+    	  femaleVec <- as.matrix(inputs$MIGf[cidxF,col.idx])
+	}
+    colnames(maleVec) <- colnames(femaleVec) <- colnames(inputs$MIGm)[col.idx]
     tot <- colSums(maleVec+femaleVec)
     if(any(tot == 0)) {
 		#Pull a model schedule to use in scenarios where the projection is 0
@@ -1171,6 +1195,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	maleArray[,which(!non.zero)] <- matrix(modelM, nrow=nAgeGroups, ncol=sum(!non.zero))
     	femaleArray[,which(!non.zero)] <- matrix(modelF, nrow=nAgeGroups, ncol=sum(!non.zero))
     }
+
     # special handling for negative rates
     negM <- negF <- NULL
     if(is.gcc(country)) { # set negatives to zero
@@ -1191,7 +1216,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	maleArray <- t(apply(maleArray, 1, '/', tot))
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
-    if(country %in% c(528, 756)) { # Netherlands and Switzerland (get Czech schedule)
+    if(country %in% c(528, 756)) { # Netherlands, Switzerland  (get Czech schedule for negative schedules)
     	maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, "2010-2015"]
     	femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, "2010-2015"]
     	tot <- sum(maleVec+femaleVec)
