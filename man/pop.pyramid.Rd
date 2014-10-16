@@ -24,7 +24,7 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
 \usage{
 \method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
 	indicator = c("P", "B", "D"), pi = c(80, 95), 
-    proportion = FALSE, age = 1:21, plot = TRUE, \dots)
+    proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     pyr1.par = list(border='black', col=NA, density=NULL, height=0.9),
@@ -37,7 +37,7 @@ pop.pyramidAll(pop.pred, year = NULL,
     output.type = "png", verbose = FALSE, \dots)
 	
 \method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, pi = c(80, 95), 
-    nr.traj = NULL, proportion = FALSE, age = 1:21, plot = TRUE, \dots)
+    nr.traj = NULL, proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     col = rainbow, col.traj = 'grey', lwd = 2, ann = par('ann'), axes = TRUE, 
@@ -51,7 +51,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
 
 \method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, 
 	indicator = c("P", "B", "D"), pi = c(80, 95), 
-    proportion = FALSE, age = 1:21, nr.traj = 0, sort.pi=TRUE, \dots)
+    proportion = FALSE, age = 1:21, nr.traj = 0, sort.pi=TRUE, pop.max = NULL, \dots)
     
 \method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = 'observed', 
     is.proportion = FALSE, ages = NULL, pop.max = NULL, 

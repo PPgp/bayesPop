@@ -1,3 +1,9 @@
+5.2-0 (10/3/2014)
+-----
+Added an option of using projections of mx only, without calculating e0.
+
+Fix in pop.pyramid - the argument pop.max now works.
+
 5.1-5 (8/13/2014)
 -----
 Minor fixes.

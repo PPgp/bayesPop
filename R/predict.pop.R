@@ -172,6 +172,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				par <- paste0('mig', sex, 'pred')
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 			}
+			#stop('')
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
 			totp[,itraj] <- popres$totpop
@@ -816,17 +817,19 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
 survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
     sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
     Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
+    sx <- rep(0, 27)
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	Mx[[mxYKan$sex]] <- mxYKan$mx
     	sex <- c('Male', 'Female')[mxYKan$sex]
     	for(time in 1:npred) {
 			res <- LifeTableMx(mxYKan$mx[,time], sex=sex)
-			sr[[mxYKan$sex]][,time] <- res$Lx[2:nrow(res)]/res$Lx[1:(nrow(res)-1)]
-			LLm[[mxYKan$sex]][,time] <- res$Lx[1:(nrow(res)-1)]
+			LLm[[mxYKan$sex]][,time] <- c(sum(res$Lx[1:2]), +res$Lx[3:nrow(res)]) # collapse first two age groups
+			res.sr <- .C("get_sx27", as.numeric(LLm[[mxYKan$sex]][,time]), sx=sx)
+			sr[[mxYKan$sex]][,time] <- res.sr$sx			
 			lx[[mxYKan$sex]][,time] <- res$lx
 		}
     }
-    stop('')
+    #stop('')
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
