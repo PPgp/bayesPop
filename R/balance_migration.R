@@ -311,7 +311,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 			inpc <- inputs[[as.character(country.codes[cidx])]]
 			pop.ini.by.group <- list(M=env$totpm.hch[,cidx,variant], F=env$totpf.hch[,cidx,variant])
 			pop.ini <- sum(pop.ini.by.group$M + pop.ini.by.group$F)
-			fixed.rate <- if(!is.null(env$mig.rate)) apply(env$mig.rate[,cidx,], 1, median) else NULL
+			fixed.rate <- if(!is.null(env$mig.rate)) median(env$mig.rate[time,cidx,]) else NULL
 			migpred <- .get.migration.one.trajectory(inpc, variant, time, pop.ini, 
 								pop.group=pop.ini.by.group, country.code=country.codes[cidx], 
 								fixed.rate=fixed.rate)
@@ -540,6 +540,17 @@ cummulative.min.rate <- function(l)
 	switch(l, -0.330165, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
 			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
 	
+gcc.upper.threshold <- function(country) {
+	switch(as.character(country),
+		'634'= 1619, # Qatar
+		'784'= 7632, # UAE
+		'414'= 1330, # Kuwait
+		'48'= 505,  # Bahrain
+		'512'= 303, # Oman
+		'682'= 3319, # SA
+		NA)
+}
+
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
 													pop.group=NULL, country.code=NULL, mig.rates=NULL, fixed.rate=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
@@ -551,11 +562,11 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	zero.constant <- -1e-4
 	warns <- c()
 	while(TRUE) {
-		if(!is.null(fixed.rate))
+		if(is.null(fixed.rate))
 			rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
-					#rmax=if(is.gcc(country.code) && pop>0) max(colSums(inpc$observed$MIGm + inpc$observed$MIGf))/pop else NULL
-					rmax=if(!is.na(land.area) && pop>0) 44*land.area/pop - 1 else NULL 
+					rmax=if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL 
+					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
 		else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA')
