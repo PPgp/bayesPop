@@ -477,10 +477,14 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	nrates <- length(oldRates)
 	oldRate <- oldRates[nrates]
 	isGCC <- is.gcc(country.code)
-	fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
-	fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
-	xmin <- .get.rate.limit(oldRates, nrates, fun.min, max, nperiods=6)
-	xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
+	#fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
+	#fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
+	fun.max <- paste0("max.multiplicative.pop.change", if(isGCC) "" else ".no.gcc")
+	fun.min <- "min.multiplicative.pop.change"
+	#xmin <- .get.rate.limit(oldRates, nrates, fun.min, max, nperiods=6)
+	#xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
+	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
+	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	if(!is.null(rmax)) xmax <- min(xmax, rmax)
 	
   #while(newRate < -0.33 || newRate > 0.665)
@@ -508,14 +512,14 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	return(do.call(fun, list(res)))
 }
 
-is.migrate.within.permissible.range <- function(rates, n, is.gcc, fun.min, fun.max){
-	for(i in 1:min(12,n)) {
-		s <- sum(rates[(n-i+1):n])
-		if(s < do.call(fun.min, list(i)) || s > do.call(fun.max, list(i))) return (FALSE)
+.get.rate.mult.limit <- function(rates, n, cumfun, fun, nperiods=6) {
+	res <- do.call(cumfun, list(1))
+	for(i in 2:min(nperiods,n+1)) {
+		p <- prod(1+rates[(n-i+2):n])
+		res <- c(res, do.call(cumfun, list(i))/p)
 	}
-	return(TRUE)
-}
-
+	return(do.call(fun, list(res))-1)
+ }
 
 is.gcc <- function(country)
 	return(country %in% c(634, 784, 414, 48, 512, 682)) # Qatar, UAE, Kuwait, Bahrain, Oman, SA
@@ -539,6 +543,15 @@ cummulative.max.rate <- function(l)
 cummulative.min.rate <- function(l)
 	switch(l, -0.330165, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
 			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
+	
+max.multiplicative.pop.change <- function(l)
+	switch(l, 2.087025815, 3.606344662, 4.952147194, 6.992680749, 8.194692131, 9.773177262)
+	
+max.multiplicative.pop.change.no.gcc <- function(l)
+	switch(l, 1.409065294, 1.509547891, 1.606376672, 1.926878976, 1.892288126, 1.932271285)
+	
+min.multiplicative.pop.change <- function(l)
+	switch(l, 0.707796098, 0.62555766, 0.567081044, 0.56605145, 0.559550789, 0.508914659)
 	
 gcc.upper.threshold <- function(country) {
 	switch(as.character(country),
