@@ -329,7 +329,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  int *returnNothingIfNegative,
 				  double *popm, double *popf, double *totp, 
-				  double *Lm, double *Lf, double *lxm, double *lxf,
 				  double *btagem, double *btagef, double *deathsm, double *deathsf,
 				  double *finmigrm, double *finmigrf, int *isNegative
 					) {
@@ -444,7 +443,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, double *srb, 
 				  int *returnNothingIfNegative,
 				  double *popm, double *popf, double *totp, 
-				  double *Lm, double *Lf, double *lxm, double *lxf,
 				  double *btagem, double *btagef, double *deathsm, double *deathsf,
 				  int *isNegative
 					) {

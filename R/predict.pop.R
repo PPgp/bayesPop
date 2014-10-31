@@ -1044,8 +1044,6 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 			srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 			srb=as.numeric(as.matrix(srb)), returnNothingIfNegative=as.integer(returnIfNegative), 
 			popm=popm, popf=popf, totp=totp,
-			Lm=as.numeric(LT$LLm[[1]]), Lf=as.numeric(LT$LLm[[2]]), 
-			lxm=as.numeric(LT$lx[[1]]), lxf=as.numeric(LT$lx[[2]]), 
 			btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
 			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
 			finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF), isNegative=as.integer(isNegative)
