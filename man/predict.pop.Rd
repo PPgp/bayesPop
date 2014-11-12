@@ -17,7 +17,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2010,
         e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
         migMtraj = NULL, migFtraj = NULL), 
-    nr.traj = 1000, keep.vital.events = FALSE, 
+    nr.traj = 1000, keep.vital.events = FALSE, fixed.mx = FALSE,
     replace.output = FALSE, verbose = TRUE)
 }
 \arguments{
@@ -50,6 +50,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2010,
   	\item{nr.traj}{Number of trajectories to be generated. If this number is smaller than the number of available trajectories of the probabilistic components (TFR, life expectancy and migration), the trajectories are equidistantly thinned. 
   		If all of those components contain less trajectories than \code{nr.traj}, the value is adjusted to the maximum of available trajectories of the components. For those that have less trajectories than the adjusted number, the available trajectories are re-sampled, so that all components have the same number of trajectories.}
   	\item{keep.vital.events}{Logical. If \code{TRUE} age- and sex-specific vital events of births and deaths as well as other objects are stored in the prediction object, see Details.}
+  	\item{fixed.mx}{Logical. If \code{TRUE}, it is assumed the dataset of death rates (mxM and mxF) include data for projection years and they are then used instead of the life expectancy.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
   	\item{verbose}{Logical controlling the amount of output messages.} 
 }

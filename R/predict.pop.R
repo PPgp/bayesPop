@@ -18,25 +18,25 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						replace.output=FALSE, 
+						fixed.mx=FALSE, replace.output=FALSE, 
 						verbose=TRUE) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
 
 	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
-	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, verbose=verbose)
+	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
-								pred$wpp.year, verbose=verbose)
+								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
-		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, verbose=verbose)
+		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -67,11 +67,12 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	}
 	do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, function.inputs=inputs, verbose=verbose)
+					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, verbose=verbose)
 	invisible(get.pop.prediction(output.dir))
 }
 
-do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, verbose=FALSE) {
+do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
+							function.inputs=NULL, verbose=FALSE) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 
@@ -152,20 +153,26 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
 		}
 		debug <- FALSE
-		MxKan <- runKannisto(nest, inpc)
+		if(!fixed.mx) 
+			MxKan <- runKannisto(nest, inpc) 
+		else {
+			MxKan <- runKannisto.noLC(npred, inpc)
+			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
+		}
 		npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
+			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 			}
+			#stop('')
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
 			totp[,itraj] <- popres$totpop
@@ -338,7 +345,7 @@ load.wpp.dataset <- function(...)
 read.bayesPop.file <- function(file)
 	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
-load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, verbose=FALSE) {
+load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -362,6 +369,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	POPf0 <- pop.ini[['F']]
 
 	# Get death rates
+	MXm.pred <- MXf.pred <- NULL
 	if(is.null(inputs$mxM)) 
 		MXm <- load.wpp.dataset('mxM', wpp.year)
 	else MXm <- read.pop.file(inputs$mxM)
@@ -372,13 +380,19 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
 	present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
 	estim.periods <- names.MXm.data[num.columns[start.index:present.index]]
+	if(fixed.mx) {
+		end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
+		proj.periods <- names.MXm.data[num.columns[(present.index+1):end.index]]
+		MXm.pred <- MXm[,c('country_code', 'age', proj.periods)]
+	}
 	MXm <- MXm[,c('country_code', 'age', estim.periods)]
-	estim.years <- cols.starty[start.index:present.index] + 3
 	if(is.null(inputs$mxF)) 
 		MXf <- load.wpp.dataset('mxF', wpp.year)
 	else MXf <- read.pop.file(inputs$mxF)
+	if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
 	MXf <- MXf[,c('country_code', 'age', estim.periods)]
 	
+	estim.years <- cols.starty[start.index:present.index] + 3
 	# Get sex ratio at birth
 	if(is.null(inputs$srb)) 
 		SRB <- load.wpp.dataset('sexRatio', wpp.year)
@@ -451,6 +465,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	
 	# Get life expectancy
 	e0F.wpp.median.loaded <- FALSE
+	e0Fpred <- e0Mpred <- NULL
+	if(!fixed.mx){
 	if(!is.null(inputs$e0F.file)) { # female
 		if(inputs$e0F.file == 'median_') {
 			e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE)
@@ -502,7 +518,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 	}
-	
+	}
 	# Get TFR
 	if(!is.null(inputs$tfr.file)) {
 		if(inputs$tfr.file == 'median_')
@@ -524,9 +540,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, ve
 	}
 	
 	inp <- new.env()
-	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
+	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-				'start.year', 'present.year', 'end.year', 'observed'))
+				'start.year', 'present.year', 'end.year', 'fixed.mx', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	return(inp)
@@ -612,7 +628,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc <- list()
 	obs <- list()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB',
-						'PASFR', 'MIGtype', 'MIGm', 'MIGf')) {
+				'PASFR', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
@@ -678,6 +694,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		stop('Mismatch in projection periods of TFR and the target projection years.')
 	inpc$TFRhalfchild <- inpc$TFRhalfchild[,as.character(inputs$proj.years)]
 	
+	if(!inputs$fixed.mx){
 	if(is.null(inpc$e0Mpred)) {
 		inpc$e0Mpred <- get.e0.trajectories(inputs$e0Mpred, country)
 		if(is.null(inpc$e0Mpred)) {
@@ -710,7 +727,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	if(!all(is.element(inputs$proj.years, names(medians$e0Fpred))))
 		stop('Mismatch in projection periods of female e0 and the target projection years.')
 	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
-	
+	}
 	# select trajectories
 	indices <- list()
 	nr.traj <- min(nr.traj, max(ncol(inpc$e0Mpred), ncol(inpc$e0Fpred), ncol(inpc$TFRpred), 
@@ -749,6 +766,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 				traj.available, ' <> ', ncol(inpc[[dependencies[[par]]]]), ' for ', country.name, '. No population projection generated.')
 	}
 	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) { # these are matrices
+		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
@@ -767,33 +785,6 @@ get.traj.index <- function(nr.traj, traj, traj.dim=2, sample=FALSE) {
 	if(nr.traj >= traj.tot) 
 		return(if(sample) sample(1:traj.tot, nr.traj, replace=TRUE) else 1:traj.tot)
 	return(if(sample) sample(1:traj.tot, nr.traj) else as.integer(seq(1, traj.tot, length=nr.traj)))
-}
-
-
-runKannisto <- function(nest, inputs) {
-	# extend mx, get LC ax,bx,k1
-	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
-	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
-	Kan <- KannistoAxBx.joint(nest, inputs$MXm, inputs$MXf, inputs$MIGBaseYear)
-	mxMKan <- c(Kan$male, sex=1)
-	mxFKan <- c(Kan$female, sex=2)
-	#stop('')
-	#mxFKan$ax.orig <- mxFKan$ax
-	#mxFKan$ax[(mxMKan$ax - mxFKan$ax)<0.2] <- mxMKan$ax[(mxMKan$ax - mxFKan$ax)<0.2]-0.2
-	#mxFKan$bx.orig <- mxFKan$bx
-	#mxFKan$bx <- mxMKan$bx
-	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
-	bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
-	lmin <- -12
-	lmax <- 0
-	machine.max <- log(.Machine$double.xmax)
-	machine.min <- log(.Machine$double.xmin)
-	klM <- min((lmax - min(mxMKan$ax))/bx.lim[2], machine.max)
-	klF <- min((lmax - min(mxFKan$ax))/bx.lim[2], machine.max)
-	kuM <- max((lmin - max(mxMKan$ax))/bx.lim[1], machine.min)
-	kuF <- max((lmin - max(mxFKan$ax))/bx.lim[1], machine.min)
-	return(list(male=mxMKan, female=mxFKan, 
-				bx=bx, kl=c(klM, klF), ku=c(kuM, kuF)))
 }
 
 modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
@@ -822,6 +813,60 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     }
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
+
+survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
+    sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
+    Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
+    sx <- rep(0, 27)
+    for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
+    	Mx[[mxYKan$sex]] <- mxYKan$mx
+    	sex <- c('Male', 'Female')[mxYKan$sex]
+    	for(time in 1:npred) {
+			res <- LifeTableMx(mxYKan$mx[,time], sex=sex)
+			LLm[[mxYKan$sex]][,time] <- c(sum(res$Lx[1:2]), +res$Lx[3:nrow(res)]) # collapse first two age groups
+			res.sr <- .C("get_sx27", as.numeric(LLm[[mxYKan$sex]][,time]), sx=sx)
+			sr[[mxYKan$sex]][,time] <- res.sr$sx			
+			lx[[mxYKan$sex]][,time] <- res$lx
+		}
+    }
+    #stop('')
+	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
+}
+
+runKannisto <- function(nest, inputs) {
+	# extend mx, get LC ax,bx,k1
+	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
+	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
+	Kan <- KannistoAxBx.joint(nest, inputs$MXm, inputs$MXf, inputs$MIGBaseYear)
+	mxMKan <- c(Kan$male, sex=1)
+	mxFKan <- c(Kan$female, sex=2)
+	#stop('')
+	#mxFKan$ax.orig <- mxFKan$ax
+	#mxFKan$ax[(mxMKan$ax - mxFKan$ax)<0.2] <- mxMKan$ax[(mxMKan$ax - mxFKan$ax)<0.2]-0.2
+	#mxFKan$bx.orig <- mxFKan$bx
+	#mxFKan$bx <- mxMKan$bx
+	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
+	bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
+	lmin <- -12
+	lmax <- 0
+	machine.max <- log(.Machine$double.xmax)
+	machine.min <- log(.Machine$double.xmin)
+	klM <- min((lmax - min(mxMKan$ax))/bx.lim[2], machine.max)
+	klF <- min((lmax - min(mxFKan$ax))/bx.lim[2], machine.max)
+	kuM <- max((lmin - max(mxMKan$ax))/bx.lim[1], machine.min)
+	kuF <- max((lmin - max(mxFKan$ax))/bx.lim[1], machine.min)
+	return(list(male=mxMKan, female=mxFKan, 
+				bx=bx, kl=c(klM, klF), ku=c(kuM, kuF)))
+}
+
+runKannisto.noLC <- function(nest, inputs) {
+	# extend mx
+	Kan <- KannistoAxBx.joint(nest, inputs$MXm.pred, inputs$MXf.pred, inputs$MIGBaseYear)
+	mxMKan <- c(Kan$male, sex=1)
+	mxFKan <- c(Kan$female, sex=2)
+	return(list(male=mxMKan, female=mxFKan))
+}
+
 
 KannistoAxBx.joint <- function(ne, male.mx, female.mx, yb)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
@@ -861,7 +906,7 @@ KannistoAxBx.joint <- function(ne, male.mx, female.mx, yb)  {
     
 	#Get Lee-Cater Ax and Bx
 	start.year <- as.integer(substr(colnames(male.mx)[1],1,4)) # 1950
-	ns <- (min(yb, 1980) - start.year) / 5 + 1 # ?
+	ns <- (max(min(yb, 1980), start.year) - start.year) / 5 + 1 # ?
     
     result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
     for(sex in c('male', 'female')) {
