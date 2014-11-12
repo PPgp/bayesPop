@@ -1033,11 +1033,13 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {		
-		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
+		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
+		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex])[1:21,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
 		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(pop[[sex]])), 
 					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
+		#stop('')
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])

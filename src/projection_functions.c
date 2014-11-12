@@ -275,7 +275,8 @@ void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGty
 	n = *N;
 	for(j=0; j<n; ++j) {
 		/* age < 5 */
-		Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);
+		/*Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);*/
+		Deaths[j*nrow] = Births[j*nrow]*(1-Sr[j*nrow]);
 		for(i=1; i<(nrow-1); ++i) {
 			switch (*MIGtype) {
 				case 0: /* migration evenly distributed over each interval (MigCode=0) */
@@ -289,7 +290,7 @@ void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGty
 			}
 		}
 		/* Last open-ended age category */
-		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[i+j*nrow]);
+		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]);
 	}
 }
 
@@ -321,7 +322,7 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 		}
 		/* Last open-ended age category */
 		Sr[nrow-1+j*nrow] = (Pop[nrow-1+(j+1)*nrow] - MIG[nrow-1+j*nrow])/(Pop[nrow-2+j*nrow]+Pop[nrow-1+j*nrow]);
-		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[i+j*nrow]);
+		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]);
 	}
 }
 
