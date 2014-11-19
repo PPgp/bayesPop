@@ -275,8 +275,8 @@ void get_deaths_from_sr(double *Sr, int *N, double *Pop, double *MIG, int *MIGty
 	n = *N;
 	for(j=0; j<n; ++j) {
 		/* age < 5 */
-		/*Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);*/
-		Deaths[j*nrow] = Births[j*nrow]*(1-Sr[j*nrow]);
+		Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]); /* this includes migration */
+		/*Deaths[j*nrow] = Births[j*nrow]*(1-Sr[j*nrow]);*/
 		for(i=1; i<(nrow-1); ++i) {
 			switch (*MIGtype) {
 				case 0: /* migration evenly distributed over each interval (MigCode=0) */
@@ -329,7 +329,7 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
-				  double *Lm, double *Lf, double *lxm, double *lxf,
+				  /*double *Lm, double *Lf, double *lxm, double *lxf,*/
 				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
@@ -372,12 +372,20 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 		/* Compute ages >=5 */
 		for(i=1; i<(adim-1); ++i) {		
-			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim] + totmigm[i][jve];
-			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim] + totmigf[i][jve];
+			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
+			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];
+			totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]); /* assures population is not negative */
+			popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
+			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
+            popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
 		/* Age 130+ */
-		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim] + migm[26][jve];
-		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim] + migf[26][jve];
+		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim];
+		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim];
+		totmigm[26][jve] = fmax(migm[26][jve], -1*popm[26 + j*adim]);
+		popm[26 + j*adim] = popm[26 + j*adim] + totmigm[26][jve];
+		totmigf[26][jve] = fmax(migf[26][jve], -1*popf[26 + j*adim]);
+		popf[26 + j*adim] = popf[26 + j*adim] + totmigf[26][jve];
 		/* birth in 5-yrs */
 		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
@@ -389,8 +397,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		bm = b * srb_ratio;
 		bf = b / (1 + srb[jve]);
 		/* age 0-4 */	
-		popm[j*adim] = bm * srm[jve*adim] + mmult * migm[0][jve];
-		popf[j*adim] = bf * srf[jve*adim] + mmult * migf[0][jve];
+		popm[j*adim] = bm * srm[jve*adim];
+		popf[j*adim] = bf * srf[jve*adim];
+		totmigm[0][jve] = fmax(mmult * migm[0][jve], -1*popm[j*adim]);
+		popm[j*adim] = popm[j*adim] + totmigm[0][jve];
+		totmigf[0][jve] = fmax(mmult * migf[0][jve], -1*popf[j*adim]);
+		popf[j*adim] = popf[j*adim] + totmigf[0][jve];
 		
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {

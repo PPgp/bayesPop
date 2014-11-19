@@ -1,3 +1,9 @@
+5.2-1 (11/12/2014)
+-----
+Assuring population age groups are not negative (adjusting migration).
+
+Bug in computing deaths for observed data fixed.
+
 5.2-0 (10/3/2014)
 -----
 Added an option of using projections of mx only, without calculating e0.
