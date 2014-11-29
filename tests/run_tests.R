@@ -6,9 +6,9 @@ options(warn=2)
 test.expressions()
 
 # longer tests (comment out for submission)
-#test.prediction()
-#test.prediction.with.prob.migration()
-#test.expressions.with.VE(map=FALSE)
-#test.regional.aggregation()
+# test.prediction()
+# test.prediction.with.prob.migration()
+# test.expressions.with.VE(map=FALSE)
+# test.regional.aggregation()
 
 options(warn=warn$warn)
