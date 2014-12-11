@@ -325,7 +325,7 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		}
 	} 
 	if(!is.null(traj)) 
-	 	dimnames(traj)[[2]] <- pop.pred$proj.years
+	 	dimnames(traj)[[2]] <- litem('proj.years.pop', pop.pred, pop.pred$proj.years+2) # pop.pred$proj.years
 	return(list(trajectories=traj, index=traj.idx, age.idx=age.idx, quantiles=quant, half.child=hch))
 }
 
