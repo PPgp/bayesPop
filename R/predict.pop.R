@@ -871,8 +871,13 @@ runKannisto <- function(inputs, start.year) {
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
+	# ultimate bx (Li, Lee, Gerland 2013)
+    bux <- bx
+    avg15.65 <- mean(bux[4:13])
+    bux[1:13] <- avg15.65
+    bux[14:28] <- bux[14:28] * (bux[13]/bux[14]) # adjust so that b(70)=b(65)
+    bux <- bux/sum(bux) # must sum to 1
 	#bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
-	bux <- 0.5 * (mxMKan$bux + mxFKan$bux)
 	#lmin <- -12
 	#lmax <- 0
 	#machine.max <- log(.Machine$double.xmax)
@@ -969,15 +974,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.lates
 		}
     	#bx[19:28] <- bx[18]   # bx(80) is used for all older ages to fit large Eo
     	bx <- bx/sum(bx) # must sum to 1
-    	# ultimate bx (Li, Lee, Gerland 2013)
-    	bux <- bx
-    	avg15.65 <- mean(bux[4:13])
-    	bux[1:13] <- avg15.65
-    	bux[14:28] <- bux[14:28] * (bux[13]/bux[14]) # adjust so that b(70)=b(65)
-    	bux <- bux/sum(bux) # must sum to 1
 		result[[sex]]$ax <- ax
 		result[[sex]]$bx <- bx
-		result[[sex]]$bux <- bux
 		result[[sex]]$k0 <- kt[ne]
 		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)
 	}
