@@ -186,13 +186,11 @@ void get_sx21_21(double *LLm, double *sx) {
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
 		double *lx, double *Mx) {
-	double eop, kl, ku, sx[27], Lm[27], mxm[28], fmx[28], lm[28];
+	double eop, kl, ku, sx[27], Lm[27], mxm[28], fmx[28], lm[28], locbx[28];
 	int i, sex, npred, pred;
 	
 	npred = *Npred;
 	sex=*Sex;
-	ku=*Ku;
-	kl=*Kl;
 	for (i=0; i < 28; ++i) fmx[i] = -1;
 	for (pred=0; pred < npred; ++pred) {
 		eop = Eop[pred];
@@ -203,10 +201,11 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 				for (i=22; i < 28; ++i) {fmx[i] = -1;}
 			}
 		}
+		for (i=0; i < 28; ++i) locbx[i] = bx[i + pred*28];
 		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
-		LCEoKtC(sex, ax, bx, eop, kl, ku, fmx, Lm, lm, mxm);
+		LCEoKtC(sex, ax, locbx, eop, Kl[pred], Ku[pred], fmx, Lm, lm, mxm);
 		get_sx27(Lm, sx);
-
+		
 		for (i=0; i < 27; ++i) {
 			Sr[i + pred*27] = sx[i];
 			/*Rprintf("\nLLm=%lf, Sr=%lf", LLm[i], Sr[i + pred*27]);*/

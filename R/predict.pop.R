@@ -815,8 +815,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 			kranges[[sex]]$ku[t] <- max((lmin - max(ax[[sex]]))/bx.lim[1], machine.min)
 		}
 	}
-	stop('')
-	return(c(bx=Bxt, kranges=kranges))
+	return(list(bx=Bxt, kranges=kranges))
 }
 
 modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
@@ -827,7 +826,8 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     nproj <- npred
     rotKan <- rotateLC(0.5*(eop[[1]]+eop[[2]]), mxKan$bx, mxKan$bux, mxKan$male$ax, mxKan$female$ax)
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
-    	#print(c('sex: ', mxYKan$sex))    	 
+    	#print(c('sex: ', mxYKan$sex))
+    	#stop('')	 
     	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$ax), 
     		#as.numeric(mxKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
     		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
@@ -873,9 +873,9 @@ runKannisto <- function(inputs, start.year) {
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
 	# ultimate bx (Li, Lee, Gerland 2013)
     bux <- bx
-    avg15.65 <- mean(bux[4:13])
-    bux[1:13] <- avg15.65
-    bux[14:28] <- bux[14:28] * (bux[13]/bux[14]) # adjust so that b(70)=b(65)
+    avg15.65 <- mean(bux[5:14])
+    bux[1:14] <- avg15.65
+    bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
     bux <- bux/sum(bux) # must sum to 1
 	#bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
 	#lmin <- -12
