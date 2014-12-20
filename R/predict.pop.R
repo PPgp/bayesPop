@@ -152,6 +152,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
 		}
 		debug <- FALSE
+		#stop('')
 		if(!fixed.mx) 
 			MxKan <- runKannisto(inpc, inp$start.year) 
 		else {
@@ -863,11 +864,11 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
-runKannisto <- function(inputs, start.year) {
+runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
 	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
 	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
-	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year)
+	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year, ...)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
@@ -1312,7 +1313,7 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
 	Lx <- lx <- qx <- rep(0, nage)
-	ax <- rep(0, 21)
+	ax <- rep(0, 27)
 	nagem1 <- nage-1
 	nas <- rep(NA,nage)
 	if(!any(is.na(mx))) {

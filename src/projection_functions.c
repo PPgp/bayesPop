@@ -17,10 +17,8 @@ double sum(double *x, int dim) {
 void doLifeTable(int sex, int nage, double *mx, 
 				double *Lx, double *lx, double *qx, double *ax) {
 	
-	int i, minnage;
-	
-	minnage = 21;
-	if (nage < 21) minnage = nage;
+	int i;
+
 	if(sex > 1) {/* female*/
 		if (mx[0] < 0.107) {
 			ax[0] = 0.053 + 2.8 * mx[0];      /*1a0*/
@@ -45,37 +43,31 @@ void doLifeTable(int sex, int nage, double *mx,
 	lx[2] = lx[1] * (1 - 4 * mx[1] / (1 + qx[1]));                 /* l5 = l1 * (1-4q1) */
 	Lx[0] =  lx[1] + ax[0] * (lx[0] - lx[1]);                     /* 1L0 */
 	Lx[1] =  4 * lx[2] + ax[1] * (lx[1] - lx[2]);                 /* 4L1 */
-	
-	
-    /*Rprintf("\nL0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
-	/* Age 5-9, .... 95-99 
+		
+    /*Rprintf("\nnage=%i, L0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", nage, Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
+    /* Age 5-9, .... 125-129 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
-	for(i = 2; i < minnage; ++i) {
+	for(i = 2; i < nage; ++i) {
 		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
+		if(i > 9 && ax[i] < 0.97) { /*0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
+			ax[i] = 0.97;
+		}
+	}
+	for(i = 2; i < nage; ++i) {		
 		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
 		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
-	}
-    
-    for(i = 2; i<minnage; ++i) {
 		lx[i+1] = lx[i] * (1-qx[i]);
 		Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
-	}
-	if(nage > minnage) {
-		for(i = minnage; i<nage; ++i) {         /* Starts 104 */
-			qx[i] = 1 - exp(-5 * mx[i]);
-			lx[i+1] = lx[i] * (1 - qx[i]); 
-			Lx[i] = (lx[i] - lx[i+1]) / fmax(mx[i], DBL_MIN);
-			
-		}
 	}
 	/* Open ended age interval */
 	Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); /* Assuming Mx levels off at age 130 */
 	qx[nage] = 1.0;
+	/*Rprintf("\nLTend\n");*/
 }
 
 void LifeTableC(int sex, int nage, double *mxm, 
 				double *LLm, double *lm) {
-	double ax[21], qx[28], L[28];
+	double ax[27], qx[28], L[28];
 	int i;
 	doLifeTable(sex, nage, mxm, L, lm, qx, ax);
 	/* collapse 1L0 and 4L1 into 5L0 */
@@ -155,10 +147,14 @@ void get_sx(double *LLm, double *sx, int n, int Ldim) {
 	int i, oei;
 	double sumLL;
 	oei=n-1;
+	/*Rprintf("\nSR oei=%i", oei);
+	Rprintf("\nLLm0=%lf", LLm[0]);*/
 	/* Survival Ratios */
     sx[0] = LLm[0] / 5.0;
+    /*Rprintf("\nsx[0]=%lf\n", sx[0]);*/
 	for(i=1; i < oei; ++i) {
-		if(LLm[i-1] == 0) sx[i] = 0;
+		/*Rprintf("i=%i, LLm[i]=%lf, LLm[i-1]=%lf, ", i, LLm[i], LLm[i-1]);*/
+		if(LLm[i-1] == 0) sx[i] = exp(-5);
 		else sx[i] = LLm[i]/LLm[i-1];
 	}
 	/* Last age group */
@@ -166,7 +162,7 @@ void get_sx(double *LLm, double *sx, int n, int Ldim) {
 	for(i=oei; i < Ldim; ++i) {
 		sumLL += LLm[i];
 	}
-	if((sumLL + LLm[oei-1]) == 0 ||  sumLL == 0) sx[oei] = 0;
+	if((sumLL + LLm[oei-1]) == 0 ||  sumLL == 0) sx[oei] = exp(-5);
 	else sx[oei] = sumLL/(sumLL+LLm[oei-1]);
 	if(sx[oei] > sx[oei-1]) sx[oei] = sx[oei-1];
 }
@@ -203,7 +199,7 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 		}
 		for (i=0; i < 28; ++i) locbx[i] = bx[i + pred*28];
 		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
-		LCEoKtC(sex, ax, locbx, eop, Kl[pred], Ku[pred], fmx, Lm, lm, mxm);
+		LCEoKtC(sex, ax, locbx, eop, Kl[pred], Ku[pred], fmx, Lm, lm, mxm);		
 		get_sx27(Lm, sx);
 		
 		for (i=0; i < 27; ++i) {
