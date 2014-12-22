@@ -901,7 +901,7 @@ runKannisto.noLC <- function(inputs, start.year) {
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.latest.periods=1)  {
+KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.latest.periods=5)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	Mxe.m <- as.matrix(male.mx)
 	Mxe.m <- rbind(Mxe.m, 
