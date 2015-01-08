@@ -152,7 +152,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
 		}
 		debug <- FALSE
-		#stop('')
+		stop('')
 		if(!fixed.mx) 
 			MxKan <- runKannisto(inpc, inp$start.year) 
 		else {
@@ -432,9 +432,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	
 	# Get migration type and base year
 	if(is.null(inputs$mig.type)) 
-		MIGtype <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
-	else MIGtype <- read.pop.file(inputs$mig.type)
-	MIGtype <- MIGtype[,c('country_code', 'ProjFirstYear', 'MigCode')]
+		vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+	else vwBase <- read.pop.file(inputs$mig.type)
+	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
+	MXpattern <- data.frame(vwBase[,'country_code'])
+	MXpatcols <- c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern")
+	for(col in MXpatcols)
+		if(col %in% colnames(vwBase))
+			MXpattern <- cbind(MXpattern, vwBase[,col])
+	if(ncol(MXpattern)==1) MXpattern <- NULL
+	else colnames(MXpattern) <- c('country_code', MXpatcols)[1:ncol(MXpattern)]
 	# Get age-specific migration
 	if(is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred 
 		MIGm <- load.wpp.dataset('migrationM', wpp.year)
@@ -543,7 +550,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	
 	inp <- new.env()
-	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
+	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'fixed.mx', 'observed'))
 		assign(par, get(par), envir=inp)
@@ -630,7 +637,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc <- list()
 	obs <- list()
-	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'SRB',
+	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXpattern', 'SRB',
 				'PASFR', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
@@ -868,7 +875,7 @@ runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
 	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
 	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
-	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year, ...)
+	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year, inputs$MXpattern, ...)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
@@ -901,7 +908,7 @@ runKannisto.noLC <- function(inputs, start.year) {
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.latest.periods=5)  {
+KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	Mxe.m <- as.matrix(male.mx)
 	Mxe.m <- rbind(Mxe.m, 
@@ -941,7 +948,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.lates
 	years <- substr(colnames(male.mx),1,4)
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne]) 
-    
+    model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
+    avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
+    smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
+    if(!avg.ax) ax.from.latest.periods <- 1
+    if(model.bx) {
+    	bx.env <- new.env()
+    	data(MLTbx, envir = bx.env)
+    	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
+    	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
+    }
     result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
     for(sex in c('male', 'female')) {
     	lMxe <- log(result[[sex]]$mx)
@@ -950,32 +966,41 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, ax.from.lates
     	ax.ns <- max(ne-ax.from.latest.periods+1, this.ns)
     	x1 <- apply(lMxe[,ax.ns:ne, drop=FALSE], 1, sum, na.rm=TRUE)
     	ax <- x1 / (ne - ax.ns + 1)
+    	ax.orig <- ax
+    	if(smooth.ax) {
+    		ax.sm <- smooth.spline(ax[1:21], df=11)$y
+    		ax[2:21] <- ax.sm[2:21] # keep value the first age group
+    	}
 		kt <- rep(NA, ne)
 		kt[this.ns:ne] = apply(lMxe[,this.ns:ne, drop=FALSE], 2, sum) - sum(ax)
-    
-		x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
-		x1 <- rep(NA, nrow(lMxe))
-		for (i in 1:nrow(lMxe)) 
-			x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
-		bx <- x1/x2
-		negbx <- which(bx <= 0)
-		lnegbx <- length(negbx)
-		if(lnegbx > 0 && negbx[1] == 1) {
-			bx[1] <- 0
-			negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
+    	if(!model.bx) {
+			x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
+			x1 <- rep(NA, nrow(lMxe))
+			for (i in 1:nrow(lMxe)) 
+				x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
+			bx <- x1/x2
+			negbx <- which(bx <= 0)
 			lnegbx <- length(negbx)
-		}
-		while(lnegbx > 0) {
-			bx[negbx] <- 0.5 * bx[negbx-1]
-			negbx <- which(bx < 0)
-			lnegbx <- length(negbx)
-		}      
-		for (i in 1:27) { # ?
-			if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
-		}
-    	#bx[19:28] <- bx[18]   # bx(80) is used for all older ages to fit large Eo
+			if(lnegbx > 0 && negbx[1] == 1) {
+				bx[1] <- 0
+				negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
+				lnegbx <- length(negbx)
+			}
+			while(lnegbx > 0) {
+				bx[negbx] <- 0.5 * bx[negbx-1]
+				negbx <- which(bx < 0)
+				lnegbx <- length(negbx)
+			}      
+			for (i in 1:27) { 
+				if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
+			}
+		} else bx <- mlt.bx
     	bx <- bx/sum(bx) # must sum to 1
 		result[[sex]]$ax <- ax
+		result[[sex]]$ax.orig <- ax.orig
+		result[[sex]]$ax.from.periods <- ax.from.latest.periods
+		result[[sex]]$smooth.ax <- smooth.ax
+		result[[sex]]$model.bx <- model.bx
 		result[[sex]]$bx <- bx
 		result[[sex]]$k0 <- kt[ne]
 		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)
