@@ -152,7 +152,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
 		}
 		debug <- FALSE
-		stop('')
+		#stop('')
 		if(!fixed.mx) 
 			MxKan <- runKannisto(inpc, inp$start.year) 
 		else {

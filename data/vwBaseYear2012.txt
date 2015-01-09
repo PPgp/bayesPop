@@ -8,27 +8,27 @@
 660	"Anguilla"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 28	"Antigua and Barbuda"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 32	"Argentina"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-51	"Armenia"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+51	"Armenia"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 533	"Aruba"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 36	"Australia"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 40	"Austria"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 31	"Azerbaijan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-44	"Bahamas"	"LN"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
+44	"Bahamas"	"LN"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	1
 48	"Bahrain"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
-50	"Bangladesh"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
+50	"Bangladesh"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 52	"Barbados"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
-112	"Belarus"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+112	"Belarus"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 56	"Belgium"	"TS"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 84	"Belize"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 204	"Benin"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 60	"Bermuda"	"KA"	1	1950	0	0	Model life tables	CD West	0	0
 64	"Bhutan"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
-68	"Bolivia (Plurinational State of)"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
+68	"Bolivia (Plurinational State of)"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 70	"Bosnia and Herzegovina"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 72	"Botswana"	"KA"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 76	"Brazil"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 92	"British Virgin Islands"	"LN"	1	1950	0	0	Model life tables	CD West	0	0
-96	"Brunei Darussalam"	"LN"	0	1950	9	0	Relational model	CD West	1	0
+96	"Brunei Darussalam"	"LN"	0	1950	9	0	Relational model	CD West	1	1
 100	"Bulgaria"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 854	"Burkina Faso"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 108	"Burundi"	"TS"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
@@ -46,7 +46,7 @@
 344	"China, Hong Kong SAR"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 446	"China, Macao SAR"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 158	"China, Taiwan Province of China"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-170	"Colombia"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+170	"Colombia"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 174	"Comoros"	"LN"	0	1950	0	0	Model life tables	CD West	0	0
 178	"Congo"	"KA"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 184	"Cook Islands"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
@@ -63,7 +63,7 @@
 262	"Djibouti"	"TS"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 212	"Dominica"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 214	"Dominican Republic"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-218	"Ecuador"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
+218	"Ecuador"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 818	"Egypt"	"TS"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 222	"El Salvador"	"DG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 226	"Equatorial Guinea"	"DG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
@@ -91,16 +91,16 @@
 320	"Guatemala"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 324	"Guinea"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 624	"Guinea-Bissau"	"PG"	0	1950	0	0	Relational model	CD South	1	0
-328	"Guyana"	"LN"	0	1950	9	0	Relational model	CD West	1	0
-332	"Haiti"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
+328	"Guyana"	"LN"	0	1950	9	0	Relational model	CD West	1	1
+332	"Haiti"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	1
 336	"Holy See"	"LN"	1	1950	9	0	Model life tables	CD West	0	0
 340	"Honduras"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 348	"Hungary"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 352	"Iceland"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 356	"India"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 360	"Indonesia"	"LN"	0	1950	9	0	Relational model	CD West	1	0
-364	"Iran (Islamic Republic of)"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
-368	"Iraq"	"PG"	0	1950	0	0	Relational model	CD West	1	0
+364	"Iran (Islamic Republic of)"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
+368	"Iraq"	"PG"	0	1950	0	0	Relational model	CD West	1	1
 372	"Ireland"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 833	"Isle of Man"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 376	"Israel"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
@@ -108,19 +108,19 @@
 388	"Jamaica"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 392	"Japan"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 400	"Jordan"	"PG"	0	1950	0	0	Relational model	CD West	1	0
-398	"Kazakhstan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+398	"Kazakhstan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 404	"Kenya"	"DG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 296	"Kiribati"	"LN"	0	1950	0	0	Model life tables	CD West	0	0
 414	"Kuwait"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 417	"Kyrgyzstan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 418	"Lao People's Dem. Republic"	"PG"	0	1950	0	0	Model life tables	CD West	0	0
-428	"Latvia"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+428	"Latvia"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 422	"Lebanon"	"PG"	0	1950	0	0	Model life tables	CD West	0	0
 426	"Lesotho"	"KA"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
-430	"Liberia"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
+430	"Liberia"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	1
 434	"Libya"	"TS"	0	1950	0	0	Model life tables	CD West	0	0
 438	"Liechtenstein"	"TS"	1	1950	9	0	Model life tables	CD West	0	0
-440	"Lithuania"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+440	"Lithuania"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 442	"Luxembourg"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 450	"Madagascar"	"DG"	0	1950	0	0	Relational model	CD North	1	0
 454	"Malawi"	"LN"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
@@ -150,26 +150,26 @@
 554	"New Zealand"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 558	"Nicaragua"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 562	"Niger"	"PG"	0	1950	0	0	Relational model	CD South	1	0
-566	"Nigeria"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
+566	"Nigeria"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	1
 570	"Niue"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 580	"Northern Mariana Islands"	"LN"	1	1950	0	0	Model life tables	CD West	0	0
 578	"Norway"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-512	"Oman"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
+512	"Oman"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 586	"Pakistan"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 585	"Palau"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 591	"Panama"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 598	"Papua New Guinea"	"LN"	0	1950	0	0	Relational model	UN Far Eastern	1	0
-600	"Paraguay"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-604	"Peru"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-608	"Philippines"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+600	"Paraguay"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
+604	"Peru"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
+608	"Philippines"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 616	"Poland"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 620	"Portugal"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 630	"Puerto Rico"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 634	"Qatar"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 410	"Republic of Korea"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-498	"Republic of Moldova"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+498	"Republic of Moldova"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 638	"Réunion"	"LN"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
-642	"Romania"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+642	"Romania"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 643	"Russian Federation"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 646	"Rwanda"	"TS"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 654	"Saint Helena"	"TS"	1	1950	0	0	Model life tables	CD West	0	0
@@ -184,7 +184,7 @@
 686	"Senegal"	"PG"	0	1950	0	0	Relational model	CD South	1	0
 688	"Serbia"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 690	"Seychelles"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-694	"Sierra Leone"	"PG"	0	1950	0	0	Relational model	CD South	1	0
+694	"Sierra Leone"	"PG"	0	1950	0	0	Relational model	CD South	1	1
 702	"Singapore"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 534	"Sint Maarten (Dutch part)"	"DG"	1	1950	9	0	Model life tables	CD West	0	0
 703	"Slovakia"	"TS"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
@@ -194,7 +194,7 @@
 710	"South Africa"	"KA"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
 728	"South Sudan"	"TS"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 724	"Spain"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-144	"Sri Lanka"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
+144	"Sri Lanka"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 275	"State of Palestine"	"PG"	0	1950	0	0	Model life tables	CD West	0	0
 729	"Sudan"	"TS"	0	1950	0	0	Model life tables	CD North	0	0
 740	"Suriname"	"DG"	0	1950	9	1	Age specific mortality pattern	Life Tables	1	0
@@ -206,26 +206,26 @@
 807	"TFYR Macedonia"	"TS"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 764	"Thailand"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 626	"Timor-Leste"	"LN"	0	1950	0	0	Model life tables	CD West	0	0
-768	"Togo"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
+768	"Togo"	"PG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	1
 772	"Tokelau"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 776	"Tonga"	"DG"	0	1950	0	0	Relational model	UN Far Eastern	1	0
-780	"Trinidad and Tobago"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+780	"Trinidad and Tobago"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 788	"Tunisia"	"TS"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 792	"Turkey"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-795	"Turkmenistan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+795	"Turkmenistan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 796	"Turks and Caicos Islands"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 798	"Tuvalu"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 800	"Uganda"	"DG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
-804	"Ukraine"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+804	"Ukraine"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 784	"United Arab Emirates"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1
 826	"United Kingdom"	"LN"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 834	"United Republic of Tanzania"	"DG"	0	1950	0	1	Age specific mortality pattern	Life Tables	1	0
 840	"United States of America"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 850	"United States Virgin Islands"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
-858	"Uruguay"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+858	"Uruguay"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 860	"Uzbekistan"	"KA"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
 548	"Vanuatu"	"LN"	0	1950	9	0	Relational model	UN Far Eastern	1	0
-862	"Venezuela (Bolivarian Republic of)"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0
+862	"Venezuela (Bolivarian Republic of)"	"DG"	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1
 704	"Viet Nam"	"PG"	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0
 876	"Wallis and Futuna Islands"	"DG"	1	1950	0	0	Model life tables	CD West	0	0
 732	"Western Sahara"	"TS"	0	1950	0	0	Model life tables	CD West	0	0
