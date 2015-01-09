@@ -182,7 +182,7 @@ void get_sx21_21(double *LLm, double *sx) {
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
 		double *lx, double *Mx) {
-	double eop, kl, ku, sx[27], Lm[27], mxm[28], fmx[28], lm[28], locbx[28], locax[28];
+	double eop, sx[27], Lm[27], mxm[28], fmx[28], lm[28], locbx[28], locax[28];
 	int i, sex, npred, pred;
 	
 	npred = *Npred;

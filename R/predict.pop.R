@@ -803,25 +803,32 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 	lmax <- 0
 	machine.max <- log(.Machine$double.xmax)
 	machine.min <- log(.Machine$double.xmin)
-	wt <- (e0 - 80)/(e0u-80)
-	wst <- (0.5*(1+(sin(pi/2*(2*wt-1)))))^p
 	npred <- length(e0)
-	Bxt <- matrix(NA, nrow=length(bx), ncol=npred)
 	kranges <- ax <- list()
 	ku <- rep(NA, npred)
 	for(sex in 1:2)
 		kranges[[sex]] <- list(ku=ku, kl=ku)
 	ax <- list(axM, axF)
-	for(t in 1:npred) {
-		Bxt[,t] <- switch(cut(e0[t], c(0, 80, 102, 9999), labels=FALSE, right=FALSE),
+	if(!is.null(dim(bx)) && length(dim(bx))==2) { # aids country; bx is already a matrix
+		Bxt <- bx
+	} else {
+		wt <- (e0 - 80)/(e0u-80)
+		wst <- (0.5*(1+(sin(pi/2*(2*wt-1)))))^p
+		Bxt <- matrix(NA, nrow=length(bx), ncol=npred)
+		for(t in 1:npred) {
+			Bxt[,t] <- switch(cut(e0[t], c(0, 80, 102, 9999), labels=FALSE, right=FALSE),
 					bx, 
 					(1-wst[t])*bx + wst[t]*bux,
-					bux)	
-		bx.lim=c(min(Bxt[Bxt[,t]>0,t]), max(Bxt[Bxt[,t]>0,t]))
-		for(sex in 1:2) {
-			kranges[[sex]]$kl[t] <- min((lmax - min(ax[[sex]][,t]))/bx.lim[2], machine.max)
-			kranges[[sex]]$ku[t] <- max((lmin - max(ax[[sex]][,t]))/bx.lim[1], machine.min)
+					bux)
 		}
+	}
+	#bx.lim=c(min(Bxt[Bxt[,t]>0,t]), max(Bxt[Bxt[,t]>0,t]))
+	bx.lim=rbind(apply(Bxt, 2, function(x) min(x[x>0])), apply(Bxt, 2, function(x) max(x[x>0])))
+	for(sex in 1:2) {
+		#kranges[[sex]]$kl[t] <- min((lmax - min(ax[[sex]][,t]))/bx.lim[2], machine.max)
+		kranges[[sex]]$kl <- pmin((lmax - apply(ax[[sex]], 2, min))/bx.lim[2,], machine.max)
+		kranges[[sex]]$ku <- pmax((lmin - apply(ax[[sex]], 2, max))/bx.lim[1,], machine.min)
+		#kranges[[sex]]$ku[t] <- max((lmin - max(ax[[sex]][,t]))/bx.lim[1], machine.min)
 	}
 	return(list(bx=Bxt, kranges=kranges))
 }
@@ -878,26 +885,18 @@ runKannisto <- function(inputs, start.year, ...) {
 	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year, inputs$MXpattern, ...)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
-	bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
-	bx.end <- 0.5 * (mxMKan$bx.end + mxFKan$bx.end)
-	# ultimate bx (Li, Lee, Gerland 2013)
-    bux <- bx.end
-    avg15.65 <- mean(bux[5:14])
-    bux[1:14] <- avg15.65
-    bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
-    bux <- bux/sum(bux) # must sum to 1
-	#bx.lim=c(min(bx[bx>0]), max(bx[bx>0]))
-	#lmin <- -12
-	#lmax <- 0
-	#machine.max <- log(.Machine$double.xmax)
-	#machine.min <- log(.Machine$double.xmin)
-	#klM <- min((lmax - min(mxMKan$ax))/bx.lim[2], machine.max)
-	#klF <- min((lmax - min(mxFKan$ax))/bx.lim[2], machine.max)
-	#kuM <- max((lmin - max(mxMKan$ax))/bx.lim[1], machine.min)
-	#kuF <- max((lmin - max(mxFKan$ax))/bx.lim[1], machine.min)
-	return(list(male=mxMKan, female=mxFKan, 
-				bx=bx, bux=bux#, kl=c(klM, klF), ku=c(kuM, kuF)
-				))
+	bux <- NULL
+	if(is.null(mxMKan$bxt)) {
+		bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
+		# ultimate bx (Li, Lee, Gerland 2013)
+    	bux <- bx
+    	avg15.65 <- mean(bux[5:14])
+    	bux[1:14] <- avg15.65
+    	bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
+    	bux <- bux/sum(bux) # must sum to 1
+    } else # aids country, bxt is a matrix
+    	bx <- 0.5 * (mxMKan$bxt + mxFKan$bxt)
+	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
 }
 
 runKannisto.noLC <- function(inputs, start.year) {
@@ -911,6 +910,26 @@ runKannisto.noLC <- function(inputs, start.year) {
 
 KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
+	finish.bx <- function(bx) {
+			negbx <- which(bx <= 0)
+			lnegbx <- length(negbx)
+			if(lnegbx > 0 && negbx[1] == 1) {
+				bx[1] <- 0
+				negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
+				lnegbx <- length(negbx)
+			}
+			while(lnegbx > 0) {
+				bx[negbx] <- 0.5 * bx[negbx-1]
+				negbx <- which(bx < 0)
+				lnegbx <- length(negbx)
+			}      
+			for (i in 1:27) { 
+				if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
+			}
+			bx <- bx/sum(bx) # must sum to 1
+			return(bx)
+		}
+
 	Mxe.m <- as.matrix(male.mx)
 	Mxe.m <- rbind(Mxe.m, 
 			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
@@ -957,6 +976,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- which(years <= 1990)
+    	aids.npred <- min(9, npred)
     }
     if(!avg.ax) ax.from.latest.periods <- 1
     mlt.bx <- NULL
@@ -981,32 +1001,17 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	}
 		kt <- rep(NA, ne)
 		kt[this.ns:ne] = apply(lMxe[,this.ns:ne, drop=FALSE], 2, sum) - sum(ax)
+		axt <- matrix(ax, nrow=28, ncol=npred)
 		if(is.aids.country) {
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
-			kt.end <- rep(NA, ne)
-			kt.end[aids.idx] = apply(lMxe[,aids.idx, drop=FALSE], 2, sum) - sum(ax.end)
-		}
-		finish.bx <- function(bx) {
-			negbx <- which(bx <= 0)
-			lnegbx <- length(negbx)
-			if(lnegbx > 0 && negbx[1] == 1) {
-				bx[1] <- 0
-				negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
-				lnegbx <- length(negbx)
+			for (i in 1:28) {
+				axt[i,] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
+				#axt[i,] <- approx(log(c(1,npred)), c(ax[i], ax.all[i]), xout=log(1:npred))$y
+				axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
-			while(lnegbx > 0) {
-				bx[negbx] <- 0.5 * bx[negbx-1]
-				negbx <- which(bx < 0)
-				lnegbx <- length(negbx)
-			}      
-			for (i in 1:27) { 
-				if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
-			}
-			bx <- bx/sum(bx) # must sum to 1
-			return(bx)
 		}
 		bx <- mlt.bx
-		bx.end <- bx
+		bxt <- NULL
     	if(!model.bx) {
 			x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
 			x1 <- rep(NA, nrow(lMxe))
@@ -1014,25 +1019,21 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 				x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
 			bx <- x1/x2
 			bx <- finish.bx(bx)
-			bx.end <- bx
 			if(is.aids.country) {
-				x2.end <- sum(kt.end[aids.idx]*kt.end[aids.idx])
-				x1.end <- rep(NA, nrow(lMxe))
-				for (i in 1:nrow(lMxe)) 
-					x1.end[i] <- sum((lMxe[i,aids.idx]-ax.end[i])*kt.end[aids.idx])
-				bx.end <- x1.end/x2.end
-				bx.end <- finish.bx(bx.end)
+				bxt <- matrix(bx, nrow=28, ncol=npred)
+				slMxe.aids <- apply(lMxe[,aids.idx, drop=FALSE], 2, sum)
+				x1.t <- rep(NA, nrow(lMxe))
+				for(t in 2:aids.npred) {
+					kt.t = slMxe.aids - sum(axt[,t])
+					x2.t <- sum(kt.t*kt.t)					
+					for (i in 1:nrow(lMxe)) 
+						x1.t[i] <- sum((lMxe[i,aids.idx]-axt[i,t])*kt.t)
+					bxt.t <- x1.t/x2.t
+					bxt[,t] <- finish.bx(bxt.t)
+				}
+				for(t in (aids.npred+1):npred) bxt[,t] <- bxt[,aids.npred]
 			}
 		}
-		axt <- matrix(ax, nrow=28, ncol=npred)
-    	if(is.aids.country) {    		
-    		aids.npred <- min(9, npred)
-			for (i in 1:28) {
-				axt[i,] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
-				#axt[i,] <- approx(log(c(1,npred)), c(ax[i], ax.all[i]), xout=log(1:npred))$y
-				axt[i,(aids.npred+1):npred] <- ax.end[i]	
-			}
-		} 
 		result[[sex]]$ax <- ax
 		result[[sex]]$axt <- axt
 		#result[[sex]]$ax.orig <- ax.orig
@@ -1040,7 +1041,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		#result[[sex]]$smooth.ax <- smooth.ax
 		#result[[sex]]$model.bx <- model.bx
 		result[[sex]]$bx <- bx
-		result[[sex]]$bx.end <- bx.end
+		result[[sex]]$bxt <- bxt
 		result[[sex]]$k0 <- kt[ne]
 		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)
 	}
