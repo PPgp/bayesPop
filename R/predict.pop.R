@@ -975,8 +975,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
-    	aids.idx <- which(years <= 1990)
-    	aids.npred <- min(9, npred)
+    	aids.idx <- which(years < 1985)
+    	aids.npred <- min(length(aids.idx), npred)
     }
     if(!avg.ax) ax.from.latest.periods <- 1
     mlt.bx <- NULL
@@ -994,7 +994,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	ax.ns <- max(ne-ax.from.latest.periods+1, this.ns)
     	x1 <- apply(lMxe[,ax.ns:ne, drop=FALSE], 1, sum, na.rm=TRUE)
     	ax <- x1 / (ne - ax.ns + 1)
-    	ax.orig <- ax
+    	#ax.orig <- ax
     	if(smooth.ax) {
     		ax.sm <- smooth.spline(ax[1:21], df=11)$y
     		ax[2:21] <- ax.sm[2:21] # keep value the first age group
@@ -1005,7 +1005,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		if(is.aids.country) {
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
 			for (i in 1:28) {
-				axt[i,] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
+				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
 				#axt[i,] <- approx(log(c(1,npred)), c(ax[i], ax.all[i]), xout=log(1:npred))$y
 				axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
