@@ -237,6 +237,9 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
 								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch',
 								'migm', 'migf')
+	# The next two lines need to be there for the R checker to get to know these objects
+	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- NULL
+	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
@@ -290,8 +293,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 					assign(par, get(par) + e[[par]])
 				aggr.obs.dataM <- aggr.obs.dataM + obs.data[['male']][country.obs.idx,]
 				aggr.obs.dataF <- aggr.obs.dataF + obs.data[['female']][country.obs.idx,]
-				for(par in names(observed))
-					observed[[par]] <- observed[[par]] + e$observed[[par]]
+				if(has.vital.events) {
+					for(par in names(observed))
+						observed[[par]] <- observed[[par]] + e$observed[[par]]
+				}
 			}
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,

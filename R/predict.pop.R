@@ -1,4 +1,4 @@
-if(getRversion() >= "2.15.1") utils::globalVariables("UNlocations")
+if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
 pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.year=2012,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
