@@ -842,7 +842,7 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     rotKan <- rotateLC(0.5*(eop[[1]]+eop[[2]]), mxKan$bx, mxKan$bux, mxKan$male$axt, mxKan$female$axt)
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	#print(c('sex: ', mxYKan$sex))
-    	#stop('')	 
+    	stop('')	 
     	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$axt), 
     		#as.numeric(mxKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
     		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
@@ -908,7 +908,7 @@ runKannisto.noLC <- function(inputs, start.year) {
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19)  {
+KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19, joint=TRUE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	finish.bx <- function(bx) {
 			negbx <- which(bx <= 0)
@@ -939,28 +939,43 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 	ne <- ncol(Mxe.m)
 	k <- 22:28
 	npoints <- 4
-	#h <- 100 + 5 * (0:6)
-	#hminus80 <- h - 80
 	age.group <- (21-npoints+1):21
 	data <- data.frame(sex=c(rep(1,npoints), rep(0,npoints)), age=c(age.group, age.group))
 	mxc <- rbind(male.mx[age.group, 1:ne], female.mx[age.group, 1:ne])
 	logit.mxc <- log(mxc) - log(1-mxc)
-	#lmxr <- log(mx[18:21, 1:ne] / (1 - mx[18:21, 1:ne]))
-	#Xm1 <- apply(lmxr, 2, sum)
-	#Xm2 <- apply((5 * (1:4) - 5) * lmxr, 2, sum)
-	for(j in 1:ne) {
-		data$lmx <- logit.mxc[,j]
-		if(all(is.na(data$lmx))) next
-		fit <- lm(lmx ~ sex + age, data=data)
-		coefs <- coefficients(fit)
-		aam.female <- exp(coefs[1]) # intercept
-		aam.male <- exp(coefs[1] + coefs['sex'])
-		bbm <- coefs['age']
-		# Ages 100-105, ..., 130+
-		expterm.m <- aam.male * exp(bbm * k)	
-		Mxe.m[k, j] =  expterm.m / (1 + expterm.m)
-		expterm.f <- aam.female * exp(bbm * k)	
-		Mxe.f[k, j] =  expterm.f / (1 + expterm.f)
+	if(joint) {
+		for(j in 1:ne) {		
+			data$lmx <- logit.mxc[,j]
+			if(all(is.na(data$lmx))) next
+			fit <- lm(lmx ~ sex + age, data=data)
+			coefs <- coefficients(fit)
+			aam.female <- exp(coefs[1]) # intercept
+			aam.male <- exp(coefs[1] + coefs['sex'])
+			bbm <- coefs['age']
+			# Ages 100-105, ..., 130+
+			expterm.m <- aam.male * exp(bbm * k)	
+			Mxe.m[k, j] =  expterm.m / (1 + expterm.m)
+			expterm.f <- aam.female * exp(bbm * k)	
+			Mxe.f[k, j] =  expterm.f / (1 + expterm.f)
+		}
+	} else {
+		h <- 100 + 5 * (0:6)
+		hminus80 <- h - 80
+		lmxr <- list(M=log(male.mx[18:21, 1:ne] / (1 - male.mx[18:21, 1:ne])),
+					F=log(female.mx[18:21, 1:ne] / (1 - female.mx[18:21, 1:ne])))
+		res <- list(M=Mxe.m, F=Mxe.f)
+		for(sex in c('M', 'F')) {
+			Xm1 <- apply(lmxr[[sex]], 2, sum)
+			Xm2 <- apply((5 * (1:4) - 5) * lmxr[[sex]], 2, sum)
+			for(j in 1:ne) {		
+				aam <- exp((350 * Xm1[j] - 30 * Xm2[j]) / 500)
+				bbm <- (Xm1[j] - 4 * log(aam)) / 30
+				expterm <- aam * exp(bbm * (hminus80))
+				res[[sex]][k, j] =  expterm / (1 + expterm)
+			}
+		}
+		Mxe.m <- res$M
+		Mxe.f <- res$F
 	}
 	#Get Lee-Cater Ax and Bx
 	#start.year <- as.integer(substr(colnames(male.mx)[1],1,4)) # 1950
@@ -978,6 +993,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	aids.idx <- which(years < 1985)
     	aids.npred <- min(length(aids.idx), npred)
     }
+    avg.ax <- TRUE
     if(!avg.ax) ax.from.latest.periods <- 1
     mlt.bx <- NULL
     if(model.bx) {
@@ -1043,7 +1059,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		result[[sex]]$bx <- bx
 		result[[sex]]$bxt <- bxt
 		result[[sex]]$k0 <- kt[ne]
-		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)
+		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
 	}
 	return(result)
 }
