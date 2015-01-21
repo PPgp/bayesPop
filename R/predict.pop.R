@@ -822,13 +822,10 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 					bux)
 		}
 	}
-	#bx.lim=c(min(Bxt[Bxt[,t]>0,t]), max(Bxt[Bxt[,t]>0,t]))
 	bx.lim=rbind(apply(Bxt, 2, function(x) min(x[x>0])), apply(Bxt, 2, function(x) max(x[x>0])))
 	for(sex in 1:2) {
-		#kranges[[sex]]$kl[t] <- min((lmax - min(ax[[sex]][,t]))/bx.lim[2], machine.max)
 		kranges[[sex]]$kl <- pmin((lmax - apply(ax[[sex]], 2, min))/bx.lim[2,], machine.max)
 		kranges[[sex]]$ku <- pmax((lmin - apply(ax[[sex]], 2, max))/bx.lim[1,], machine.min)
-		#kranges[[sex]]$ku[t] <- max((lmin - max(ax[[sex]][,t]))/bx.lim[1], machine.min)
 	}
 	return(list(bx=Bxt, kranges=kranges))
 }
@@ -842,10 +839,10 @@ modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
     rotKan <- rotateLC(0.5*(eop[[1]]+eop[[2]]), mxKan$bx, mxKan$bux, mxKan$male$axt, mxKan$female$axt)
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	#print(c('sex: ', mxYKan$sex))
-    	stop('')	 
+    	#stop('')	 
     	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$axt), 
-    		#as.numeric(mxKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(mxKan$kl[[mxYKan$sex]]), Ku=as.numeric(mxKan$ku[[mxYKan$sex]]), 
-    		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
+    		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), 
+    		Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
 			constrain=as.integer(mxYKan$sex == 1), 
 			#constrain=as.integer(0),
 			FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
@@ -993,7 +990,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	aids.idx <- which(years < 1985)
     	aids.npred <- min(length(aids.idx), npred)
     }
-    avg.ax <- TRUE
+    #avg.ax <- TRUE
     if(!avg.ax) ax.from.latest.periods <- 1
     mlt.bx <- NULL
     if(model.bx) {
@@ -1010,7 +1007,6 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	ax.ns <- max(ne-ax.from.latest.periods+1, this.ns)
     	x1 <- apply(lMxe[,ax.ns:ne, drop=FALSE], 1, sum, na.rm=TRUE)
     	ax <- x1 / (ne - ax.ns + 1)
-    	#ax.orig <- ax
     	if(smooth.ax) {
     		ax.sm <- smooth.spline(ax[1:21], df=11)$y
     		ax[2:21] <- ax.sm[2:21] # keep value the first age group
@@ -1020,9 +1016,10 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		axt <- matrix(ax, nrow=28, ncol=npred)
 		if(is.aids.country) {
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
-			for (i in 1:28) {
+			ax.end.sm <- smooth.spline(ax.end[1:21], df=11)$y
+    		ax.end[2:21] <- ax.end.sm[2:21] # keep value the first age group
+			for (i in 1:28) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
 				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
-				#axt[i,] <- approx(log(c(1,npred)), c(ax[i], ax.all[i]), xout=log(1:npred))$y
 				axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
 		}
@@ -1052,14 +1049,10 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		}
 		result[[sex]]$ax <- ax
 		result[[sex]]$axt <- axt
-		#result[[sex]]$ax.orig <- ax.orig
-		#result[[sex]]$ax.from.periods <- ax.from.latest.periods
-		#result[[sex]]$smooth.ax <- smooth.ax
-		#result[[sex]]$model.bx <- model.bx
 		result[[sex]]$bx <- bx
 		result[[sex]]$bxt <- bxt
-		result[[sex]]$k0 <- kt[ne]
-		result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
+		#result[[sex]]$k0 <- kt[ne]
+		#result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
 	}
 	return(result)
 }
