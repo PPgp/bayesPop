@@ -1111,6 +1111,7 @@ gmean <- function(f, cats=NULL) {
 }
 
 .remove.trailing.spaces <- function(x) return(gsub("^[[:blank:]]|[[:blank:]]$", '', x))
+.remove.all.spaces <- function(x) return(gsub("[[:blank:]]", '', x))
 
 age.func <- function(data, fun="*") {
 	# data is expected to be 4-d array where the second dimension is age

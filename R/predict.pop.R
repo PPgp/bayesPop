@@ -163,7 +163,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
-			asfr <- inpc$PASFR/100.
+			asfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
+										norms=inp$PASFRnorms, proj.years=inp$proj.years)
+			#asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
@@ -202,7 +204,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			}
 		}
 		for (variant in 1:nvariants) { # compute the two half child variants
-			asfr <- inpc$PASFR/100.
+			asfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
+										norms=inp$PASFRnorms, proj.years=inp$proj.years)
+
+			#asfr <- inpc$PASFR/100.
 			for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
 			LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
 									inpc$e0Fmedian, verbose=verbose, debug=debug)
@@ -435,13 +440,18 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
 	else vwBase <- read.pop.file(inputs$mig.type)
 	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
-	MXpattern <- data.frame(vwBase[,'country_code'])
-	MXpatcols <- c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS")
-	for(col in MXpatcols)
-		if(col %in% colnames(vwBase))
-			MXpattern <- cbind(MXpattern, vwBase[,col])
-	if(ncol(MXpattern)==1) MXpattern <- NULL
-	else colnames(MXpattern) <- c('country_code', MXpatcols)[1:ncol(MXpattern)]
+
+	create.pattern <- function(dataset, columns) {
+		pattern <- data.frame(dataset[,'country_code'])
+		for(col in columns)
+			if(col %in% colnames(dataset))
+				pattern <- cbind(pattern, dataset[,col])
+		if(ncol(pattern)==1) pattern <- NULL
+		else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
+		return(pattern)
+	}
+	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", "PasfrGlobalNorm", "PasfrFarEastAsianNorm", "PasfrSouthAsianNorm"))
 	# Get age-specific migration
 	if(is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred 
 		MIGm <- load.wpp.dataset('migrationM', wpp.year)
@@ -550,11 +560,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	
 	inp <- new.env()
-	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB','PASFR', 'MIGtype', 'MIGm', 'MIGf',
+	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
+				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'fixed.mx', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
+	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	return(inp)
 }
 
@@ -626,6 +638,82 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		return(res)	
 }
 
+.pasfr.norm.name <- function(norms)
+	return(paste0('Pasfr', .remove.all.spaces(norms)))
+	
+compute.pasfr.global.norms <- function(inputs) {
+	pattern <- inputs$PASFRpattern
+	if(is.null(pattern) || !('PasfrNorm' %in% colnames(pattern))) return(NULL)
+	norms <- .pasfr.norm.name(levels(pattern$PasfrNorm))
+	result <- list()
+	for(norm in norms) {
+		tpasfr <- NULL
+		countries <- pattern$country_code[which(pattern[[norm]]==1)]
+		for(country in countries) {
+			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
+			tpasfr <- if(is.null(tpasfr)) pasfr else tpasfr + pasfr
+		}
+		tpasfr <- tpasfr/(length(countries)*100)
+		result[[norm]] <- scale(tpasfr, center=FALSE, scale=colSums(tpasfr))*100
+	}
+	return(result)
+}
+
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
+	logit <- function(x) log(x/(1-x))
+	inv.logit <- function(x) exp(x)/(1+exp(x))
+	min.value <- 1e-10
+	pasfr <- inputs$PASFR
+	pattern <- inputs$PASFRpattern
+	pasfr.obs <- inputs$observed$PASFR
+	
+	years <- as.integer(names(tfr))
+	if(length(years)==0)
+		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
+	lyears <- length(years)
+	end.year <- years[lyears]
+	start.phase3 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
+	start.phase3 <- min(lyears, start.phase3+1) # the previos function finds the end of phase II
+	if(years[start.phase3] >= 2060) endT <- end.year
+	else {
+		if(years[start.phase3] < 2015) endT <- 2038
+		else endT <- years[start.phase3+5]
+	}
+	startTi <- which(years == proj.years[1])
+	norm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
+	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=nrow(norm), ncol=length(proj.years))
+	tobs <- lyears - length(proj.years)
+	pasfr.startTi <- which(proj.years==endT)
+	tau.denominator <- endT - years[startTi]
+	asfr <- pasfr[,1]/100.
+	asfr <- pmax(asfr, min.value)
+	logit.asfr <- logit(asfr)
+	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.asfr
+	for(t in 1:ncol(asfr1)){
+		asfr1[,t] <- logit.asfr + ((years[t+tobs] - years[startTi])/tau.denominator)*logit.dif
+	}
+	asfr1 <- inv.logit(asfr1)
+	asfr1 <-  scale(asfr1, center=FALSE, scale=colSums(asfr1))
+	
+	asfr.e <- pasfr.obs[,ncol(pasfr.obs)-1]/100.
+	asfr.e <- pmax(asfr.e, min.value)
+	tau.denominator2 <- years[startTi] - years[startTi-2]
+	logit.dif <- logit.asfr - logit(asfr.e)
+	for(t in 1:ncol(asfr2)){
+		asfr2[,t] <- logit.asfr + ((years[t+tobs] - years[startTi])/tau.denominator2)*logit.dif
+	}
+	asfr2 <- inv.logit(asfr2)
+	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
+	
+	logit.asfr1 <- logit(asfr1)
+	logit.asfr2 <- logit(asfr2)
+	for(t in 1:ncol(res.asfr)){
+		tau <- (years[t+tobs] - years[startTi])/tau.denominator
+		res.asfr[,t] <- tau*logit.asfr1[,t] + (1-tau)*logit.asfr2[,t]
+	}
+	res.asfr <- inv.logit(res.asfr)
+	return(res.asfr)
+}
 
 .get.par.from.inputs <- function(par, inputs, country) {
 	if(is.null(inputs[[par]])) return (NULL)
@@ -634,11 +722,12 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	return (as.matrix(res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]))
 }
 
+
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc <- list()
 	obs <- list()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXpattern', 'SRB',
-				'PASFR', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
+				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
