@@ -141,6 +141,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			btm <- btf <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
 			deathsm <- deathsf <- array(0, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
 			asfert <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
+			pasfert <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
 			btm.hch <- btf.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
 			asfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
@@ -159,14 +160,15 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			MxKan <- runKannisto.noLC(inpc, inp$start.year)
 			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
 		}
-		npasfr <- nrow(inpc$PASFR)
+		#npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
-			asfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
+			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years)
 			#asfr <- inpc$PASFR/100.
-			for(i in 1:npasfr) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
+			asfr <- pasfr
+			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
 			migpred <- list(M=NULL, F=NULL)
@@ -191,6 +193,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
 				asfert[,2:npredplus1,itraj] <- asfr
 				asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
+				pasfert[,2:npredplus1,itraj] <- pasfr*100
+				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
 				mxm[,2:npredplus1,itraj] <- LTres$mx[[1]]
 				mxm[1:dim(MxKan[[1]]$mx)[1],1,itraj] <- MxKan[[1]]$mx[,dim(MxKan[[1]]$mx)[2]]
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
@@ -204,11 +208,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			}
 		}
 		for (variant in 1:nvariants) { # compute the two half child variants
-			asfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
+			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years)
-
+			asfr <- pasfr
 			#asfr <- inpc$PASFR/100.
-			for(i in 1:npasfr) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
+			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
 			LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
 									inpc$e0Fmedian, verbose=verbose, debug=debug)
 			migpred.hch <- list(M=NULL, F=NULL)
@@ -242,7 +246,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
 			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
-			save(btm, btf, deathsm, deathsf, asfert, mxm, mxf, migm, migf,
+			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, 
 				mxm.hch, mxf.hch, 
 				observed,
@@ -663,7 +667,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	min.value <- 1e-10
-	pasfr <- inputs$PASFR
+	#pasfr <- inputs$PASFR
 	pattern <- inputs$PASFRpattern
 	pasfr.obs <- inputs$observed$PASFR
 	
@@ -672,11 +676,11 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
 	lyears <- length(years)
 	end.year <- years[lyears]
-	start.phase3 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
-	start.phase3 <- min(lyears, start.phase3+1) # the previos function finds the end of phase II
+	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
+	start.phase3 <- min(lyears, end.phase2+1)
 	if(years[start.phase3] >= 2060) endT <- end.year
 	else {
-		if(years[start.phase3] < 2015) endT <- 2038
+		if(years[start.phase3] <= proj.years[1]) endT <- proj.years[1]+25
 		else endT <- years[start.phase3+5]
 	}
 	startTi <- which(years == proj.years[1])
@@ -685,22 +689,22 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	tobs <- lyears - length(proj.years)
 	pasfr.startTi <- which(proj.years==endT)
 	tau.denominator <- endT - years[startTi]
-	asfr <- pasfr[,1]/100.
-	asfr <- pmax(asfr, min.value)
-	logit.asfr <- logit(asfr)
-	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.asfr
+	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
+	p.r <- pmax(p.r, min.value)
+	logit.pr <- logit(p.r)
+	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.pr
 	for(t in 1:ncol(asfr1)){
-		asfr1[,t] <- logit.asfr + ((years[t+tobs] - years[startTi])/tau.denominator)*logit.dif
+		asfr1[,t] <- logit.pr + ((years[t+tobs] - years[startTi])/tau.denominator)*logit.dif
 	}
 	asfr1 <- inv.logit(asfr1)
 	asfr1 <-  scale(asfr1, center=FALSE, scale=colSums(asfr1))
 	
-	asfr.e <- pasfr.obs[,ncol(pasfr.obs)-1]/100.
-	asfr.e <- pmax(asfr.e, min.value)
+	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
+	p.e <- pmax(p.e, min.value)
 	tau.denominator2 <- years[startTi] - years[startTi-2]
-	logit.dif <- logit.asfr - logit(asfr.e)
+	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
-		asfr2[,t] <- logit.asfr + ((years[t+tobs] - years[startTi])/tau.denominator2)*logit.dif
+		asfr2[,t] <- logit.pr + ((years[t+tobs] - years[startTi])/tau.denominator2)*logit.dif
 	}
 	asfr2 <- inv.logit(asfr2)
 	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
@@ -712,6 +716,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 		res.asfr[,t] <- tau*logit.asfr1[,t] + (1-tau)*logit.asfr2[,t]
 	}
 	res.asfr <- inv.logit(res.asfr)
+	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
 	return(res.asfr)
 }
 
