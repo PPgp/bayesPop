@@ -688,23 +688,24 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=nrow(norm), ncol=length(proj.years))
 	tobs <- lyears - length(proj.years)
 	pasfr.startTi <- which(proj.years==endT)
-	tau.denominator <- endT - years[startTi]
+	t.r <- years[startTi-1]
+	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
 	p.r <- pmax(p.r, min.value)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.pr
 	for(t in 1:ncol(asfr1)){
-		asfr1[,t] <- logit.pr + ((years[t+tobs] - years[startTi])/tau.denominator)*logit.dif
+		asfr1[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator)*logit.dif
 	}
 	asfr1 <- inv.logit(asfr1)
 	asfr1 <-  scale(asfr1, center=FALSE, scale=colSums(asfr1))
 	
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
 	p.e <- pmax(p.e, min.value)
-	tau.denominator2 <- years[startTi] - years[startTi-2]
+	tau.denominator2 <- t.r - years[startTi-3]
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
-		asfr2[,t] <- logit.pr + ((years[t+tobs] - years[startTi])/tau.denominator2)*logit.dif
+		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2)*logit.dif
 	}
 	asfr2 <- inv.logit(asfr2)
 	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
@@ -712,7 +713,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit.asfr1 <- logit(asfr1)
 	logit.asfr2 <- logit(asfr2)
 	for(t in 1:ncol(res.asfr)){
-		tau <- (years[t+tobs] - years[startTi])/tau.denominator
+		tau <- (years[t+tobs] - t.r)/tau.denominator
 		res.asfr[,t] <- tau*logit.asfr1[,t] + (1-tau)*logit.asfr2[,t]
 	}
 	res.asfr <- inv.logit(res.asfr)
