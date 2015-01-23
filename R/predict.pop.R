@@ -666,7 +666,7 @@ compute.pasfr.global.norms <- function(inputs) {
 kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
-	min.value <- 1e-10
+	min.value <- 1e-5
 	#pasfr <- inputs$PASFR
 	pattern <- inputs$PASFRpattern
 	pasfr.obs <- inputs$observed$PASFR
@@ -675,18 +675,20 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
 	lyears <- length(years)
+	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
 	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
 	start.phase3 <- min(lyears, end.phase2+1)
-	if(years[start.phase3] >= 2060) endT <- end.year
-	else {
-		if(years[start.phase3] <= proj.years[1]) endT <- proj.years[1]+25
-		else endT <- years[start.phase3+5]
-	}
+	endT <- years[min(max(start.phase3+5, tobs+5), lyears)]
+	# if(years[start.phase3] >= 2060) endT <- end.year
+	# else {
+		# if(years[start.phase3] <= proj.years[1]) endT <- proj.years[1]+20
+		# else endT <- years[start.phase3+5]
+	# }
 	startTi <- which(years == proj.years[1])
 	norm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=nrow(norm), ncol=length(proj.years))
-	tobs <- lyears - length(proj.years)
+	
 	pasfr.startTi <- which(proj.years==endT)
 	t.r <- years[startTi-1]
 	tau.denominator <- endT - t.r
@@ -695,7 +697,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.pr
 	for(t in 1:ncol(asfr1)){
-		asfr1[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator)*logit.dif
+		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
 	asfr1 <- inv.logit(asfr1)
 	asfr1 <-  scale(asfr1, center=FALSE, scale=colSums(asfr1))
@@ -705,7 +707,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	tau.denominator2 <- t.r - years[startTi-3]
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
-		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2)*logit.dif
+		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2) *logit.dif
 	}
 	asfr2 <- inv.logit(asfr2)
 	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
@@ -713,11 +715,12 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit.asfr1 <- logit(asfr1)
 	logit.asfr2 <- logit(asfr2)
 	for(t in 1:ncol(res.asfr)){
-		tau <- (years[t+tobs] - t.r)/tau.denominator
+		tau <- min((years[t+tobs] - t.r)/tau.denominator, 1)
 		res.asfr[,t] <- tau*logit.asfr1[,t] + (1-tau)*logit.asfr2[,t]
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
+	#stop('')
 	return(res.asfr)
 }
 
