@@ -720,7 +720,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	stop('')
+	#stop('')
 	return(res.asfr)
 }
 
