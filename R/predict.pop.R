@@ -666,7 +666,7 @@ compute.pasfr.global.norms <- function(inputs) {
 kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
-	min.value <- 1e-5
+	min.value <- 1e-4
 	#pasfr <- inputs$PASFR
 	pattern <- inputs$PASFRpattern
 	pasfr.obs <- inputs$observed$PASFR
@@ -675,11 +675,13 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
 	lyears <- length(years)
+	years.long <- c(years, seq(years[lyears]+5, by=5, length=5))
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
 	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
 	start.phase3 <- min(lyears, end.phase2+1)
-	endT <- years[min(max(start.phase3+5, tobs+5), lyears)]
+	#endT <- years[min(max(start.phase3+5, tobs+5), lyears)]	
+	endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
 	# if(years[start.phase3] >= 2060) endT <- end.year
 	# else {
 		# if(years[start.phase3] <= proj.years[1]) endT <- proj.years[1]+20
@@ -688,12 +690,11 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	startTi <- which(years == proj.years[1])
 	norm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=nrow(norm), ncol=length(proj.years))
-	
-	pasfr.startTi <- which(proj.years==endT)
 	t.r <- years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
 	p.r <- pmax(p.r, min.value)
+	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.pr
 	for(t in 1:ncol(asfr1)){
@@ -704,6 +705,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
 	p.e <- pmax(p.e, min.value)
+	p.e <- p.e/sum(p.e)
 	tau.denominator2 <- t.r - years[startTi-3]
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
