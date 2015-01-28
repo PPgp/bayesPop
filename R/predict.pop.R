@@ -666,7 +666,26 @@ compute.pasfr.global.norms <- function(inputs) {
 kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
-	min.value <- 1e-4
+	compute.mac <- function(x) {
+		factors <- seq(17.5, by=5, length=dim(x)[1])
+		mac <- rep(0, dim(x)[2])
+        for(iage in 1:dim(x)[1]) 
+        	mac <- mac + x[iage,]*factors[iage]/100.
+        return(mac)
+	}
+	update.by.mac <- function(x, sp3i) {
+		if(sp3i >= dim(x)[2]) return(x)
+		phase3i <- seq(sp3i, dim(x)[2])
+		mac <- compute.mac(x[,phase3i]*100)		
+		mac.norm <- compute.mac(matrix(gnorm, ncol=1))
+		maxi <- which.max(mac)
+		if(mac[maxi] <= mac.norm)
+			return(x)
+		x[,phase3i[maxi:length(phase3i)]] <- x[,phase3i[maxi]]
+		#stop('')
+		return(x)
+	}
+	min.value <- 1e-3
 	#pasfr <- inputs$PASFR
 	pattern <- inputs$PASFRpattern
 	pasfr.obs <- inputs$observed$PASFR
@@ -688,15 +707,16 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 		# else endT <- years[start.phase3+5]
 	# }
 	startTi <- which(years == proj.years[1])
-	norm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
-	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=nrow(norm), ncol=length(proj.years))
+	gnorm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
+	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
+	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
 	t.r <- years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
 	p.r <- pmax(p.r, min.value)
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
-	logit.dif <- logit(norm[,ncol(norm)]/100.) - logit.pr
+	logit.dif <- logit(gnorm/100.) - logit.pr
 	for(t in 1:ncol(asfr1)){
 		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
@@ -723,7 +743,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
 	#stop('')
-	return(res.asfr)
+	return(update.by.mac(res.asfr, start.phase3-tobs))
 }
 
 .get.par.from.inputs <- function(par, inputs, country) {
