@@ -743,7 +743,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
 	#stop('')
-	return(update.by.mac(res.asfr, start.phase3-tobs))
+	return(update.by.mac(res.asfr, max(1, start.phase3-tobs)))
 }
 
 .get.par.from.inputs <- function(par, inputs, country) {
