@@ -1226,8 +1226,8 @@ get.pop.all.countries <- function(pop.pred, quantiles, projection.index, sex='bo
 
 litem <- function(i, x, default=NULL) { 
 	# return element i of the list x if it exists otherwise default
-	i <- match(i, names(x)) # this is suppose to be faster than i %in% names(x)
-	if (is.na(i)) return(default) 
+	j <- match(i, names(x)) # this is suppose to be faster than i %in% names(x)
+	if (is.na(j)) return(default) 
 	x[[i]]
 }
 
