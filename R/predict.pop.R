@@ -145,6 +145,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			btm.hch <- btf.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
 			asfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
+			pasfert.hch <- array(0, dim=c(7, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
 			mxm <- mxf <- array(0, dim=c(28, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			migMntraj <- if(is.null(inpc[['migMpred']])) 1 else dim(inpc[['migMpred']])[2]
@@ -237,6 +238,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				deathsf.hch[,1,variant] <- deathsf[,1,1]
 				asfert.hch[,2:npredplus1,variant] <- asfr
 				asfert.hch[,1,variant] <- asfert[,1,1]
+				pasfert.hch[,2:npredplus1,variant] <- pasfr*100
+				pasfert.hch[,1,variant] <- pasfert[,1,1]
 				mxm.hch[,2:npredplus1,variant] <- LTres$mx[[1]]
 				mxf.hch[,2:npredplus1,variant] <- LTres$mx[[2]]
 				mxm.hch[,1,variant] <- mxm[,1,1]
@@ -247,7 +250,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
-				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, 
+				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, 
 				mxm.hch, mxf.hch, 
 				observed,
 					file=file.path(outdir, paste0('vital_events_country', country, '.rda')))
@@ -1219,10 +1222,11 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	npasfr <- nrow(obs$PASFR)
 	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])))
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
-	asfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]/100.
+	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
 	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
 					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
+	asfr <- pasfr/100.
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
 	pop <- D10 <- list()
@@ -1255,7 +1259,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
 	res <- list(btm=births[[1]], btf=births[[2]], 
-				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, mxm=mx[[1]], mxf=mx[[2]])
+				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, pasfert=pasfr, mxm=mx[[1]], mxf=mx[[2]])
 	for(par in names(res))
 		res[[par]] <- abind(res[[par]], NULL, along=3) # add trajectory dimension
 	return(res)
