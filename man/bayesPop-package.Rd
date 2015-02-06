@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 5.2-1\cr
-Date: \tab 2014-11-19\cr
+Version: \tab 5.2-2\cr
+Date: \tab 2015-2-4\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
@@ -76,7 +76,8 @@ e0.predict(sim.dir=sim.dir.e0, nr.traj=2000, burnin=20000)
 
 # Population prediction
 pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
-    inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
+    inputs = list(tfr.sim.dir=sim.dir.tfr, 
+                  e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
 pop.trajectories.plot(pred, 'Madagascar', nr.traj=50, sum.over.ages=TRUE)
 pop.trajectories.table(pred, 'Madagascar')
 }

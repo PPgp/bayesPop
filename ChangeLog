@@ -1,3 +1,7 @@
+5.2-2 (2/4/2015)
+-----
+Fix in litem function - made compatible with R-devel.
+
 5.2-1 (11/12/2014)
 -----
 Assuring population age groups are not negative (adjusting migration).

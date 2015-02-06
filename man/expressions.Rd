@@ -87,13 +87,13 @@ Depending on the context from which the expression is called, the trajectory dim
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
-# median child-bearing age of Netherlands and all countries - trajecotries
+# median age of women in child-bearing ages in Netherlands and all countries - trajectories
 pop.trajectories.plot(pred, nr.traj=50,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 pop.trajectories.plotAll(pred, nr.traj=50, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 
-# mean child-bearing age of Netherlands - table
+# mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
 
