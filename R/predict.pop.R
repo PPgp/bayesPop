@@ -573,6 +573,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 	}
+	}
 	# Get TFR
 	if(!is.null(inputs$tfr.file)) {
 		if(inputs$tfr.file == 'median_')
