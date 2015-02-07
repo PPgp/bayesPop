@@ -1,6 +1,6 @@
 
 get.expression.indicators <- function() {
-		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration'))
+		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr'))
 }
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
@@ -325,7 +325,7 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		}
 	} 
 	if(!is.null(traj)) 
-	 	dimnames(traj)[[2]] <- pop.pred$proj.years
+	 	dimnames(traj)[[2]] <- litem('proj.years.pop', pop.pred, pop.pred$proj.years+2) # pop.pred$proj.years
 	return(list(trajectories=traj, index=traj.idx, age.idx=age.idx, quantiles=quant, half.child=hch))
 }
 
@@ -504,7 +504,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 }
 
 get.popVE.trajectories.and.quantiles <- function(pop.pred, country, 
-									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration'), 
+									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
  									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
  	# get trajectories and quantiles for vital events and other indicators
@@ -566,6 +566,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 				births = list(male=myenv$btm, female=myenv$btf, male.hch=myenv$btm.hch, female.hch=myenv$btf.hch),
 				deaths = list(male=myenv$deathsm, female=myenv$deathsf, male.hch=myenv$deathsm.hch, female.hch=myenv$deathsf.hch),
 				fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
+				pasfr = list(female=myenv$pasfert, female.hch=myenv$pasfert.hch)
 				)
 		}
 	}
@@ -576,7 +577,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= (max.age + if(max.age < 21) 3 else 0)] # in case max.age==7
 	quantiles <- if(is.null(q)) get.quantiles.to.keep() else q
 	trajdimnames <- if(!is.null(alltraj$male)) dimnames(alltraj$male) else dimnames(alltraj$female)
-	if(event == 'births' || event == 'fertility') {
+	if(event %in% c('births', 'fertility', 'pasfr')) {
 		if(age[1] != 'all') {
 			age.idx <- age.idx - 3 # translate age index into mother's child-bearing age index
 			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1) 
@@ -591,7 +592,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		age.idx <- age.idx+2
 	}
 	hch <- NULL
-	if(event == 'fertility') sex <- 'female'
+	if(event  %in% c('fertility', 'pasfr')) sex <- 'female'
 	if(sex == 'both') {
 		if(sum.over.ages) {
 			traj <- colSums(alltraj$male[age.idx,,,drop=FALSE]) + colSums(alltraj$female[age.idx,,,drop=FALSE])
@@ -1113,6 +1114,7 @@ gmean <- function(f, cats=NULL) {
 }
 
 .remove.trailing.spaces <- function(x) return(gsub("^[[:blank:]]|[[:blank:]]$", '', x))
+.remove.all.spaces <- function(x) return(gsub("[[:blank:]]", '', x))
 
 age.func <- function(data, fun="*") {
 	# data is expected to be 4-d array where the second dimension is age
@@ -1228,8 +1230,8 @@ get.pop.all.countries <- function(pop.pred, quantiles, projection.index, sex='bo
 
 litem <- function(i, x, default=NULL) { 
 	# return element i of the list x if it exists otherwise default
-	i <- match(i, names(x)) # this is suppose to be faster than i %in% names(x)
-	if (is.na(i)) return(default) 
+	j <- match(i, names(x)) # this is suppose to be faster than i %in% names(x)
+	if (is.na(j)) return(default) 
 	x[[i]]
 }
 

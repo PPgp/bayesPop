@@ -232,6 +232,15 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 	valid.regions <- rep(FALSE, length(regions))
 	status.for.gui <- paste('out of', nreg, 'regions.')
 	gui.options <- list()
+	has.vital.events <- FALSE
+	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch')
+	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
+								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch',
+								'migm', 'migf')
+	# The next two lines need to be there for the R checker to get to know these objects
+	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- NULL
+	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
+	aggr.quantities.all <- aggr.quantities
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
 			# This is to unblock the GUI, if the run is invoked from bayesDem
@@ -249,55 +258,79 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		e <- new.env()
 		if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+		
 		for(cidx in 1:length(countries.index)) {
 			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
 			traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', countries[cidx], '.rda', sep=''))
 			load(traj.file, envir=e)
 			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env)
+			if(has.vital.events || cidx == 1) {
+				ve.file <- file.path(pop.output.directory(pop.pred), 
+									paste('vital_events_country', countries[cidx], '.rda', sep=''))
+				if(file.exists(ve.file)) {
+					if(cidx == 1) {
+						has.vital.events <- TRUE
+						aggr.quantities.all <- c(aggr.quantities, aggr.quantities.ve)
+						observed <- list()
+					}
+					load(ve.file, envir=e)
+				}
+			}
 			if(cidx == 1) {
-				stotp <- e$totp
-				stotpm <- e$totpm
-				stotpf <- e$totpf
-				stotp.hch <- e$totp.hch
-				stotpm.hch <- e$totpm.hch
-				stotpf.hch <- e$totpf.hch
+				for(par in aggr.quantities.all)
+					assign(par, e[[par]])
 				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
 				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
 				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
 																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
+				if(has.vital.events) {
+					for(par in aggr.quantities.ve)
+						if(!is.null(e$observed[[par]]))
+							observed[[par]] <- e$observed[[par]]
+				}												
 			} else {
-				stotp <- stotp + e$totp
-				stotpm <- stotpm + e$totpm
-				stotpf <- stotpf + e$totpf
-				stotp.hch <- stotp.hch + e$totp.hch
-				stotpm.hch <- stotpm.hch + e$totpm.hch
-				stotpf.hch <- stotpf.hch + e$totpf.hch
+				for(par in aggr.quantities.all)
+					assign(par, get(par) + e[[par]])
 				aggr.obs.dataM <- aggr.obs.dataM + obs.data[['male']][country.obs.idx,]
 				aggr.obs.dataF <- aggr.obs.dataF + obs.data[['female']][country.obs.idx,]
+				if(has.vital.events) {
+					for(par in names(observed))
+						observed[[par]] <- observed[[par]] + e$observed[[par]]
+				}
 			}
 		}
-		totp <- stotp
-		totpm <- stotpm
-		totpf <- stotpf
-		totp.hch <- stotp.hch
-		totpm.hch <- stotpm.hch
-		totpf.hch <- stotpf.hch
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
-			 file = file.path(outdir, paste('totpop_country', id, '.rda', sep='')))
-		quant[id.idx,,] = apply(stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sd[id.idx,1,] <- apply(stotp, 1, mean, na.rm = TRUE)
-		mean_sd[id.idx,2,] = apply(stotp, 1, sd, na.rm = TRUE)
-		for (i in 1:dim(stotpm)[1]) {
-			quantMage[id.idx,i,,] <- apply(stotpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			quantFage[id.idx,i,,] = apply(stotpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			quantPropMage[id.idx,i,,] <- apply(stotpm[i,,]/stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			quantPropFage[id.idx,i,,] <- apply(stotpf[i,,]/stotp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
+		if(has.vital.events)
+			save(btm, btf, deathsm, deathsf, migm, migf,
+				btm.hch, btf.hch, deathsm.hch, deathsf.hch, 
+				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
+				
+		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		mean_sd[id.idx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
+		mean_sd[id.idx,2,] = apply(totp, 1, sd, na.rm = TRUE)
+		
+		for (i in 1:dim(totpm)[1]) {
+			if(dim(totpm)[3] == 1) { # 1 trajectory
+				quantMage[id.idx,i,,] <- matrix(totpm[i,,1], nrow=dim(quantMage)[3], ncol=dim(quantMage)[4], byrow=TRUE)
+				quantFage[id.idx,i,,] <- matrix(totpf[i,,1], nrow=dim(quantFage)[3], ncol=dim(quantFage)[4], byrow=TRUE)
+				quantPropMage[id.idx,i,,] <- matrix(totpm[i,,1]/totp[,1], nrow=dim(quantPropMage)[3], 
+													ncol=dim(quantPropMage)[4], byrow=TRUE)
+				
+				quantPropFage[id.idx,i,,] <- matrix(totpf[i,,1]/totp[,1], nrow=dim(quantPropFage)[3], 
+													ncol=dim(quantPropFage)[4], byrow=TRUE)
+			} else { # multiple trajectories
+				quantMage[id.idx,i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+				quantFage[id.idx,i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+				quantPropMage[id.idx,i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+				quantPropFage[id.idx,i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			}
 		}
-		sstotpm <- colSums(stotpm)
+		sstotpm <- colSums(totpm)
 		quantM[id.idx,,] = apply(sstotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sdM[id.idx,1,] <- apply(sstotpm, 1, mean, na.rm = TRUE)
 		mean_sdM[id.idx,2,] = apply(sstotpm, 1, sd, na.rm = TRUE)
-		sstotpf <- colSums(stotpf)
+		sstotpf <- colSums(totpf)
 		quantF[id.idx,,] = apply(sstotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sdF[id.idx,1,] <- apply(sstotpf, 1, mean, na.rm = TRUE)
 		mean_sdF[id.idx,2,] = apply(sstotpf, 1, sd, na.rm = TRUE)
