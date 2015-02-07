@@ -1,3 +1,5 @@
+if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
+
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
 									rebalance=TRUE, start.time.index=1, 
 									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, .countries=NULL, .migration.pars=NULL, ...) {

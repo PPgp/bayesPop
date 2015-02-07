@@ -19,7 +19,7 @@
 "Mauritius"	480	2040
 "Mayotte"	175	374
 "Mozambique"	508	801590
-"Réunion"	638	2510
+"Reunion"	638	2510
 "Rwanda"	646	26338
 "Seychelles"	690	455
 "Somalia"	706	637657
@@ -56,7 +56,7 @@
 "Benin"	204	112622
 "Burkina Faso"	854	274000
 "Cabo Verde"	132	4033
-"Côte d'Ivoire"	384	322463
+"Cote d'Ivoire"	384	322463
 "Gambia"	270	11295
 "Ghana"	288	238533
 "Guinea"	324	245857
@@ -192,7 +192,7 @@
 "Caribbean Netherlands"	535	328
 "Cayman Islands"	136	264
 "Cuba"	192	110861
-"Curaçao"	531	444
+"Curacao"	531	444
 "Dominica"	212	751
 "Dominican Republic"	214	48511
 "Grenada"	308	344
