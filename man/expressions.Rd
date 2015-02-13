@@ -14,7 +14,8 @@ A \bold{basic component} is a character string constituted of four parts, two of
 		\item \sQuote{D} - deaths, 
 		\item \sQuote{B} - births, 
 		\item \sQuote{S} - survival ratio,
-		\item \sQuote{F} - fertility rate, 
+		\item \sQuote{F} - fertility rate,
+		\item \sQuote{R} - percent age-specific fertility,
 		\item \sQuote{M} - mortality rate, 
 		\item \sQuote{Q} - probability of dying,
 		\item \sQuote{G} - net migration.
@@ -29,7 +30,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
 \item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4. Use the pre-defined function \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
 }
-Not all combinations of the four parts above make sense. For example, \sQuote{F} can be only combined with female sex, \sQuote{B} and \sQuote{F} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 
@@ -87,13 +88,13 @@ Depending on the context from which the expression is called, the trajectory dim
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
-# median child-bearing age of Netherlands and all countries - trajecotries
+# median age of women in child-bearing ages in Netherlands and all countries - trajectories
 pop.trajectories.plot(pred, nr.traj=50,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 pop.trajectories.plotAll(pred, nr.traj=50, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 
-# mean child-bearing age of Netherlands - table
+# mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
 

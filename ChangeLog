@@ -1,3 +1,14 @@
+5.3-3
+-----
+Projecting age-specific mortality:
+	- dealt with jump-off bias - different way of computing a_x (country specific)
+	- implemented rotation of b_x (Li, Gerland 2013)
+	- some countries use modeled b_x
+
+Implemented projection of percent age-specific fertility rate (Kantorova 2014)
+
+Added 'R' into expressions for obtaining percent age-specific fertility.
+
 5.2-2 (2/4/2015)
 -----
 Fix in litem function - made compatible with R-devel.
