@@ -458,7 +458,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		return(pattern)
 	}
 	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
-	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", "PasfrGlobalNorm", "PasfrFarEastAsianNorm", "PasfrSouthAsianNorm"))
+	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
 	# Get age-specific migration
 	if(is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred 
 		MIGm <- load.wpp.dataset('migrationM', wpp.year)

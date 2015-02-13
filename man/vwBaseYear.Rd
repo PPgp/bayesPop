@@ -8,7 +8,7 @@
 Datasets on Migration Base Year and Type
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country.
+Datasets giving information on the baseyear and type of migration for each country. The 2012 dataset also gives information on country's specifics regarding mortality and fertility age patterns.
 }
 \usage{
     data(vwBaseYear2008)
@@ -23,6 +23,13 @@ Datasets giving information on the baseyear and type of migration for each count
     \item{\code{isSmall}}{UN internal code. Not used by the package.}
     \item{\code{ProjFirstYear}}{The base year of migration.}
     \item{\code{MigCode}}{Type of migration. Zero means migration is evenly distributed over each time interval. Code 9 means migration is captured at the end of each interval.}
+    \item{\code{WPPAIDS}}{Dummy indicating if the country has generilized HIV/AIDS epidemics.}
+    \item{\code{AgeMortalityType}}{Type of mortality age pattern. Only relevant for countries with the entry \dQuote{Model life tables}. In such a case, the \eqn{b_x} Lee-Carter parameter is not estimated from historical data. Instead is taken from the dataset \code{\link{MLTbx}} using a pattern given in the \code{AgeMortalityPattern} column.}
+    \item{\code{AgeMortalityPattern}}{If \code{AgeMortalityType} is equal to \dQuote{Model life tables}, this value determines which \eqn{b_x} is selected from the \code{\link{MLTbx}} dataset. It must sorrespond to one of the rownames of \code{\link{MLTbx}}, e.g. \dQuote{CD East}, \dQuote{CD West}, \dQuote{UN Latin American}.}
+    \item{\code{LatestAgeMortalityPattern}}{Dummy indicating if the \eqn{a_x} Lee-Carter parameter should be computed using observed data from the latest time period only.}
+    \item{\code{SmoothLatestAgeMortalityPattern}}{If \code{LatestAgeMortalityPattern} is 1, this column indicates if the \eqn{a_x} should be smoothed.}
+    \item{\code{PasfrNorm}}{Type of norm for computing age-specific fertility patern to which the country belongs to. Currently only \dQuote{GlobalNorm} is used.}
+    \item{\code{PasfrGlobalNorm, PasfrFarEastAsianNorm, PasfrSouthAsianNorm}}{Dummies indicating which country to include to compute the specific norms.}
   }
 }
 \details{
