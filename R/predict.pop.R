@@ -175,10 +175,12 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
 		pop.ini <- list(M=inpc$POPm0, F=inpc$POPf0)
+		tfr.med <- apply(inpc$TFRpred, 1, median)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
-										norms=inp$PASFRnorms, proj.years=inp$proj.years)
+										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
+										tfr.med=tfr.med)
 			#asfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
@@ -218,7 +220,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		for (variant in 1:nvariants) { # compute the two half child variants
 			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
-										norms=inp$PASFRnorms, proj.years=inp$proj.years)
+										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
+										tfr.med=tfr.med)
 			asfr <- pasfr
 			#asfr <- inpc$PASFR/100.
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
@@ -476,7 +479,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		return(pattern)
 	}
 	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
-	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", "PasfrGlobalNorm", "PasfrFarEastAsianNorm", "PasfrSouthAsianNorm"))
+	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
 	# Get age-specific migration
 	if(is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred 
 		MIGm <- load.wpp.dataset('migrationM', wpp.year)
@@ -694,7 +697,7 @@ compute.pasfr.global.norms <- function(inputs) {
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	compute.mac <- function(x) {
@@ -725,18 +728,34 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
 	lyears <- length(years)
-	years.long <- c(years, seq(years[lyears]+5, by=5, length=5))
+	years.long <- c(years, seq(years[lyears]+5, by=5, length=10))
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, length(tfr))
-	start.phase3 <- min(lyears, end.phase2+1)
-	#endT <- years[min(max(start.phase3+5, tobs+5), lyears)]	
-	endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
-	# if(years[start.phase3] >= 2060) endT <- end.year
-	# else {
-		# if(years[start.phase3] <= proj.years[1]) endT <- proj.years[1]+20
-		# else endT <- years[start.phase3+5]
-	# }
+	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears)
+	start.phase3 <- end.phase2 + 1
+	#stop('')
+	if(start.phase3 > lyears) { # Phase 3 hasn't start
+		if(tfr[lyears] > 1.8) { # regress the last four points to approximate start of Phase 3
+			df <- data.frame(tfr=tfr[(lyears-3):lyears], time=(lyears-3):lyears)
+			reg <- lm(tfr~time, df)
+			if(reg$coefficients[2] < -1e-3) {# use only if it has negative slope 
+				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, length(years.long))
+			} else {
+				start.phase3 <- length(years.long)
+			}			
+		}
+		endT <- years.long[min(start.phase3+5, length(years.long))]
+	} else {
+		smaller.than.median <- tfr[start.phase3:lyears] < tfr.med
+		if(all(smaller.than.median)) {
+			#endT <- years.long[max(start.phase3+10, tobs+10)]
+			endT <- years.long[length(years.long)]
+		} else {
+			first.larger <- which(!smaller.than.median)[1] + start.phase3 - 1
+			endT <- years.long[max(first.larger, tobs+1)]
+		}
+	}
+	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
 	startTi <- which(years == proj.years[1])
 	gnorm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
@@ -762,6 +781,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years) {
 	for(t in 1:ncol(asfr2)){
 		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2) *logit.dif
 	}
+	#stop('')
 	asfr2 <- inv.logit(asfr2)
 	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
 	
@@ -980,9 +1000,9 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 	for(sex in 1:2)
 		kranges[[sex]] <- list(ku=ku, kl=ku)
 	ax <- list(axM, axF)
-	if(!is.null(dim(bx)) && length(dim(bx))==2) { # aids country; bx is already a matrix
-		Bxt <- bx
-	} else {
+	#if(!is.null(dim(bx)) && length(dim(bx))==2) { # aids country; bx is already a matrix
+	#	Bxt <- bx
+	#} else {
 		wt <- (e0 - 80)/(e0u-80)
 		wst <- (0.5*(1+(sin(pi/2*(2*wt-1)))))^p
 		Bxt <- matrix(NA, nrow=length(bx), ncol=npred)
@@ -992,7 +1012,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 					(1-wst[t])*bx + wst[t]*bux,
 					bux)
 		}
-	}
+	#}
 	bx.lim=rbind(apply(Bxt, 2, function(x) min(x[x>0])), apply(Bxt, 2, function(x) max(x[x>0])))
 	for(sex in 1:2) {
 		kranges[[sex]]$kl <- pmin((lmax - apply(ax[[sex]], 2, min))/bx.lim[2,], machine.max)
@@ -1054,7 +1074,7 @@ runKannisto <- function(inputs, start.year, ...) {
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	bux <- NULL
-	if(is.null(mxMKan$bxt)) {
+	#if(is.null(mxMKan$bxt)) {
 		bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
 		# ultimate bx (Li, Lee, Gerland 2013)
     	bux <- bx
@@ -1062,8 +1082,8 @@ runKannisto <- function(inputs, start.year, ...) {
     	bux[1:14] <- avg15.65
     	bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
     	bux <- bux/sum(bux) # must sum to 1
-    } else # aids country, bxt is a matrix
-    	bx <- 0.5 * (mxMKan$bxt + mxFKan$bxt)
+    #} else # aids country, bxt is a matrix
+    #	bx <- 0.5 * (mxMKan$bxt + mxFKan$bxt)
 	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
 }
 
@@ -1195,7 +1215,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 			}
 		}
 		bx <- mlt.bx
-		bxt <- NULL
+		#bxt <- NULL
     	if(!model.bx) {
 			x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
 			x1 <- rep(NA, nrow(lMxe))
@@ -1203,25 +1223,25 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 				x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
 			bx <- x1/x2
 			bx <- finish.bx(bx)
-			if(is.aids.country) {
-				bxt <- matrix(bx, nrow=28, ncol=npred)
-				slMxe.aids <- apply(lMxe[,aids.idx, drop=FALSE], 2, sum)
-				x1.t <- rep(NA, nrow(lMxe))
-				for(t in 2:aids.npred) {
-					kt.t = slMxe.aids - sum(axt[,t])
-					x2.t <- sum(kt.t*kt.t)					
-					for (i in 1:nrow(lMxe)) 
-						x1.t[i] <- sum((lMxe[i,aids.idx]-axt[i,t])*kt.t)
-					bxt.t <- x1.t/x2.t
-					bxt[,t] <- finish.bx(bxt.t)
-				}
-				for(t in (aids.npred+1):npred) bxt[,t] <- bxt[,aids.npred]
-			}
+			# if(is.aids.country) {
+				# bxt <- matrix(bx, nrow=28, ncol=npred)
+				# slMxe.aids <- apply(lMxe[,aids.idx, drop=FALSE], 2, sum)
+				# x1.t <- rep(NA, nrow(lMxe))
+				# for(t in 2:aids.npred) {
+					# kt.t = slMxe.aids - sum(axt[,t])
+					# x2.t <- sum(kt.t*kt.t)					
+					# for (i in 1:nrow(lMxe)) 
+						# x1.t[i] <- sum((lMxe[i,aids.idx]-axt[i,t])*kt.t)
+					# bxt.t <- x1.t/x2.t
+					# bxt[,t] <- finish.bx(bxt.t)
+				# }
+				# for(t in (aids.npred+1):npred) bxt[,t] <- bxt[,aids.npred]
+			# }
 		}
 		result[[sex]]$ax <- ax
 		result[[sex]]$axt <- axt
 		result[[sex]]$bx <- bx
-		result[[sex]]$bxt <- bxt
+		#result[[sex]]$bxt <- bxt
 		#result[[sex]]$k0 <- kt[ne]
 		#result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
 	}
