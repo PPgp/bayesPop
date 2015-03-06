@@ -98,7 +98,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	kannisto <- list()
 	observed <- new.env()
 	for(country in ls(countries.input)) {
-		kannisto[[country]] <- runKannisto(nest, countries.input[[country]])
+		kannisto[[country]] <- runKannisto(countries.input[[country]], inp$start.year, npred=npred)
 		if(keep.vital.events) 
 			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
 										countries.input[[country]]$MIGtype, kannisto[[country]], 
@@ -1217,7 +1217,7 @@ do.pop.predict.balance.old <- function(inp, outdir, nr.traj, ages, pred=NULL, ke
 	kannisto <- list()
 	observed <- new.env()
 	for(country in ls(countries.input)) {
-		kannisto[[country]] <- runKannisto(nest, countries.input[[country]])
+		kannisto[[country]] <- runKannisto(countries.input[[country]], inp$start.year, npred=npred)
 		if(keep.vital.events) 
 			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
 										countries.input[[country]]$MIGtype, kannisto[[country]], 
