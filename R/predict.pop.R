@@ -728,31 +728,32 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
 	lyears <- length(years)
-	years.long <- c(years, seq(years[lyears]+5, by=5, length=10))
+	years.long <- c(years, seq(years[lyears]+5, by=5, length=15))
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
 	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears)
 	start.phase3 <- end.phase2 + 1
 	#stop('')
-	if(start.phase3 > lyears) { # Phase 3 hasn't start
+	if(start.phase3 > lyears) { # Phase 3 hasn't start (Case 2)
 		if(tfr[lyears] > 1.8) { # regress the last four points to approximate start of Phase 3
 			df <- data.frame(tfr=tfr[(lyears-3):lyears], time=(lyears-3):lyears)
 			reg <- lm(tfr~time, df)
 			if(reg$coefficients[2] < -1e-3) {# use only if it has negative slope 
-				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, length(years.long))
+				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, lyears+10)
 			} else {
-				start.phase3 <- length(years.long)
+				start.phase3 <- lyears+10
 			}			
 		}
-		endT <- years.long[min(start.phase3+5, length(years.long))]
-	} else {
+		#endT <- years.long[min(start.phase3+5, length(years.long))]
+		endT <- years.long[start.phase3+5]
+	} else { # Case 1
 		smaller.than.median <- tfr[start.phase3:lyears] < tfr.med
-		if(all(smaller.than.median)) {
+		if(all(smaller.than.median)) { # t_u does not exist
 			#endT <- years.long[max(start.phase3+10, tobs+10)]
-			endT <- years.long[length(years.long)]
-		} else {
+			endT <- years.long[max(lyears, start.phase3+5)]
+		} else { # t_u exists
 			first.larger <- which(!smaller.than.median)[1] + start.phase3 - 1
-			endT <- years.long[max(first.larger, tobs+1)]
+			endT <- years.long[max(first.larger, tobs+2)]
 		}
 	}
 	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
@@ -794,7 +795,8 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
 	#stop('')
-	return(update.by.mac(res.asfr, max(1, start.phase3-tobs)))
+	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
+	return(res.asfr)
 }
 
 .get.par.from.inputs <- function(par, inputs, country) {
