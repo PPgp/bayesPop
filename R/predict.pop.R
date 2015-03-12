@@ -87,7 +87,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 	for(icountry in 1:length(country.codes)) {
-		print(icountry)
 		country.idx <- which(UNlocations[,'country_code'] == country.codes[icountry])
 		if(length(country.idx) == 0) {
 			not.valid.countries.idx <- c(not.valid.countries.idx, icountry)
