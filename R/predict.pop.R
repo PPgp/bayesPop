@@ -75,7 +75,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	if(use.migration.model || rebalance.migration)
 		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, 
-					rebalance=rebalance.migration, verbose=verbose, ...)
+					rebalance=rebalance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 
 		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, verbose=verbose)

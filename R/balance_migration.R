@@ -1,10 +1,14 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
-									rebalance=TRUE, start.time.index=1, 
+									rebalance=TRUE, use.migration.model=TRUE, start.time.index=1, 
 									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, .countries=NULL, .migration.pars=NULL, ...) {
+	# if .migration.pars is NULL, don't use the migration model
+	if (use.migration.model && is.null(.migration.pars))
+		stop('Argument .migration.pars has to be given if use.migration.model is TRUE.')
 	countries.idx <- if(is.null(.countries)) which(UNlocations$location_type==4) else which(UNlocations$country_code %in% .countries)
 	country.codes <- UNlocations$country_code[countries.idx]
+	country.codes.char <- as.character(country.codes)
 	ncountries <- length(country.codes)
 	nr_project <- length(inp$proj.years)
 	nages <- length(ages)
@@ -24,7 +28,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npred <- nr_project
 		
 	mig.rate.prev <- mig.rate <- NULL
-	if(!is.null(.migration.pars)) {
+	if(use.migration.model) {
+		if(is.null(.migration.pars$posterior))
+			stop('Argument .migration.pars must have an element "posterior".')
 		inp[['migration.parameters']] <- .migration.pars$posterior
 		if(!is.null(.migration.pars$ini.rates)) {
 			mig.rate.prev <- .migration.pars$ini.rates#/5.
@@ -45,8 +51,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		popF.prev <- env.tmp$totpf
 		popM.hch.prev <- env.tmp$totpm.hch
 		popF.hch.prev <- env.tmp$totpf.hch
-		mig.rate <- env.tmp$mig.rate
-		mig.rate.prev <- mig.rate[start.time.index-1,,]
+		if(!is.null(env.tmp$mig.rate)) {
+			mig.rate <- env.tmp$mig.rate
+			mig.rate.prev <- mig.rate[start.time.index-1,,]
+		}
 	}
 	UNnames <- UNlocations[countries.idx,'name']
 	if(parallel) {
@@ -65,31 +73,32 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		stopCluster(cl)
 		for(cidx in 1:ncountries) {	
 			if(is.null(inpc.list[[cidx]]) || length(inpc.list[[cidx]]$POPm0)==0) next
-			countries.input[[as.character(country.codes[cidx])]] <- inpc.list[[cidx]]
+			countries.input[[country.codes.char[cidx]]] <- inpc.list[[cidx]]
 		}
 	} else { # load inputs sequentially
 		if(verbose) cat('(sequentially).')
 		for(cidx in 1:ncountries) {
 			inpc <- get.country.inputs(country.codes[cidx], inp, nr.traj, UNnames[cidx])
 			if(is.null(inpc) || length(inpc$POPm0)==0) next
-			countries.input[[as.character(country.codes[cidx])]] <- inpc
+			countries.input[[country.codes.char[cidx]]] <- inpc
 		}
 	}
 	nr.traj <- min(nr.traj, sapply(ls(countries.input), function(ccode) return(ncol(countries.input[[ccode]]$TFRpred))))
 	npred <- min(npred, sapply(ls(countries.input), function(ccode) return(nrow(countries.input[[ccode]]$TFRpred))))
 	npredplus1 <- npred+1
-	npasfr <- nrow(countries.input[[as.character(country.codes[1])]]$PASFR)
-	nvariants <- nrow(countries.input[[as.character(country.codes[1])]]$TFRhalfchild)
+	npasfr <- nrow(countries.input[[country.codes.char[1]]]$PASFR)
+	nvariants <- nrow(countries.input[[country.codes.char[1]]]$TFRhalfchild)
 	if(verbose) cat('\nProcessing ', nr.traj, ' trajectories for each country ')
 	if(length(countries.input) < ncountries) {
 		ncountries <- length(countries.input)
-		country.codes <- as.integer(ls(countries.input))
+		country.codes.char <- ls(countries.input)
+		country.codes <- as.integer(country.codes.char)
 		countries.idx <- sapply(country.codes, function(x) which(UNlocations[,'country_code'] == x))
 		UNnames <- UNlocations[countries.idx,'name']
 		if(parallel) nr.nodes <- min(nr.nodes, ncountries)
 	}
 	if(!is.null(mig.rate.prev)) {
-		mig.rate.prev <- mig.rate.prev[as.character(country.codes)]
+		mig.rate.prev <- mig.rate.prev[country.codes.char]
 		mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
 		if(is.null(mig.rate)) 
 			mig.rate <- array(NA, c(npred+1, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
@@ -97,7 +106,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	}
 	kannisto <- list()
 	observed <- new.env()
-	for(country in ls(countries.input)) {
+	for(country in country.codes.char) {
 		kannisto[[country]] <- runKannisto(countries.input[[country]], inp$start.year, npred=npred)
 		if(keep.vital.events) 
 			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
@@ -276,13 +285,13 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	
 	pop <- rep(NA, nr.countries)
 	names(pop) <- country.codes
-	data(land_area_wpp2012)
-	warns <- list()
 	country.codes.char <- as.character(country.codes)
+	data(land_area_wpp2012)
+	warns <- list()	
 	for(itraj in 1:nr.traj){
 		pop.ini <- colSums(env$totpm[,,itraj] + env$totpf[,,itraj])
 		for(cidx in 1:nr.countries) {
-			inpc <- inputs[[as.character(country.codes[cidx])]]
+			inpc <- inputs[[country.codes.char[cidx]]]
 			migpred <- .get.migration.one.trajectory(inpc, itraj, time, pop.ini[cidx], 
 								popM=env$totpm[,cidx,itraj], popF=env$totpf[,cidx,itraj], country.code=country.codes[cidx], 
 								mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[,cidx,itraj] else NULL)
