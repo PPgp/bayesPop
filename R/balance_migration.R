@@ -320,7 +320,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 				e$migrm.labor[,cidx] <- migpred$laborM
 				e$migrf.labor[,cidx] <- migpred$laborF
 			}
-			pop[cidx] <- pop.ini
+			pop[cidx] <- pop.ini[cidx]
 			warns[[country.codes.char[cidx]]] <- c(warns[[country.codes.char[cidx]]], migpred$warns)
 		}
 		e$pop.by.age <- list(m=env$totpm.hch[,,variant], f=env$totpf.hch[,,variant])
