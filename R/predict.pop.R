@@ -1180,7 +1180,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- which(years < 1985)
-    	aids.npred <- min(length(aids.idx), npred)
+    	aids.npred <- min((2050-(as.integer(years[ne])+5))/5, npred)
     }
     #avg.ax <- TRUE
     if(!avg.ax) ax.from.latest.periods <- 1
