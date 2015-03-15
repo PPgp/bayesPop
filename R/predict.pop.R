@@ -1133,7 +1133,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- which(years < 1985)
-    	aids.npred <- min((2050-(as.integer(years[ne])+5))/5, npred)
+    	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     #avg.ax <- TRUE
     if(!avg.ax) ax.from.latest.periods <- 1
@@ -1165,7 +1165,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     		ax.end[2:21] <- ax.end.sm[2:21] # keep value the first age group
 			for (i in 1:28) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
 				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
-				axt[i,(aids.npred+1):npred] <- ax.end[i]	
+				if(aids.npred < npred)
+					axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
 		}
 		bx <- mlt.bx
