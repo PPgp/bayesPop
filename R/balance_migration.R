@@ -513,6 +513,11 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	if(!is.null(rmax)) xmax <- min(xmax, rmax)
+	if(has.relaxedB && xmin > xmax) {
+		avg <- (xmin + xmax)/2.
+		xmin <- avg - 1e-3
+		xmax <- avg + 1e-3 
+	}
 	
   #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
