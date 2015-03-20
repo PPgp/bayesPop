@@ -621,7 +621,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			else rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
 					rmax=if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL,
-					relaxed.bounds=time < 4
+					relaxed.bounds=time < 6
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
 		} else rate <- fixed.rate
