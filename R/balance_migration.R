@@ -440,24 +440,6 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 	return(res)
 }
 
-.get.migration.traj <- function(pred, par, country) {
-		cidx <- pred$inputs[[par]][,'country_code'] == country 
-		idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
-		if(sum(idx) == 0) return(NULL)
-		migdf <- pred$inputs[[par]][idx,-1]
-		utrajs <- sort(unique(migdf$trajectory))
-		ntrajs <- length(utrajs)
-		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
-		lyears <- length(pred$inputs$proj.years)
-		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*21), trajectory=rep(rep(utrajs, each=21), times=lyears),
-									age=c(paste(seq(0,95,by=5), seq(4,99,by=5), sep='-'), '100+'))
-		# this is to get rows of the data frame in a particular order
-		migdf <- merge(sorted.df, migdf, sort=FALSE)
-		res <- array(migdf$value, dim=c(21, ntrajs, lyears))
-		dimnames(res) <- list(1:21,  NULL, pred$inputs$proj.years)
-		return(res)	
-}
-
 .get.migration.one.trajectory <- function(use.migration.model, inpc, itraj=NULL, time=NULL,  pop=NULL, ...) {
 	if(use.migration.model) #TODO: what should it be for half child variants?
 		return(sample.migration.trajectory.from.model(inpc, itraj, time, pop, ...))

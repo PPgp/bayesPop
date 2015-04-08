@@ -185,7 +185,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
-			migpred <- .get.migration.one.trajectory(inpc, itraj)			
+			migpred <- .get.migration.one.trajectory(FALSE, inpc, itraj)			
 			popres <- StoPopProj(npred, pop.ini, LTres, asfr, inpc$SRB, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
 			
@@ -226,7 +226,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
 			LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
 									inpc$e0Fmedian, verbose=verbose, debug=debug)
-			migpred.hch <- .get.migration.one.trajectory(inpc, itraj=NULL)
+			migpred.hch <- .get.migration.one.trajectory(FALSE, inpc, itraj=NULL)
 			popres <- StoPopProj(npred, pop.ini, LTres, asfr, inpc$SRB, migpred.hch, inpc$MIGtype, 
 							country.name=UNlocations[country.idx,'name'], 
 							keep.vital.events=keep.vital.events)
