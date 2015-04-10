@@ -9,6 +9,8 @@ Implemented projection of percent age-specific fertility rate (Kantorova 2014)
 
 Added 'R' into expressions for obtaining percent age-specific fertility.
 
+plot.by.age got a few additional graphical arguments.
+
 5.2-2 (2/4/2015)
 -----
 Fix in litem function - made compatible with R-devel.
