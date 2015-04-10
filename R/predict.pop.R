@@ -691,9 +691,9 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 		#stop('')
 		return(x)
 	}
-	min.value <- 1e-3
-	#pasfr <- inputs$PASFR
 	pattern <- inputs$PASFRpattern
+	if(is.null(pattern)) return(inputs$PASFR)
+	min.value <- 1e-3	
 	pasfr.obs <- inputs$observed$PASFR
 	
 	years <- as.integer(names(tfr))
@@ -774,6 +774,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 .get.par.from.inputs <- function(par, inputs, country) {
 	if(is.null(inputs[[par]])) return (NULL)
 	idx <- inputs[[par]][,'country_code'] == country
+	if(sum(idx)==0) return (NULL)
 	res <- inputs[[par]][idx,,drop=FALSE]
 	return (as.matrix(res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]))
 }
@@ -1124,7 +1125,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 	#ns <- (max(min(yb, 1980), start.year) - start.year) / 5 + 1 # ?
 	years <- substr(colnames(male.mx),1,4)
 	ns <- which(years == start.year)
-	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne]) 
+	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne])
     model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
     avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
     smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
