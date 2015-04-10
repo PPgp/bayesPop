@@ -5,7 +5,7 @@
 \alias{vwBaseYear2012}
 \docType{data}
 \title{
-Datasets on Migration Base Year and Type
+Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
 Datasets giving information on the baseyear and type of migration for each country. The 2012 dataset also gives information on country's specifics regarding mortality and fertility age patterns.
