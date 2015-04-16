@@ -1,4 +1,4 @@
-5.3-3
+5.3-4 (4/10/2015)
 -----
 Projecting age-specific mortality:
 	- dealt with jump-off bias - different way of computing a_x (country specific)
@@ -8,6 +8,8 @@ Projecting age-specific mortality:
 Implemented projection of percent age-specific fertility rate (Kantorova 2014)
 
 Added 'R' into expressions for obtaining percent age-specific fertility.
+
+plot.by.age got a few additional graphical arguments.
 
 5.2-2 (2/4/2015)
 -----

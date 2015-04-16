@@ -382,7 +382,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  xlim=NULL, ylim=NULL,  
 								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', 'gray'),
-								  show.legend=TRUE, add=FALSE, ann=par('ann'), ...
+								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=1, pt.cex=1, ...
 								  ) {
 
 	sex <- match.arg(sex)
@@ -395,6 +395,11 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 	data <- get.data.byage(pop.pred, country, year, expression, pi=pi,
 							sex=sex, nr.traj=nr.traj, typical.trajectory=typical.trajectory)
 	if(missing(ylab) && !is.null(expression)) ylab <- ''
+	# recycle the last value to ensure there are at least 4 elements
+	col <- c(col, rep(col[length(col)],3))
+	lwd <- c(lwd, rep(lwd[length(lwd)],3))
+	type <- c(type, rep(type[length(type)],3))
+	pch <- c(pch, rep(pch[length(pch)],3))
 	with(data, {
 	x <- 1:length(age.idx)
 	y <- pop.median
@@ -416,18 +421,19 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 	# plot trajectories
 	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
 		for (i in 1:length(trajectories$index)) {
-			lines(x, trajectories$trajectories[,projection.index,trajectories$index[i]], type='l', col=col[4], lwd=lwd[4])
+			lines(x, trajectories$trajectories[,projection.index,trajectories$index[i]], 
+					type=type[4], col=col[4], lwd=lwd[4], pch=pch[4], cex=pt.cex)
 		}
 	}
 	# median
-	lines(x,y, lwd=lwd[1], col=col[1])
+	lines(x,y, lwd=lwd[1], col=col[1], type=type[1], pch=pch[1], cex=pt.cex)
 	# plot given CIs
 	if(projection) {
 		lty <- 2:(length(pi)+1)
 		for (i in 1:length(pi)) {		
 			if (!is.null(cqp[[i]])) {
-				lines(x, cqp[[i]][1,], type='l', col=col[2], lty=lty[i], lwd=lwd[2])
-				lines(x, cqp[[i]][2,], type='l', col=col[2], lty=lty[i], lwd=lwd[2])
+				lines(x, cqp[[i]][1,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
+				lines(x, cqp[[i]][2,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
 			}
 		}
 		legend <- c('median', paste(pi, '% PI', sep=''))
@@ -439,17 +445,23 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 	lty <- c(1, lty)
 	lwds <- c(lwd[1], rep(lwd[2], length(pi)))
 	cols <- c(col[1], rep(col[2], length(pi)))
+	types <- c(type[1], rep(type[2], length(pi)))
+	pchs <- c(pch[1], rep(pch[2], length(pi)))
 	if (half.child.variant && !is.null(trajectories$half.child)) {
 		lty <- c(lty, max(lty)+1)
 		llty <- length(lty)
-		lines(x, trajectories$half.child[,projection.index,1], type='l', col=col[3], lty=lty[llty], lwd=lwd[3])
-		lines(x, trajectories$half.child[,projection.index,2], type='l', col=col[3], lty=lty[llty], lwd=lwd[3])
+		lines(x, trajectories$half.child[,projection.index,1], type=type[3], col=col[3], 
+					lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
+		lines(x, trajectories$half.child[,projection.index,2], type=type[3], col=col[3], 
+					lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
 		legend <- c(legend, '+/- 0.5 child')
 		cols <- c(cols, col[3])
 		lwds <- c(lwds, lwd[3])
+		types <- c(types, type[3])
+		pchs <- c(pchs, lwd[3])
 	}
 	if(show.legend && ann)
-		legend('topleft', legend=legend, lty=lty, bty='n', col=cols, lwd=lwds)
+		legend('topleft', legend=legend, lty=lty, bty='n', col=cols, lwd=lwds, pch=pchs, pt.cex=pt.cex)
 	})
 }
 

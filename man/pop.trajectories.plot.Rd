@@ -32,7 +32,8 @@ pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL,
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory=FALSE,
     xlim = NULL, ylim = NULL, xlab = '', ylab = 'Population projection', 
     main = NULL, lwd = c(2,2,2,1), col = c('red', 'red', 'blue', 'gray'),
-    show.legend = TRUE, add = FALSE, ann = par('ann'), \dots)
+    show.legend = TRUE, add = FALSE, ann = par('ann'), type = "l", pch = 1, 
+    pt.cex = 1, \dots)
     
 pop.byage.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.byage"),
@@ -54,9 +55,10 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
 }
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{typical.trajectory}{Logical. If \code{TRUE} one trajectory is shown that has the smallest distance to the median.}
-  \item{xlim, ylim, xlab, ylab, main, ann}{Graphical parameters passed to the \code{plot} function.}
+  \item{xlim, ylim, xlab, ylab, main, ann, pt.cex}{Graphical parameters passed to the \code{plot} function.}
   \item{dev.ncol}{Number of column for the graphics device if \code{sum.over.ages} is \code{FALSE}. If the number of age groups is smaller than \code{dev.ncol}, the number of columns is automatically decreased.}
     \item{lwd, col}{For the first three functions it is a vector of five elements giving the line width and color for: 1. observed data, 2. median, 3. quantiles, 4. half-child variant, 5. trajectories. For functions that show results by age it is a vector of four elements - as above without the first item (observed data).}
+    \item{type, pch}{Currently works for plotting by age only. It is a vector of four elements giving the plot type and point type for: 1. median, 2. quantiles, 3. half-child variant, 4. trajectories. The last element of the array is recycled.}
     \item{show.legend}{Logical controlling whether the legend should be drawn.}
   \item{\dots}{Additional graphical arguments. Functions \code{pop.trajectories.plotAll} and \code{pop.byage.plotAll} accept also any arguments of \code{pop.trajectories.plot} and \code{pop.byage.plot}, respectively, except \code{country}.}
   \item{output.dir}{Directory into which resulting graphs are stored.}
