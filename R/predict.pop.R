@@ -911,10 +911,15 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		stop('Mismatch in projection periods of female e0 and the target projection years.')
 	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
 	}
+	if(!is.null(inputs$migration.parameters)) {
+		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country == country, c('mu', 'phi', 'sigma')]
+		inpc$mig.nr.traj <- nrow(inpc$migration.parameters)
+	} else inpc$mig.nr.traj <- 1
+	
 	# select trajectories
 	indices <- list()
 	nr.traj <- min(nr.traj, max(ncol(inpc$e0Mpred), ncol(inpc$e0Fpred), ncol(inpc$TFRpred), 
-							    ncol(inpc$migMpred), ncol(inpc$migFpred)))
+							    ncol(inpc$migMpred), ncol(inpc$migFpred), inpc$mig.nr.traj))
 	for (par in c('TFRpred', 'e0Fpred', 'migMpred')) {
 		if(is.null(inpc[[par]])) next
 		traj.available <- ncol(inpc[[par]])
@@ -953,7 +958,6 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
-	inpc$mig.nr.traj <- 1
 	for(par in c('migMpred', 'migFpred')) { # age-specific, thus 3-d arrays
 		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE]
@@ -962,7 +966,6 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc$observed <- obs
 	
 	if(!is.null(inputs$migration.parameters)) {
-		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country == country, c('mu', 'phi', 'sigma')]
 		# select trajectories
 		if(nrow(inpc$migration.parameters) > nr.traj)  # select equidistantly
 			migpar.idx <- get.traj.index(nr.traj, inpc$migration.parameters, traj.dim = 1)

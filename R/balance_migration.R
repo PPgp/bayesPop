@@ -325,7 +325,7 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 		migrationf[,,itraj] <- e$migrf + e$migrf.labor
 	}
 	for(variant in 1:2){
-		pop <- colSums(env$totpm[,,variant] + env$totpf[,,variant])
+		pop <- colSums(env$totpm.hch[,,variant] + env$totpf.hch[,,variant])
 		for(cidx in 1:nr.countries) {
 			inpc <- inputs[[as.character(country.codes[cidx])]]
 			fixed.rate <- if(!is.null(env$mig.rate)) median(env$mig.rate[time,cidx,]) else NULL
