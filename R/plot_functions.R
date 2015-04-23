@@ -1141,3 +1141,52 @@ bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 	bayesTFR:::.do.gvis.bdem.map('pop', 'Population', pred, ...)
 }
 
+pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NULL, cohort.data=NULL, pi=c(80, 95), 
+								dev.ncol=5, show.legend=TRUE, ann=par('ann'), add=FALSE, 
+								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, ...) {
+	if(is.null(cohort.data)) 
+		cohort.data <- cohorts(pop.pred, country=country, expression=expression, pi=pi)
+	all.cohorts <- names(cohort.data)[-which(names(cohort.data) == 'last.observed')]
+	all.cohorts.num <- as.integer(all.cohorts)
+	if(is.null(cohorts)) 
+		cohorts <- seq(cohort.data[['last.observed']], by=5, length=min(10, sum(all.cohorts.num > cohort.data[['last.observed']])))
+	cohorts <- as.character(cohorts)
+	if(is.null(xlim))
+		xlim <- range(unlist(sapply(cohorts, function(x) range(as.integer(colnames(cohort.data[[x]]))))))
+	if(is.null(ylim))
+		ylim <- range(unlist(sapply(cohorts, function(x) range(cohort.data[[x]]))))
+	cur.mgp <- par('mgp')
+	cur.oma <- par('oma')
+	cur.mar <- par('mar')
+	nplots <- length(cohorts)
+	if (nplots < dev.ncol) {
+       	ncols <- nplots
+		nrows <- 1
+	} else {
+		ncols <- dev.ncol
+		nrows <- ceiling(nplots/dev.ncol)
+	}
+	pi <- sort(pi)
+	legend <- c('median', paste(pi, '% PI', sep=''))
+	lty <- c(1, 2:(length(pi)+1))
+	cols <- rep('red', 1+length(pi))
+	par(mfrow=c(nrows,ncols),  oma = c(0, 0, 2, 0))
+	par(mar=c(2,2,1,0.4)+0.1, mgp=c(1,0.3,0))
+	for(iplot in 1:nplots) {
+		this.data <- cohort.data[[cohorts[iplot]]]
+		this.x <- as.integer(colnames(this.data))
+		if(!add)
+			plot(this.x, this.data["median",], type="l", col='red', xlim=xlim, ylim=ylim,
+				ylab=ylab, xlab=xlab, main=if(is.null(main)) paste("Cohort", cohorts[iplot]) else main, ...)
+		else lines(this.x, this.data["median",], type="l", col='red')
+		for(ipi in 1:length(pi)) {
+			qs <- c((1-pi[ipi]/100)/2, (1+pi[ipi]/100)/2)
+			lines(this.x, this.data[as.character(qs[1]),], col='red', lty=1+ipi)
+			lines(this.x, this.data[as.character(qs[2]),], col='red', lty=1+ipi)
+		}
+		grid()
+		if(show.legend && ann)
+			legend('topleft', legend=legend, lty=lty, bty='n', col=cols)
+	}
+	par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
+}
