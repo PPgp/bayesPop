@@ -32,7 +32,7 @@ pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL,
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory=FALSE,
     xlim = NULL, ylim = NULL, xlab = '', ylab = 'Population projection', 
     main = NULL, lwd = c(2,2,2,1), col = c('red', 'red', 'blue', 'gray'),
-    show.legend = TRUE, add = FALSE, ann = par('ann'), type = "l", pch = 1, 
+    show.legend = TRUE, add = FALSE, ann = par('ann'), type = "l", pch = NA, 
     pt.cex = 1, \dots)
     
 pop.byage.plotAll(pop.pred, 

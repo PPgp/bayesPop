@@ -334,7 +334,7 @@ is.saved.pi <- function(pop.pred, pi, warning=TRUE) {
 	is.valid.pi <- rep(NA, length(pi))
 	quantile.values <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
 	for (i in 1:length(pi)) {
-		al <- 1-(1-pi[i]/100)/2		
+		al <- (1+pi[i]/100)/2		
 		is.valid.pi[i] <- any(round(quantile.values,6)==round(al,6))
 		if(!is.valid.pi[i] && warning)
 			warning(pi[i], '% interval not available.')
@@ -345,7 +345,7 @@ is.saved.pi <- function(pop.pred, pi, warning=TRUE) {
 get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index, country.code, year.index,
 									trajectories=NULL, pi=80, q=NULL, ...) {
 	# quantile.array should be 4d-array (country x age x quantiles x time)
-	al <- if(!is.null(q)) q else c((1-pi/100)/2, 1-(1-pi/100)/2)
+	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
 	if(!is.null(quantile.array)) {
 		quantile.values <- as.numeric(dimnames(quantile.array)[[3]])
@@ -376,7 +376,7 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL,
 									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
 	# quantile.array should be 3d-array (country x quantiles x time). 
 	# If country.index is NULL, the country dimension can be omitted 
-	al <- if(!is.null(q)) q else c((1-pi/100)/2, 1-(1-pi/100)/2)
+	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
 	if(!is.null(quantile.array)) {
 		if(is.null(country.index) && length(dim(quantile.array))<3) {
@@ -1244,3 +1244,44 @@ as.environment.bayesPop.prediction <- function(pop.pred){
 UNcountries <- function()
 	return(UNlocations$country_code[UNlocations$location_type==4])
 	
+cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
+	.get.quantiles.from.cohort.data <- function(trajs) {
+		res <- apply(trajs, 1, median)
+		res <- rbind(res, apply(trajs, 1, quantile, quants))
+		rownames(res) <- c("median", quants.char)
+		res
+	}
+	if(is.null(country) && is.null(expression))
+		stop("Either country or expression must be given.")
+	
+	if(!is.null(country)) {
+		country.object <- get.country.object(country, country.table=pop.pred$countries)
+		expression <- paste0("P", country.object$code, "{}")
+	}
+	alldata <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred)$trajectories # should be 3d array
+	quants <- sort(c((1-pi/100)/2, (1+pi/100)/2))
+	quants.char <- as.character(quants)
+	result <- list()
+	age.index <- as.integer(dimnames(alldata)[[1]])
+	nage <- dim(alldata)[1]
+	years <- dimnames(alldata)[[2]]
+	last.observed.cohort <- pop.pred$proj.years.pop[1]-age.index[1]*5
+	from.cohorts <- seq(last.observed.cohort, length=nage-1, by=-5)
+	observed.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	for(cohort in length(observed.cohorts):1) {
+		cohort.traj <- apply(alldata[cohort:nage,,,drop=FALSE], 3, 'diag')
+		result[[observed.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)
+		colnames(result[[observed.cohorts[cohort]]]) <- years[1:ncol(result[[observed.cohorts[cohort]]])]
+	}
+	nyears <- length(pop.pred$proj.years.pop)
+	from.cohorts <- seq(last.observed.cohort + 5, length=nyears-2, by=5)
+	projected.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")	
+	for(cohort in 1:length(projected.cohorts)) {
+		cohort.traj <- apply(alldata[,(cohort+1):nyears,,drop=FALSE], 3, 'diag')
+		result[[projected.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)
+		colnames(result[[projected.cohorts[cohort]]]) <- years[(cohort+1):(cohort+ncol(result[[projected.cohorts[cohort]]]))]
+	}
+	#stop('')
+	result[["last.observed"]] <- last.observed.cohort
+	return(result)
+}

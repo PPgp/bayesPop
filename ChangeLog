@@ -1,3 +1,8 @@
+5.4-0
+-----
+Added functions for extracting and plotting cohort data 
+(functions cohorts, pop.cohorts.plot)
+
 5.3-4 (4/10/2015)
 -----
 Projecting age-specific mortality:
