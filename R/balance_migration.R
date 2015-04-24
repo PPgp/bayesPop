@@ -39,6 +39,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			names(mig.rate.prev) <- inp$migration.rates$country_code
 		}
 		inp$migration.rates <- inp$migration.rates[,-ncol(inp$migration.rates)] # remove the present year column as it is in mig.rate.prev
+		for(par in c('year.of.migration.schedule'))
+			if(!is.null(.migration.pars[[par]])) inp[[par]] <- .migration.pars[[par]]
 	}
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
@@ -463,7 +465,7 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 }
 
 
-project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rmax=NULL, relaxed.bounds=FALSE){
+project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rmax=NULL, relaxed.bounds=FALSE, is.small=FALSE){
 # Based on Jon Azose code 
 #######################
 #Project migration for a single country one time point into the future
@@ -495,7 +497,7 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	if(!is.null(rmax)) xmax <- min(xmax, rmax)
-	if(has.relaxedB && xmin > xmax) {
+	if((has.relaxedB || is.small) && xmin > xmax) {
 		avg <- (xmin + xmax)/2.
 		xmin <- avg - 1e-3
 		xmax <- avg + 1e-3 
@@ -603,7 +605,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			else rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
 					rmax=if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL,
-					relaxed.bounds=time < 6
+					relaxed.bounds=time < 6, is.small=pop < 200
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
 		} else rate <- fixed.rate
@@ -699,7 +701,6 @@ rebalance.population.by.migration <- function(e) { # not used
 		countries.totals <- e$totp[,itraj]
 		sumpop <- sum(countries.totals)
 		sumadj <- difarray <- rep(0, nrow(e$totp))
-		#if(itraj == 2) stop('')
 		for(sex in c('m', 'f')) {
 			par <- paste0('migration',sex)
 			parpop <- paste0('totp',sex)
@@ -1061,7 +1062,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 
 	#Handle Croatia separately because of some bad data
 	#Use 2010-2015 schedules, which aren't messed up.
-	if(country == 191) {
+	if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
 		maleVec <- inputs$MIGm[inputs$MIGm$country_code==191,"2010-2015"]
 		femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191,"2010-2015"];
 		tot <- sum(maleVec+femaleVec)
@@ -1082,14 +1083,21 @@ migration.age.schedule <- function(country, npred, inputs) {
 	}
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
-	col.idx <- which(substr(colnames(inputs$MIGm), 1,4)==as.character(inputs$present.year)):ncol(inputs$MIGm)
-	if(first.year) {
-		       cix <- rep(which(colnames(inputs$MIGm)=="2010-2015"), length(col.idx))
-		       maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
-		       femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
-	} else {
-	  maleVec <- as.matrix(inputs$MIGm[cidxM,col.idx])
-    	  femaleVec <- as.matrix(inputs$MIGf[cidxF,col.idx])
+	first.year.period <- paste(inputs$present.year, inputs$present.year+5, sep="-")
+	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
+	
+	if(!is.null(inputs$year.of.migration.schedule)) { 
+		first.year.period <- inputs$year.of.migration.schedule
+		first.year <- TRUE
+	}
+	if(first.year) { # take a one year as age-schedule for all future years
+		cix <- rep(which(colnames(inputs$MIGm)==first.year.period), length(col.idx))
+		if(is.null(cix)) stop("Time period ", first.year.period, " not found in the migration data.")
+		maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
+		femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
+	} else {# take all years starting from present year
+	  	maleVec <- as.matrix(inputs$MIGm[cidxM,col.idx])
+    	femaleVec <- as.matrix(inputs$MIGf[cidxF,col.idx])
 	}
     colnames(maleVec) <- colnames(femaleVec) <- colnames(inputs$MIGm)[col.idx]
     tot <- colSums(maleVec+femaleVec)
