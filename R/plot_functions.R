@@ -382,7 +382,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  xlim=NULL, ylim=NULL,  
 								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', 'gray'),
-								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=1, pt.cex=1, ...
+								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=NA, pt.cex=1, ...
 								  ) {
 
 	sex <- match.arg(sex)
@@ -1143,21 +1143,26 @@ bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 
 pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NULL, cohort.data=NULL, pi=c(80, 95), 
 								dev.ncol=5, show.legend=TRUE, ann=par('ann'), add=FALSE, 
-								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, ...) {
+								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, col='red', ...) {
+	.round.to.lower5 <- function(x) 5*floor(x/5) 
+
 	if(is.null(cohort.data)) 
 		cohort.data <- cohorts(pop.pred, country=country, expression=expression, pi=pi)
 	all.cohorts <- names(cohort.data)[-which(names(cohort.data) == 'last.observed')]
-	all.cohorts.num <- as.integer(all.cohorts)
+	all.cohorts.num.start <- as.integer(substr(all.cohorts, 1, 4))
 	if(is.null(cohorts)) 
-		cohorts <- seq(cohort.data[['last.observed']], by=5, length=min(10, sum(all.cohorts.num > cohort.data[['last.observed']])))
-	cohorts <- as.character(cohorts)
+		cohorts <- seq(cohort.data[['last.observed']], by=5, 
+							length=min(10, sum(all.cohorts.num.start > cohort.data[['last.observed']])))
+	if(any(is.numeric(cohorts))) {
+		# convert to the from-to format, e.g. 2000-2005
+		from.cohorts <- .round.to.lower5(cohorts)
+		cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	}
 	if(is.null(xlim))
 		xlim <- range(unlist(sapply(cohorts, function(x) range(as.integer(colnames(cohort.data[[x]]))))))
 	if(is.null(ylim))
 		ylim <- range(unlist(sapply(cohorts, function(x) range(cohort.data[[x]]))))
-	cur.mgp <- par('mgp')
-	cur.oma <- par('oma')
-	cur.mar <- par('mar')
+
 	nplots <- length(cohorts)
 	if (nplots < dev.ncol) {
        	ncols <- nplots
@@ -1166,27 +1171,33 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		ncols <- dev.ncol
 		nrows <- ceiling(nplots/dev.ncol)
 	}
+
 	pi <- sort(pi)
 	legend <- c('median', paste(pi, '% PI', sep=''))
 	lty <- c(1, 2:(length(pi)+1))
-	cols <- rep('red', 1+length(pi))
-	par(mfrow=c(nrows,ncols),  oma = c(0, 0, 2, 0))
-	par(mar=c(2,2,1,0.4)+0.1, mgp=c(1,0.3,0))
+	cols <- rep(col, 1+length(pi))
+	if(nplots > 1) {
+		cur.mgp <- par('mgp')
+		cur.oma <- par('oma')
+		cur.mar <- par('mar')
+		par(mfrow=c(nrows,ncols),  oma = c(0, 0, 2, 0))
+		par(mar=c(2,2,1,0.4)+0.1, mgp=c(1,0.3,0))
+	}
 	for(iplot in 1:nplots) {
 		this.data <- cohort.data[[cohorts[iplot]]]
 		this.x <- as.integer(colnames(this.data))
 		if(!add)
-			plot(this.x, this.data["median",], type="l", col='red', xlim=xlim, ylim=ylim,
+			plot(this.x, this.data["median",], type="l", col=col, xlim=xlim, ylim=ylim,
 				ylab=ylab, xlab=xlab, main=if(is.null(main)) paste("Cohort", cohorts[iplot]) else main, ...)
-		else lines(this.x, this.data["median",], type="l", col='red')
+		else lines(this.x, this.data["median",], type="l", col=col)
 		for(ipi in 1:length(pi)) {
 			qs <- c((1-pi[ipi]/100)/2, (1+pi[ipi]/100)/2)
-			lines(this.x, this.data[as.character(qs[1]),], col='red', lty=1+ipi)
-			lines(this.x, this.data[as.character(qs[2]),], col='red', lty=1+ipi)
+			lines(this.x, this.data[as.character(qs[1]),], col=col, lty=1+ipi)
+			lines(this.x, this.data[as.character(qs[2]),], col=col, lty=1+ipi)
 		}
 		grid()
 		if(show.legend && ann)
 			legend('topleft', legend=legend, lty=lty, bty='n', col=cols)
 	}
-	par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
+	if(nplots > 1) par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
 }

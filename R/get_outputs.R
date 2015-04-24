@@ -1264,16 +1264,16 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 	nage <- dim(alldata)[1]
 	years <- dimnames(alldata)[[2]]
 	last.observed.cohort <- pop.pred$proj.years.pop[1]-age.index[1]*5
-	observed.cohorts <- as.character(seq(last.observed.cohort, length=nage-1, by=-5))
+	from.cohorts <- seq(last.observed.cohort, length=nage-1, by=-5)
+	observed.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
 	for(cohort in length(observed.cohorts):1) {
 		cohort.traj <- apply(alldata[cohort:nage,,,drop=FALSE], 3, 'diag')
 		result[[observed.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)
 		colnames(result[[observed.cohorts[cohort]]]) <- years[1:ncol(result[[observed.cohorts[cohort]]])]
 	}
 	nyears <- length(pop.pred$proj.years.pop)
-	#projected.cohorts <- as.character(pop.pred$proj.years.pop[1:(nyears-2)])
-	projected.cohorts <- as.character(seq(last.observed.cohort + 5, length=nyears-2, by=5))
-	
+	from.cohorts <- seq(last.observed.cohort + 5, length=nyears-2, by=5)
+	projected.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")	
 	for(cohort in 1:length(projected.cohorts)) {
 		cohort.traj <- apply(alldata[,(cohort+1):nyears,,drop=FALSE], 3, 'diag')
 		result[[projected.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)

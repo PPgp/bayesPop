@@ -31,7 +31,9 @@ write.pop.projection.summary,
 pop.cleanup.cache,
 LifeTableMx,
 LifeTableMxCol,
-get.pop
+get.pop,
+cohorts,
+pop.cohorts.plot
 )
 
 # register S3 methods
