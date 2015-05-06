@@ -249,7 +249,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxf.hch[,1,variant] <- mxf[,1,1]
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
+		trajectory.indices <- inpc$trajectory.indices
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
@@ -933,6 +934,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	inpc$observed <- obs
+	inpc$trajectory.indices <- indices
 	return(inpc)
 }
 
