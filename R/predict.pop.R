@@ -363,7 +363,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		migrationm[] <- migrationf[] <- migrationm.hch[] <- migrationf.hch[] <- 0
 		if(vital.events) {
 			btm[] <- btf[] <- deathsm[] <- deathsf[] <- btm.hch[] <- btf.hch[] <- asfert.hch[] <- 0
-			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- migm[] <- migf[] <- 0 
+			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- 0 
+			if(exists("migm")) migm[] <- migf[] <- 0
 		}
 	})
 }
