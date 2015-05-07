@@ -217,15 +217,27 @@ get.psr.denominator.startindex <- function() return(14)
 	return(adjust.quantiles(quant, what, env=pop.pred$adjust.env))
 }
 
+.load.traj.file <- function(dir, country, e) {
+	traj.file <- file.path(dir, paste('totpop_country', country, '.rda', sep=''))
+	if (!file.exists(traj.file)) return(0)
+	load(traj.file, envir=e)
+	return(1)
+}
+
+pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', ...) {
+	country.object <- get.country.object(country, country.table=pop.pred$countries)
+	res <- get.pop.trajectories(pop.pred, country.object$code, sex=sex, age=age, ...)
+	return(res$trajectories[,res$index])
+}
+
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
  									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE) {
-	traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', country, '.rda', sep=''))
+	
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
 	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory
-	if (!file.exists(traj.file)) 
-		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	e <- new.env()
-	load(traj.file, envir=e)
+	if (!.load.traj.file(pop.output.directory(pop.pred), country, e))
+		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	if(adjust) {
 		if(is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env)
@@ -284,16 +296,15 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 }
 
+
 get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), 
 												age='all', nr.traj=NULL, proportion=FALSE, typical.trajectory=FALSE,
 												adjust=FALSE) {
 	# Like get.pop.trajectories() but it doesn't sum up over ages.
 	# Called when creating pop pyramid and pop.byage.*. Doesn't handle potential support ratio.
-	traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', country, '.rda', sep=''))
 	age.idx <- traj.idx <- traj <- quant <- hch <- NULL
-	if (file.exists(traj.file)) {
-		e <- new.env()
-		load(traj.file, envir=e)
+	e <- new.env()
+	if (.load.traj.file(pop.output.directory(pop.pred), country, e)) {
 		sex <- match.arg(sex)
 		max.age <- dim(e$totpm)[1] # should be 27
 		age.idx <- if(age[1]=='all') 1:max.age else age
@@ -1284,4 +1295,13 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 	#stop('')
 	result[["last.observed"]] <- last.observed.cohort
 	return(result)
+}
+
+get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F", "migM", "migF")) {
+	country.object <- get.country.object(country, country.table=pop.pred$countries)
+	e <- new.env()
+	if (!.load.traj.file(pop.output.directory(pop.pred), country.object$code, e))
+		return (NULL)
+	par <- list(TFR="TFRpred", e0M="e0Mpred", e0F="e0Fpred", migM="migMpred", migF="migFpred")
+	return(e$trajectory.indices[[par[[what[1]]]]])
 }
