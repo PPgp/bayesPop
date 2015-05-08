@@ -287,7 +287,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
 							observed[[par]] <- e$observed[[par]]
-				}												
+				}
+				trajectory.indices <- e$trajectory.indices											
 			} else {
 				for(par in aggr.quantities.all)
 					assign(par, get(par) + e[[par]])
@@ -299,13 +300,16 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 				}
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
-		if(has.vital.events)
+		if(has.vital.events) {
+			#TODO: asfert, pasfert
+			#asfert <- 2*(btm + btf)/(totpf[,1:(dim(totpf)[2]-1),]+totpf[,2:dim(totpf)[2],])
+			#asfert.hch <- 2*(btm.hch + btf.hch)/(totpf.hch[,1:(dim(totpf.hch)[2]-1),]+totpf.hch[,2:dim(totpf.hch)[2],])
 			save(btm, btf, deathsm, deathsf, migm, migf,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, 
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
-				
+		}		
 		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sd[id.idx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
 		mean_sd[id.idx,2,] = apply(totp, 1, sd, na.rm = TRUE)
