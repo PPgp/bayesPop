@@ -27,7 +27,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
 	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	else {
-		if(has.pop.prediction(output.dir) && !replace.output) {
+		if(has.pop.prediction(output.dir) && !replace.output && !rebalance.migration) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, verbose=verbose)
@@ -40,7 +40,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	}
 	outdir <- file.path(output.dir, 'predictions')
 	if(use.migration.model || rebalance.migration) {
-		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher time point
+		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher trajectory
 			unlink(outdir, recursive=TRUE)
 			.remove.cache.file(outdir)
 		}
@@ -73,7 +73,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	} 
 	if(use.migration.model || rebalance.migration)
-		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
+		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, 
 					rebalance=rebalance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 

@@ -1,12 +1,12 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
 
-do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
-									rebalance=TRUE, use.migration.model=TRUE, start.time.index=1, 
-									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, .countries=NULL, .migration.pars=NULL, ...) {
+do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
+									rebalance=TRUE, use.migration.model=TRUE, start.traj.index=1, 
+									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, .migration.pars=NULL, ...) {
 	# if .migration.pars is NULL, don't use the migration model
 	if (use.migration.model && is.null(.migration.pars))
 		stop('Argument .migration.pars has to be given if use.migration.model is TRUE.')
-	countries.idx <- if(is.null(.countries)) which(UNlocations$location_type==4) else which(UNlocations$country_code %in% .countries)
+	countries.idx <- if(is.null(countries)) which(UNlocations$location_type==4) else which(UNlocations$country_code %in% countries)
 	country.codes <- UNlocations$country_code[countries.idx]
 	country.codes.char <- as.character(country.codes)
 	ncountries <- length(country.codes)
@@ -43,21 +43,18 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			if(!is.null(.migration.pars[[par]])) inp[[par]] <- .migration.pars[[par]]
 	}
 	outdir.tmp <- file.path(outdir, '_tmp_')
-	if(file.exists(outdir.tmp) && start.time.index==1) unlink(outdir.tmp, recursive=TRUE)
-	if(start.time.index==1) dir.create(outdir.tmp)
+	if(file.exists(outdir.tmp) && start.traj.index==1) unlink(outdir.tmp, recursive=TRUE)
+	if(start.traj.index==1) dir.create(outdir.tmp)
 	
-	# if(start.time.index > 1) { # reload initial population
-		# env.tmp <- new.env()
-		# load(file.path(outdir.tmp, paste0('pop_time_', start.time.index-1, '.rda')), envir=env.tmp)
-		# popM.prev <- env.tmp$totpm
-		# popF.prev <- env.tmp$totpf
-		# popM.hch.prev <- env.tmp$totpm.hch
-		# popF.hch.prev <- env.tmp$totpf.hch
-		# if(!is.null(env.tmp$mig.rate)) {
-			# mig.rate <- env.tmp$mig.rate
-			# mig.rate.prev <- mig.rate[start.time.index-1,]
-		# }
-	# }
+	if(start.traj.index > 1) { # reload last rates
+		env.tmp <- new.env()
+		load(file.path(outdir.tmp, paste0('pop_traj_', start.traj.index-1, '.rda')), envir=env.tmp)
+		if(!is.null(env.tmp$mig.rate)) {
+			mig.rate <- env.tmp$mig.rate
+			mig.rate.prev <- mig.rate[,,start.traj.index-1]
+		}
+	}
+        
 	UNnames <- UNlocations[countries.idx,'name']
 	if(parallel) {
 		if(is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores())
@@ -90,7 +87,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 	npredplus1 <- npred+1
 	npasfr <- nrow(countries.input[[country.codes.char[1]]]$PASFR)
 	nvariants <- nrow(countries.input[[country.codes.char[1]]]$TFRhalfchild)
-	if(verbose) cat('\nProcessing ', nr.traj, ' trajectories for each country ')
+	if(verbose) cat('\nProcessing ', npred, ' time periods for ', ncountries, ' countries for ', nr.traj, ' trajectories ')
 	if(length(countries.input) < ncountries) {
 		ncountries <- length(countries.input)
 		country.codes.char <- ls(countries.input)
@@ -104,7 +101,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 		mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
 		if(is.null(mig.rate)) 
 			mig.rate <- array(NA, c(ncountries, npred+1, nr.traj), dimnames=list(country.codes, NULL, NULL))
-		mig.rate[,start.time.index,] <- mig.rate.prev
+		mig.rate[,1,] <- mig.rate.prev
 	}
 	kannisto <- list()
 	observed <- new.env()
@@ -146,40 +143,37 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, npred, nvariants), dimnames=list(mx.ages, country.codes, NULL, NULL))
 		}
 		warns <- list()
+		warns[["_template_"]] <- matrix(0, nrow=get.nr.warns(), ncol=npred)
 	})
 	debug <- FALSE
 	res.env$mig.rate <- mig.rate
 
 	if(parallel) {
 		nr.nodes.traj <- min(nr.nodes, nr.traj)
-		if(verbose) cat(' (in parallel on ', max(nr.nodes.traj, nr.nodes.cntry), ' nodes).')
-		cl <- create.pop.cluster(nr.nodes.cntry, ...)
+		if(verbose) cat(' (in parallel on ', nr.nodes.traj, ' nodes).')
+		cl <- create.pop.cluster(nr.nodes.traj, ...)
 		clusterExport(cl, c("nr.traj", "country.codes",  "UNnames", "countries.input", "kannisto", "npasfr", 
-								"ages", "nvariants", "keep.vital.events", "verbose"), envir=environment())
+								"ages", "nvariants", "keep.vital.events", "verbose",
+								"res.env", "npred", "country.codes.char", "kantor.pasfr", 
+								"rebalance", "use.migration.model", "outdir.tmp"), envir=environment())
 	} else if(verbose) cat(' (sequentially).')
 	
-	wrapper.pop.predict.one.country.no.migration <- function(cidx) {
-			if(time > 1) 
-				do.pop.predict.one.country.no.migration(itraj, time, 
+	wrapper.pop.predict.one.trajectory <- function(itraj) {
+		.ini.pop.res.env(res.env, keep.vital.events)
+		for(time in 1:npred) {
+			for(cidx in 1:ncountries) {
+				nomigpred <- if(time > 1) do.pop.predict.one.country.no.migration(itraj, time, 
 												UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
 												kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj, 
 												popM.prev[,cidx, drop=FALSE], popF.prev[,cidx, drop=FALSE],
 												popM.hch.prev[,cidx, ,drop=FALSE], popF.hch.prev[,cidx, ,drop=FALSE],
 												ages, nvariants, 
 												keep.vital.events=keep.vital.events, verbose=verbose)
-			else do.pop.predict.one.country.no.migration(itraj, time, 
+							else do.pop.predict.one.country.no.migration(itraj, time, 
 												UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
 												kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj,  
 												ages=ages, nvariants=nvariants, keep.vital.events=keep.vital.events, verbose=verbose)
-	} 
-	for(itraj in 1:nr.traj){
-		unblock.gtk.if.needed(paste('finished', itraj, status.for.gui), gui.options)
-		if(verbose)
-			cat('\nProcessing trajectory ', itraj)
-		.ini.pop.res.env(res.env, keep.vital.events)
-		for(time in 1:npred) {
-			for(cidx in 1:ncountries) {
-				nomigpred <- wrapper.pop.predict.one.country.no.migration(cidx)
+
 				# collect results
 				for(par in c('totp')) res.env[[par]][cidx,time] <- nomigpred[[par]]
 				for(par in c('totpm', 'totpf'))#'migrationm', 'migrationf', 'migrationm.hch', 'migrationf.hch'
@@ -198,8 +192,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 				}
 			}
 			migpred <- get.balanced.migration(itraj, time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
-								if(time>1)popM.prev[,, ,drop=FALSE] else NULL, 
-								if(time>1)popF.prev[,, ,drop=FALSE] else NULL, ages, res.env,  verbose=verbose)
+								ages, res.env,  verbose=verbose)
 			# New population counts
 			res.env$totpm[,,time] <- res.env$totpm[,,time] + res.env$migrationm[,,time]
 			res.env$totpf[,,time] <- res.env$totpf[,,time] + res.env$migrationf[,,time]
@@ -220,32 +213,51 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			res.env$migm <- res.env$migrationm
 			res.env$migf <- res.env$migrationf
 		}
-		if (any(res.env$totpm < -1e-4) || any(res.env$totpf < -1e-4))
-			warning('Final population negative for some countries and age groups.', immediate.=TRUE)
-		
+		if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
+			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
+			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
+			for(country in unique(c(cntries.m, cntries.f))) {
+				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+								which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+			}
+		}
+		res.env$trajectory <- itraj
 		with(res.env, {
-			traj.file.name <- file.path(outdir.tmp, paste0('pop_traj_', itraj, '.rda'))
-			if(itraj == nr.traj) save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, mig.rate, file = traj.file.name)
+			traj.file.name <- file.path(outdir.tmp, paste0('pop_traj_', trajectory, '.rda'))
+			if(trajectory == nr.traj) save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, mig.rate, file = traj.file.name)
 			else save(totp, totpm, totpf, mig.rate, file = traj.file.name)
 			if(keep.vital.events) {
-				traj.file.name <- file.path(outdir.tmp, paste0('vital_events_traj_', itraj, '.rda'))
-				if(itraj == nr.traj) 
+				traj.file.name <- file.path(outdir.tmp, paste0('vital_events_traj_', trajectory, '.rda'))
+				if(trajectory == nr.traj) 
 					save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
 						btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, 
 						mxm.hch, mxf.hch, file=traj.file.name)
 				else save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf, file=traj.file.name)
 			}
-		})
-		gc()
-	} # end trajectories
-		# print accummulated warnings
-		all.warns <- unique(unlist(res.env$warns))
-		print.warn <- function(key, value, warn) if(warn %in% value) return(key) else return(c())
-		for(warn in all.warns) {
-			cntrs <- mapply(print.warn, names(res.env$warns), res.env$warns, warn=warn)
-			warning(warn, ': ', paste(unlist(cntrs), collapse=', '), immediate.=TRUE)
+		})		
+		return(list(warns=res.env$warns, rates=res.env$mig.rate[,,itraj]))		
+	} 
+	if(parallel) {
+		res.list <- parLapplyLB(cl, start.traj.index:(nr.traj-1), wrapper.pop.predict.one.trajectory)
+		for(itraj in start.traj.index:(nr.traj-1)){
+			for(country in names(res.list[[itraj]]$warns)) {
+				if(is.null(res.env$warns[[country]])) res.env$warns[[country]] <- res.env$warns[["_template_"]]
+				res.env$warns[[country]] <- res.env$warns[[country]] + res.list[[itraj]]$warns[[country]]
+			}
+			res.env$mig.rate[,,itraj] <- res.list[[itraj]]$rates
 		}
-
+		# run the last one separately, because it does the half child variant which needs the median of all rates
+		wrapper.pop.predict.one.trajectory(nr.traj)
+	} else { # sequential processing
+		if (verbose) verbose.iter <- max(1, round(nr.traj/100,0))
+		for(itraj in start.traj.index:nr.traj){
+			unblock.gtk.if.needed(paste('finished', itraj, status.for.gui), gui.options)
+			if(verbose && (itraj %% verbose.iter == 0))
+				cat('\nProcessing trajectory ', itraj)			
+			wrapper.pop.predict.one.trajectory(itraj)
+		} # end trajectories
+	}
 	if(parallel) {
 		stopCluster(cl)
 	}
@@ -276,16 +288,59 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, keep.v
 			   				inputs = inp.to.save, # save as list because environment takes much more space
 			   				function.inputs=function.inputs,
 			   				countries=country.rows,
-			   				ages=ages), class='bayesPop.prediction')
-
+			   				ages=ages, warnings=res.env$warns), class='bayesPop.prediction')
+	print.pop.warnings(bayesPop.prediction, which.warns=c(2,3,5))
 	prediction.file <- file.path(outdir, 'prediction.rda')
 	save(bayesPop.prediction, file=prediction.file)
 	cat('\nPrediction stored into', outdir, '\n')
 	return(bayesPop.prediction)
 }
 
+get.nr.warns <- function() length(get.pop.all.warns())
+get.pop.all.warns <- function() {
+	list(
+		'Population negative while balancing', # 1
+		'Unable to modify age schedule to get positive population', # 2
+		'Migration rate resampled more than 500 times', # 3
+		'Population negative while balancing half child', # 4
+		'Final population negative for some age groups' # 5	
+	)
+}
+
+get.pop.warn <- function(l) {
+	get.pop.all.warns()[[l]]
+}
+
+print.pop.warnings <- function(pop.pred, which.warns=NULL) {
+	# print accummulated warnings
+	warns <- pop.pred$warnings
+	all.warns <- get.pop.all.warns()
+	if (is.null(which.warns)) which.warns <- 1:length(all.warns)
+	cntry.warn <- function(country.warn, warn.code) country.warn[warn.code,]
+	for(iwarn in which.warns) {
+		cntries.warn <- t(sapply(warns, cntry.warn, iwarn))
+		rownames(cntries.warn) <- names(warns)
+		cntries.warn <- cntries.warn[apply(cntries.warn, 1, function(x) any(x>0)),]
+		if(nrow(cntries.warn)>0) {
+			cat("\n", get.pop.warn(iwarn), ":\n")
+			rownames(cntries.warn) <- sapply(as.integer(rownames(cntries.warn)), function(x) UNlocations[which(UNlocations$country_code==x),'name'])
+			colnames(cntries.warn) <- pop.pred$proj.years[-1]
+			print(cntries.warn)
+		}
+	}
+	cat("\n")
+}
+
+add.pop.warn <- function(country, time, code, env) {
+	if(is.null(env$warns[[country]])) 
+		env$warns[[country]] <- env$warns[["_template_"]]
+	env$warns[[country]][code, time] <- env$warns[[country]][code, time] + 1
+}
+
+get.zero.constant <- function() -1e-4
+
 get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, rebalance, use.migration.model,
-												popM.prev, popF.prev, ages, env, verbose=FALSE) {
+												ages, env, verbose=FALSE) {
 	nr.countries <- length(country.codes)
 	e <- new.env()
 	labor.codes <- labor.countries()
@@ -304,7 +359,8 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 		inpc <- inputs[[country.codes.char[cidx]]]
 		migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[cidx], 
 							popM=env$totpm[,cidx, time], popF=env$totpf[,cidx,time], country.code=country.codes[cidx], 
-							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[cidx,,itraj] else NULL)
+							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[cidx,,itraj] else NULL, warn.template=env$warns[["_template_"]])
+		#print(c(list(paste('Country:', country.codes.char[cidx], ', time: ', time, ', traj: ', itraj)), migpred))
 		e$migrm[,cidx] <- migpred$M
 		e$migrf[,cidx] <- migpred$F
 		if(!is.null(migpred$laborM)) {
@@ -312,15 +368,17 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 			e$migrf.labor[,cidx] <- migpred$laborF
 		}
 		env$mig.rate[cidx, time+1,itraj] <- migpred$rate
-		env$warns[[country.codes.char[cidx]]] <- c(env$warns[[country.codes.char[cidx]]], migpred$warns)
+		if (!is.null(migpred$warns)) {
+			env$warns[[country.codes.char[cidx]]] <- if(is.null(env$warns[[country.codes.char[cidx]]])) migpred$warns else
+															env$warns[[country.codes.char[cidx]]] + migpred$warns			
+		}
 	}
 	e$popm <- env$totpm[,,time]
 	e$popf <- env$totpf[,,time]
 	if(rebalance) {
 		rebalance.migration2groups(e, pop, itraj)			
 		negatives <- as.character(country.codes[unique(e$negatives)])
-		for(country in negatives)
-			env$warns[[country]] <- c(env$warns[[country]], 'population negative while balancing')
+		for(country in negatives) add.pop.warn(country, time, 1, env) # 'Population negative while balancing'
 	}
 	env$migrationm[1:lages,,time] <- e$migrm + e$migrm.labor
 	env$migrationf[1:lages,,time] <- e$migrf + e$migrf.labor
@@ -340,21 +398,21 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 					e$migrm.labor[,cidx] <- migpred$laborM
 					e$migrf.labor[,cidx] <- migpred$laborF
 				}
-				env$warns[[country.codes.char[cidx]]] <- c(env$warns[[country.codes.char[cidx]]], migpred$warns)
+				if (!is.null(migpred$warns)) 
+					env$warns[[country.codes.char[cidx]]] <- if(is.null(env$warns[[country.codes.char[cidx]]])) migpred$warns else 
+																env$warns[[country.codes.char[cidx]]] + migpred$warns
 			}
 			e$popm <- env$totpm.hch[,,time,variant]
 			e$popf <- env$totpf.hch[,,time,variant]
 			if(rebalance) {
 				rebalance.migration2groups(e, pop, variant)			
 				negatives <- as.character(country.codes[unique(e$negatives)])
-				for(country in negatives)
-					env$warns[[country]] <- c(env$warns[[country]], 'population negative while balancing half child')
+				for(country in negatives) add.pop.warn(country, time, 4, env)  # 'Population negative while balancing half child'
 			}
 			env$migrationm.hch[1:lages,,time,variant] <- e$migrm + e$migrm.labor
 			env$migrationf.hch[1:lages,,time,variant] <- e$migrf + e$migrf.labor
 		}
 	}
-	for(country in names(env$warns)) env$warns[[country]] <- unique(env$warns[[country]])
 	return(NULL)
 }
 
@@ -516,7 +574,7 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 		# r <- r+1
 	# }
 	# stop("Can't simulate new migration rate for country ", country.code)
-	if(is.na(newRate)) stop('Migration rate is NA')
+	#if(is.na(newRate)) stop('Migration rate is NA')
 	return(newRate)
 }
 
@@ -591,15 +649,16 @@ gcc.upper.threshold <- function(country) {
 }
 
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
-													popM=NULL, popF=NULL, country.code=NULL, mig.rates=NULL, fixed.rate=NULL) {													
+													popM=NULL, popF=NULL, country.code=NULL, mig.rates=NULL, 
+													fixed.rate=NULL, warn.template=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
 	if(country.code %in% land_area_wpp2012$country_code)
 		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
 	i <- 1
 	k <- 1
-	zero.constant <- -1e-4
-	warns <- c()
+	zero.constant <- get.zero.constant()
+	warns <- NULL
 	while(TRUE) {
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
@@ -610,7 +669,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
 		} else rate <- fixed.rate
-		if(is.na(rate)) stop('Migration rate is NA')
+		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
+					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
 		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
 		#if(is.gcc(country.code)) { # cap to historical maximum
@@ -673,15 +733,14 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			}
 		}
 		if(i > 1000) {
-			warning('Unable to modify age schedule to get positive population for country ', country.code, immediate.=TRUE)
+			if(is.null(warns)) warns <- warn.template
+			warns[2,time] <- warns[2,time] + 1 # 'Unable to modify age schedule to get positive population'
 			break
 		}
 	}
-	if(i>2) {
-		wints <- c(10,50, seq(100, 10000, by=100))
-		wints.ch <- c(3, wints)
-		widx <- findInterval(i, wints)+1
-		warns <- c(warns, paste('migration rate resampled', paste0(wints.ch[widx], '-', wints.ch[widx+1]), 'times'))	
+	if(i>500) {
+		if(is.null(warns)) warns <- warn.template
+		warns[3,time] <- warns[3,time] + 1 # 'Migration rate resampled more than 500 times'
 	}
 	migM.labor <- migF.labor <- NULL
 	if(country.code %in% labor.countries()) {
@@ -720,43 +779,10 @@ rebalance.population.by.migration <- function(e) { # not used
 	}
 }
 
-rebalance.migration.with.mask <- function(e, pop, what='', pop.by.age, mask=NULL) {
-	sumpop <- sum(pop)
-	which.negative <- c()
-	if(is.null(mask)) mask <- rep(TRUE, dim(e$migrm)[2])	
-	for(sex in c('m', 'f')) {
-		par <- paste0('migr',sex, what)
-		for(age in dimnames(e$migrm)[[1]]) {
-			i <- 1
-			this.sumpop <- sumpop
-			this.pop <- pop
-			while(i < 100) {		
-				dif <- sum(e[[par]][age,])
-				dif.countries <- dif/this.sumpop * this.pop
-				e[[par]][age,] <- e[[par]][age,] - dif.countries
-				#if(what != '') break
-				wneg <- which(e[[par]][age,] + pop.by.age[[sex]][age,] < -1e-4)
-				this.mask <- mask[wneg]
-				if(sum(this.mask)>0) {
-					#stop('')
-					e[[par]][age,mask] <- pmax(e[[par]][age,mask], -pop.by.age[[sex]][age,mask])
-					this.pop[wneg[this.mask]] <- 0
-					this.sumpop <- sum(this.pop)
-					i <- i+1
-					which.negative <- c(which.negative, wneg[this.mask])
-					if(sum(this.pop[mask]) == 0) stop('')
-				} else break
-			}
-			if(i>=100) stop('')
-		}
-	}
-	e$negatives <- which.negative
-}
-
 rebalance.migration <- function(e, pop, what='', check.negatives=FALSE) {
 	sumpop <- sum(pop)
 	which.negative <- c()
-	zero.constant <- -1e-4
+	zero.constant <- get.zero.constant()
 	for(sex in c('m', 'f')) {
 		par <- paste0('migr',sex, what)
 		poppar <- paste0('pop', sex)
