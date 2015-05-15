@@ -32,6 +32,8 @@ pop.cleanup.cache,
 LifeTableMx,
 LifeTableMxCol,
 get.pop,
+pop.trajectories,
+get.trajectory.indices,
 cohorts,
 pop.cohorts.plot
 )

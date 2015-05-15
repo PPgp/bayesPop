@@ -27,7 +27,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
 	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	else {
-		if(has.pop.prediction(output.dir) && !replace.output) {
+		if(has.pop.prediction(output.dir) && !replace.output && !rebalance.migration) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, verbose=verbose)
@@ -40,7 +40,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	}
 	outdir <- file.path(output.dir, 'predictions')
 	if(use.migration.model || rebalance.migration) {
-		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher time point
+		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher trajectory
 			unlink(outdir, recursive=TRUE)
 			.remove.cache.file(outdir)
 		}
@@ -73,7 +73,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	} 
 	if(use.migration.model || rebalance.migration)
-		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
+		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, 
 					rebalance=rebalance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 
@@ -252,7 +252,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxf.hch[,1,variant] <- mxf[,1,1]
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
+		trajectory.indices <- inpc$trajectory.indices
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
@@ -362,7 +363,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		migrationm[] <- migrationf[] <- migrationm.hch[] <- migrationf.hch[] <- 0
 		if(vital.events) {
 			btm[] <- btf[] <- deathsm[] <- deathsf[] <- btm.hch[] <- btf.hch[] <- asfert.hch[] <- 0
-			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- migm[] <- migf[] <- 0 
+			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- 0 
+			if(exists("migm")) migm[] <- migf[] <- 0
 		}
 	})
 }
@@ -912,9 +914,14 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
 	}
 	if(!is.null(inputs$migration.parameters)) {
-		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country == country, c('mu', 'phi', 'sigma')]
+		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country_code == country, c('mu', 'phi', 'sigma')]
 		inpc$mig.nr.traj <- nrow(inpc$migration.parameters)
 	} else inpc$mig.nr.traj <- 1
+	if(!is.null(inputs$projected.migration.rates)) {
+		inpc$projected.migration.rates <- inputs$projected.migration.rates[inputs$projected.migration.rates$country_code == country, 
+												-which(colnames(inputs$projected.migration.rates)=='country_code')]
+		inpc$mig.nr.traj <- nrow(inpc$projected.migration.rates)
+	} 
 	
 	# select trajectories
 	indices <- list()
@@ -965,23 +972,27 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc$observed <- obs
 	
-	if(!is.null(inputs$migration.parameters)) {
+	if(!is.null(inputs$migration.parameters) || !is.null(inputs$projected.migration.rates)) {
 		# select trajectories
-		if(nrow(inpc$migration.parameters) > nr.traj)  # select equidistantly
-			migpar.idx <- get.traj.index(nr.traj, inpc$migration.parameters, traj.dim = 1)
+		par <- if(!is.null(inputs$migration.parameters)) "migration.parameters" else "projected.migration.rates"
+		if(nrow(inpc[[par]]) > nr.traj)  # select equidistantly
+			migpar.idx <- get.traj.index(nr.traj, inpc[[par]], traj.dim = 1)
 		else # resample
-			migpar.idx <- sample(1:nrow(inpc$migration.parameters), nr.traj, replace=TRUE)
-		inpc$migration.parameters <- inpc$migration.parameters[migpar.idx,]
+			migpar.idx <- sample(1:nrow(inpc[[par]]), nr.traj, replace=TRUE)
+		indices[['migrates']] <- migpar.idx
+		inpc[[par]] <- inpc[[par]][migpar.idx,]
 		inpc$mig.nr.traj <- length(migpar.idx)
 		inpc$migration.age.schedule <- migration.age.schedule(country, length(inputs$proj.years), inputs)
 		#if(any(inpc$migration.age.schedule[['M']][,1] > 0) && any(inpc$migration.age.schedule[['M']][,1] < 0)) {
 		#	cat('\nCross-overs in migration age schedules for ', country.obj$name)
 		#	print(inpc$migration.age.schedule[['M']][,1])
 		#}
-		if(country %in% inputs$migration.rates$country_code)
+		
+		if(!is.null(inputs$migration.parameters) && (country %in% inputs$migration.rates$country_code))
 			inpc$migration.rates <- inputs$migration.rates[inputs$migration.rates$country_code == country, 
 										-which(colnames(inputs$migration.rates)=='country_code')]
-	}
+	} 
+	inpc$trajectory.indices <- indices
 	return(inpc)
 }
 
