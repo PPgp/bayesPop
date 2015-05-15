@@ -914,9 +914,14 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc$e0Fmedian <- medians$e0Fpred[as.character(inputs$proj.years)]
 	}
 	if(!is.null(inputs$migration.parameters)) {
-		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country == country, c('mu', 'phi', 'sigma')]
+		inpc$migration.parameters <- inputs$migration.parameters[inputs$migration.parameters$country_code == country, c('mu', 'phi', 'sigma')]
 		inpc$mig.nr.traj <- nrow(inpc$migration.parameters)
 	} else inpc$mig.nr.traj <- 1
+	if(!is.null(inputs$projected.migration.rates)) {
+		inpc$projected.migration.rates <- inputs$projected.migration.rates[inputs$projected.migration.rates$country_code == country, 
+												-which(colnames(inputs$projected.migration.rates)=='country_code')]
+		inpc$mig.nr.traj <- nrow(inpc$projected.migration.rates)
+	} 
 	
 	# select trajectories
 	indices <- list()
@@ -967,23 +972,26 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc$observed <- obs
 	
-	if(!is.null(inputs$migration.parameters)) {
+	if(!is.null(inputs$migration.parameters) || !is.null(inputs$projected.migration.rates)) {
 		# select trajectories
-		if(nrow(inpc$migration.parameters) > nr.traj)  # select equidistantly
-			migpar.idx <- get.traj.index(nr.traj, inpc$migration.parameters, traj.dim = 1)
+		par <- if(!is.null(inputs$migration.parameters)) "migration.parameters" else "projected.migration.rates"
+		if(nrow(inpc[[par]]) > nr.traj)  # select equidistantly
+			migpar.idx <- get.traj.index(nr.traj, inpc[[par]], traj.dim = 1)
 		else # resample
-			migpar.idx <- sample(1:nrow(inpc$migration.parameters), nr.traj, replace=TRUE)
-		inpc$migration.parameters <- inpc$migration.parameters[migpar.idx,]
+			migpar.idx <- sample(1:nrow(inpc[[par]]), nr.traj, replace=TRUE)
+		indices[['migrates']] <- migpar.idx
+		inpc[[par]] <- inpc[[par]][migpar.idx,]
 		inpc$mig.nr.traj <- length(migpar.idx)
 		inpc$migration.age.schedule <- migration.age.schedule(country, length(inputs$proj.years), inputs)
 		#if(any(inpc$migration.age.schedule[['M']][,1] > 0) && any(inpc$migration.age.schedule[['M']][,1] < 0)) {
 		#	cat('\nCross-overs in migration age schedules for ', country.obj$name)
 		#	print(inpc$migration.age.schedule[['M']][,1])
 		#}
-		if(country %in% inputs$migration.rates$country_code)
+		
+		if(!is.null(inputs$migration.parameters) && (country %in% inputs$migration.rates$country_code))
 			inpc$migration.rates <- inputs$migration.rates[inputs$migration.rates$country_code == country, 
 										-which(colnames(inputs$migration.rates)=='country_code')]
-	}
+	} 
 	inpc$trajectory.indices <- indices
 	return(inpc)
 }

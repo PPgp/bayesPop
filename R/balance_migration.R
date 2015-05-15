@@ -2,10 +2,10 @@ if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
 									rebalance=TRUE, use.migration.model=TRUE, start.traj.index=1, 
-									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, .migration.pars=NULL, ...) {
-	# if .migration.pars is NULL, don't use the migration model
-	if (use.migration.model && is.null(.migration.pars))
-		stop('Argument .migration.pars has to be given if use.migration.model is TRUE.')
+									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, migration.settings=NULL, ...) {
+	# if migration.settings is NULL, don't use the migration model
+	if (use.migration.model && is.null(migration.settings))
+		stop('Argument migration.settings has to be given if use.migration.model is TRUE.')
 	countries.idx <- if(is.null(countries)) which(UNlocations$location_type==4) else which(UNlocations$country_code %in% countries)
 	country.codes <- UNlocations$country_code[countries.idx]
 	country.codes.char <- as.character(country.codes)
@@ -28,20 +28,30 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	npred <- nr_project
 		
 	mig.rate.prev <- mig.rate <- NULL
+	fixed.mig.rate <- FALSE
 	if(use.migration.model) {
-		if(is.null(.migration.pars$posterior))
-			stop('Argument .migration.pars must have an element "posterior".')
-		inp[['migration.parameters']] <- .migration.pars$posterior
-		if(!is.null(.migration.pars$ini.rates)) {
-			mig.rate.prev <- .migration.pars$ini.rates#/5.
+		if(is.null(migration.settings$posterior) && is.null(migration.settings[['projected.rates']]))
+			stop('Argument migration.settings must either have an element "posterior" or an element "projected.rates".')
+		if(!is.null(migration.settings$posterior)) {
+			inp[['migration.parameters']] <- migration.settings$posterior
+			if(!('country_code' %in% colnames(inp[['migration.parameters']])))
+				stop('Column "country_code" must be included in the "migration.parameters" dataset.')
+		} else { # fixed rates
+			inp[['projected.migration.rates']] <- migration.settings[['projected.rates']]
+			if(!('country_code' %in% colnames(inp[['projected.migration.rates']])))
+				stop('Column "country_code" must be included in the "projected.rates" dataset.')
+			fixed.mig.rate <- TRUE
+		}
+		if(!is.null(migration.settings$ini.rates)) {
+			mig.rate.prev <- migration.settings$ini.rates#/5.
 		} else {
 			mig.rate.prev <- inp$migration.rates[,ncol(inp$migration.rates)]
 			names(mig.rate.prev) <- inp$migration.rates$country_code
 		}
 		inp$migration.rates <- inp$migration.rates[,-ncol(inp$migration.rates)] # remove the present year column as it is in mig.rate.prev
 		for(par in c('year.of.migration.schedule'))
-			if(!is.null(.migration.pars[[par]])) inp[[par]] <- .migration.pars[[par]]
-	}
+			if(!is.null(migration.settings[[par]])) inp[[par]] <- migration.settings[[par]]
+	} 
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.traj.index==1) unlink(outdir.tmp, recursive=TRUE)
 	if(start.traj.index==1) dir.create(outdir.tmp)
@@ -155,7 +165,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		clusterExport(cl, c("nr.traj", "country.codes",  "UNnames", "countries.input", "kannisto", "npasfr", 
 								"ages", "nvariants", "keep.vital.events", "verbose",
 								"res.env", "npred", "country.codes.char", "kantor.pasfr", 
-								"rebalance", "use.migration.model", "outdir.tmp"), envir=environment())
+								"rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp"), envir=environment())
 	} else if(verbose) cat(' (sequentially).')
 	
 	wrapper.pop.predict.one.trajectory <- function(itraj) {
@@ -192,7 +202,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 				}
 			}
 			migpred <- get.balanced.migration(itraj, time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
-								ages, res.env,  verbose=verbose)
+								ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
 			# New population counts
 			res.env$totpm[,,time] <- res.env$totpm[,,time] + res.env$migrationm[,,time]
 			res.env$totpf[,,time] <- res.env$totpf[,,time] + res.env$migrationf[,,time]
@@ -340,7 +350,7 @@ add.pop.warn <- function(country, time, code, env) {
 get.zero.constant <- function() -1e-4
 
 get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, rebalance, use.migration.model,
-												ages, env, verbose=FALSE) {
+												ages, env, use.fixed.rate=FALSE, verbose=FALSE) {
 	nr.countries <- length(country.codes)
 	e <- new.env()
 	labor.codes <- labor.countries()
@@ -359,7 +369,9 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 		inpc <- inputs[[country.codes.char[cidx]]]
 		migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[cidx], 
 							popM=env$totpm[,cidx, time], popF=env$totpf[,cidx,time], country.code=country.codes[cidx], 
-							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[cidx,,itraj] else NULL, warn.template=env$warns[["_template_"]])
+							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[cidx,,itraj] else NULL, 
+							fixed.rate=if(use.fixed.rate) inpc$projected.migration.rates[itraj,time] else NULL,
+							warn.template=env$warns[["_template_"]])
 		#print(c(list(paste('Country:', country.codes.char[cidx], ', time: ', time, ', traj: ', itraj)), migpred))
 		e$migrm[,cidx] <- migpred$M
 		e$migrf[,cidx] <- migpred$F
@@ -388,7 +400,7 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 			pop <- colSums(env$totpm.hch[,,time,variant] + env$totpf.hch[,,time,variant])
 			for(cidx in 1:nr.countries) {
 				inpc <- inputs[[as.character(country.codes[cidx])]]
-				fixed.rate <- if(!is.null(env$mig.rate)) median(env$mig.rate[cidx,time,]) else NULL
+				fixed.rate <- if(!is.null(env$mig.rate)) median(env$mig.rate[cidx,time+1,]) else NULL
 				migpred <- .get.migration.one.trajectory(use.migration.model, inpc, variant, time, pop[cidx], 
 									popM=env$totpm.hch[,cidx,time,variant], popF=env$totpf.hch[,cidx,time,variant],
 									country.code=country.codes[cidx], fixed.rate=fixed.rate)
@@ -897,60 +909,223 @@ prop.labor.migration.for.country <- function(code){
 
 
 restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.traj, inputs, observed, kannisto, 
-									present.and.proj.years, keep.vital.events=FALSE, parallel=FALSE, nr.nodes=NULL, verbose=FALSE, ...){
-	envs <- list()
-	for(i in 1:nr.traj) {
-		envs[[i]] <- new.env()
-		load(file.path(source.dir, paste0('pop_traj_', i, '.rda')), envir=envs[[i]])
-		if(keep.vital.events) 
-			load(file.path(source.dir, paste0('vital_events_traj_', i, '.rda')), envir=envs[[i]])
+									present.and.proj.years, keep.vital.events=FALSE, parallel=FALSE, nr.nodes=NULL, 
+									chunk.size=100, verbose=FALSE, ...){
+	
+	restructure.pop.data.and.compute.quantiles.one.country <- function(cidx) {		
+		country <- country.codes[cidx]
+		inpc <- inputs[[country.codes[cidx]]]
+		obs <- observed[[country.codes[cidx]]]
+		MxKan <- kannisto[[country.codes[cidx]]]
+		repi <- rep(1,this.chunk.size) # index for repeating columns
+		res.env <- new.env()
+		with(res.env, {
+			totp <- matrix(NA, nrow=npredplus1, ncol=this.chunk.size, dimnames=list(present.and.proj.years.pop, NULL))
+			totpm <- totpf <- array(NA, dim=c(27, npredplus1, this.chunk.size), dimnames=list(ages, present.and.proj.years.pop, NULL))
+			if(chunk == nr.chunks) {
+				totp.hch <- matrix(NA, nrow=npredplus1, ncol=nvariants, dimnames=list(present.and.proj.years.pop, NULL))
+				totpm.hch <- totpf.hch <- array(NA, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years.pop, NULL))
+			}
+			# values from current year
+			totp[1,] <- sum(inpc$POPm0) + sum(inpc$POPf0)
+			totpm[1:length(inpc$POPm0),1,] <- as.matrix(inpc$POPm0)[,repi]
+			totpf[1:length(inpc$POPf0),1,] <- as.matrix(inpc$POPf0)[,repi]
+			if(chunk == nr.chunks) {
+				totp.hch[1,] <- totp[1,1]
+				totpm.hch[,1,] <- totpm[,1,rep(1,nvariants)]
+				totpf.hch[,1,] <- totpf[,1,rep(1,nvariants)]
+			}
+			if(keep.vital.events) {
+				btm <- btf <- asfert <- pasfert <- array(0, dim=c(7, npredplus1, this.chunk.size), 
+							dimnames=list(NULL, present.and.proj.years, NULL))
+				deathsm <- deathsf <- migm <- migf <- array(0, dim=c(27, npredplus1, this.chunk.size), 
+							dimnames=list(ages, present.and.proj.years, NULL))
+				mxm <- mxf <- array(0, dim=c(28, npredplus1, this.chunk.size), dimnames=list(mx.ages, present.and.proj.years, NULL))
+				if(chunk == nr.chunks) {
+					btm.hch <- btf.hch <- asfert.hch <- pasfert.hch <- array(0, dim=c(7, npredplus1, nvariants), 
+																	dimnames=list(NULL, present.and.proj.years, NULL))
+					deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
+					mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
+				}
+				# values from current year		
+				btm[1:dim(obs$btm)[1],1,] <- obs$btm[,dim(obs$btm)[2],repi]
+				btf[1:dim(obs$btf)[1],1,] <- obs$btf[,dim(obs$btf)[2],repi]
+				deathsm[1:dim(obs$deathsm)[1],1,] <- obs$deathsm[,dim(obs$deathsm)[2],repi]
+				deathsf[1:dim(obs$deathsf)[1],1,] <- obs$deathsf[,dim(obs$deathsf)[2],repi]
+				asfert[1:dim(obs$asfert)[1],1,] <- obs$asfert[,dim(obs$asfert)[2],repi]
+				pasfert[1:dim(obs$pasfert)[1],1,] <- obs$pasfert[,dim(obs$pasfert)[2],repi]
+				mxm[1:dim(MxKan[[1]]$mx)[1],1,] <- as.matrix(MxKan[[1]]$mx[,dim(MxKan[[1]]$mx)[2]])[repi]
+				mxf[1:dim(MxKan[[2]]$mx)[1],1,] <- as.matrix(MxKan[[2]]$mx[,dim(MxKan[[2]]$mx)[2]])[repi]
+				migm[1:dim(inpc$observed$MIGm)[1],1,] <- as.matrix(inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]])[,repi]
+				migf[1:dim(inpc$observed$MIGf)[1],1,] <- as.matrix(inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]])[,repi]
+				if(chunk == nr.chunks) {
+					btm.hch[,1,] <- btm[,1,rep(1,nvariants)]
+					btf.hch[,1,] <- btf[,1,rep(1,nvariants)]
+					deathsm.hch[,1,] <- deathsm[,1,rep(1,nvariants)]
+					deathsf.hch[,1,] <- deathsf[,1,rep(1,nvariants)]
+					asfert.hch[,1,] <- asfert[,1,rep(1,nvariants)]
+					pasfert.hch[,1,] <- pasfert[,1,rep(1,nvariants)]
+					mxm.hch[,1,] <- mxm[,1,rep(1,nvariants)]
+					mxf.hch[,1,] <- mxf[,1,rep(1,nvariants)]
+				}
+			}
+		})
+		for(i in 1:this.chunk.size) {
+			for(par in c('totp'))
+				res.env[[par]][2:npredplus1,i] <- envs[[i]][[par]][cidx,]
+			for(par in c('totpm', 'totpf'))
+				res.env[[par]][,2:npredplus1,i] <- envs[[i]][[par]][,cidx,]
+			if(keep.vital.events) {
+				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf', 'migm', 'migf'))
+					res.env[[par]][,2:npredplus1,i] <- envs[[i]][[par]][,cidx,]
+			}
+		}
+		# half a child variants is stored in the last trajectory file
+		if(chunk == nr.chunks) {		
+			for(par in c('totp.hch'))
+				res.env[[par]][2:npredplus1,] <- envs[[this.chunk.size]][[par]][cidx,,]
+			for(par in c('totpm.hch', 'totpf.hch'))
+				res.env[[par]][,2:npredplus1,] <- envs[[this.chunk.size]][[par]][,cidx,,]
+			if(keep.vital.events) {
+				for(par in c('btm.hch', 'btf.hch', 'deathsm.hch', 'deathsf.hch', 'asfert.hch', 'pasfert.hch', 'mxm.hch', 'mxf.hch'))
+					res.env[[par]][,2:npredplus1,] <- envs[[this.chunk.size]][[par]][,cidx,,]
+			}
+		}
+		# check if previous chunks stored some data
+		file.name <- file.path(dest.dir, paste('totpop_country', country, '.rda', sep=''))
+		file.name.ve <- file.path(dest.dir, paste('vital_events_country', country, '.rda', sep=''))
+		if(file.exists(file.name)) {
+			existing.env <- new.env()
+			load(file.name, envir=existing.env)
+			for(par in c('totp', 'totpm', 'totpf')) 
+				res.env[[par]] <- abind(existing.env[[par]], res.env[[par]], along=length(dim(res.env[[par]])))
+			if(keep.vital.events) {
+				load(file.name.ve, envir=existing.env)
+				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf', 'migm', 'migf'))
+					res.env[[par]] <- abind(existing.env[[par]], res.env[[par]], along=length(dim(res.env[[par]])))
+			}
+		}
+		observed <- obs
+		trajectory.indices <- inpc$trajectory.indices
+		if(chunk == nr.chunks) { # save also half.child.variant
+			with(res.env, {
+				save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices, file = file.name)
+				if(keep.vital.events) 
+					save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
+						btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, 
+						mxm.hch, mxf.hch, observed, file=file.name.ve)
+			})
+		} else { # doesn't need to store everything, just the chunked arrays
+			with(res.env, {
+				save(totp, totpm, totpf, file = file.name)
+				if(keep.vital.events) 
+					save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf, file=file.name.ve)
+			})
+		} 
+		if(chunk < nr.chunks) return(NULL)
+		# last chunk computes the quantiles
+		stotpm <- colSums(res.env$totpm, na.rm=TRUE)
+		stotpf <- colSums(res.env$totpf, na.rm=TRUE)
+	
+		quant.env <- new.env()
+		with(quant.env, {
+			PIs_cqp <- quantM <- quantF <- matrix(NA, nrow=nquant, ncol=npredplus1,
+						dimnames=list(quantiles.to.keep, present.and.proj.years.pop))
+			quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(nages, nquant, npredplus1),
+						dimnames=list(ages, quantiles.to.keep, present.and.proj.years.pop))
+			mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(2, npredplus1), 
+						dimnames=list(c('mean', 'sd'), present.and.proj.years.pop))
+
+			PIs_cqp[,] <- apply(res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			mean_sd[1,] <- apply(res.env$totp, 1, mean, na.rm = TRUE)
+			mean_sd[2,] <- apply(res.env$totp, 1, sd, na.rm = TRUE)
+			for (i in 1:nages) {
+				if(nr.traj == 1) {
+					quantMage[i,,] <- matrix(rep(res.env$totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+					quantFage[i,,] <- matrix(rep(res.env$totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+					quantPropMage[i,,] <- matrix(rep(res.env$totpm[i,,1]/res.env$totp,nquant) , nrow=nquant, byrow=TRUE)
+					quantPropFage[i,,] <- matrix(rep(res.env$totpf[i,,1]/res.env$totp,nquant) , nrow=nquant, byrow=TRUE)
+				} else {
+					quantMage[i,,] <- apply(res.env$totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+					quantFage[i,,] <- apply(res.env$totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+					quantPropMage[i,,] <- apply(res.env$totpm[i,,]/res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+					quantPropFage[i,,] <- apply(res.env$totpf[i,,]/res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+				}
+			}
+			quantM[,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			mean_sdM[1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
+			mean_sdM[2,] = apply(stotpm, 1, sd, na.rm = TRUE)
+			quantF[,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+			mean_sdF[1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
+			mean_sdF[2,] = apply(stotpf, 1, sd, na.rm = TRUE)
+		})
+		return(quant.env)
 	}
-	ncountries <- nrow(envs[[1]]$totp)
-	country.codes <- rownames(envs[[1]]$totp)
-	npred <- ncol(envs[[1]]$totp)
-	nvariants <- ncol(envs[[nr.traj]]$totp.hch)
-	ages <- dimnames(envs[[1]]$totpm)[[1]]
-	nages <- length(ages)
-	mx.ages <- c(0,1,ages[2:nages])
-	npredplus1 <- npred + 1
-	present.and.proj.years.pop <- present.and.proj.years + 2
+
+	envs <- list()
 	quantiles.to.keep <- get.quantiles.to.keep()
 	nquant <- length(quantiles.to.keep)
 	quant.env <- new.env()
-	with(quant.env, {
-		PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, npredplus1),
-						dimnames=list(country.codes, quantiles.to.keep, present.and.proj.years.pop))
-		quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(ncountries, nages, nquant, npredplus1),
-						dimnames=list(country.codes, ages, quantiles.to.keep, present.and.proj.years.pop))
-		mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, npredplus1), 
-						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years.pop))
-	})
+	nr.chunks <- max(1, ceiling(nr.traj/chunk.size))
 	if(parallel) {
-		if(verbose) cat('(in parallel on ', nr.nodes, ' nodes).')
-		cl <- create.pop.cluster(nr.nodes, ...)
-		clusterExport(cl, c("time", "nr.traj", "dest.dir", "country.codes", "inputs", "kannisto", 
-								 "ages", "mx.ages", "npred", "nvariants", "observed", "present.and.proj.years",
+		if(verbose) cat('(in ', nr.chunks, ' chunks; in parallel on ', nr.nodes, ' nodes).')
+	} else  # process sequentially
+		if(verbose) cat('(in ', nr.chunks, ' chunks; sequentially) ... ')
+	for(chunk in 1:nr.chunks) {
+		traj.index <- ((chunk - 1)*chunk.size + 1):min(chunk*chunk.size, nr.traj)
+		if(verbose) cat("\nChunk ", chunk, " ...")
+		this.chunk.size <- length(traj.index)
+		for(i in 1:this.chunk.size) {
+			if(chunk == 1)
+				envs[[i]] <- new.env()
+			itraj <- traj.index[i]
+			load(file.path(source.dir, paste0('pop_traj_', itraj, '.rda')), envir=envs[[i]])
+			if(keep.vital.events) 
+				load(file.path(source.dir, paste0('vital_events_traj_', itraj, '.rda')), envir=envs[[i]])
+		}
+		if(chunk == nr.chunks) {
+			nvariants <- ncol(envs[[this.chunk.size]]$totp.hch)
+			if(parallel) clusterExport(cl, c("nvariants", "quantiles.to.keep", "nquant"), envir=environment())
+		}
+		if(chunk == 1) {
+			ncountries <- nrow(envs[[1]]$totp)
+			country.codes <- rownames(envs[[1]]$totp)
+			npred <- ncol(envs[[1]]$totp)
+			ages <- dimnames(envs[[1]]$totpm)[[1]]
+			nages <- length(ages)
+			mx.ages <- c(0,1,ages[2:nages])
+			npredplus1 <- npred + 1
+			present.and.proj.years.pop <- present.and.proj.years + 2
+			if(parallel) {
+				cl <- create.pop.cluster(nr.nodes, ...)
+				clusterExport(cl, c("nr.traj", "dest.dir", "country.codes", "inputs", "kannisto", 
+								 "ages", "mx.ages", "npred", "observed", "present.and.proj.years",
+								 "nr.chunks",
 								 "keep.vital.events", "verbose"), envir=environment())
-		res.list <- parLapplyLB(cl, 1:ncountries, 
-							function(cidx) restructure.pop.data.and.compute.quantiles.one.country(cidx, country.codes[cidx], 
-												envs, dest.dir, nr.traj, npred, nvariants, inputs[[country.codes[cidx]]], 
-												observed[[country.codes[cidx]]], kannisto[[country.codes[cidx]]], 
-												present.and.proj.years, ages, mx.ages, 
-												keep.vital.events=keep.vital.events, verbose=verbose))
-		stopCluster(cl)
-	} else { # process sequentially
-		if(verbose) cat('(sequentially) ... ')
-		res.list <- list()
-		for(cidx in 1:ncountries) {
+			}
+		}
+		if(parallel) {
+			clusterExport(cl, c("this.chunk.size", "envs"), envir=environment())
+			res.list <- parLapplyLB(cl, 1:ncountries, 
+							restructure.pop.data.and.compute.quantiles.one.country)
+		} else { # process sequentially
+			res.list <- list()				
+			for(cidx in 1:ncountries) {
 				if(verbose) cat(cidx, ', ')
-				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx, country.codes[cidx], 
-												envs, dest.dir, nr.traj, npred, nvariants, inputs[[country.codes[cidx]]], 
-												observed[[country.codes[cidx]]], kannisto[[country.codes[cidx]]], 
-												present.and.proj.years, ages, mx.ages, 
-												keep.vital.events=keep.vital.events, verbose=verbose)
+				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
+			}
 		}
 	}
-	
+	if(parallel) stopCluster(cl)
+	with(quant.env, {
+			PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, npredplus1),
+						dimnames=list(country.codes, quantiles.to.keep, present.and.proj.years.pop))
+			quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(ncountries, nages, nquant, npredplus1),
+						dimnames=list(country.codes, ages, quantiles.to.keep, present.and.proj.years.pop))
+			mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(ncountries, 2, npredplus1), 
+						dimnames=list(country.codes, c('mean', 'sd'), present.and.proj.years.pop))
+	})
+	# quantiles are collected from the results of the last chunk
 	for(cidx in 1:ncountries) {
 		for(par in c('PIs_cqp', 'mean_sd', 'quantM', 'quantF', 'mean_sdM', 'mean_sdF'))
 			quant.env[[par]][cidx,,] <- res.list[[cidx]][[par]]
@@ -961,125 +1136,6 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 }
 
 
-restructure.pop.data.and.compute.quantiles.one.country <- function(cidx, country, envs, dest.dir, nr.traj, npred, nvariants, 
-																	inpc, obs, MxKan, present.and.proj.years, 
-																   ages, mx.ages, 
-																   keep.vital.events=FALSE, verbose=FALSE){
-	npredplus1 <- npred + 1
-	present.and.proj.years.pop <- present.and.proj.years + 2
-	nages <- length(ages)
-	quantiles.to.keep <- get.quantiles.to.keep()
-	nquant <- length(quantiles.to.keep)
-	quant.env <- new.env()
-	with(quant.env, {
-		PIs_cqp <- quantM <- quantF <- matrix(NA, nrow=nquant, ncol=npredplus1,
-						dimnames=list(quantiles.to.keep, present.and.proj.years.pop))
-		quantMage <- quantFage <- quantPropMage <- quantPropFage <- array(NA, c(nages, nquant, npredplus1),
-						dimnames=list(ages, quantiles.to.keep, present.and.proj.years.pop))
-		mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(2, npredplus1), 
-						dimnames=list(c('mean', 'sd'), present.and.proj.years.pop))
-	})
-	repi <- rep(1,nr.traj) # index for repeating columns
-	res.env <- new.env()
-	with(res.env, {
-		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, dimnames=list(present.and.proj.years.pop, NULL))
-		totpm <- totpf <- array(NA, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years.pop, NULL))
-		totp.hch <- matrix(NA, nrow=npredplus1, ncol=nvariants, dimnames=list(present.and.proj.years.pop, NULL))
-		totpm.hch <- totpf.hch <- array(NA, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years.pop, NULL))
-		# values from current year
-		totp[1,] <- sum(inpc$POPm0) + sum(inpc$POPf0)
-		totpm[1:length(inpc$POPm0),1,] <- as.matrix(inpc$POPm0)[,rep(1,nr.traj)]
-		totpf[1:length(inpc$POPf0),1,] <- as.matrix(inpc$POPf0)[,rep(1,nr.traj)]
-		totp.hch[1,] <- totp[1,1]
-		totpm.hch[,1,] <- totpm[,1,rep(1,nvariants)]
-		totpf.hch[,1,] <- totpf[,1,rep(1,nvariants)]
-		if(keep.vital.events) {
-			btm <- btf <- asfert <- pasfert <- array(0, dim=c(7, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
-			deathsm <- deathsf <- migm <- migf <- array(0, dim=c(27, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
-			mxm <- mxf <- array(0, dim=c(28, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
-			btm.hch <- btf.hch <- asfert.hch <- pasfert.hch <- array(0, dim=c(7, npredplus1, nvariants), 
-																	dimnames=list(NULL, present.and.proj.years, NULL))
-			deathsm.hch <- deathsf.hch <- array(0, dim=c(27, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
-			mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
-			# values from current year		
-			btm[1:dim(obs$btm)[1],1,] <- obs$btm[,dim(obs$btm)[2],repi]
-			btf[1:dim(obs$btf)[1],1,] <- obs$btf[,dim(obs$btf)[2],repi]
-			deathsm[1:dim(obs$deathsm)[1],1,] <- obs$deathsm[,dim(obs$deathsm)[2],repi]
-			deathsf[1:dim(obs$deathsf)[1],1,] <- obs$deathsf[,dim(obs$deathsf)[2],repi]
-			asfert[1:dim(obs$asfert)[1],1,] <- obs$asfert[,dim(obs$asfert)[2],repi]
-			pasfert[1:dim(obs$pasfert)[1],1,] <- obs$pasfert[,dim(obs$pasfert)[2],repi]
-			mxm[1:dim(MxKan[[1]]$mx)[1],1,] <- as.matrix(MxKan[[1]]$mx[,dim(MxKan[[1]]$mx)[2]])[repi]
-			mxf[1:dim(MxKan[[2]]$mx)[1],1,] <- as.matrix(MxKan[[2]]$mx[,dim(MxKan[[2]]$mx)[2]])[repi]
-			migm[1:dim(inpc$observed$MIGm)[1],1,] <- as.matrix(inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]])[,repi]
-			migf[1:dim(inpc$observed$MIGf)[1],1,] <- as.matrix(inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]])[,repi]
-			btm.hch[,1,] <- btm[,1,rep(1,nvariants)]
-			btf.hch[,1,] <- btf[,1,rep(1,nvariants)]
-			deathsm.hch[,1,] <- deathsm[,1,rep(1,nvariants)]
-			deathsf.hch[,1,] <- deathsf[,1,rep(1,nvariants)]
-			asfert.hch[,1,] <- asfert[,1,rep(1,nvariants)]
-			pasfert.hch[,1,] <- pasfert[,1,rep(1,nvariants)]
-			mxm.hch[,1,] <- mxm[,1,rep(1,nvariants)]
-			mxf.hch[,1,] <- mxf[,1,rep(1,nvariants)]
-		}
-	})
-	for(i in 1:nr.traj) {
-		for(par in c('totp'))
-			res.env[[par]][2:npredplus1,i] <- envs[[i]][[par]][cidx,]
-		for(par in c('totpm', 'totpf'))
-			res.env[[par]][,2:npredplus1,i] <- envs[[i]][[par]][,cidx,]
-		if(keep.vital.events) {
-			for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf', 'migm', 'migf'))
-				res.env[[par]][,2:npredplus1,i] <- envs[[i]][[par]][,cidx,]
-		}
-	}
-	# half a child variants is stored in the last trajectory file
-	for(par in c('totp.hch'))
-		res.env[[par]][2:npredplus1,] <- envs[[nr.traj]][[par]][cidx,,]
-	for(par in c('totpm.hch', 'totpf.hch'))
-		res.env[[par]][,2:npredplus1,] <- envs[[nr.traj]][[par]][,cidx,,]
-	if(keep.vital.events) {
-		for(par in c('btm.hch', 'btf.hch', 'deathsm.hch', 'deathsf.hch', 'asfert.hch', 'pasfert.hch', 'mxm.hch', 'mxf.hch'))
-			res.env[[par]][,2:npredplus1,] <- envs[[nr.traj]][[par]][,cidx,,]
-	}
-	observed <- obs
-	trajectory.indices <- inpc$trajectory.indices
-	with(res.env, {
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
-			 file = file.path(dest.dir, paste('totpop_country', country, '.rda', sep='')))
-		if(keep.vital.events) 
-			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
-				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, 
-				mxm.hch, mxf.hch, observed,
-				file=file.path(dest.dir, paste('vital_events_country', country, '.rda', sep='')))
-	})
-	stotpm <- colSums(res.env$totpm, na.rm=TRUE)
-	stotpf <- colSums(res.env$totpf, na.rm=TRUE)
-	with(quant.env, {
-		PIs_cqp[,] <- apply(res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sd[1,] <- apply(res.env$totp, 1, mean, na.rm = TRUE)
-		mean_sd[2,] <- apply(res.env$totp, 1, sd, na.rm = TRUE)
-		for (i in 1:nages) {
-			if(nr.traj == 1) {
-				quantMage[i,,] <- matrix(rep(res.env$totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantFage[i,,] <- matrix(rep(res.env$totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantPropMage[i,,] <- matrix(rep(res.env$totpm[i,,1]/res.env$totp,nquant) , nrow=nquant, byrow=TRUE)
-				quantPropFage[i,,] <- matrix(rep(res.env$totpf[i,,1]/res.env$totp,nquant) , nrow=nquant, byrow=TRUE)
-			} else {
-				quantMage[i,,] <- apply(res.env$totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantFage[i,,] <- apply(res.env$totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropMage[i,,] <- apply(res.env$totpm[i,,]/res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropFage[i,,] <- apply(res.env$totpf[i,,]/res.env$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			}
-		}
-		quantM[,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdM[1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
-		mean_sdM[2,] = apply(stotpm, 1, sd, na.rm = TRUE)
-		quantF[,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdF[1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
-		mean_sdF[2,] = apply(stotpf, 1, sd, na.rm = TRUE)
-	})
-	return(quant.env)
-}
 
 migration.age.schedule <- function(country, npred, inputs) {
 	# original code by Jon Azose
