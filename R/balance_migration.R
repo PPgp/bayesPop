@@ -54,8 +54,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			if(!is.null(migration.settings[[par]])) inp[[par]] <- migration.settings[[par]]
 	} 
 	outdir.tmp <- file.path(outdir, '_tmp_')
-	if(file.exists(outdir.tmp) && start.traj.index==1) unlink(outdir.tmp, recursive=TRUE)
-	if(start.traj.index==1) dir.create(outdir.tmp)
+	if(file.exists(outdir.tmp) && start.traj.index==1 && !reformat.only) unlink(outdir.tmp, recursive=TRUE)
+	if(start.traj.index==1 && !reformat.only) dir.create(outdir.tmp)
 	
 	if(start.traj.index > 1) { # reload last rates
 		env.tmp <- new.env()
