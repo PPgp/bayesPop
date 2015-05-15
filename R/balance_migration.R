@@ -2,7 +2,8 @@ if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
 									rebalance=TRUE, use.migration.model=TRUE, start.traj.index=1, 
-									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, migration.settings=NULL, ...) {
+									verbose=FALSE, parallel=FALSE, nr.nodes=NULL, migration.settings=NULL, 
+									chunk.size=100, reformat.only=FALSE, ...) {
 	# if migration.settings is NULL, don't use the migration model
 	if (use.migration.model && is.null(migration.settings))
 		stop('Argument migration.settings has to be given if use.migration.model is TRUE.')
@@ -135,7 +136,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 										countries.input[[country]], norms=inp$PASFRnorms, proj.years=inp$proj.years, 
 										tfr.med=tfr.med)					
 	}
-
+	if(!reformat.only) {
 	res.env <- new.env()
 	with(res.env, {
 		totp <- matrix(0, nrow=ncountries, ncol=npred, dimnames=list(country.codes, NULL))
@@ -271,9 +272,11 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	if(parallel) {
 		stopCluster(cl)
 	}
+	}
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, nr.traj, countries.input, observed, kannisto, 
-					present.and.proj.years, keep.vital.events, parallel=parallel, nr.nodes=nr.nodes.cntry, verbose=verbose)
+					present.and.proj.years, keep.vital.events, parallel=parallel, nr.nodes=nr.nodes.cntry, 
+					chunk.size=chunk.size, verbose=verbose)
 	if(verbose) cat(' done.\n')
 	unlink(outdir.tmp, recursive=TRUE)
 	#save meta file
