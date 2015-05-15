@@ -275,7 +275,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	}
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, nr.traj, countries.input, observed, kannisto, 
-					present.and.proj.years, keep.vital.events, parallel=parallel, nr.nodes=nr.nodes.cntry, 
+					present.and.proj.years, keep.vital.events, 
+					#parallel=parallel,  # this can cause memory swapping
+					parallel=FALSE, 
+					nr.nodes=nr.nodes.cntry, 
 					chunk.size=chunk.size, verbose=verbose)
 	if(verbose) cat(' done.\n')
 	unlink(outdir.tmp, recursive=TRUE)
