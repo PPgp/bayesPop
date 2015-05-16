@@ -919,7 +919,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	} else inpc$mig.nr.traj <- 1
 	if(!is.null(inputs$projected.migration.rates)) {
 		inpc$projected.migration.rates <- inputs$projected.migration.rates[inputs$projected.migration.rates$country_code == country, 
-												-which(colnames(inputs$projected.migration.rates)=='country_code')]
+												-which(colnames(inputs$projected.migration.rates)=='country_code'), drop=FALSE]
 		inpc$mig.nr.traj <- nrow(inpc$projected.migration.rates)
 	} 
 	

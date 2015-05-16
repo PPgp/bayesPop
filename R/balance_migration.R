@@ -305,10 +305,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			   				function.inputs=function.inputs,
 			   				countries=country.rows,
 			   				ages=ages, warnings=res.env$warns), class='bayesPop.prediction')
-	print.pop.warnings(bayesPop.prediction, which.warns=c(2,3,5))
 	prediction.file <- file.path(outdir, 'prediction.rda')
 	save(bayesPop.prediction, file=prediction.file)
 	cat('\nPrediction stored into', outdir, '\n')
+	print.pop.warnings(bayesPop.prediction, which.warns=c(2,3,5))
 	return(bayesPop.prediction)
 }
 
@@ -337,7 +337,7 @@ print.pop.warnings <- function(pop.pred, which.warns=NULL) {
 		cntries.warn <- t(sapply(warns, cntry.warn, iwarn))
 		rownames(cntries.warn) <- names(warns)
 		cntries.warn <- cntries.warn[apply(cntries.warn, 1, function(x) any(x>0)),]
-		if(nrow(cntries.warn)>0) {
+		if(length(cntries.warn)>0 || nrow(cntries.warn)>0) {
 			cat("\n", get.pop.warn(iwarn), ":\n")
 			rownames(cntries.warn) <- sapply(as.integer(rownames(cntries.warn)), function(x) UNlocations[which(UNlocations$country_code==x),'name'])
 			colnames(cntries.warn) <- pop.pred$proj.years[-1]
@@ -1183,7 +1183,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	}
 	if(first.year) { # take a one year as age-schedule for all future years
 		cix <- rep(which(colnames(inputs$MIGm)==first.year.period), length(col.idx))
-		if(is.null(cix)) stop("Time period ", first.year.period, " not found in the migration data.")
+		if(length(cix)==0) stop("Time period ", first.year.period, " not found in the migration data.")
 		maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
 		femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
 	} else {# take all years starting from present year
