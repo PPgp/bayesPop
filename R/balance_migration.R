@@ -336,8 +336,8 @@ print.pop.warnings <- function(pop.pred, which.warns=NULL) {
 	for(iwarn in which.warns) {
 		cntries.warn <- t(sapply(warns, cntry.warn, iwarn))
 		rownames(cntries.warn) <- names(warns)
-		cntries.warn <- cntries.warn[apply(cntries.warn, 1, function(x) any(x>0)),]
-		if(length(cntries.warn)>0 || nrow(cntries.warn)>0) {
+		cntries.warn <- cntries.warn[apply(cntries.warn, 1, function(x) any(x>0)),,drop=FALSE]
+		if(nrow(cntries.warn)>0) {
 			cat("\n", get.pop.warn(iwarn), ":\n")
 			rownames(cntries.warn) <- sapply(as.integer(rownames(cntries.warn)), function(x) UNlocations[which(UNlocations$country_code==x),'name'])
 			colnames(cntries.warn) <- pop.pred$proj.years[-1]
