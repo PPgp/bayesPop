@@ -1,5 +1,7 @@
 5.4-0
 -----
+Added pasfr to write.pop.projection.summary.
+
 Added functions for extracting and plotting cohort data 
 (functions cohorts, pop.cohorts.plot)
 
