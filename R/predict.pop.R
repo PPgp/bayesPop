@@ -1429,7 +1429,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 						data=pop.matrix)
 		pop[[sex]] <- tpop$data[tpop$age.idx,(ncol(tpop$data)-nest):ncol(tpop$data)]
 	}
-	bt <- (pop[[2]][4:10,2:ncol(pop[[2]])] + pop[[2]][4:10,1:(ncol(pop[[2]])-1)]) * asfr * 0.5
+	bt <- (pop[[2]][4:10,-1] + pop[[2]][4:10,-ncol(pop[[2]])]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {		
@@ -1443,6 +1443,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
+		colnames(births[[sex]]) <- estim.years
 	}	
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
@@ -1460,7 +1461,7 @@ write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, o
 	if (is.null(output.dir)) output.dir <- pop.output.directory(pred)
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.what <- c('pop', 'popsex', 'popsexage', 'popage', 'births', 'birthssex', 'birthsage', 'birthssexage', 
-			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage')
+			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage', 'pfertilityage')
 	what <- if(is.null(what)) all.what else match.arg(what, all.what, several.ok=TRUE)
 	params <- list()
 	if(!is.null(expression)) {
@@ -1528,6 +1529,10 @@ write.fertility <- function(pop.pred, output.dir, ...)
 write.fertilityage <- function(pop.pred, output.dir, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='fertility', 
 			file.suffix='asfr', what.log='fertility rate', digits=litem('digits', list(...), 4))
+			
+write.pfertilityage <- function(pop.pred, output.dir, ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='pasfr', 
+			file.suffix='pasfr', what.log='percent fertility rate', digits=litem('digits', list(...), 4))
 	
 write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
 								include.observed=FALSE, digits=NULL, adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
