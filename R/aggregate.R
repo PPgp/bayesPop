@@ -303,10 +303,28 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
 		if(has.vital.events) {
-			#TODO: asfert, pasfert
-			#asfert <- 2*(btm + btf)/(totpf[,1:(dim(totpf)[2]-1),]+totpf[,2:dim(totpf)[2],])
-			#asfert.hch <- 2*(btm.hch + btf.hch)/(totpf.hch[,1:(dim(totpf.hch)[2]-1),]+totpf.hch[,2:dim(totpf.hch)[2],])
-			save(btm, btf, deathsm, deathsf, migm, migf,
+			# asfert
+			# Attach the second last observed year of female population in order to get last observed fertility
+			tmp <- aggr.obs.dataF[4:10,as.character(pop.pred$proj.years.pop[1]-5),drop=FALSE]
+			tmp <- abind(tmp, NULL, along=3)
+			popfwprev <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf[4:10,,,drop=FALSE], along=2)
+			asfert <- 2*(btm + btf)/(popfwprev[,-dim(popfwprev)[2],,drop=FALSE]+
+										popfwprev[,-1,,drop=FALSE])
+			popfwprev.hch <- abind(tmp[,,rep(1,dim(totpf.hch)[3]), drop=FALSE], totpf.hch[4:10,,,drop=FALSE], along=2)
+			asfert.hch <- 2*(btm.hch + btf.hch)/(popfwprev.hch[,-dim(popfwprev.hch)[2],,drop=FALSE]+
+										popfwprev.hch[,-1,,drop=FALSE])
+			# pasfert
+			tfr <- apply(asfert, c(2,3), sum)
+			pasfert <- asfert/abind(tfr, NULL, along=1)[rep(1,dim(asfert)[1])]*100
+			# asfert, pasfert for observed data
+			observed <- within(observed, {
+				tmp <- abind(aggr.obs.dataF[4:10, , drop=FALSE], NULL, along=3)
+				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
+				tfr <- apply(asfert, c(2,3), sum)
+				pasfert <- asfert/abind(tfr, NULL, along=1)[rep(1,dim(asfert)[1])]*100
+				rm(tmp, tfr)
+			})
+			save(btm, btf, deathsm, deathsf, migm, migf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, 
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}		
