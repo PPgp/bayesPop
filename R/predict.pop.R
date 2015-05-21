@@ -1429,7 +1429,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 						data=pop.matrix)
 		pop[[sex]] <- tpop$data[tpop$age.idx,(ncol(tpop$data)-nest):ncol(tpop$data)]
 	}
-	bt <- (pop[[2]][4:10,2:ncol(pop[[2]])] + pop[[2]][4:10,1:(ncol(pop[[2]])-1)]) * asfr * 0.5
+	bt <- (pop[[2]][4:10,-1] + pop[[2]][4:10,-ncol(pop[[2]])]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {		
@@ -1443,6 +1443,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
+		colnames(births[[sex]]) <- estim.years
 	}	
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
