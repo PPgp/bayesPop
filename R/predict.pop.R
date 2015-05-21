@@ -1301,13 +1301,11 @@ write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, o
 	what <- if(is.null(what)) all.what else match.arg(what, all.what, several.ok=TRUE)
 	params <- list()
 	if(!is.null(expression)) {
-		#write.expression(pop.pred, expression=expression, output.dir=output.dir, ...)
 		what <- 'expression'
 		params <- list(expression=expression)
-	} #else {
-		for(summary.type in what) 
-			do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
-	#}
+	}
+	for(summary.type in what) 
+		do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
 }
 
 write.pop <- function(pop.pred, output.dir, ...) 
@@ -1370,8 +1368,9 @@ write.pfertilityage <- function(pop.pred, output.dir, ...)
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='pasfr', 
 			file.suffix='pasfr', what.log='percent fertility rate', digits=litem('digits', list(...), 4))
 	
-write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
-								include.observed=FALSE, digits=NULL, adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
+write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
+							expression.label=expression, include.observed=FALSE, digits=NULL, 
+							adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
