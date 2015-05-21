@@ -1091,7 +1091,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 				load(file.path(source.dir, paste0('vital_events_traj_', itraj, '.rda')), envir=envs[[i]])
 		}
 		if(chunk == nr.chunks) {
-			nvariants <- ncol(envs[[this.chunk.size]]$totp.hch)
+			nvariants <- dim(envs[[this.chunk.size]]$totp.hch)[3]
 			if(parallel) clusterExport(cl, c("nvariants", "quantiles.to.keep", "nquant"), envir=environment())
 		}
 		if(chunk == 1) {
