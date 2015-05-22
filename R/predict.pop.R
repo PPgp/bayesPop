@@ -249,7 +249,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxf.hch[,1,variant] <- mxf[,1,1]
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch,
+		trajectory.indices <- inpc$trajectory.indices
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
@@ -933,6 +934,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	inpc$observed <- obs
+	inpc$trajectory.indices <- indices
 	return(inpc)
 }
 
@@ -1265,7 +1267,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 						data=pop.matrix)
 		pop[[sex]] <- tpop$data[tpop$age.idx,(ncol(tpop$data)-nest):ncol(tpop$data)]
 	}
-	bt <- (pop[[2]][4:10,2:ncol(pop[[2]])] + pop[[2]][4:10,1:(ncol(pop[[2]])-1)]) * asfr * 0.5
+	bt <- (pop[[2]][4:10,-1] + pop[[2]][4:10,-ncol(pop[[2]])]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {		
@@ -1279,6 +1281,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
+		colnames(births[[sex]]) <- estim.years
 	}	
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
@@ -1294,17 +1297,15 @@ write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, o
 	if (is.null(output.dir)) output.dir <- pop.output.directory(pred)
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.what <- c('pop', 'popsex', 'popsexage', 'popage', 'births', 'birthssex', 'birthsage', 'birthssexage', 
-			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage')
+			'deaths', 'deathssex', 'deathsage', 'deathssexage', 'srsexage', 'fertility', 'fertilityage', 'pfertilityage')
 	what <- if(is.null(what)) all.what else match.arg(what, all.what, several.ok=TRUE)
 	params <- list()
 	if(!is.null(expression)) {
-		#write.expression(pop.pred, expression=expression, output.dir=output.dir, ...)
 		what <- 'expression'
 		params <- list(expression=expression)
-	} #else {
-		for(summary.type in what) 
-			do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
-	#}
+	}
+	for(summary.type in what) 
+		do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
 }
 
 write.pop <- function(pop.pred, output.dir, ...) 
@@ -1362,9 +1363,14 @@ write.fertility <- function(pop.pred, output.dir, ...)
 write.fertilityage <- function(pop.pred, output.dir, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='fertility', 
 			file.suffix='asfr', what.log='fertility rate', digits=litem('digits', list(...), 4))
+			
+write.pfertilityage <- function(pop.pred, output.dir, ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='pasfr', 
+			file.suffix='pasfr', what.log='percent fertility rate', digits=litem('digits', list(...), 4))
 	
-write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
-								include.observed=FALSE, digits=NULL, adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
+write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
+							expression.label=expression, include.observed=FALSE, digits=NULL, 
+							adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
