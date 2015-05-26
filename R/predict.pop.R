@@ -1246,7 +1246,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
-	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])))
+	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])), length(estim.years))
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
