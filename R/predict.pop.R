@@ -18,13 +18,15 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, replace.output=FALSE, 
+						fixed.mx=FALSE, my.locations.file = NULL, replace.output=FALSE, 
 						verbose=TRUE) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
-
-	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
+	if(!is.null(my.locations.file)) {
+		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
+		if(verbose) cat('Loading ', my.locations.file, '.\n')
+	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
 	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
