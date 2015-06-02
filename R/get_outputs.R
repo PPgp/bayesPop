@@ -502,7 +502,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
 		if(itraj == 1) {
 			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
-			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]))
+			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
 			sr <- rep(0, dim(LLm)[1])
 		}
 		sx[,, itraj] <- apply(LLm, 2, 

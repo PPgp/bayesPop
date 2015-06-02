@@ -752,7 +752,10 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
-	tau.denominator2 <- t.r - years[startTi-3]
+	if(startTi < 3) { # not enough observed data
+		yd <- years[1] - 5 * (3-startTi)
+	} else yd <- years[startTi-3]
+	tau.denominator2 <- t.r - yd
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
 		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2) *logit.dif
@@ -769,7 +772,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	#stop('')
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
 	return(res.asfr)
 }
