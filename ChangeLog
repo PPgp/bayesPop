@@ -1,5 +1,8 @@
 5.4-0
 -----
+Argument my.locations.file added to pop.predict to allow projections for other 
+than the UN countries/regions. (thanks to Filippo Temporin)
+
 Aggregations for ASFR and PASFR implemented.
 
 Added PASFR to write.pop.projection.summary.

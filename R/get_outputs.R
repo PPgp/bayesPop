@@ -160,6 +160,7 @@ print.summary.bayesPop.prediction <- function(x, digits = 5, ...) {
 }
 
 get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', data=NULL) {
+	# Results are not sorted in the same order as values in "country". The caller should take care of it. 
 	sex <- match.arg(sex)
 	if(is.null(data)) data <- pop.pred$inputs$pop.matrix
 	if(sex == 'both') {
@@ -191,19 +192,22 @@ get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 }
 
 get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE) {
+	# the function assumes that population data are sorted be age
 	data.age <- get.pop.observed.with.age(pop.pred, countries, sex, age)
 	data <- data.age$data
 	age.idx <- data.age$age.idx
 	ncountries <- length(countries)
 	max.age <- data.age$max.age
-	cindex <- seq(1, length=ncountries, by=max.age)
+	cindex <- lapply(countries, function(x) grep(paste0("^", x, "_"), rownames(data), value=FALSE)[1:max.age])
+	names(cindex) <- countries
 	if(age[1]=='psr')  # potential support ratio
-		return(list(data=t(sapply(cindex, function(start.idx) 
-				colSums(data[start.idx:(start.idx+max.age),][get.psr.nominator.index(),])/colSums(data[start.idx:(start.idx+max.age),][get.psr.denominator.startindex():max.age,]))), age.idx=age.idx))
-	sum.over.countries <- function(start.idx) return(colSums(data[start.idx:(start.idx+max.age),][age.idx,]))
+		return(list(data=t(sapply(cindex, function(country.idx) 
+				colSums(data[country.idx,][get.psr.nominator.index(),])/colSums(data[country.idx,][get.psr.denominator.startindex():max.age,]))), age.idx=age.idx))
+	sum.over.countries <- function(country.idx) return(colSums(data[country.idx,][age.idx,]))
 	if(sum.over.ages) return(list(data=t(sapply(cindex, sum.over.countries)), age.idx=age.idx))
 	res <- array(NA, c(ncountries, length(age.idx), ncol(data)), dimnames=list(countries, age.idx, colnames(data)))
-	for(i in 1:length(age.idx)) res[,i,] <- as.matrix(data[seq(age.idx[i], length=ncountries, by=max.age),])
+	countries.char <- names(cindex)
+	for(i in 1:ncountries) res[i,,] <- as.matrix(data[cindex[[countries.char[i]]],])
 	return(list(data=res, age.idx=age.idx))
 }
 
@@ -498,7 +502,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
 		if(itraj == 1) {
 			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
-			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]))
+			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
 			sr <- rep(0, dim(LLm)[1])
 		}
 		sx[,, itraj] <- apply(LLm, 2, 

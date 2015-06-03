@@ -5,7 +5,7 @@
 Writing Projection Summary Files
 }
 \description{
-The function creates ASCII files containing projection summaries, such as the median, the lower and upper bound of the 80 and 90\% probability intervals, respectively. 
+The function creates ASCII files containing projection summaries, such as the median, the lower and upper bound of the 80 and 95\% probability intervals, respectively. 
 }
 \usage{
 write.pop.projection.summary(pop.pred, what = NULL, expression = NULL, 
@@ -20,7 +20,7 @@ write.pop.projection.summary(pop.pred, what = NULL, expression = NULL,
   \item{\dots}{These are arguments used if \code{expression} is given: \code{file.suffix} defines the file suffix; \code{expression.label} (defaults to the expression) is put as the first line in the resulting file; logical \code{include.observed} determines if observed data should be included; integer \code{digits} defines the number of decimal places in the resulting file.}
 }
 \details{
-There is one file created per value of \code{what}, or \code{expression}, called \file{projection_summary_}\emph{suffix}\file{.csv}, where \emph{suffix} is either \code{what} or \code{alias} of the expression. It is a comma-separated table with the following columns:
+There is one file created per value of \code{what}, or \code{expression}, called \file{projection_summary_}\emph{suffix}\file{.csv}, where \emph{suffix} is either \code{what} or, if an expression is given, the value of \code{file.suffix}. It is a comma-separated table with the following columns:
 \itemize{
 	\item 	\dQuote{country_name}: country name 
 	\item \dQuote{country_code}: country code 
@@ -29,8 +29,7 @@ There is one file created per value of \code{what}, or \code{expression}, called
 	\item period2: e.g. \dQuote{2010-2015}: Given population measure for the second time period
 	\item \dots further time period columns	
 }
-If  \code{expression} is given, the full expression is written as the first line of the file starting with \#.
-The file contains one line per country, and possibly sex and age.
+If  \code{expression} is given, \code{expression.label} (by default the full expression) is written as the first line of the file starting with #. The file contains one line per country, and possibly sex and age.
 }
 
 \note{

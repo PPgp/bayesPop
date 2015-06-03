@@ -18,13 +18,16 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, replace.output=FALSE, use.migration.model=FALSE, rebalance.migration=FALSE,
+						fixed.mx=FALSE, my.locations.file = NULL, replace.output=FALSE, 
+						use.migration.model=FALSE, rebalance.migration=FALSE,
 						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
-
-	bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
+	if(!is.null(my.locations.file)) {
+		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
+		if(verbose) cat('Loading ', my.locations.file, '.\n')
+	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
 	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	else {
 		if(has.pop.prediction(output.dir) && !replace.output && !rebalance.migration) {
@@ -778,7 +781,10 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
-	tau.denominator2 <- t.r - years[startTi-3]
+	if(startTi < 3) { # not enough observed data
+		yd <- years[1] - 5 * (3-startTi)
+	} else yd <- years[startTi-3]
+	tau.denominator2 <- t.r - yd
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
 		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2) *logit.dif
@@ -795,7 +801,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	#stop('')
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
 	return(res.asfr)
 }
@@ -1408,7 +1413,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
-	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])))
+	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])), length(estim.years))
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
@@ -1465,13 +1470,11 @@ write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, o
 	what <- if(is.null(what)) all.what else match.arg(what, all.what, several.ok=TRUE)
 	params <- list()
 	if(!is.null(expression)) {
-		#write.expression(pop.pred, expression=expression, output.dir=output.dir, ...)
 		what <- 'expression'
 		params <- list(expression=expression)
-	} #else {
-		for(summary.type in what) 
-			do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
-	#}
+	}
+	for(summary.type in what) 
+		do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
 }
 
 write.pop <- function(pop.pred, output.dir, ...) 
@@ -1534,8 +1537,9 @@ write.pfertilityage <- function(pop.pred, output.dir, ...)
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='pasfr', 
 			file.suffix='pasfr', what.log='percent fertility rate', digits=litem('digits', list(...), 4))
 	
-write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', expression.label=expression,  
-								include.observed=FALSE, digits=NULL, adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
+write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
+							expression.label=expression, include.observed=FALSE, digits=NULL, 
+							adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
