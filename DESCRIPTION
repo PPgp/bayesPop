@@ -6,7 +6,7 @@ Date: 2015-5-27
 Author: Hana Sevcikova, Adrian Raftery
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 Depends: R (>= 2.14.2), bayesTFR (>= 4.0-0), bayesLife (>= 2.0-0)
-Suggests: rworldmap, fields, wpp2008, wpp2010
+Suggests: rworldmap, fields, googleVis, wpp2008, wpp2010
 Imports: parallel, abind, plyr, wpp2012
 Description: Generating population projections for all countries of the world using several probabilistic components, such as total fertility rate (TFR) and life expectancy.
 License: GPL (>=2)

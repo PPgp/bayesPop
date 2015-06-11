@@ -24,7 +24,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 								  sum.over.ages=FALSE,
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE, main=NULL,
-								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
+								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, ann=par('ann'), ...
 								  ) {
 	# lwd is a vector of 5 line widths for: 
@@ -40,7 +40,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 	if(length(col) < 5) {
 		lcol <- length(col)
 		col <- rep(col, 5)
-		col[(lcol+1):5] <- c('black', 'red', 'red', 'blue', 'gray')[(lcol+1):5]
+		col[(lcol+1):5] <- c('black', 'red', 'red', 'blue', '#00000020')[(lcol+1):5]
 	}
 
 	if(!is.null(country)) {
@@ -94,7 +94,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL, type='b', 
 								  xlab='', ylab='Population projection', main=NULL, 
-								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
+								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, ann=par('ann'), add=FALSE, adjust=FALSE, adj.to.file=NULL, ...
 								  ) {
 
@@ -381,7 +381,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL,  
 								  xlab='', ylab='Population projection', main=NULL, 
-								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', 'gray'),
+								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=NA, pt.cex=1, ...
 								  ) {
 
@@ -787,6 +787,9 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 	quantiles <- pop.object$CI[[1]]
 	pyr1 <- pop.object$pyramid[[1]]
 	pyr2 <- if(draw.past) pop.object$pyramid[[2]] else NULL
+	#if(draw.median)
+	#	cohort.labels <- if("_cohorts_" %in% colnames(pyr1)) pyr1[,"_cohorts_"] else age.labels
+	#else cohort.labels <- if(!is.null(pyr2) && "_cohorts_" %in% colnames(pyr2)) pyr2[,"_cohorts_"] else age.labels
 	with(pop.object, {
 		maxx <- pop.max	
 		proportion <- !is.null(is.proportion) && is.proportion
@@ -868,7 +871,7 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 }
 
 .do.plot.pyramid.all <- function(pop.pred, output.dir, func, year=NULL, output.type="png", 
-						file.prefix='pyr', plot.type='pyramid(s)', 
+						file.prefix='pyr', plot.type='pyramid(s)', one.file=FALSE,
 						main=NULL, verbose=FALSE, ...) {
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.countries <- pop.pred$countries[,'name']
@@ -877,6 +880,9 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 	if(is.null(year)) year <- list(pop.pred$present.year)
 	if(!is.list(year)) year <- list(year)
 	main.arg <- main
+	if(one.file) 
+		do.call(output.type, list(file.path(output.dir, 
+										paste(file.prefix, '.', postfix, sep=''))))
 	for (country in all.countries) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries)
 		if(verbose)
@@ -884,11 +890,10 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 		if(!is.null(main) && grepl('XXX', main, fixed=TRUE))
 			main.arg <- gsub('XXX', as.character(country.obj$name), main, fixed=TRUE)
 		for(y in year) {
-			do.call(output.type, list(file.path(output.dir, 
+			if(!one.file) do.call(output.type, list(file.path(output.dir, 
 										paste(file.prefix, paste(y, collapse='_'), '_c', country.obj$code, '.', postfix, sep=''))))
 			do.call(func, list(pop.pred, country=country.obj$code, year=y, main=main.arg, ...))
-			pop.pyramid(pop.pred, country=country.obj$code, year=y, main=main.arg, ...)
-			dev.off()
+			if(!one.file) dev.off()
 		}
 	}
 	if(verbose)
@@ -898,9 +903,10 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 
 pop.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.pyramid'),
-									output.type="png", verbose=FALSE, ...) {
+									output.type="png", one.file=FALSE, verbose=FALSE, ...) {
 	# plots pyramid for all countries
-	.do.plot.pyramid.all(pop.pred, output.dir, pop.pyramid, year=year, output.type=output.type, verbose=verbose, ...)
+	.do.plot.pyramid.all(pop.pred, output.dir, pop.pyramid, year=year, output.type=output.type, 
+				one.file=one.file, verbose=verbose, ...)
 }
 
 
@@ -918,7 +924,7 @@ pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, ye
 }
 
 pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, show.legend=TRUE, 
-													col=rainbow, col.traj='grey',
+													col=rainbow, col.traj='#00000020',
 													lwd=2, ann=par('ann'), axes=TRUE, grid=TRUE, 
 													cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
 	# col/lwd is color and line width for:
@@ -1023,10 +1029,10 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, sh
 
 pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.traj.pyramid'),
-									output.type="png", verbose=FALSE, ...) {
+									output.type="png", one.file=FALSE, verbose=FALSE, ...) {
 	# plots pyramid for all countries and all years given by 'year'
 	.do.plot.pyramid.all(pop.pred, output.dir, pop.trajectories.pyramid, year=year, output.type=output.type, 
-					plot.type='trajectory pyramid(s)', verbose=verbose, ...)
+					one.file=one.file, plot.type='trajectory pyramid(s)', verbose=verbose, ...)
 }
 
 
@@ -1098,6 +1104,10 @@ get.data.for.worldmap.bayesPop.prediction <- function(pred, quantile=0.5, year=N
 
 
 pop.map <- function(pred, sex=c('both', 'male', 'female'), age='all', expression=NULL, ...) {
+	if(!requireNamespace("rworldmap", quietly=TRUE)) {
+		warning("Package 'rworldmap' is not installed. If 'googleVis' is installed, use pop.map.gvis(...).")
+		return()
+	}
 	return(bayesTFR::tfr.map(pred, par.name=expression, data.args=list(sex=sex, age=age, expression=expression), ...))
 }
 
@@ -1134,9 +1144,14 @@ get.pop.map.parameters <- function(pred, expression=NULL, sex=c('both', 'male', 
 	return(map.pars)		
 }
 
-pop.map.gvis <- function(pred, ...)
+pop.map.gvis <- function(pred, ...){
+	if(!requireNamespace("googleVis", quietly=TRUE)) {
+		warning("Package 'googleVis' is not installed. If 'rworldmap' is installed, use pop.map(...).")
+		return()
+	}
 	bdem.map.gvis(pred, ...)
-						
+}
+					
 bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 	bayesTFR:::.do.gvis.bdem.map('pop', 'Population', pred, ...)
 }

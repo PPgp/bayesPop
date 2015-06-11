@@ -315,13 +315,13 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 										popfwprev.hch[,-1,,drop=FALSE])
 			# pasfert
 			tfr <- apply(asfert, c(2,3), sum)
-			pasfert <- asfert/abind(tfr, NULL, along=1)[rep(1,dim(asfert)[1])]*100
+			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 			# asfert, pasfert for observed data
 			observed <- within(observed, {
 				tmp <- abind(aggr.obs.dataF[4:10, , drop=FALSE], NULL, along=3)
 				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
 				tfr <- apply(asfert, c(2,3), sum)
-				pasfert <- asfert/abind(tfr, NULL, along=1)[rep(1,dim(asfert)[1])]*100
+				pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 				rm(tmp, tfr)
 			})
 			save(btm, btf, deathsm, deathsf, migm, migf, asfert, pasfert,
