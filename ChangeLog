@@ -1,5 +1,7 @@
 5.4-0
 -----
+Added function for creating an expression for the mean age of child-bearing, "mac.expression(country)".
+
 pop.pyramidAll got a logical argument "one.file" for plotting everyhting into one file.
 
 pop.trajectories.pyramid accepts now the "indicator" argument (analogous to pop.pyramid)

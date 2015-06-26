@@ -886,7 +886,8 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 						main=NULL, verbose=FALSE, ...) {
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.countries <- pop.pred$countries[,'name']
-	postfix <- output.type
+	if(one.file && !(output.type %in% c("pdf", 'postscript'))) output.type <- "pdf"
+	postfix <- output.type	
 	if(output.type=='postscript') postfix <- 'ps'
 	if(is.null(year)) year <- list(pop.pred$present.year)
 	if(!is.list(year)) year <- list(year)
@@ -907,6 +908,7 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 			if(!one.file) dev.off()
 		}
 	}
+	if(one.file) dev.off()
 	if(verbose)
 		cat('\nPyramids stored into', output.dir, '\n')
 }
@@ -1169,7 +1171,7 @@ bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 }
 
 pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NULL, cohort.data=NULL, pi=c(80, 95), 
-								dev.ncol=5, show.legend=TRUE, ann=par('ann'), add=FALSE, 
+								dev.ncol=5, show.legend=TRUE, legend.pos="bottomleft", ann=par('ann'), add=FALSE, 
 								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, col='red', ...) {
 	.round.to.lower5 <- function(x) 5*floor(x/5) 
 
@@ -1228,7 +1230,7 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		}
 		grid()
 		if(show.legend && ann)
-			legend('bottomleft', legend=legend, lty=lty, bty='n', col=cols)
+			legend(legend.pos, legend=legend, lty=lty, bty='n', col=cols)
 	}
 	if(nplots > 1) par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
 }

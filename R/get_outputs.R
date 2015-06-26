@@ -1148,6 +1148,11 @@ drop.age <- function(data) {
 age.index01 <- function(end) return (c(-1,0,2:end))
 age.index05 <- function(end) return (1:end)
 	
+mac.expression <- function(country) {
+	factors <- seq(17.5, by=5, length=7)
+	return(paste0("(", paste0(factors, "*R", country, "[", 4:10, "]", collapse=" + "), ")/100"))
+}
+	
 .solve.expression.for.country <- function(icountry, pop.pred, expression, adjust=FALSE) {
 	country <- pop.pred$countries$code[icountry]
 	expr <- gsub('XXX', as.character(country), expression, fixed=TRUE)
