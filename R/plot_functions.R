@@ -759,7 +759,7 @@ plot.bayesPop.pyramid <- function(x, ...) {
 
 pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE, 
 										pyr1.par=list(border='black', col=NA, density=NULL, height=0.9),
-										pyr2.par =list(border='plum1', col='plum1', density=20, height=0.2), 
+										pyr2.par =list(density=-1, height=0.3), 
 										col.pi = NULL, ann=par('ann'), axes=TRUE, grid=TRUE, 
 										cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
 	mgp <- par('mgp')
@@ -777,7 +777,8 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 	draw.median <- !is.null(pop.object$pyramid[[1]])
 	pyr1.par.default <- list(border='black', col=NA, density=NULL, height=0.9)
 	for(item in names(pyr1.par.default)) if(is.null(pyr1.par[[item]])) pyr1.par[[item]] <- pyr1.par.default[[item]]
-	pyr2.par.default <- list(border='violet', col='violet', density=20, height=0.3)
+	col.pyr2.default <- adjustcolor('#f46d43', alpha.f=0.3)
+	pyr2.par.default <- list(border=col.pyr2.default, col=col.pyr2.default, density=-1, height=0.3)
 	for(item in names(pyr2.par.default)) if(is.null(pyr2.par[[item]])) pyr2.par[[item]] <- pyr2.par.default[[item]]
 	pyr1.half.height <- pyr1.par[['height']]/2
 	pyr2.half.height <- pyr2.par[['height']]/2
@@ -812,8 +813,18 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 			segments(rep(-maxx-2*maxx/25, length(gridyat)), gridyat, rep(maxx+2*maxx/25, length(gridyat)), 
 						gridyat, col="lightgray", lty = "dotted")
 		}
-		if(nquant > 0) {
-			cols <- if(is.null(col.pi)) rainbow(max(nquant, 5), start=0.15)[1:nquant] else rep(col.pi, nquant)[1:nquant]
+		if(nquant > 0) {			
+			if(is.null(col.pi)) {
+				if(nquant < 10) {
+					# from RcolorBrewer: brewer.pal(9, "YlGnBu")
+					col.pi.default <- c("#FFFFD9", "#EDF8B1", "#C7E9B4", "#7FCDBB", "#41B6C4", "#1D91C0", "#225EA8", "#253494", "#081D58")
+					if(nquant < 5) # remove the extreme colors at both ends
+						col.pi.default <- col.pi.default[2:(length(col.pi.default)-3)]
+					cols <- if(nquant == 2) c("#C7E9B4", "#41B6C4") else col.pi.default[sort(seq(length(col.pi.default), 1, length=nquant))]
+				} else { # more than 9 PIs
+					cols <- rainbow(nquant, start=0.15)
+				}
+			} else col <- rep(col.pi, nquant)[1:nquant]
 			for(i in 1:nquant) {
 				rect(-quantiles[[i]]$high[,male], age.axis.at-pyr1q.half.height, 
 						-quantiles[[i]]$low[,male], age.axis.at+pyr1q.half.height, col=cols[i],
@@ -912,12 +923,13 @@ pop.pyramidAll <- function(pop.pred, year=NULL,
 
 "pop.trajectories.pyramid" <- function(pop.object, ...) UseMethod("pop.trajectories.pyramid")
 
-pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), 
-					nr.traj=NULL, proportion=FALSE, age=1:21, plot=TRUE, pop.max=NULL, ...) {
+pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'), 
+														pi=c(80, 95), nr.traj=NULL, proportion=FALSE, 
+														age=1:21, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, nr.traj=nr.traj, proportion=proportion, 
+	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, nr.traj=nr.traj, proportion=proportion, 
 							age=age, sort.pi=FALSE, pop.max=pop.max)
 	if(plot) pop.trajectories.pyramid(data, ...)
 	invisible(data)
@@ -1207,12 +1219,16 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		else lines(this.x, this.data["median",], type="l", col=col)
 		for(ipi in 1:length(pi)) {
 			qs <- c((1-pi[ipi]/100)/2, (1+pi[ipi]/100)/2)
+			if(! as.character(qs[1]) %in% rownames(this.data)) {
+				warning("PI ", pi, " not availalble in cohort.data.")
+				next
+			}
 			lines(this.x, this.data[as.character(qs[1]),], col=col, lty=1+ipi)
 			lines(this.x, this.data[as.character(qs[2]),], col=col, lty=1+ipi)
 		}
 		grid()
 		if(show.legend && ann)
-			legend('topleft', legend=legend, lty=lty, bty='n', col=cols)
+			legend('bottomleft', legend=legend, lty=lty, bty='n', col=cols)
 	}
 	if(nplots > 1) par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
 }
