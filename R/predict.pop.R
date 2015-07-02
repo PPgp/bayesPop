@@ -24,6 +24,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
 	if(!is.null(my.locations.file)) {
+		UNlocations <- NULL # needed for R check not to complain
 		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
 		if(verbose) cat('Loading ', my.locations.file, '.\n')
 	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
