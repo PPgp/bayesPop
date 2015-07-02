@@ -104,6 +104,7 @@ test.expressions.with.VE <- function(map=TRUE) {
 	stopifnot(size > 0)
 	pop.trajectories.table(pred, expression='D528 / (DNLD + D218)')
 	pop.trajectories.table(pred, expression='F528_F[4]/(R528_F[4]/100)') # gives TFR
+	pop.trajectories.table(pred, expression=mac.expression("ECU")) # MAC
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)

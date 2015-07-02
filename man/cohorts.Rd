@@ -13,8 +13,8 @@ cohorts(pop.pred, country = NULL, expression = NULL, pi = c(80, 95))
 	
 pop.cohorts.plot(pop.pred, country = NULL, expression = NULL, cohorts = NULL, 
     cohort.data = NULL, pi = c(80, 95), dev.ncol = 5, show.legend = TRUE, 
-    ann = par("ann"), add = FALSE, xlab = "", ylab = "", main = NULL, 
-    xlim = NULL, ylim = NULL, col = "red", \dots)
+    legend.pos = "bottomleft", ann = par("ann"), add = FALSE, xlab = "", ylab = "",  
+    main = NULL, xlim = NULL, ylim = NULL, col = "red", \dots)
 }
 
 \arguments{
@@ -26,6 +26,7 @@ pop.cohorts.plot(pop.pred, country = NULL, expression = NULL, cohorts = NULL,
   \item{cohort.data}{List with the cohort data obtained via the \code{cohorts} function. If it is not given, function \code{cohorts} is called internally, but by passing this argument the processing is faster.}
   \item{dev.ncol}{Number of column for the graphics device.}
   \item{show.legend}{Logical controlling whether the legend should be drawn.}
+  \item{legend.pos}{Position of the legend passed to the \code{\link{legend}} function.}
   \item{ann, xlab, ylab, main, xlim, ylim, col, \dots}{Graphical parameters passed to the \code{plot} function.}
   \item{add}{Logical specifying if the plot should be added to an existing graphics.}
 }

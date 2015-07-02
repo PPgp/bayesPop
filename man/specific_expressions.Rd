@@ -11,11 +11,11 @@ mac.expression(country)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{country}{Country code as defined for \code{\link[expressions]{pop.expressions}}.
+  \item{country}{Country code as defined for \code{\link[=pop.expressions]{expressions}}.
 }
 }
 \details{
-\code{mac.expression} generates an expression for the mean age of childbearing of the given country.
+\code{mac.expression} generates an expression for the mean age of childbearing of the given country. Note that \code{\link{pop.predict}} has to be run with \code{keep.vital.events=TRUE} for this to work.
 }
 \value{
 \code{mac.expression} returns a character string corresponding to the formula
@@ -27,11 +27,15 @@ where \eqn{R_c(x)} denotes the country-specific percent age-specific fertility f
 \code{\link{pop.expressions}}
 }
 \examples{
-    sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
-    pred <- get.pop.prediction(sim.dir)
-    # plot the mean age of childbearing 
-    pop.trajectories.plot(pred, expression=mac.expression("NL"))
-}
+# Run pop.predict with storing vital events
+\dontrun{
+sim.dir <- tempfile()
+pred <- pop.predict(countries=c("Germany", "France"), nr.traj=3, 
+           keep.vital.events=TRUE, output.dir=sim.dir)
+# plot the mean age of childbearing 
+pop.trajectories.plot(pred, expression=mac.expression("FR"))
+unlink(sim.dir, recursive=TRUE)}}
+
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ manip }

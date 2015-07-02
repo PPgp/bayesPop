@@ -28,24 +28,25 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
     
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     pyr1.par = list(border='black', col=NA, density=NULL, height=0.9),
-    pyr2.par = list(border='plum1', col='plum1', density=20, height=0.2), 
+    pyr2.par = list(density = -1, height = 0.3), 
     col.pi = NULL, ann = par('ann'), axes = TRUE, grid = TRUE, 
     cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
 pop.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.pyramid'),
-    output.type = "png", verbose = FALSE, \dots)
+    output.type = "png", one.file = FALSE, verbose = FALSE, \dots)
 	
-\method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, pi = c(80, 95), 
-    nr.traj = NULL, proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
+\method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
+    indicator = c("P", "B", "D"), pi = c(80, 95), nr.traj = NULL, 
+    proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    col = rainbow, col.traj = 'grey', lwd = 2, ann = par('ann'), axes = TRUE, 
+    col = rainbow, col.traj = '#00000020', lwd = 2, ann = par('ann'), axes = TRUE, 
     grid = TRUE, cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), 'pop.traj.pyramid'),
-    output.type = "png", verbose = FALSE, \dots)
+    output.type = "png", one.file = FALSE, verbose = FALSE, \dots)
 	
 \method{plot}{bayesPop.pyramid}(x, \dots)
 
@@ -76,7 +77,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{plot}{If \code{FALSE}, nothing is plotted. It can be used to retrieve the pyramid object without drawing it.}
   \item{main}{Titel of the plot. By default it is the country name and projection year if known.}
   \item{show.legend}{Logical controlling if the plot legend is drawn.}
-  \item{pyr1.par, pyr2.par}{List of graphical parameters (color, border, density and height) for drawing the pyramid rectangles, for the first and second pyramid, respectively (see Details). The \code{height} component should be a number between 0 (corresponds to a line) and 1 (for non-overelapping rectangles). If \code{density} is \code{NULL}, the rectangles are transparent.}
+  \item{pyr1.par, pyr2.par}{List of graphical parameters (color, border, density and height) for drawing the pyramid rectangles, for the first and second pyramid, respectively (see Details). The \code{height} component should be a number between 0 (corresponds to a line) and 1 (for non-overelapping rectangles). If \code{density} is \code{NULL}, the rectangles are transparent, see the argument \code{density} in \code{\link{rect}}.}
   \item{col.pi}{Vector of colors for drawing the probability boxes. If it is given, it must be of the same length as \code{pi}.}
    \item{ann}{Logical controlling if any annotation (main and legend) is plotted.}
    \item{axes}{Logical controlling if axes are plotted.}
@@ -84,6 +85,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
    \item{cex.main, cex.sub, cex, cex.axis}{Magnification to be used for the title, secondary titles on the right and left panels, legend and axes, respectively.}
   \item{output.dir}{Directory into which resulting graphs are stored.}
   \item{output.type}{Type of the resulting files. It can be \dQuote{png}, \dQuote{pdf}, \dQuote{jpeg}, \dQuote{bmp}, \dQuote{tiff}, or \dQuote{postscript}.}
+  \item{one.file}{Logical. If \code{TRUE} the output is put into one single file, by default a PDF.}
   \item{verbose}{Logical switching log messages on and off.}
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{col}{Colors generating function. It is called with an argument giving the number of pyramids to be plotted. Each color is then used for one pyramid, including its confidence intervals.}
