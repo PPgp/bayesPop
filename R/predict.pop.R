@@ -1387,9 +1387,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 		obs.period <- get.pop.observed.periods(pop.pred, end.time.only=end.time.only)
 		nr.obs <- length(obs.period)-1
 		obs.period <- obs.period[-(nr.obs+1)] # remove the last one because the same as the first projection period
-		for(iyear in 1:nr.obs) header[[paste('year', iyear, sep='')]] <- obs.period[iyear]
+		for(iyear in 1:nr.obs) header[[paste0('year', iyear)]] <- obs.period[iyear]
 	}
-	for(iyear in 1:nr.proj) header[[paste('year', iyear+nr.obs, sep='')]] <- pred.period[iyear]
+	for(iyear in 1:nr.proj) header[[paste0('year', iyear+nr.obs)]] <- pred.period[iyear]
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	if(include.observed) {
@@ -1420,7 +1420,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 }	
 	
 .write.pop <- function(pop.pred, output.dir, bysex=FALSE, byage=FALSE, vital.event=NULL, file.suffix='tpop', 
-							what.log='total population', digits=0, adjust=FALSE) {
+							what.log='total population', include.observed=FALSE, digits=0, adjust=FALSE, 
+							end.time.only=FALSE) {
 	cat('Creating summary file of ', what.log, ' ')
 	if(bysex) cat('by sex ')
 	if(byage) cat('by age ')
@@ -1430,11 +1431,18 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) header[['age']] <- 'age'
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
 	nr.var <- length(variant.names)
-	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=is.null(vital.event))
+	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=(is.null(vital.event) && end.time.only))
 	#if(!is.null(vital.event)) pred.period <- pred.period[2:length(pred.period)]
+	nr.obs <- 0
+	if(include.observed && is.null(vital.event)) {
+		obs.period <- get.pop.observed.periods(pop.pred, end.time.only=end.time.only)
+		nr.obs <- length(obs.period)-1
+		obs.period <- obs.period[-(nr.obs+1)] # remove the last one because the same as the first projection period
+		for(iyear in 1:nr.obs) header[[paste0('year', iyear)]] <- obs.period[iyear]
+	}
 	nr.proj <- length(pred.period)
 	for (i in 1:nr.proj) 
-		header[[paste('year', i, sep='')]] <- pred.period[i]
+		header[[paste0('year', i+nr.obs)]] <- pred.period[i]
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	sex.index <- c(TRUE, FALSE, FALSE)
@@ -1443,6 +1451,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) age.index <- !age.index
 	ages <- 1:length(pop.pred$ages)
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+	observed.data <- NULL
 	for (country in 1:nrow(pop.pred$countries)) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
 		for(sex in c('both', 'male', 'female')[sex.index]) {
@@ -1473,6 +1482,10 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages)[age], nr.var))
 				}
 				if(is.null(vital.event)) {
+					if(include.observed) {
+						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
+						
+					}
 					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, adjust=adjust)$quantiles
 					traj <- NULL
 					reload <- TRUE
@@ -1493,7 +1506,14 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
 											trajectories=traj, reload=reload)),
 					digits)
+				if(!is.null(observed.data)) {
+					# put it into the same shape as proj.result minus the last observed
+					observed.data <- round(rbind(observed.data, NULL), digits)
+					observed.data <- observed.data[rep(1, nrow(proj.result)), -ncol(observed.data)]
+					proj.result <- cbind(observed.data, proj.result)
+				}
 				colnames(proj.result) <- col.names
+				#stop('')
 				this.result <- cbind(this.result, proj.result)
 				result <- rbind(result, this.result)
 			}
