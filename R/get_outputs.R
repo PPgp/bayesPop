@@ -218,7 +218,7 @@ get.psr.denominator.startindex <- function() return(14)
 .get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE) {
 	quant <- pop.pred[[paste0('quantiles', what)]]
 	if(!adjust) return(quant)
-	return(adjust.quantiles(quant, what, env=pop.pred$adjust.env))
+	return(adjust.quantiles(quant, what, wpp.year=pop.pred$wpp.year, env=pop.pred$adjust.env))
 }
 
 .load.traj.file <- function(dir, country, e) {
