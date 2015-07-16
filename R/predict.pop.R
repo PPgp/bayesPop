@@ -1431,7 +1431,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) header[['age']] <- 'age'
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
 	nr.var <- length(variant.names)
-	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=(is.null(vital.event) && end.time.only))
+	if(missing(end.time.only)) end.time.only <- is.null(vital.event)
+	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.only)
 	#if(!is.null(vital.event)) pred.period <- pred.period[2:length(pred.period)]
 	nr.obs <- 0
 	if(include.observed && is.null(vital.event)) {
