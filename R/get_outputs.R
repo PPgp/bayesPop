@@ -250,7 +250,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	max.age <- dim(e$totpf)[1] # should be 27
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
-	if(sex == 'both' && age[1]=='all') {
+	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
 		hch <- e$totp.hch

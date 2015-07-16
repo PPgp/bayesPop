@@ -141,8 +141,17 @@ test.expressions.with.VE <- function(map=TRUE) {
 	
 	filename <- tempfile()
 	png(filename=filename)
+	pop.pyramid(pred, 218)
+	pop.pyramid(pred, 528, year=2052, proportion=TRUE)
 	pop.pyramid(pred, 218, indicator='D')
-	pop.pyramid(pred, 218, indicator='B')
+	pop.pyramid(pred, 218, indicator='B', year=2100)
+	pop.pyramid(pred, 218, indicator='D', proportion=TRUE, year=2100)
+	pop.trajectories.pyramid(pred, 218, proportion=TRUE)
+	pop.trajectories.pyramid(pred, 528, year=2052, proportion=TRUE)
+	pop.trajectories.pyramid(pred, 218, indicator='B')
+	pop.trajectories.pyramid(pred, 218, indicator='D', year=2100)
+	pop.trajectories.pyramid(pred, 218, indicator='B', year=2100)
+	pop.trajectories.pyramid(pred, 218, indicator='B', proportion=TRUE, year=2100)
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
