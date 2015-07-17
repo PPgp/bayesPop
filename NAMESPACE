@@ -1,6 +1,6 @@
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2012, plyr
+    bayesTFR, bayesLife, parallel, abind, wpp2015, plyr
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
