@@ -1435,7 +1435,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.only)
 	#if(!is.null(vital.event)) pred.period <- pred.period[2:length(pred.period)]
 	nr.obs <- 0
-	if(include.observed && is.null(vital.event)) {
+	if(include.observed) {
 		obs.period <- get.pop.observed.periods(pop.pred, end.time.only=end.time.only)
 		nr.obs <- length(obs.period)-1
 		obs.period <- obs.period[-(nr.obs+1)] # remove the last one because the same as the first projection period
@@ -1458,6 +1458,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 		for(sex in c('both', 'male', 'female')[sex.index]) {
 			if(!is.null(vital.event)) {
 			 	sum.over.ages <- age.index[1]
+			 	if(include.observed) 
+			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
+										sex=sex, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
 										sex=sex, age='all', sum.over.ages=sum.over.ages)
 				if(is.null(traj.and.quantiles$trajectories)) {
@@ -1483,21 +1486,28 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages)[age], nr.var))
 				}
 				if(is.null(vital.event)) {
-					if(include.observed) {
+					if(include.observed) 
 						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
-						
-					}
 					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, adjust=adjust)$quantiles
 					traj <- NULL
 					reload <- TRUE
 				} else { # vital event
 					quant <- traj.and.quantiles$quantiles
 					traj <- traj.and.quantiles$trajectories
+					if(include.observed)
+						observed.data <- observed$trajectories[,,1]
 					if(!sum.over.ages) {
 						quant <- quant[age-subtract.from.age,,]
 						traj <- traj[age-subtract.from.age,,]
+						if(include.observed) {
+							if (age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
+								observed.data <- rep(0, ncol(observed.data))
+							else
+								observed.data <- observed.data[age-subtract.from.age,]
+						}
 					}
 					reload <- FALSE
+					#stop('')
 				}
 				proj.result <- round(rbind(
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 

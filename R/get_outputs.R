@@ -625,10 +625,15 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			if(has.hch) hch <- alltraj[[paste(sex,'hch', sep='.')]][age.idx,,,drop=FALSE]
 		}
 	}
-	if(is.observed && dim(traj)[[2]] < nperiods)
-		traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
+	if(is.observed) {
+		if(length(dim(traj)) < 3) # age dimension is missing
+			traj <- abind(traj, NULL, along=0)
+		 if(dim(traj)[[2]] < nperiods) {		
+			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
 						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
 						traj, along=2)
+		}
+	}
 	quant <- NULL
 	if(!is.observed) {
 		if(sum.over.ages) { # quantiles are 2-d arrays

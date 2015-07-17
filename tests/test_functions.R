@@ -71,13 +71,13 @@ test.expressions <- function() {
 	stopifnot(size > 0)
 	pop.trajectories.table(pred, expression='P242 / (P528 + P218 + P450 + P242 + P458)')
 	
-	write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=sim.dir)
+	write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=sim.dir, include.observed=TRUE)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(25,22)))
+	stopifnot(all(dim(t) == c(25,34)))
 	
-	write.pop.projection.summary(pred, expression="GXXX[1:10]", output.dir=sim.dir) # migration
+	write.pop.projection.summary(pred, expression="GXXX[1:10]", output.dir=sim.dir, include.observed=TRUE) # migration
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(25,22)))
+	stopifnot(all(dim(t) == c(25,34)))
 	
 	aggr <- pop.aggregate(pred, 900)
 	pop.trajectories.table(pred, expression='P528_M / P900')
@@ -162,6 +162,10 @@ test.expressions.with.VE <- function(map=TRUE) {
 	stopifnot(all(dim(t) == c(10,22)))
 	t <- read.table(file.path(sim.dir, 'projection_summary_asfrage.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(70,23)))
+	
+	write.pop.projection.summary(pred, output.dir=sim.dir, include.observed=TRUE)
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpop.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t) == c(10,34)))
 	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
