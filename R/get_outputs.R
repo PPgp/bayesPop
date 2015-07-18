@@ -153,7 +153,7 @@ print.summary.bayesPop.prediction <- function(x, digits = 5, ...) {
 	if(!is.null(x$country.name)) {
 		cat('\n\nCountry:', x$country.name, '\n')
 		cat('\nProjected Population')
-		if (x$sex != 'all') cat(' for', x$sex)
+		if (x$sex != 'both') cat(' for', x$sex)
 		cat(':\n')
 		print(x$projections, digits=digits, ...)
 	}
