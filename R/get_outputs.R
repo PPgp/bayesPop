@@ -153,7 +153,7 @@ print.summary.bayesPop.prediction <- function(x, digits = 5, ...) {
 	if(!is.null(x$country.name)) {
 		cat('\n\nCountry:', x$country.name, '\n')
 		cat('\nProjected Population')
-		if (x$sex != 'all') cat(' for', x$sex)
+		if (x$sex != 'both') cat(' for', x$sex)
 		cat(':\n')
 		print(x$projections, digits=digits, ...)
 	}
@@ -250,7 +250,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	max.age <- dim(e$totpf)[1] # should be 27
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
-	if(sex == 'both' && age[1]=='all') {
+	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
 		hch <- e$totp.hch
@@ -625,10 +625,15 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			if(has.hch) hch <- alltraj[[paste(sex,'hch', sep='.')]][age.idx,,,drop=FALSE]
 		}
 	}
-	if(is.observed && dim(traj)[[2]] < nperiods)
-		traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
+	if(is.observed) {
+		if(length(dim(traj)) < 3) # age dimension is missing
+			traj <- abind(traj, NULL, along=0)
+		 if(dim(traj)[[2]] < nperiods) {		
+			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
 						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
 						traj, along=2)
+		}
+	}
 	quant <- NULL
 	if(!is.observed) {
 		if(sum.over.ages) { # quantiles are 2-d arrays

@@ -24,6 +24,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
 	if(!is.null(my.locations.file)) {
+		UNlocations <- NULL # needed for R check not to complain
 		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
 		if(verbose) cat('Loading ', my.locations.file, '.\n')
 	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
@@ -1386,9 +1387,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 		obs.period <- get.pop.observed.periods(pop.pred, end.time.only=end.time.only)
 		nr.obs <- length(obs.period)-1
 		obs.period <- obs.period[-(nr.obs+1)] # remove the last one because the same as the first projection period
-		for(iyear in 1:nr.obs) header[[paste('year', iyear, sep='')]] <- obs.period[iyear]
+		for(iyear in 1:nr.obs) header[[paste0('year', iyear)]] <- obs.period[iyear]
 	}
-	for(iyear in 1:nr.proj) header[[paste('year', iyear+nr.obs, sep='')]] <- pred.period[iyear]
+	for(iyear in 1:nr.proj) header[[paste0('year', iyear+nr.obs)]] <- pred.period[iyear]
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	if(include.observed) {
@@ -1419,7 +1420,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 }	
 	
 .write.pop <- function(pop.pred, output.dir, bysex=FALSE, byage=FALSE, vital.event=NULL, file.suffix='tpop', 
-							what.log='total population', digits=0, adjust=FALSE) {
+							what.log='total population', include.observed=FALSE, digits=0, adjust=FALSE, 
+							end.time.only=FALSE) {
 	cat('Creating summary file of ', what.log, ' ')
 	if(bysex) cat('by sex ')
 	if(byage) cat('by age ')
@@ -1429,11 +1431,19 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) header[['age']] <- 'age'
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
 	nr.var <- length(variant.names)
-	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=is.null(vital.event))
+	if(missing(end.time.only)) end.time.only <- is.null(vital.event)
+	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.only)
 	#if(!is.null(vital.event)) pred.period <- pred.period[2:length(pred.period)]
+	nr.obs <- 0
+	if(include.observed) {
+		obs.period <- get.pop.observed.periods(pop.pred, end.time.only=end.time.only)
+		nr.obs <- length(obs.period)-1
+		obs.period <- obs.period[-(nr.obs+1)] # remove the last one because the same as the first projection period
+		for(iyear in 1:nr.obs) header[[paste0('year', iyear)]] <- obs.period[iyear]
+	}
 	nr.proj <- length(pred.period)
 	for (i in 1:nr.proj) 
-		header[[paste('year', i, sep='')]] <- pred.period[i]
+		header[[paste0('year', i+nr.obs)]] <- pred.period[i]
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	sex.index <- c(TRUE, FALSE, FALSE)
@@ -1442,11 +1452,15 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) age.index <- !age.index
 	ages <- 1:length(pop.pred$ages)
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+	observed.data <- NULL
 	for (country in 1:nrow(pop.pred$countries)) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
 		for(sex in c('both', 'male', 'female')[sex.index]) {
 			if(!is.null(vital.event)) {
 			 	sum.over.ages <- age.index[1]
+			 	if(include.observed) 
+			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
+										sex=sex, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
 										sex=sex, age='all', sum.over.ages=sum.over.ages)
 				if(is.null(traj.and.quantiles$trajectories)) {
@@ -1472,17 +1486,28 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages)[age], nr.var))
 				}
 				if(is.null(vital.event)) {
+					if(include.observed) 
+						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
 					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, adjust=adjust)$quantiles
 					traj <- NULL
 					reload <- TRUE
 				} else { # vital event
 					quant <- traj.and.quantiles$quantiles
 					traj <- traj.and.quantiles$trajectories
+					if(include.observed)
+						observed.data <- observed$trajectories[,,1]
 					if(!sum.over.ages) {
 						quant <- quant[age-subtract.from.age,,]
 						traj <- traj[age-subtract.from.age,,]
+						if(include.observed) {
+							if (age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
+								observed.data <- rep(0, ncol(observed.data))
+							else
+								observed.data <- observed.data[age-subtract.from.age,]
+						}
 					}
 					reload <- FALSE
+					#stop('')
 				}
 				proj.result <- round(rbind(
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
@@ -1492,7 +1517,14 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
 											trajectories=traj, reload=reload)),
 					digits)
+				if(!is.null(observed.data)) {
+					# put it into the same shape as proj.result minus the last observed
+					observed.data <- round(rbind(observed.data, NULL), digits)
+					observed.data <- observed.data[rep(1, nrow(proj.result)), -ncol(observed.data)]
+					proj.result <- cbind(observed.data, proj.result)
+				}
 				colnames(proj.result) <- col.names
+				#stop('')
 				this.result <- cbind(this.result, proj.result)
 				result <- rbind(result, this.result)
 			}
