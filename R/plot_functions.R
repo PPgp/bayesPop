@@ -256,14 +256,14 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	rownames(pred.table) <- c(x1, x2)
 	pred.table[x1,1] <- pop.observed[-length(pop.observed)]
 	pred.table[x2,1] <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression))
+							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
 	#if(is.na(pred.table[x2[1],1])) pred.table[x2[1],1] <- pop.observed[length(pop.observed)]
 	
 	colnames(pred.table) <- c('median', rep(NA,ncol(pred.table)-1))
 	idx <- 2
 	for (i in 1:length(pi)) {
 		cqp <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression))
+							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
 		if (!is.null(cqp)) {
 			pred.table[x2,idx:(idx+1)] <- t(cqp)
 		} else{
@@ -278,7 +278,7 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	colnames(pred.table)[2:ncol(pred.table)] <- cn[order(cn)]
 	if(half.child.variant && is.null(expression)) {
 		# load the half child variants from trajectory file
-		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0)
+		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0, adjust=adjust)
 		if(!is.null(traj$half.child)) {
 			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), traj$half.child))
 			colnames(pred.table)[(ncol(pred.table)-1):ncol(pred.table)] <- c('-0.5child', '+0.5child')
