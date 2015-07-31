@@ -1,5 +1,20 @@
-5.4-0
+5.4-0 (7/17/2014)
 -----
+A few fixes in adjustments.
+
+Added function for creating an expression for the mean age of child-bearing, "mac.expression(country)".
+
+pop.pyramidAll got a logical argument "one.file" for plotting everyhting into one file.
+
+pop.trajectories.pyramid accepts now the "indicator" argument (analogous to pop.pyramid)
+to plot deaths and births.  
+
+Plotted trajectories are shown in a transparent color. Default colors of pop.pyramid 
+changed (thanks to Tim Riffe).
+
+Argument my.locations.file added to pop.predict to allow projections for other 
+than the UN countries/regions (thanks to Filippo Temporin).
+
 Aggregations for ASFR and PASFR implemented.
 
 Added PASFR to write.pop.projection.summary.
