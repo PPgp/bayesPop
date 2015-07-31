@@ -1,10 +1,11 @@
 \name{pop.expressions}
 \alias{pop.expressions}
 \title{Expressions as used in Population Plot Functions}
-\description{Documentations of expressions supported by functions {\code{\link{pop.trajectories.plot}}}, {\code{\link{pop.trajectories.plotAll}}}, {\code{\link{pop.trajectories.table}}}, {\code{\link{pop.byage.plot}}}, {\code{\link{pop.byage.table}}}, {\code{\link{pop.map}}}, {\code{\link{pop.map.gvis}}}, {\code{\link{write.pop.projection.summary}}}.
+\description{
+	Documentation of expressions supported by functions \code{\link{pop.trajectories.plot}}, \code{\link{pop.trajectories.plotAll}}, \code{\link{pop.trajectories.table}}, \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, \code{\link{pop.cohorts.plot}}, \code{\link{pop.map}}, \code{\link{pop.map.gvis}}, \code{\link{write.pop.projection.summary}}.
 }
 \details{
-The functions above accept an argument \code{expression} which should define a population measure, i.e. a quantity that can be computed from population projections, observed population data or vital events. Such expression is a collection of \emph{basic components} connected via usual arithmetic operators, such as \code{+},  \code{-}, \code{*}, \code{/}, \code{^}, \code{\%\%}, \code{\%/\%}, and combined using parentheses. In addition, standard R functions or predefined functions (see below) can be used within expressions.
+The functions above accept an argument \code{expression} which should define a population measure, i.e. a quantity that can be computed from population projections, observed population data or vital events. Such an expression is a collection of \emph{basic components} connected via usual arithmetic operators, such as \code{+},  \code{-}, \code{*}, \code{/}, \code{^}, \code{\%\%}, \code{\%/\%}, and combined using parentheses. In addition, standard R functions or predefined functions (see below) can be used within expressions.
 
 A \bold{basic component} is a character string constituted of four parts, two of which are optional. They must be in the following order:
 \enumerate{
@@ -42,8 +43,7 @@ When the expression is evaluated on a prediction object, each basic component is
 \item Trajectory dimension: Corresponds to the number of trajectories in the prediction object, or one if the component is evaluated on observed data.
 }
 
-Depending on the context from which the expression is called, the trajectory dimension of the result of the expression can be reduced by computing given quantiles, and if only one country is evaluated, the first dimension is removed. In addition, with an exception of functions {\code{\link{pop.byage.plot}}}, {\code{\link{pop.byage.table}}}, the expression should be constructed in a way that the age dimension is eliminated, for example by using the \code{apply} function or one of the pre-defined functions described below. When using within {\code{\link{pop.byage.plot}}} or {\code{\link{pop.byage.table}}}, the expression MUST include curly braces.
-
+Depending on the context from which the expression is called, the trajectory dimension of the result of the expression can be reduced by computing given quantiles, and if only one country is evaluated, the first dimension is removed. In addition, with an exception of functions \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}},  \code{\link{cohorts}}, and \code{\link{pop.cohorts.plot}}, the expression should be constructed in a way that the age dimension is eliminated. This can be done for example by using brackets to define age, by using the \code{apply} function or one of the pre-defined functions described below. When using within \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, or \code{\link{pop.cohorts.plot}}, the expression MUST include curly braces.
 } 
 
 \section{Pre-defined functions}{
@@ -78,12 +78,13 @@ Depending on the context from which the expression is called, the trajectory dim
 \item \code{age.index05(end)} \cr
 	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
 }
+There is also a help function available that generates an expression for the mean age of childbearing, see \code{\link{mac.expression}}.
 }
 
 \note{The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.}
 
 \author{Hana Sevcikova, Adrian Raftery}
-\seealso{\code{\link{get.pop}}, \code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, {\code{\link{write.pop.projection.summary}}}.}
+\seealso{\code{\link{mac.expression}}, \code{\link{get.pop}}, \code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, \code{\link{write.pop.projection.summary}}.}
 \examples{
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
@@ -97,6 +98,7 @@ pop.trajectories.plotAll(pred, nr.traj=50,
 # mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
+# for the mean age of childbearing, see ?mac.expression
 
 # migration per capita by age
 pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)

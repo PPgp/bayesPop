@@ -71,13 +71,13 @@ test.expressions <- function() {
 	stopifnot(size > 0)
 	pop.trajectories.table(pred, expression='P242 / (P528 + P218 + P450 + P242 + P458)')
 	
-	write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=sim.dir)
+	write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=sim.dir, include.observed=TRUE)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(25,22)))
+	stopifnot(all(dim(t) == c(25,34)))
 	
-	write.pop.projection.summary(pred, expression="GXXX[1:10]", output.dir=sim.dir) # migration
+	write.pop.projection.summary(pred, expression="GXXX[1:10]", output.dir=sim.dir, include.observed=TRUE) # migration
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(25,22)))
+	stopifnot(all(dim(t) == c(25,34)))
 	
 	aggr <- pop.aggregate(pred, 900)
 	pop.trajectories.table(pred, expression='P528_M / P900')
@@ -104,6 +104,7 @@ test.expressions.with.VE <- function(map=TRUE) {
 	stopifnot(size > 0)
 	pop.trajectories.table(pred, expression='D528 / (DNLD + D218)')
 	pop.trajectories.table(pred, expression='F528_F[4]/(R528_F[4]/100)') # gives TFR
+	pop.trajectories.table(pred, expression=mac.expression("ECU")) # MAC
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
@@ -140,8 +141,17 @@ test.expressions.with.VE <- function(map=TRUE) {
 	
 	filename <- tempfile()
 	png(filename=filename)
+	pop.pyramid(pred, 218)
+	pop.pyramid(pred, 528, year=2052, proportion=TRUE)
 	pop.pyramid(pred, 218, indicator='D')
-	pop.pyramid(pred, 218, indicator='B')
+	pop.pyramid(pred, 218, indicator='B', year=2100)
+	pop.pyramid(pred, 218, indicator='D', proportion=TRUE, year=2100)
+	pop.trajectories.pyramid(pred, 218, proportion=TRUE)
+	pop.trajectories.pyramid(pred, 528, year=2052, proportion=TRUE)
+	pop.trajectories.pyramid(pred, 218, indicator='B')
+	pop.trajectories.pyramid(pred, 218, indicator='D', year=2100)
+	pop.trajectories.pyramid(pred, 218, indicator='B', year=2100)
+	pop.trajectories.pyramid(pred, 218, indicator='B', proportion=TRUE, year=2100)
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
@@ -152,6 +162,10 @@ test.expressions.with.VE <- function(map=TRUE) {
 	stopifnot(all(dim(t) == c(10,22)))
 	t <- read.table(file.path(sim.dir, 'projection_summary_asfrage.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(70,23)))
+	
+	write.pop.projection.summary(pred, output.dir=sim.dir, include.observed=TRUE)
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpop.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t) == c(10,34)))
 	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)

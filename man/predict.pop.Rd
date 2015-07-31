@@ -18,14 +18,14 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2010,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
         migMtraj = NULL, migFtraj = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, fixed.mx = FALSE,
-    replace.output = FALSE, verbose = TRUE)
+    my.locations.file = NULL, replace.output = FALSE, verbose = TRUE)
 }
 \arguments{
 	\item{end.year}{End year of the projection.}
   	\item{start.year}{First year of the historical data.}
   	\item{present.year}{Year for which initial population data is to be used.}
   	\item{wpp.year}{Year for which WPP data is used. The functions loads a package called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} and uses the various datasets as default if the corresponding \code{inputs} element is missing (see below).}
-  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2012]{UNlocations}} dataset.}
+  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2012]{UNlocations}} dataset (or in the dataset loaded from \code{my.locations.file} if used).}
   	\item{output.dir}{Output directory of the projection. If there is an existing projection in \code{output.dir} and \code{replace.output=TRUE}, everything in the directory will be deleted.}
   	\item{inputs}{A list of file names where input data is stored. It contains the following elements (Unless otherwise noted, these are tab delimited ASCII files; Names of default datasets from the corresponding \pkg{wpp} package which are used if the corresponding element is \code{NULL} are shown in brackets):
   		\describe{
@@ -51,6 +51,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2010,
   		If all of those components contain less trajectories than \code{nr.traj}, the value is adjusted to the maximum of available trajectories of the components. For those that have less trajectories than the adjusted number, the available trajectories are re-sampled, so that all components have the same number of trajectories.}
   	\item{keep.vital.events}{Logical. If \code{TRUE} age- and sex-specific vital events of births and deaths as well as other objects are stored in the prediction object, see Details.}
   	\item{fixed.mx}{Logical. If \code{TRUE}, it is assumed the dataset of death rates (mxM and mxF) include data for projection years and they are then used instead of the life expectancy.}
+  	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2012]{UNlocations}} dataset. It must have the same structure.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
   	\item{verbose}{Logical controlling the amount of output messages.} 
 }
@@ -88,7 +89,8 @@ A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian 
 
 P. Gerland, A. E. Raftery, H. Sevcikova, N. Li, D. Gu, T. Spoorenberg, L. Alkema, B. K. Fosdick, J. L. Chunn, N. Lalic, G. Bay, T. Buettner, G. K. Heilig,  J. Wilmoth (2014). World Population Stabilization Unlikely This Century. Science 346:234-237.
 
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. Working Paper 150. Center for Statistics and the Social Sciences, University of Washington. \url{http://www.csss.washington.edu/Papers/2015/wp150.pdf} 
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{http://arxiv.org/abs/1503.05215}
+%Working Paper 150. Center for Statistics and the Social Sciences, University of Washington. \url{http://www.csss.washington.edu/Papers/2015/wp150.pdf} 
 }
 \author{
 Hana Sevcikova, based on code of Nan Li and helpful comments from Patrick Gerland

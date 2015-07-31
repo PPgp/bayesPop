@@ -17,7 +17,7 @@ pop.trajectories.plot(pop.pred, country = NULL, expression = NULL, pi = c(80, 95
     sex = c("both", "male", "female"), age = "all", sum.over.ages = FALSE, 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory = FALSE,
     main = NULL, dev.ncol = 5, lwd = c(2, 2, 2, 2, 1), 
-    col = c('black', 'red', 'red', 'blue', 'gray'), show.legend = TRUE, 
+    col = c('black', 'red', 'red', 'blue', '#00000020'), show.legend = TRUE, 
     ann = par('ann'), \dots)
     
 pop.trajectories.plotAll(pop.pred, 
@@ -31,7 +31,7 @@ pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL,
     pi = c(80, 95), sex = c('both', 'male', 'female'), 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory=FALSE,
     xlim = NULL, ylim = NULL, xlab = '', ylab = 'Population projection', 
-    main = NULL, lwd = c(2,2,2,1), col = c('red', 'red', 'blue', 'gray'),
+    main = NULL, lwd = c(2,2,2,1), col = c('red', 'red', 'blue', '#00000020'),
     show.legend = TRUE, add = FALSE, ann = par('ann'), type = "l", pch = NA, 
     pt.cex = 1, \dots)
     

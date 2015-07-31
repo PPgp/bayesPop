@@ -153,13 +153,14 @@ print.summary.bayesPop.prediction <- function(x, digits = 5, ...) {
 	if(!is.null(x$country.name)) {
 		cat('\n\nCountry:', x$country.name, '\n')
 		cat('\nProjected Population')
-		if (x$sex != 'all') cat(' for', x$sex)
+		if (x$sex != 'both') cat(' for', x$sex)
 		cat(':\n')
 		print(x$projections, digits=digits, ...)
 	}
 }
 
 get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', data=NULL) {
+	# Results are not sorted in the same order as values in "country". The caller should take care of it. 
 	sex <- match.arg(sex)
 	if(is.null(data)) data <- pop.pred$inputs$pop.matrix
 	if(sex == 'both') {
@@ -191,19 +192,22 @@ get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 }
 
 get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE) {
+	# the function assumes that population data are sorted be age
 	data.age <- get.pop.observed.with.age(pop.pred, countries, sex, age)
 	data <- data.age$data
 	age.idx <- data.age$age.idx
 	ncountries <- length(countries)
 	max.age <- data.age$max.age
-	cindex <- seq(1, length=ncountries, by=max.age)
+	cindex <- lapply(countries, function(x) grep(paste0("^", x, "_"), rownames(data), value=FALSE)[1:max.age])
+	names(cindex) <- countries
 	if(age[1]=='psr')  # potential support ratio
-		return(list(data=t(sapply(cindex, function(start.idx) 
-				colSums(data[start.idx:(start.idx+max.age),][get.psr.nominator.index(),])/colSums(data[start.idx:(start.idx+max.age),][get.psr.denominator.startindex():max.age,]))), age.idx=age.idx))
-	sum.over.countries <- function(start.idx) return(colSums(data[start.idx:(start.idx+max.age),][age.idx,]))
+		return(list(data=t(sapply(cindex, function(country.idx) 
+				colSums(data[country.idx,][get.psr.nominator.index(),])/colSums(data[country.idx,][get.psr.denominator.startindex():max.age,]))), age.idx=age.idx))
+	sum.over.countries <- function(country.idx) return(colSums(data[country.idx,][age.idx,]))
 	if(sum.over.ages) return(list(data=t(sapply(cindex, sum.over.countries)), age.idx=age.idx))
 	res <- array(NA, c(ncountries, length(age.idx), ncol(data)), dimnames=list(countries, age.idx, colnames(data)))
-	for(i in 1:length(age.idx)) res[,i,] <- as.matrix(data[seq(age.idx[i], length=ncountries, by=max.age),])
+	countries.char <- names(cindex)
+	for(i in 1:ncountries) res[i,,] <- as.matrix(data[cindex[[countries.char[i]]],])
 	return(list(data=res, age.idx=age.idx))
 }
 
@@ -214,7 +218,7 @@ get.psr.denominator.startindex <- function() return(14)
 .get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE) {
 	quant <- pop.pred[[paste0('quantiles', what)]]
 	if(!adjust) return(quant)
-	return(adjust.quantiles(quant, what, env=pop.pred$adjust.env))
+	return(adjust.quantiles(quant, what, wpp.year=pop.pred$wpp.year, env=pop.pred$adjust.env))
 }
 
 .load.traj.file <- function(dir, country, e) {
@@ -234,7 +238,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
  									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE) {
 	
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
-	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory
+	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country, e))
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
@@ -246,7 +250,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	max.age <- dim(e$totpf)[1] # should be 27
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
-	if(sex == 'both' && age[1]=='all') {
+	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
 		hch <- e$totp.hch
@@ -498,7 +502,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
 		if(itraj == 1) {
 			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
-			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]))
+			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
 			sr <- rep(0, dim(LLm)[1])
 		}
 		sx[,, itraj] <- apply(LLm, 2, 
@@ -621,10 +625,15 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			if(has.hch) hch <- alltraj[[paste(sex,'hch', sep='.')]][age.idx,,,drop=FALSE]
 		}
 	}
-	if(is.observed && dim(traj)[[2]] < nperiods)
-		traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
+	if(is.observed) {
+		if(length(dim(traj)) < 3) # age dimension is missing
+			traj <- abind(traj, NULL, along=0)
+		 if(dim(traj)[[2]] < nperiods) {		
+			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
 						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
 						traj, along=2)
+		}
+	}
 	quant <- NULL
 	if(!is.observed) {
 		if(sum.over.ages) { # quantiles are 2-d arrays
@@ -1145,6 +1154,11 @@ drop.age <- function(data) {
 
 age.index01 <- function(end) return (c(-1,0,2:end))
 age.index05 <- function(end) return (1:end)
+	
+mac.expression <- function(country) {
+	factors <- seq(17.5, by=5, length=7)
+	return(paste0("(", paste0(factors, "*R", country, "[", 4:10, "]", collapse=" + "), ")/100"))
+}
 	
 .solve.expression.for.country <- function(icountry, pop.pred, expression, adjust=FALSE) {
 	country <- pop.pred$countries$code[icountry]
