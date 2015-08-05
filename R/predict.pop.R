@@ -781,7 +781,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
-	if(startTi < 3) { # not enough observed data
+	if(startTi < 4) { # not enough observed data
 		yd <- years[1] - 5 * (3-startTi)
 	} else yd <- years[startTi-3]
 	tau.denominator2 <- t.r - yd
