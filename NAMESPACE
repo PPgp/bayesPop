@@ -1,7 +1,12 @@
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2012, plyr, truncnorm
+    bayesTFR, bayesLife, parallel, abind, wpp2015, plyr, fields, googleVis, rworldmap
 )
+
+importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
+importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
+importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", "sd")
+importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim")
 
 #exportPattern("^[[:alpha:]]+")
 useDynLib(bayesPop)
@@ -35,7 +40,8 @@ get.pop,
 pop.trajectories,
 get.trajectory.indices,
 cohorts,
-pop.cohorts.plot
+pop.cohorts.plot,
+mac.expression
 )
 
 # register S3 methods

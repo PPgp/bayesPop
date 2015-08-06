@@ -24,7 +24,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 								  sum.over.ages=FALSE,
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE, main=NULL,
-								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
+								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, ann=par('ann'), ...
 								  ) {
 	# lwd is a vector of 5 line widths for: 
@@ -40,7 +40,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 	if(length(col) < 5) {
 		lcol <- length(col)
 		col <- rep(col, 5)
-		col[(lcol+1):5] <- c('black', 'red', 'red', 'blue', 'gray')[(lcol+1):5]
+		col[(lcol+1):5] <- c('black', 'red', 'red', 'blue', '#00000020')[(lcol+1):5]
 	}
 
 	if(!is.null(country)) {
@@ -94,7 +94,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL, type='b', 
 								  xlab='', ylab='Population projection', main=NULL, 
-								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', 'gray'),
+								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, ann=par('ann'), add=FALSE, adjust=FALSE, adj.to.file=NULL, ...
 								  ) {
 
@@ -256,14 +256,14 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	rownames(pred.table) <- c(x1, x2)
 	pred.table[x1,1] <- pop.observed[-length(pop.observed)]
 	pred.table[x2,1] <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression))
+							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
 	#if(is.na(pred.table[x2[1],1])) pred.table[x2[1],1] <- pop.observed[length(pop.observed)]
 	
 	colnames(pred.table) <- c('median', rep(NA,ncol(pred.table)-1))
 	idx <- 2
 	for (i in 1:length(pi)) {
 		cqp <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression))
+							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
 		if (!is.null(cqp)) {
 			pred.table[x2,idx:(idx+1)] <- t(cqp)
 		} else{
@@ -278,7 +278,7 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	colnames(pred.table)[2:ncol(pred.table)] <- cn[order(cn)]
 	if(half.child.variant && is.null(expression)) {
 		# load the half child variants from trajectory file
-		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0)
+		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0, adjust=adjust)
 		if(!is.null(traj$half.child)) {
 			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), traj$half.child))
 			colnames(pred.table)[(ncol(pred.table)-1):ncol(pred.table)] <- c('-0.5child', '+0.5child')
@@ -381,7 +381,7 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  nr.traj=NULL, typical.trajectory=FALSE,
 								  xlim=NULL, ylim=NULL,  
 								  xlab='', ylab='Population projection', main=NULL, 
-								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', 'gray'),
+								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', '#00000020'),
 								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=NA, pt.cex=1, ...
 								  ) {
 
@@ -600,6 +600,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 	quantiles.table <- trajs <- list(male=NULL, female=NULL)
 	if(!any(draw.projection) || !any(draw.projection & (year.idx>1))) nquant <- 0
 	if(nquant > 1 && sort.pi) pi<-sort(pi, decreasing=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
+	ind.trajs <- NULL
 	if(indicator != 'P') { # other indicators
 		trajectoriesM <- get.popVE.trajectories.and.quantiles(pop.pred, country$code, 
 								event=get.expression.indicators()[[indicator]], sex='male', 
@@ -607,21 +608,24 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		trajectoriesF <- get.popVE.trajectories.and.quantiles(pop.pred, country$code, 
 								event=get.expression.indicators()[[indicator]], sex='female', 
 								sum.over.ages=FALSE, q=c(0.5, (1-pi/100)/2, 1-(1-pi/100)/2))
-		if(proportion) {
-			sumTrajs <- apply(trajectoriesM$trajectories + trajectoriesF$trajectories, 2, sum)
-			if(is.null(dim(sumTrajs))) sumTrajs <- abind(sumTrajs, along=2)
-			trajs <- list(male=trajectoriesM$trajectories, female=trajectoriesF$trajectories)
-			for (itraj in dim(trajectoriesM$trajectories)[3]) {
-				sTm <- matrix(rep(sumTrajs[,itraj], dim(trajectoriesM$trajectories)[1]), 
-									nrow=dim(trajectoriesM$trajectories)[1], byrow=TRUE)
-				trajs[['male']][,,itraj] <- trajs[['male']][,,itraj]/sTm
-				trajs[['female']][,,itraj] <- trajs[['female']][,,itraj]/sTm
-			}
-		} else
-			quantiles.table <- list(male=trajectoriesM$quantiles, female=trajectoriesF$quantiles)
 		ages.idx <- ages.idx[is.element(ages.idx, trajectoriesM$age.idx.raw)]
 		ages.idx.q <- trajectoriesM$age.idx[is.element(trajectoriesM$age.idx.raw, ages.idx)]
 		lages <- length(ages.idx)
+		ind.trajs <- list(male=trajectoriesM, female=trajectoriesF)
+		for(sex in c("male", "female")) # drop ages that are not needed
+			ind.trajs[[sex]]$trajectories <- ind.trajs[[sex]]$trajectories[ages.idx.q,,,drop=FALSE]
+		if(proportion) {
+			sumTrajs <- apply(trajectoriesM$trajectories + trajectoriesF$trajectories, c(2,3), sum)
+			if(is.null(dim(sumTrajs))) sumTrajs <- abind(sumTrajs, along=2)						
+			for (itraj in 1:dim(trajectoriesM$trajectories)[3]) {
+				sTm <- matrix(rep(sumTrajs[,itraj], lages), nrow=lages, byrow=TRUE)
+				ind.trajs[['male']]$trajectories[,,itraj] <- ind.trajs[['male']]$trajectories[,,itraj]/sTm
+				ind.trajs[['female']]$trajectories[,,itraj] <- ind.trajs[['female']]$trajectories[,,itraj]/sTm
+			}
+		} else 
+			quantiles.table <- list(male=trajectoriesM$quantiles, female=trajectoriesF$quantiles)
+
+		
 	} else # population indicator
 		quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
                        else list(male=pop.pred$quantilesMage, female=pop.pred$quantilesFage)
@@ -659,7 +663,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 					if(!is.null(quantiles.table[[sex]])) {
 						table <- drop(quantiles.table[[sex]][ages.idx.q[iage],,])
 						table <- array(table, dimt[c(2,3)], dimnames=c(dimn[2], dimn[3]))
-					} else this.trajs <- trajs[[sex]][ages.idx.q[iage],,]
+					} else this.trajs <- ind.trajs[[sex]]$trajectories[ages.idx.q[iage],,]
 					cidx <- NULL
 					ci.reload <- FALSE
 				}
@@ -698,11 +702,15 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 	trajs <- list()
 	male.trajectories <- female.trajectories <- NULL
 	if((is.null(nr.traj) || nr.traj > 0) && any(draw.projection & (year.idx > 1))) {
-		mtraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='male', 
+		mtraj <- ind.trajs$male
+		if(is.null(mtraj)) 
+			mtraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='male', 
 										age=ages.idx, nr.traj, proportion=proportion)
 		if(!is.null(dim(mtraj$trajectories))) {
-			ftraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='female', 
-										age=ages.idx, nr.traj, proportion=proportion)
+			ftraj <- ind.trajs$female
+			if(is.null(ftraj)) 
+				ftraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='female', 
+										age=ages.idx, nr.traj, proportion=proportion) 
 			for(yi in 1:lyears) {
 				if(!draw.projection[yi] || (year.idx[yi] == 1)) {
 					trajs[[yi]] <- list()
@@ -759,7 +767,7 @@ plot.bayesPop.pyramid <- function(x, ...) {
 
 pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE, 
 										pyr1.par=list(border='black', col=NA, density=NULL, height=0.9),
-										pyr2.par =list(border='plum1', col='plum1', density=20, height=0.2), 
+										pyr2.par =list(density=-1, height=0.3), 
 										col.pi = NULL, ann=par('ann'), axes=TRUE, grid=TRUE, 
 										cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
 	mgp <- par('mgp')
@@ -777,7 +785,8 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 	draw.median <- !is.null(pop.object$pyramid[[1]])
 	pyr1.par.default <- list(border='black', col=NA, density=NULL, height=0.9)
 	for(item in names(pyr1.par.default)) if(is.null(pyr1.par[[item]])) pyr1.par[[item]] <- pyr1.par.default[[item]]
-	pyr2.par.default <- list(border='violet', col='violet', density=20, height=0.3)
+	col.pyr2.default <- adjustcolor('#f46d43', alpha.f=0.3)
+	pyr2.par.default <- list(border=col.pyr2.default, col=col.pyr2.default, density=-1, height=0.3)
 	for(item in names(pyr2.par.default)) if(is.null(pyr2.par[[item]])) pyr2.par[[item]] <- pyr2.par.default[[item]]
 	pyr1.half.height <- pyr1.par[['height']]/2
 	pyr2.half.height <- pyr2.par[['height']]/2
@@ -787,6 +796,9 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 	quantiles <- pop.object$CI[[1]]
 	pyr1 <- pop.object$pyramid[[1]]
 	pyr2 <- if(draw.past) pop.object$pyramid[[2]] else NULL
+	#if(draw.median)
+	#	cohort.labels <- if("_cohorts_" %in% colnames(pyr1)) pyr1[,"_cohorts_"] else age.labels
+	#else cohort.labels <- if(!is.null(pyr2) && "_cohorts_" %in% colnames(pyr2)) pyr2[,"_cohorts_"] else age.labels
 	with(pop.object, {
 		maxx <- pop.max	
 		proportion <- !is.null(is.proportion) && is.proportion
@@ -809,8 +821,18 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 			segments(rep(-maxx-2*maxx/25, length(gridyat)), gridyat, rep(maxx+2*maxx/25, length(gridyat)), 
 						gridyat, col="lightgray", lty = "dotted")
 		}
-		if(nquant > 0) {
-			cols <- if(is.null(col.pi)) rainbow(max(nquant, 5), start=0.15)[1:nquant] else rep(col.pi, nquant)[1:nquant]
+		if(nquant > 0) {			
+			if(is.null(col.pi)) {
+				if(nquant < 10) {
+					# from RcolorBrewer: brewer.pal(9, "YlGnBu")
+					col.pi.default <- c("#FFFFD9", "#EDF8B1", "#C7E9B4", "#7FCDBB", "#41B6C4", "#1D91C0", "#225EA8", "#253494", "#081D58")
+					if(nquant < 5) # remove the extreme colors at both ends
+						col.pi.default <- col.pi.default[2:(length(col.pi.default)-3)]
+					cols <- if(nquant == 2) c("#C7E9B4", "#41B6C4") else col.pi.default[sort(seq(length(col.pi.default), 1, length=nquant))]
+				} else { # more than 9 PIs
+					cols <- rainbow(nquant, start=0.15)
+				}
+			} else col <- rep(col.pi, nquant)[1:nquant]
 			for(i in 1:nquant) {
 				rect(-quantiles[[i]]$high[,male], age.axis.at-pyr1q.half.height, 
 						-quantiles[[i]]$low[,male], age.axis.at+pyr1q.half.height, col=cols[i],
@@ -868,15 +890,19 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 }
 
 .do.plot.pyramid.all <- function(pop.pred, output.dir, func, year=NULL, output.type="png", 
-						file.prefix='pyr', plot.type='pyramid(s)', 
+						file.prefix='pyr', plot.type='pyramid(s)', one.file=FALSE,
 						main=NULL, verbose=FALSE, ...) {
 	if(!file.exists(output.dir)) dir.create(output.dir, recursive=TRUE)
 	all.countries <- pop.pred$countries[,'name']
-	postfix <- output.type
+	if(one.file && !(output.type %in% c("pdf", 'postscript'))) output.type <- "pdf"
+	postfix <- output.type	
 	if(output.type=='postscript') postfix <- 'ps'
 	if(is.null(year)) year <- list(pop.pred$present.year)
 	if(!is.list(year)) year <- list(year)
 	main.arg <- main
+	if(one.file) 
+		do.call(output.type, list(file.path(output.dir, 
+										paste(file.prefix, '.', postfix, sep=''))))
 	for (country in all.countries) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries)
 		if(verbose)
@@ -884,13 +910,13 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 		if(!is.null(main) && grepl('XXX', main, fixed=TRUE))
 			main.arg <- gsub('XXX', as.character(country.obj$name), main, fixed=TRUE)
 		for(y in year) {
-			do.call(output.type, list(file.path(output.dir, 
+			if(!one.file) do.call(output.type, list(file.path(output.dir, 
 										paste(file.prefix, paste(y, collapse='_'), '_c', country.obj$code, '.', postfix, sep=''))))
 			do.call(func, list(pop.pred, country=country.obj$code, year=y, main=main.arg, ...))
-			pop.pyramid(pop.pred, country=country.obj$code, year=y, main=main.arg, ...)
-			dev.off()
+			if(!one.file) dev.off()
 		}
 	}
+	if(one.file) dev.off()
 	if(verbose)
 		cat('\nPyramids stored into', output.dir, '\n')
 }
@@ -898,27 +924,29 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 
 pop.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.pyramid'),
-									output.type="png", verbose=FALSE, ...) {
+									output.type="png", one.file=FALSE, verbose=FALSE, ...) {
 	# plots pyramid for all countries
-	.do.plot.pyramid.all(pop.pred, output.dir, pop.pyramid, year=year, output.type=output.type, verbose=verbose, ...)
+	.do.plot.pyramid.all(pop.pred, output.dir, pop.pyramid, year=year, output.type=output.type, 
+				one.file=one.file, verbose=verbose, ...)
 }
 
 
 "pop.trajectories.pyramid" <- function(pop.object, ...) UseMethod("pop.trajectories.pyramid")
 
-pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, pi=c(80, 95), 
-					nr.traj=NULL, proportion=FALSE, age=1:21, plot=TRUE, pop.max=NULL, ...) {
+pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'), 
+														pi=c(80, 95), nr.traj=NULL, proportion=FALSE, 
+														age=1:21, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-	data <- get.bPop.pyramid(pop.object, country, year=year, pi=pi, nr.traj=nr.traj, proportion=proportion, 
+	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, nr.traj=nr.traj, proportion=proportion, 
 							age=age, sort.pi=FALSE, pop.max=pop.max)
 	if(plot) pop.trajectories.pyramid(data, ...)
 	invisible(data)
 }
 
 pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, show.legend=TRUE, 
-													col=rainbow, col.traj='grey',
+													col=rainbow, col.traj='#00000020',
 													lwd=2, ann=par('ann'), axes=TRUE, grid=TRUE, 
 													cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
 	# col/lwd is color and line width for:
@@ -1023,10 +1051,10 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, sh
 
 pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
 									output.dir=file.path(getwd(), 'pop.traj.pyramid'),
-									output.type="png", verbose=FALSE, ...) {
+									output.type="png", one.file=FALSE, verbose=FALSE, ...) {
 	# plots pyramid for all countries and all years given by 'year'
 	.do.plot.pyramid.all(pop.pred, output.dir, pop.trajectories.pyramid, year=year, output.type=output.type, 
-					plot.type='trajectory pyramid(s)', verbose=verbose, ...)
+					one.file=one.file, plot.type='trajectory pyramid(s)', verbose=verbose, ...)
 }
 
 
@@ -1098,6 +1126,10 @@ get.data.for.worldmap.bayesPop.prediction <- function(pred, quantile=0.5, year=N
 
 
 pop.map <- function(pred, sex=c('both', 'male', 'female'), age='all', expression=NULL, ...) {
+	if(!requireNamespace("rworldmap", quietly=TRUE)) {
+		warning("Package 'rworldmap' is not installed. If 'googleVis' is installed, use pop.map.gvis(...).")
+		return()
+	}
 	return(bayesTFR::tfr.map(pred, par.name=expression, data.args=list(sex=sex, age=age, expression=expression), ...))
 }
 
@@ -1134,15 +1166,20 @@ get.pop.map.parameters <- function(pred, expression=NULL, sex=c('both', 'male', 
 	return(map.pars)		
 }
 
-pop.map.gvis <- function(pred, ...)
+pop.map.gvis <- function(pred, ...){
+	if(!requireNamespace("googleVis", quietly=TRUE)) {
+		warning("Package 'googleVis' is not installed. If 'rworldmap' is installed, use pop.map(...).")
+		return()
+	}
 	bdem.map.gvis(pred, ...)
-						
+}
+					
 bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 	bayesTFR:::.do.gvis.bdem.map('pop', 'Population', pred, ...)
 }
 
 pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NULL, cohort.data=NULL, pi=c(80, 95), 
-								dev.ncol=5, show.legend=TRUE, ann=par('ann'), add=FALSE, 
+								dev.ncol=5, show.legend=TRUE, legend.pos="bottomleft", ann=par('ann'), add=FALSE, 
 								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, col='red', ...) {
 	.round.to.lower5 <- function(x) 5*floor(x/5) 
 
@@ -1192,12 +1229,16 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		else lines(this.x, this.data["median",], type="l", col=col)
 		for(ipi in 1:length(pi)) {
 			qs <- c((1-pi[ipi]/100)/2, (1+pi[ipi]/100)/2)
+			if(! as.character(qs[1]) %in% rownames(this.data)) {
+				warning("PI ", pi, " not availalble in cohort.data.")
+				next
+			}
 			lines(this.x, this.data[as.character(qs[1]),], col=col, lty=1+ipi)
 			lines(this.x, this.data[as.character(qs[2]),], col=col, lty=1+ipi)
 		}
 		grid()
 		if(show.legend && ann)
-			legend('topleft', legend=legend, lty=lty, bty='n', col=cols)
+			legend(legend.pos, legend=legend, lty=lty, bty='n', col=cols)
 	}
 	if(nplots > 1) par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
 }
