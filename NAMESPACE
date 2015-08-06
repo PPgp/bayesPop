@@ -7,6 +7,7 @@ importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segment
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
 importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", "sd")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim")
+importFrom("truncnorm", "rtruncnorm")
 
 #exportPattern("^[[:alpha:]]+")
 useDynLib(bayesPop)

@@ -261,13 +261,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		# run the last one separately, because it does the half child variant which needs the median of all rates
 		wrapper.pop.predict.one.trajectory(nr.traj)
 	} else { # sequential processing
-		if (verbose) verbose.iter <- max(1, round(nr.traj/100,0))
+		if (verbose) cat('\n')
+		#verbose.iter <- max(1, round(nr.traj/100,0))
 		for(itraj in start.traj.index:nr.traj){
 			unblock.gtk.if.needed(paste('finished', itraj, status.for.gui), gui.options)
-			if(verbose && (itraj %% verbose.iter == 0))
-				cat('\nProcessing trajectory ', itraj)			
+			#if(verbose && (itraj %% verbose.iter == 0))
+			if(verbose) cat('\rProcessing trajectories ... ', round(itraj/nr.traj * 100), ' %')			
 			wrapper.pop.predict.one.trajectory(itraj)
 		} # end trajectories
+		if(verbose) cat('\n')
 	}
 	if(parallel) {
 		stopCluster(cl)
@@ -620,35 +622,27 @@ is.gcc <- function(country)
 	
 has.relaxed.bounds <- function(country)
 	return(country %in% c(136, 570, 584, 772, 796)) # Cayman Islands, Niue, Marshall Islands, Tokelau, Turks and Caicos Islands
-
-cummulative.max.rate.no.gcc <- function(l)
-	switch(l, 0.318445, 0.380350, 0.432385, 0.599260, 0.582940, 0.620895, 
-			0.655665, 0.699100, 0.780100, 0.811745, 0.839445, 0.847995)
-
-cummulative.max.rate.no.gcc.with.outliers <- function(l)
-	switch(l, 0.538465, 0.628720, 0.927310, 1.195605, 1.266020, 1.586800, 
-			1.648005, 1.701605, 1.745850, 1.841215, 2.086650, 2.187455)
-
-cummulative.min.rate.no.gcc <- function(l)
-	switch(l, -0.283625, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
-			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
-	
-cummulative.max.rate <- function(l)
-	switch(l, 0.666770, 1.159820, 1.448865, 1.761840, 1.909545, 2.074115, 
-			2.231875, 2.649090, 2.938135, 3.251110, 3.228510, 3.207015)
 			
-cummulative.min.rate <- function(l)
-	switch(l, -0.330165, -0.430245, -0.521440, -0.523135, -0.542200, -0.630610, 
-			-0.712340, -0.792280, -0.831930, -0.836390, -0.914660, -0.946140)
-			
-max.multiplicative.pop.change <- function(l)
-	switch(l, 2.087025815, 3.606344662, 4.952147194, 6.992680749, 8.194692131, 9.773177262)
+max.multiplicative.pop.change <- function(l) {
+	# wpp2012
+	# switch(l, 2.087025815, 3.606344662, 4.952147194, 6.992680749, 8.194692131, 9.773177262)
+	# wpp2015
+	switch(l, 2.04157428408811, 3.54496058870786, 4.81427240609516, 6.78350174233341, 7.95488933545316, 9.49193503056661)
+}
 	
-max.multiplicative.pop.change.no.gcc <- function(l)
-	switch(l, 1.409065294, 1.509547891, 1.606376672, 1.926878976, 1.892288126, 1.932271285)
+max.multiplicative.pop.change.no.gcc <- function(l) {
+	# wpp2012
+	# switch(l, 1.409065294, 1.509547891, 1.606376672, 1.926878976, 1.892288126, 1.932271285)
+	# wpp2015
+	switch(l, 1.40906529449581, 1.50954789121653, 1.60637667154273, 1.92687897612525, 1.89228812576198, 1.94669452205643)
+}
 	
-min.multiplicative.pop.change <- function(l)
-	switch(l, 0.707796098, 0.62555766, 0.567081044, 0.56605145, 0.559550789, 0.508914659)
+min.multiplicative.pop.change <- function(l) {
+	# wpp2012
+	# switch(l, 0.707796098, 0.62555766, 0.567081044, 0.56605145, 0.559550789, 0.508914659)
+	# wpp2015
+	switch(l, 0.717850703699962, 0.646668153959635, 0.589239258594081, 0.5755073245726, 0.529981937762214, 0.491340651061678)
+}
 	
 max.multiplicative.pop.change.no.gcc.small <- function(l)
 	switch(l, 1.59473251994369, 2.12674802921728, 2.5940342528116, 3.27346148755602, 4.38710818083359, 6.07190344426719)
@@ -1080,7 +1074,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 		if(verbose) cat('(in ', nr.chunks, ' chunks; sequentially) ... ')
 	for(chunk in 1:nr.chunks) {
 		traj.index <- ((chunk - 1)*chunk.size + 1):min(chunk*chunk.size, nr.traj)
-		if(verbose) cat("\nChunk ", chunk, " ...")
+		if(verbose) cat("\nChunk ", chunk, " ... ")
 		this.chunk.size <- length(traj.index)
 		for(i in 1:this.chunk.size) {
 			if(chunk == 1)
@@ -1118,11 +1112,12 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 		} else { # process sequentially
 			res.list <- list()				
 			for(cidx in 1:ncountries) {
-				if(verbose) cat(cidx, ', ')
+				if(verbose) cat("\rChunk ", chunk, " ... ", round(cidx/ncountries * 100), " %")
 				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
 			}
+			if(verbose) cat("\n")
 		}
-	}
+	}	
 	if(parallel) stopCluster(cl)
 	with(quant.env, {
 			PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, npredplus1),
@@ -1151,11 +1146,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	maleArray <- matrix(0, nrow=nAgeGroups, ncol=npred)
 	femaleArray <- matrix(0, nrow=nAgeGroups, ncol=npred)
 
+	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
 	#Handle Croatia separately because of some bad data
 	#Use 2010-2015 schedules, which aren't messed up.
 	if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
-		maleVec <- inputs$MIGm[inputs$MIGm$country_code==191,"2010-2015"]
-		femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191,"2010-2015"];
+		maleVec <- inputs$MIGm[inputs$MIGm$country_code==191, first.year.period]
+		femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191, first.year.period];
 		tot <- sum(maleVec+femaleVec)
 		#Set all future migration schedules for Croatia to match that one.
 		croatiaM <- matrix(rep(maleVec/tot, npred), nrow=nAgeGroups)
@@ -1174,7 +1170,6 @@ migration.age.schedule <- function(country, npred, inputs) {
 	}
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
-	first.year.period <- paste(inputs$present.year, inputs$present.year+5, sep="-")
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
 	
 	if(!is.null(inputs$year.of.migration.schedule)) { 
@@ -1195,8 +1190,8 @@ migration.age.schedule <- function(country, npred, inputs) {
     if(any(tot == 0)) {
 		#Pull a model schedule to use in scenarios where the projection is 0
 		#Use China's 2010-2015 data as the model
-		modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, "2010-2015"]
-		modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, "2010-2015"]
+		modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
+		modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, first.year.period]
 		modeltot <- sum(modelmaleVec+modelfemaleVec)
 		modelM <- modelmaleVec/modeltot
 		modelF <- modelfemaleVec/modeltot
@@ -1232,8 +1227,8 @@ migration.age.schedule <- function(country, npred, inputs) {
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
     if(country %in% c(528, 756)) { # Netherlands, Switzerland  (get Czech schedule for negative schedules)
-    	maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, "2010-2015"]
-    	femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, "2010-2015"]
+    	maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, first.year.period]
+    	femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, first.year.period]
     	tot <- sum(maleVec+femaleVec)
     	negM <- matrix(maleVec/tot, nrow=nAgeGroups, ncol=ncol(maleArray))
     	negF <- matrix(femaleVec/tot, nrow=nAgeGroups, ncol=ncol(femaleArray))
