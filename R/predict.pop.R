@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.year=2012,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2015,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -18,8 +18,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, my.locations.file = NULL, replace.output=FALSE, 
-						verbose=TRUE) {
+						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, 
+						replace.output=FALSE, verbose=TRUE) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
@@ -70,12 +70,13 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2010, wpp.y
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	}
 	do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, verbose=verbose)
+					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
+					function.inputs=inputs, verbose=verbose)
 	invisible(get.pop.prediction(output.dir))
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							function.inputs=NULL, verbose=FALSE) {
+							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 
@@ -121,7 +122,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
-			cat('\nProcessing country ', country, ' -- ', as.character(UNlocations[country.idx,'name']))
+			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', as.character(UNlocations[country.idx,'name']))
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, UNlocations[country.idx,'name'])
 		if(is.null(inpc)) next
@@ -165,14 +166,16 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
 		}
 		#npasfr <- nrow(inpc$PASFR)
-		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, inp$estim.years)
+		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, 
+															estim.years=inp$estim.years)
 		tfr.med <- apply(inpc$TFRpred, 1, median)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
-			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
+			if(!fixed.pasfr) 
+				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
 										tfr.med=tfr.med)
-			#asfr <- inpc$PASFR/100.
+			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
@@ -182,7 +185,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				par <- paste0('mig', sex, 'pred')
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 			}
-			#stop('')
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
 			totp[,itraj] <- popres$totpop
@@ -214,13 +216,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			}
 		}
 		for (variant in 1:nvariants) { # compute the two half child variants
-			pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
+			if(!fixed.pasfr) 
+				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
 										tfr.med=tfr.med)
+			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
-			#asfr <- inpc$PASFR/100.
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
-			LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
+			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
 									inpc$e0Fmedian, verbose=verbose, debug=debug)
 			migpred.hch <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
