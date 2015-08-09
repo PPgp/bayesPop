@@ -1051,14 +1051,15 @@ runKannisto <- function(inputs, start.year, ...) {
 
 runKannisto.noLC <- function(inputs, start.year) {
 	# extend mx
-	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, inputs$MIGBaseYear, start.year)
+	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, inputs$MIGBaseYear, start.year, compute.AxBx=FALSE)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	return(list(male=mxMKan, female=mxFKan))
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19, joint=TRUE)  {
+KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19, 
+								joint=TRUE, compute.AxBx=TRUE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	finish.bx <- function(bx) {
 			negbx <- which(bx <= 0)
@@ -1127,6 +1128,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 		Mxe.m <- res$M
 		Mxe.f <- res$F
 	}
+	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
+	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
 	#start.year <- as.integer(substr(colnames(male.mx)[1],1,4)) # 1950
 	#ns <- (max(min(yb, 1980), start.year) - start.year) / 5 + 1 # ?
@@ -1152,7 +1155,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
     	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
-    result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
+    
     for(sex in c('male', 'female')) {
     	lMxe <- log(result[[sex]]$mx)
     	this.ns <- if(any(is.na(lMxe[,ns:ne]))) ns + sum(apply(lMxe[,ns:ne], 2, function(z) all(is.na(z))))
