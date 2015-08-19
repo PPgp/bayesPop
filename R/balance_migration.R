@@ -650,7 +650,7 @@ max.multiplicative.pop.change.no.gcc.small <- function(l)
 min.multiplicative.pop.change.small <- function(l)
 	switch(l, 0.428948397185301, 0.373042042828842, 0.31526281780426, 0.24164343419914, 0.20427051444469, 0.172963052158649)
 	
-gcc.upper.threshold <- function(country) {
+gcc.upper.threshold.wpp2012 <- function(country) {
 	switch(as.character(country),
 		'634'= 1619, # Qatar
 		'784'= 7632, # UAE
@@ -659,6 +659,17 @@ gcc.upper.threshold <- function(country) {
 		'512'= 303, # Oman
 		'682'= 3319, # SA
 		NA)
+}
+
+gcc.upper.threshold <- function(country) {
+        switch(as.character(country),
+                '634'= 1473, # Qatar
+                '784'= 5674, # UAE
+                '414'= 1649, # Kuwait
+                '48'= 290,  # Bahrain
+                '512'= 2253, # Oman
+                '682'= 2716, # SA
+                NA)
 }
 
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
@@ -1149,22 +1160,24 @@ migration.age.schedule <- function(country, npred, inputs) {
 	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
 	#Handle Croatia separately because of some bad data
 	#Use 2010-2015 schedules, which aren't messed up.
-	if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
-		maleVec <- inputs$MIGm[inputs$MIGm$country_code==191, first.year.period]
-		femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191, first.year.period];
-		tot <- sum(maleVec+femaleVec)
-		#Set all future migration schedules for Croatia to match that one.
-		croatiaM <- matrix(rep(maleVec/tot, npred), nrow=nAgeGroups)
-		croatiaF <- matrix(rep(femaleVec/tot, npred), nrow=nAgeGroups)		
-		return(list(M=croatiaM, F=croatiaF))
-	}
+	# if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
+		# maleVec <- inputs$MIGm[inputs$MIGm$country_code==191, first.year.period]
+		# femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191, first.year.period];
+		# tot <- sum(maleVec+femaleVec)
+		# #Set all future migration schedules for Croatia to match that one.
+		# croatiaM <- matrix(rep(maleVec/tot, npred), nrow=nAgeGroups)
+		# croatiaF <- matrix(rep(femaleVec/tot, npred), nrow=nAgeGroups)		
+		# return(list(M=croatiaM, F=croatiaF))
+	# }
 	sched.country <- country
 	first.year <- FALSE
 	# Replace Bahrain and Saudi Arabia with schedule from Qatar 
-	if(country %in% c(682, 48)) {
-		   sched.country <- 634
-	}
-	if(country %in% c(28, 531, 364, 376, 462, 562, 630, 662)) { # Antigua and Barbuda, Curacao, Iran, Israel, Maldives, Niger, Puerto Rico, and Saint Lucia
+	# if(country %in% c(682, 48)) {
+		   # sched.country <- 634
+	# }
+	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548)) { 
+		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu
+		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
 		   first.year <- TRUE
 	}
@@ -1226,13 +1239,13 @@ migration.age.schedule <- function(country, npred, inputs) {
     	maleArray <- t(apply(maleArray, 1, '/', tot))
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
-    if(country %in% c(528, 756)) { # Netherlands, Switzerland  (get Czech schedule for negative schedules)
-    	maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, first.year.period]
-    	femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, first.year.period]
-    	tot <- sum(maleVec+femaleVec)
-    	negM <- matrix(maleVec/tot, nrow=nAgeGroups, ncol=ncol(maleArray))
-    	negF <- matrix(femaleVec/tot, nrow=nAgeGroups, ncol=ncol(femaleArray))
-    }
+    # if(country %in% c(528, 756)) { # Netherlands, Switzerland  (get Czech schedule for negative schedules)
+    	# maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, first.year.period]
+    	# femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, first.year.period]
+    	# tot <- sum(maleVec+femaleVec)
+    	# negM <- matrix(maleVec/tot, nrow=nAgeGroups, ncol=ncol(maleArray))
+    	# negF <- matrix(femaleVec/tot, nrow=nAgeGroups, ncol=ncol(femaleArray))
+    # }
 	return(list(M=maleArray, F=femaleArray, Mnegative=negM, Fnegative=negF))
 }
 
