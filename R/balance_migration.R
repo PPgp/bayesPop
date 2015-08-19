@@ -266,7 +266,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		for(itraj in start.traj.index:nr.traj){
 			unblock.gtk.if.needed(paste('finished', itraj, status.for.gui), gui.options)
 			#if(verbose && (itraj %% verbose.iter == 0))
-			if(verbose) cat('\rProcessing trajectories ... ', round(itraj/nr.traj * 100), ' %')			
+			if(verbose & interactive()) cat('\rProcessing trajectories ... ', round(itraj/nr.traj * 100), ' %')			
 			wrapper.pop.predict.one.trajectory(itraj)
 		} # end trajectories
 		if(verbose) cat('\n')
@@ -1123,7 +1123,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 		} else { # process sequentially
 			res.list <- list()				
 			for(cidx in 1:ncountries) {
-				if(verbose) cat("\rChunk ", chunk, " ... ", round(cidx/ncountries * 100), " %")
+				if(verbose & interactive()) cat("\rChunk ", chunk, " ... ", round(cidx/ncountries * 100), " %")
 				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
 			}
 			if(verbose) cat("\n")
