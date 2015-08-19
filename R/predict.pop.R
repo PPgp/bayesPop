@@ -382,7 +382,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				paste(num.columns, collapse=', '))
 		}
 		num.columns <- num.columns[which(as.integer(num.columns)<= present.year)]
-		pop.ini.matrix[[sex]] <- POP0[,num.columns]
+		pop.ini.matrix[[sex]] <- POP0[,num.columns, drop=FALSE]
 		dimnames(pop.ini.matrix[[sex]]) <- list(paste(POP0[,'country_code'], POP0[,'age'], sep='_'), 
 									as.character(as.integer(num.columns)))
 		pop.ini[[sex]] <- POP0[,c('country_code', 'age', present.year)]
