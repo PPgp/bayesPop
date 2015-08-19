@@ -662,14 +662,14 @@ gcc.upper.threshold.wpp2012 <- function(country) {
 }
 
 gcc.upper.threshold <- function(country) {
-        switch(as.character(country),
-                '634'= 1473, # Qatar
-                '784'= 5674, # UAE
-                '414'= 1649, # Kuwait
-                '48'= 290,  # Bahrain
-                '512'= 2253, # Oman
-                '682'= 2716, # SA
-                NA)
+    switch(as.character(country),
+        '634'= 1473, # Qatar
+	'784'= 5674, # UAE
+	'414'= 1649, # Kuwait
+	'48'= 290,   # Bahrain
+	'512'= 2253, # Oman
+	'682'= 2716, # SA
+	NA)
 }
 
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
