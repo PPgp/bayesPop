@@ -279,10 +279,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			if(cidx == 1) {
 				for(par in aggr.quantities.all)
 					assign(par, e[[par]])
-				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
-				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
+				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,, drop=FALSE]
+				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,, drop=FALSE]
 				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
-																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
+																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,, drop=FALSE]))
 				if(has.vital.events) {
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
