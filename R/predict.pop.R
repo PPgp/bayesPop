@@ -470,12 +470,24 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
 	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
 	# Get age-specific migration
-	if(is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred 
-		MIGm <- load.wpp.dataset('migrationM', wpp.year)
-	else MIGm <- read.pop.file(inputs[['migM']])
-	if(is.null(inputs[['migF']]))
-		MIGf <- load.wpp.dataset('migrationF', wpp.year)
-	else MIGf <- read.pop.file(inputs[['migF']])
+	wppds <- data(package=paste0('wpp', wpp.year))
+	recon.mig <- NULL
+	if(is.null(inputs[['migM']])) {# cannot be inputs$migM because it would take the value of inputs$migMpred
+	 	if('migrationM' %in% wppds$results[,'Item'])
+			MIGm <- load.wpp.dataset('migrationM', wpp.year)
+		else {
+			recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
+			MIGm <- recon.mig$male
+		}
+	} else MIGm <- read.pop.file(inputs[['migM']])
+	if(is.null(inputs[['migF']])) {
+		if('migrationF' %in% wppds$results[,'Item'])
+			MIGf <- load.wpp.dataset('migrationF', wpp.year)
+		else {
+			if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
+			else MIGf <- recon.mig$female
+		}
+	} else MIGf <- read.pop.file(inputs[['migF']])
 	if(!is.null(obs.periods)) {
 		avail.obs.periods <- is.element(obs.periods, colnames(MIGm))
 		observed$MIGm <- MIGm[,c('country_code', 'age', obs.periods[avail.obs.periods])]
@@ -483,7 +495,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
-	
 	# Get migration trajectories if available
 	migMpred <- migFpred <- NULL
 	for(sex in c('M', 'F')) {
@@ -1619,7 +1630,16 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE) {
+age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=FALSE) {
+	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
+	# and other available indicators. It is scaled to the total net migration for each country. 
+	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over the ages,
+	# therefore it is smoothed (in a double pass through the smoother).
+	if(verbose) {
+		status.text <- paste('Reconstructing sex- and age-specific migration from', paste0('wpp', wpp.year, ' '))
+		cat('\n', status.text)
+	}
 	popm0 <- load.wpp.dataset("popM", wpp.year)
 	popm0.num.cols <- grep('^[0-9]{4}$', colnames(popm0), value=TRUE) # values of year-columns
 	popf0 <- load.wpp.dataset("popF", wpp.year)
@@ -1635,19 +1655,27 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	mxf <- load.wpp.dataset("mxF", wpp.year)
 	mxf.num.cols <- grep('^[0-9]{4}', colnames(mxf), value=TRUE)
 	mig <- load.wpp.dataset("migration", wpp.year)
-	mig.num.cols <- grep('^[0-9]{4}$', colnames(mig), value=TRUE)
+	mig.num.cols <- grep('^[0-9]{4}', colnames(mig), value=TRUE)
 	tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
 	pasfr <- load.wpp.dataset("percentASFR", wpp.year)
 	pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
-	mig.first.country <- mig[,mig$country_code == mig$country_code[1],]
-	max.ages <- nrow(mig.first.country)
+	vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))[,c('country_code', 'MigCode')]
+	pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
+	max.ages <- nrow(pop.first.country)
 	ages <- 1:max.ages
 	age.labels <- get.age.labels(ages, age.is.index=TRUE, last.open=TRUE)
+	years.periods <- paste(years-5, years, sep="-")
 	lyears <- length(years)
-	if(is.null(countries)) countries <- mig$country_code
-	else mig <- mig[which(mig$country_code %in% countries),]
+	if(is.null(countries)) {
+		countries <- mig$country_code
+		# filter out non-countries
+		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
+		countries <- countries[countries %in% subset(locs, location_type==4)$country_code]
+	} else mig <- mig[which(mig$country_code %in% countries),]
 	all.migM <- all.migF <- NULL
-	for(icountry in 1:length(countries)) {
+	lcountries <- length(countries)
+	for(icountry in 1:lcountries) {
+		if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
 		country <- countries[icountry]
 		country.name <- as.character(mig$name[icountry])
 		# filter country data
@@ -1655,75 +1683,79 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
 		pop1m <- cbind(popm.obs, popmproj[popmproj$country_code==country, popmproj.num.cols])
 		pop1f <- cbind(popf.obs, popfproj[popfproj$country_code==country, popfproj.num.cols])
-		tfra <- tfrproj[tfrproj$country_code==country,])
+		tfra <- tfrproj[tfrproj$country_code==country,]
 		asfr <- pasfr[pasfr$country_code==country, pasfr.num.cols]
 		sr <- sexrat[sexrat$country_code==country, sexrat.num.cols] 
 		mortM <- mxm[mxm$country_code==country, mxm.num.cols]
 		mortF <- mxf[mxf$country_code==country, mxf.num.cols]
 		totmig <- mig[mig$country_code==country, mig.num.cols]
+		mtype <- vwBase[vwBase$country_code==country,'MigCode']
+		if(length(mtype)==0) mtype <- 9
 		this.all.migM <- this.all.migF <- data.frame(
 				country_code=rep(country, max.ages), name=rep(country.name, max.ages), age=age.labels)
 		for(iyear in 1:lyears) {
 			year <- years[iyear]
-			year.col <- paste(year-5, year, sep="-")
+			year.col <- years.periods[iyear]
 			year.char <- as.character(year)
 			pop0m <- pop1m[,as.character(year-5)]
 			pop0f <- pop1f[,as.character(year-5)]
 			mortMy <- mortM[,year.col]
 			mortFy <- mortF[,year.col]
-			sxm <- get.sx(LifeTableMxCol(mortMy, 'Lx'))
-			sxf <- get.sx(LifeTableMxCol(mortFy, 'Lx'))
-			totmigy <- round(totmig[year.col],3)
+			sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
+       		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
+			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
-			else {
-				B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * unlist(tfra[year.col]) * asfr[,year.col]/100)			
+			else {			
+				B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
 				netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
 				netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
-				B2m <- B2 * sr[year.col]/(1+sr[year.col])
-				netmigM[1] <- pop1m[1,year.char] - unlist(B2m * sxm[1])
-				netmigF[1] <- pop1f[1,year.char] - unlist((B2 - B2m) * sxf[1])
-				orig.migM <- netmigM
-				orig.migF <- netmigF
-				smig <- round(sum(netmigM+netmigF),3)
-				netmigM[18:21] <- 0
-				netmigF[18:21] <- 0
-				if(smooth) {
-					#smooth
-					# are there zig-zags?
-					tops <- ((netmigM[2:20] > netmigM[1:19] & netmigM[2:20] > netmigM[3:21]) | (netmigM[2:20] < netmigM[1:19] & netmigM[2:20] < netmigM[3:21])) & abs(diff(netmigM)[1:19]/(unlist(totmigy)/100)) > 0.2
-					cs <- cumsum(c(TRUE, tops)) # consider first point as top
-					if(any(cs[3:20] > 2 & cs[3:20] - cs[1:18] > 1))  {# at least 3 neighboring tops
-						netmigM <- smooth.spline(netmigM, df=10)$y
-						netmigM[18:21] <- 0
+				B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
+				netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
+				netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
+				migdata <- list(M=netmigM, F=netmigF)
+				sxdata <- list(M=sxm, F=sxf)
+				for(sex in c('M', 'F')) {
+					if(mtype == 0) {					
+					 	migdata[[sex]] <- 2*migdata[[sex]]
+					 	for(i in 2:max.ages) {
+					       migdata[[sex]][i] <- migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+					  	}
 					}
-					tops <- ((netmigF[2:20] > netmigF[1:19] & netmigF[2:20] > netmigF[3:21]) | (netmigF[2:20] < netmigF[1:19] & netmigF[2:20] < netmigF[3:21])) & abs(diff(netmigF)[1:19]/(unlist(totmigy)/100)) > 0.2
-					cs <- cumsum(tops)
-					if(any(cs[3:19] > 2 & cs[3:19] - cs[1:17] > 1)) {
-						netmigF <- smooth.spline(netmigF, df=10)$y
-						netmigF[18:21] <- 0
+					migdata[[sex]][18:21] <- 0
+					if(smooth) { #smoothing					
+						for(izig in 1:2) { # two passes of smoothing
+							# are there significant zig-zags?						
+							tops <- ((migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][1:(max.ages-2)] & 
+											migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][3:max.ages]) | 
+								(migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][1:(max.ages-2)] & migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][3:max.ages])) & 
+								abs(diff(migdata[[sex]])[1:(max.ages-2)]/(totmigy/100)) > 0.05
+							cs <- cumsum(c(TRUE, tops)) # consider first point as top
+							if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
+								migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
+								migdata[[sex]][18:21] <- 0
+							} else break
+						}
 					}
-					# smooth
-					dmig3 <- sign(diff(netmigM)[1:3])
-					if(((dmig3[2] != dmig3[1]) & (dmig3[2] != dmig3[3])) | 
-							((dmig3[2] != dmig3[1]) & sign(netmigM[1]) != sign(netmigM[2]))){ # different signs
-						netmigM[1:3] <- smooth.spline(1:5, y=netmigM[1:5], df=3)$y[1:3]
-					}
-					dmig3 <- sign(diff(netmigF)[1:3])
-					if(((dmig3[2] != dmig3[1]) & (dmig3[2] != dmig3[3])) | 
-						((dmig3[2] != dmig3[1]) & sign(netmigF[1]) != sign(netmigF[2]))) # different signs
-						netmigF[1:3] <- smooth.spline(netmigF[1:5], df=3)$y[1:3]
 				}
 				# rescale
+				netmigM <- migdata[['M']]
+				netmigF <- migdata[['F']]
 				s <- sum(netmigM + netmigF)
-				netmigM <- netmigM/s *unlist(totmigy)
-				netmigF <- netmigF/s *unlist(totmigy)
+				netmigM <- netmigM/s * totmigy
+				netmigF <- netmigF/s * totmigy
 			}
 			this.all.migM <- cbind(this.all.migM, netmigM)
 			this.all.migF <- cbind(this.all.migF, netmigF)
 		}
-		colnames(this.all.migM) <- colnames(this.all.migF) <- c('country_code', 'name', 'age', paste(years-5, years, sep="-"))
+		colnames(this.all.migM) <- colnames(this.all.migF) <- c('country_code', 'name', 'age', years.periods)
 		all.migM <- rbind(all.migM, this.all.migM)
 		all.migF <- rbind(all.migF, this.all.migF)
 	}
+	if(write.to.disk) {
+		write.table(all.migM, file=file.path(directory, paste0(file.prefix, "M.txt")), sep='\t', row.names=FALSE)
+		write.table(all.migF, file=file.path(directory, paste0(file.prefix, "F.txt")), sep='\t', row.names=FALSE)
+		if(verbose) cat('\nMigration files written into ', file.path(directory, paste0(file.prefix, "X.txt")))
+	}
+	if(verbose) cat('\n')
 	return(list(male=all.migM, female=all.migF))
 }

@@ -168,7 +168,11 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 	} else data <- data[[sex]]
 	country.idx <- grep(paste('^', country, '_', sep='', collapse='|'), rownames(data), value=FALSE)
 	data <- data[country.idx,]
-	if(is.null(pop.pred$proj.years.pop)) colnames(data) <- as.integer(colnames(data)) + 2
+	if(is.null(pop.pred$proj.years.pop)) {
+		coln <- as.integer(colnames(data))
+		if(coln[1] %% 5 != 0) # column names should be the end of 5-year interval (not the middle)
+			colnames(data) <- as.integer(colnames(data)) + 2
+	}
 	max.age <- as.integer(round(nrow(data)/length(country),0))
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	age.idx <- age.idx[age.idx <= max.age]
