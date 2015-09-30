@@ -1593,20 +1593,20 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 	sex <- match.arg(sex)
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
-	Lx <- lx <- qx <- rep(0, nage)
+	Lx <- lx <- qx <- Tx <- sx <- rep(0, nage)
 	ax <- rep(0, 27)
 	nagem1 <- nage-1
 	nas <- rep(NA,nage)
 	if(!any(is.na(mx))) {
 		LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
-					Lx=Lx, lx=lx, qx=qx, ax=ax)
+					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx)
 		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					Lx=LTC$Lx, lx=LTC$lx, qx=LTC$qx, ax=nas, mx=mx)
+					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$qx*LTC$lx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=nas)
 		l <- min(length(LTC$ax), nrow(LT))
 		LT$ax[1:l] <- LTC$ax[1:l]
 	} else # there are NAs in mx
 		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					Lx=nas, lx=nas, qx=nas, ax=nas, mx=mx)
+					mx=mx, qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas)
 	return(LT)
 }
 

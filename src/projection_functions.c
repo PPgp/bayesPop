@@ -77,11 +77,6 @@ void LifeTableC(int sex, int nage, double *mxm,
 	}			
 }
 
-void LifeTable(int *sex, int *nage, double *mx, 
-				double *Lx, double *lx, double *qx, double *ax) {
-	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
-					
-}
 
 
 double get_constrained_mortality(double a, double b, double k, double constraint) {
@@ -178,6 +173,24 @@ void get_sx21(double *LLm, double *sx) {
 void get_sx21_21(double *LLm, double *sx) {
 	get_sx(LLm, sx, 21, 21);
 }
+
+void LifeTable(int *sex, int *nage, double *mx, 
+				double *Lx, double *lx, double *qx, double *ax, double *Tx, double *sx) {
+	int i;
+	double sLx;
+	
+	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
+	sLx = 0;
+	for (i = 0; i < *nage; i++) {
+		sLx += Lx[i]; 
+	}
+	Tx[0] = sLx;
+	for (i = 1; i < *nage; i++) {
+		Tx[i] = Tx[i-1] - Lx[i-1]; 
+	}
+	get_sx(Lx, sx, *nage, *nage);
+}
+
 
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
