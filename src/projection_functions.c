@@ -175,19 +175,16 @@ void get_sx21_21(double *LLm, double *sx) {
 }
 
 void LifeTable(int *sex, int *nage, double *mx, 
-				double *Lx, double *lx, double *qx, double *ax, double *Tx, double *sx) {
+				double *Lx, double *lx, double *qx, double *ax, double *Tx, double *sx, double *dx) {
 	int i;
-	double sLx;
 	
 	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
-	sLx = 0;
-	for (i = 0; i < *nage; i++) {
-		sLx += Lx[i]; 
-	}
-	Tx[0] = sLx;
-	for (i = 1; i < *nage; i++) {
-		Tx[i] = Tx[i-1] - Lx[i-1]; 
-	}
+	Tx[*nage] = Lx[*nage];
+	dx[*nage] = lx[*nage];
+	for (i = *nage-1; i >= 0; i--) {
+		Tx[i] = Tx[i+1] + Lx[i];
+		dx[i] = lx[i] - lx[i+1];
+	}	
 	get_sx(Lx, sx, *nage, *nage);
 }
 

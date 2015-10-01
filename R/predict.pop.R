@@ -1555,10 +1555,28 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx'), ...){
+LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'ex'), ...){
 	colname <- match.arg(colname)
 	if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
 	return(apply(mx, 2, .doLifeTableMxCol, colname=colname, ...))
+}
+
+.collapse.dx <- function(LT, ...) {
+	lx <- .collapse.lx(LT, ...)
+	return(c(lx[1:2]-lx[2:3], LT$dx[-(1:3)]))
+}
+
+.collapse.Tx <- function(LT, ...) {
+	Lx <- .collapse.Lx(LT, ...)
+	Tx <- LT$Tx[-1]
+	for(i in 3:1) Tx[i] <- Tx[i+1] + Lx[i]
+	return(Tx)
+}
+
+.collapse.ex <- function(LT, ...) {
+	lx <- .collapse.lx(LT, ...)
+	Tx <- .collapse.Tx(LT, ...)
+	return(c(Tx[1:2]/lx[1:2], LT$ex[-(1:3)]))	
 }
 
 .collapse.Lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
@@ -1593,17 +1611,18 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 	sex <- match.arg(sex)
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
-	Lx <- lx <- qx <- Tx <- sx <- rep(0, nage)
+	Lx <- lx <- qx <- Tx <- sx <- dx <- rep(0, nage)
 	ax <- rep(0, 27)
 	nagem1 <- nage-1
 	nas <- rep(NA,nage)
 	if(!any(is.na(mx))) {
 		LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
-					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx)
+					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx, dx=dx)
 		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$qx*LTC$lx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=nas)
+					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$dx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=nas)
 		l <- min(length(LTC$ax), nrow(LT))
 		LT$ax[1:l] <- LTC$ax[1:l]
+		LT$ax[nage] <- LT$ex[nage]
 	} else # there are NAs in mx
 		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
 					mx=mx, qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas)
