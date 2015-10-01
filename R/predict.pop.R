@@ -162,7 +162,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(!fixed.mx) 
 			MxKan <- runKannisto(inpc, inp$start.year, npred=npred) 
 		else {
-			MxKan <- runKannisto.noLC(inpc, inp$start.year)
+			MxKan <- runKannisto.noLC(inpc)
 			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
 		}
 		#npasfr <- nrow(inpc$PASFR)
@@ -1044,9 +1044,7 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 
 runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
-	#mxFKan <- c(KannistoAxBx(nest, inputs$MXf, inputs$MIGBaseYear), sex=2)
-	#mxMKan <- c(KannistoAxBx(nest, inputs$MXm, inputs$MIGBaseYear), sex=1)
-	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, inputs$MIGBaseYear, start.year, inputs$MXpattern, ...)
+	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, ...)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	bux <- NULL
@@ -1063,16 +1061,16 @@ runKannisto <- function(inputs, start.year, ...) {
 	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
 }
 
-runKannisto.noLC <- function(inputs, start.year) {
+runKannisto.noLC <- function(inputs) {
 	# extend mx
-	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, inputs$MIGBaseYear, start.year, compute.AxBx=FALSE)
+	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	return(list(male=mxMKan, female=mxFKan))
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, ax.from.latest.periods=99, npred=19, 
+KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.from.latest.periods=99, npred=19, 
 								joint=TRUE, compute.AxBx=TRUE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	finish.bx <- function(bx) {
@@ -1145,8 +1143,6 @@ KannistoAxBx.joint <- function(male.mx, female.mx, yb, start.year, mx.pattern, a
 	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
-	#start.year <- as.integer(substr(colnames(male.mx)[1],1,4)) # 1950
-	#ns <- (max(min(yb, 1980), start.year) - start.year) / 5 + 1 # ?
 	years <- substr(colnames(male.mx),1,4)
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne])
