@@ -1646,7 +1646,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 }
 
 age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
-									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=FALSE) {
+									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over the ages,
@@ -1685,7 +1685,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		countries <- mig$country_code
 		# filter out non-countries
 		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
-		countries <- countries[countries %in% subset(locs, location_type==4)$country_code]
+		countries <- countries[countries %in% locs[locs$location_type==4, "country_code"]]
 	} else mig <- mig[which(mig$country_code %in% countries),]
 	all.migM <- all.migF <- NULL
 	lcountries <- length(countries)
