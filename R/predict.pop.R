@@ -1772,5 +1772,5 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		if(verbose) cat('\nMigration files written into ', file.path(directory, paste0(file.prefix, "X.txt")))
 	}
 	if(verbose) cat('\n')
-	return(list(male=all.migM, female=all.migF))
+	return(invisible(list(male=all.migM, female=all.migF)))
 }
