@@ -299,6 +299,12 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 						observed[[par]] <- observed[[par]] + e$observed[[par]]
 				}
 			}
+			if(has.vital.events) {
+				pop01m <- compute.pop01(births=apply(btm, c(2,3), sum), mx=e$mxm)
+				pop01f <- compute.pop01()
+				death01m <- compute.death01()
+				death01f <- compute.death01()				
+			}
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
@@ -317,7 +323,12 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			tfr <- apply(asfert, c(2,3), sum)
 			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 			# TODO: mxm, mxf, mxm.hch, mxf.hch
+			mxm <- derive.aggregated.mx(deathsm, totpm)
+			mxf <- derive.aggregated.mx(deathsf, totpf)
+			mxm.hch <- derive.aggregated.mx(deathsm.hch, totpm.hch)
+			mxf.hch <- derive.aggregated.mx(deathsf.hch, totpf.hch)
 			
+			stop('')
 			# asfert, pasfert for observed data
 			observed <- within(observed, {
 				tmp <- abind(aggr.obs.dataF[4:10, , drop=FALSE], NULL, along=3)
@@ -387,4 +398,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 	save(bayesPop.prediction, file=file.path(outdir, 'prediction.rda'))
 	cat('\nAggregations stored into', outdir, '\n')
 	return(bayesPop.prediction)
+}
+
+derive.aggregated.mx <- function(deaths, pop) {
+	mx <- deaths/pop
+	# split first age category (0-4) into 0-1 and 1-4
+	
 }

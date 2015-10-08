@@ -13,29 +13,37 @@ double sum(double *x, int dim) {
 	return(s);
 }
 
-
-void doLifeTable(int sex, int nage, double *mx, 
-				double *Lx, double *lx, double *qx, double *ax) {
-	
-	int i;
-
+double * get_a05(double mx0, int sex) {
+	static double ax[2];
 	if(sex > 1) {/* female*/
-		if (mx[0] < 0.107) {
-			ax[0] = 0.053 + 2.8 * mx[0];      /*1a0*/
-			ax[1] = 1.522 - 1.518 * mx[0];    /*4a1*/
+		if (mx0 < 0.107) {
+			ax[0] = 0.053 + 2.8 * mx0;      /*1a0*/
+			ax[1] = 1.522 - 1.518 * mx0;    /*4a1*/
 		} else {
 			ax[0] = 0.35;
 			ax[1] = 1.361;
 		}
 	} else { /* male */
-		if (mx[0] < 0.107) {
-			ax[0] = 0.045 + 2.684 * mx[0];
-			ax[1] = 1.651 - 2.816 * mx[0];
+		if (mx0 < 0.107) {
+			ax[0] = 0.045 + 2.684 * mx0;
+			ax[1] = 1.651 - 2.816 * mx0;
 		} else {
 			ax[0] = 0.33;
 			ax[1] = 1.352;
 		}
 	}
+	return(ax);
+}
+
+void doLifeTable(int sex, int nage, double *mx, 
+				double *Lx, double *lx, double *qx, double *ax) {
+	
+	int i;
+	double *tmpa;
+	
+	tmpa = get_a05(mx[0], sex);
+	ax[0] = tmpa[0];
+	ax[1] = tmpa[1];
 	qx[0] = mx[0] / (1 + (1 - ax[0]) * mx[0]);                    /* 1q0 */	
 	qx[1] = 4 * mx[1] / (1 + (4 - ax[1]) * mx[1]);				  /* 4q1 */	
 	lx[0] = 1;                                                    /* l0 */
@@ -336,17 +344,20 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
+				  double *mxm, double *mxf,
 				  double *popm, double *popf, double *totp, 
-				  /*double *Lm, double *Lf, double *lxm, double *lxf,*/
 				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
-	int i,j, jve, adim, nrow, ncol, n;
+	double Lxm[27], Lxf[27], lm[27], lf[27], mxtm[28], mxtf[28], cdeathsm[27], cdeathsf[27];
+	int i,j, jve, adim, adimmx, nrow, ncol, n;
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
 	adim=27;
+	adimmx=adim+1;
+	
 	for(j=0; j<ncol; ++j) {
 		for(i=0; i<nrow; ++i) {		
 			migm[i][j] = MIGm[i + j*nrow];
@@ -417,14 +428,34 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
 		}
 		deathsm[jve*adim] = bm * (1-srm[jve*adim]);
-        deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
+        deathsf[jve*adim] = bf * (1-srf[jve*adim]);
+        /* upper triangle */
+        /*ax05m = get_a05(mxm0[jve], 1); 
+        ax05f = get_a05(mxf0[jve], 2);*/
+        /*Rprintf("\n%i:\t%f\t%f", j, mxm0[jve], mxf0[jve]);
+        Rprintf("\n\t%f\t%f", j, ax05m[0], ax05f[0]);*/
+        /*deathsm[jve*adim] = deathsm[jve*adim] + deathsm[jve*adim] / (1-ax05m[0]);
+        deathsf[jve*adim] = deathsf[jve*adim] + deathsf[jve*adim] / (1-ax05f[0]);  */
+        for(i=0; i<adimmx; ++i) {
+        	mxtm[i]=mxm[i + jve*adimmx];
+        	mxtf[i]=mxf[i + jve*adimmx];
+        }
+        LifeTableC(1, 27, mxtm, Lxm, lm);
+        LifeTableC(2, 27, mxtf, Lxf, lf);
+        cdeathsm[0] = deathsm[jve*adim];
+        cdeathsf[0] = deathsf[jve*adim];
         for(i=1; i<(adim-1); ++i) {
-        	deathsm[i + jve*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
-            deathsf[i + jve*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
+        	cdeathsm[i] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
+            cdeathsf[i] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
 		}
         i = 26;
-		deathsm[i + jve*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
-		deathsf[i + jve*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
+		cdeathsm[i] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
+		cdeathsf[i] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
+		/* convert cohort deaths into period deaths */
+		for(i=1; i<adim; ++i) {
+        	deathsm[i + jve*adim] = cdeathsm[i-1]*((5*lm[i]-Lxm[i])/(Lxm[i-1]-Lxm[i]))  + cdeathsm[i] * ((Lxm[i] - 5*lm[i+1])/(Lxm[i]-Lxm[i+1]));
+        	deathsf[i + jve*adim] = cdeathsf[i-1]*((5*lf[i]-Lxf[i])/(Lxf[i-1]-Lxf[i]))  + cdeathsf[i] * ((Lxf[i] - 5*lf[i+1])/(Lxf[i]-Lxf[i+1]));
+        }
 	}	
 }	
 
