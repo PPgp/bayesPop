@@ -1551,28 +1551,32 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'ex'), ...){
+LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'ex', 'ax'), ...){
 	colname <- match.arg(colname)
 	if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
 	return(apply(mx, 2, .doLifeTableMxCol, colname=colname, ...))
 }
 
-.collapse.dx <- function(LT, ...) {
-	lx <- .collapse.lx(LT, ...)
-	return(c(lx[1:2]-lx[2:3], LT$dx[-(1:3)]))
+.collapse.dx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	dx.start <- c(LT$dx[1:2], LT$dx[1] + LT$dx[2])[age05]
+	return(c(dx.start, LT$dx[-(1:2)]))
 }
 
-.collapse.Tx <- function(LT, ...) {
-	Lx <- .collapse.Lx(LT, ...)
-	Tx <- LT$Tx[-1]
-	for(i in 3:1) Tx[i] <- Tx[i+1] + Lx[i]
-	return(Tx)
+.collapse.ax <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	ax.start <- c(LT$ax[1:2], NA)[age05]
+	return(c(ax.start, LT$ax[-(1:2)]))
 }
 
-.collapse.ex <- function(LT, ...) {
+.collapse.Tx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	Tx.start <- c(LT$Tx[1:2], LT$Tx[1] + Tx[2])[age05]
+	return(c(Tx.start, LT$Tx[-(1:2)]))
+}
+
+.collapse.ex <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
 	lx <- .collapse.lx(LT, ...)
 	Tx <- .collapse.Tx(LT, ...)
-	return(c(Tx[1:2]/lx[1:2], LT$ex[-(1:3)]))	
+	ex.start <- c(LT$ex[1:2], Tx[1]/lx[1])[age05]
+	return(c(ex.start, LT$ex[-(1:2)]))	
 }
 
 .collapse.Lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
@@ -1598,6 +1602,8 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'ex
 .doLifeTableMxCol <- function(mx, colname, age05=c(FALSE, FALSE, TRUE), ...) {
 	# age05 determines the inclusion of ages 0-1, 1-4, 0-4
 	LT <- LifeTableMx(mx, ...)
+	if(all(age05==c(TRUE, TRUE, FALSE))) # no collapsing
+		return(LT[,colname])
 	return(do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05)))
 }
 
