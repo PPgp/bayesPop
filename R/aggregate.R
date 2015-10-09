@@ -257,7 +257,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 		valid.regions[reg.idx] <- TRUE
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		e <- new.env()
-		e$obs <- new.env()
+		etmp <- new.env()
+		etmp$obs <- new.env()
 		if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 		for(cidx in 1:length(countries.index)) {
 			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
@@ -287,9 +288,9 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
 							observed[[par]] <- e$observed[[par]]
-					e$pop01m <- e$pop01f <- e$death01m <- e$death01f <- array(0, dim=dim(e$mxm)[2:3])
-					e$pop01m.hch <- e$pop01f.hch <- e$death01m.hch <- e$death01f.hch <- array(0, dim=dim(e$mxm.hch)[2:3])
-					e$obs$pop01m <- e$obs$pop01f <- e$obs$death01m <- e$obs$death01f <- array(0, dim=dim(e$observed$mxm)[2:3])
+					etmp$pop01m <- etmp$pop01f <- etmp$death01m <- etmp$death01f <- array(0, dim=dim(e$mxm)[2:3])
+					etmp$pop01m.hch <- etmp$pop01f.hch <- etmp$death01m.hch <- etmp$death01f.hch <- array(0, dim=dim(e$mxm.hch)[2:3])
+					etmp$obs$pop01m <- etmp$obs$pop01f <- etmp$obs$death01m <- etmp$obs$death01f <- array(0, dim=dim(e$observed$mxm)[2:3])
 				}
 				trajectory.indices <- e$trajectory.indices											
 			} else {
@@ -304,37 +305,48 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			}
 			if(has.vital.events) {
 				# Compute infant population and deaths in order to get mx for aggregations
-				popd01 <- compute.pop01.and.deaths01(births=apply(btm, c(2,3), sum), mx=e$mxm, sex="Male")
-				e$pop01m <- e$pop01m + popd01$pop
-				e$death01m <- e$death01m + popd01$deaths
-				popd01 <- compute.pop01.and.deaths01(births=apply(btf, c(2,3), sum), mx=e$mxf, sex="Female")
-				e$pop01f <- e$pop01f + popd01$pop
-				e$death01f <- e$death01f + popd01$deaths	
-				popd01 <- compute.pop01.and.deaths01(births=apply(btm.hch, c(2,3), sum), mx=e$mxm.hch, sex="Male")
-				e$pop01m.hch <- e$pop01m.hch + popd01$pop
-				e$death01m.hch <- e$death01m.hch + popd01$deaths
-				popd01 <- compute.pop01.and.deaths01(births=apply(btf.hch, c(2,3), sum), mx=e$mxf.hch, sex="Female")
-				e$pop01f.hch <- e$pop01f.hch + popd01$pop
-				e$death01f.hch <- e$death01f.hch + popd01$deaths
+				popd01 <- compute.pop01.and.deaths01(births=apply(e$btm, c(2,3), sum), mx=e$mxm, sex="Male")
+				etmp$pop01m <- etmp$pop01m + popd01$pop
+				etmp$death01m <- etmp$death01m + popd01$deaths
+				popd01 <- compute.pop01.and.deaths01(births=apply(e$btf, c(2,3), sum), mx=e$mxf, sex="Female")
+				etmp$pop01f <- etmp$pop01f + popd01$pop
+				etmp$death01f <- etmp$death01f + popd01$deaths	
+				popd01 <- compute.pop01.and.deaths01(births=apply(e$btm.hch, c(2,3), sum), mx=e$mxm.hch, sex="Male")
+				etmp$pop01m.hch <- etmp$pop01m.hch + popd01$pop
+				etmp$death01m.hch <- etmp$death01m.hch + popd01$deaths
+				popd01 <- compute.pop01.and.deaths01(births=apply(e$btf.hch, c(2,3), sum), mx=e$mxf.hch, sex="Female")
+				etmp$pop01f.hch <- etmp$pop01f.hch + popd01$pop
+				etmp$death01f.hch <- etmp$death01f.hch + popd01$deaths
 				popd01 <- compute.pop01.and.deaths01(births=apply(e$observed$btm, c(2,3), sum), mx=e$observed$mxm, sex="Male")
-				e$obs$pop01m <- e$obs$pop01m + popd01$pop
-				e$obs$death01m <- e$obs$death01m + popd01$deaths
+				etmp$obs$pop01m <- etmp$obs$pop01m + popd01$pop
+				etmp$obs$death01m <- etmp$obs$death01m + popd01$deaths
 				popd01 <- compute.pop01.and.deaths01(births=apply(e$observed$btf, c(2,3), sum), mx=e$observed$mxf, sex="Female")
-				e$obs$pop01f <- e$obs$pop01f + popd01$pop
-				e$obs$death01f <- e$obs$death01f + popd01$deaths
+				etmp$obs$pop01f <- etmp$obs$pop01f + popd01$pop
+				etmp$obs$death01f <- etmp$obs$death01f + popd01$deaths
 			}
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
 		if(has.vital.events) {
-			# asfert
-			# Attach the second last observed year of female population in order to get last observed fertility
-			tmp <- aggr.obs.dataF[4:10,as.character(pop.pred$proj.years.pop[1]-5),drop=FALSE]
+			# Attach the second last observed year of population - needed to get last observed fertility and mx
+			second.last.year <- as.character(pop.pred$proj.years.pop[1]-5)
+			tmp <- aggr.obs.dataM[,second.last.year,drop=FALSE]
+			if(nrow(tmp) < dim(totpm)[1]) 
+				tmp <- rbind(tmp, matrix(NA, nrow=dim(totpm)[1]-nrow(tmp), ncol=ncol(tmp), dimnames=list(NULL, colnames(tmp))))
 			tmp <- abind(tmp, NULL, along=3)
-			popfwprev <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf[4:10,,,drop=FALSE], along=2)
+			popwpm <- abind(tmp[,,rep(1,dim(totpm)[3]), drop=FALSE], totpm, along=2)
+			popwpm.hch <- abind(tmp[,,rep(1,dim(totpm.hch)[3]), drop=FALSE], totpm.hch, along=2)
+			tmp <- aggr.obs.dataF[,second.last.year,drop=FALSE]
+			if(nrow(tmp) < dim(totpf)[1]) 
+				tmp <- rbind(tmp, matrix(NA, nrow=dim(totpf)[1]-nrow(tmp), ncol=ncol(tmp), dimnames=list(NULL, colnames(tmp))))
+			tmp <- abind(tmp, NULL, along=3)
+			popwpf <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf, along=2)
+			popwpf.hch <- abind(tmp[,,rep(1,dim(totpf.hch)[3]), drop=FALSE], totpf.hch, along=2)
+			# asfert
+			popfwprev <- popwpf[4:10,,,drop=FALSE]
 			asfert <- 2*(btm + btf)/(popfwprev[,-dim(popfwprev)[2],,drop=FALSE]+
 										popfwprev[,-1,,drop=FALSE])
-			popfwprev.hch <- abind(tmp[,,rep(1,dim(totpf.hch)[3]), drop=FALSE], totpf.hch[4:10,,,drop=FALSE], along=2)
+			popfwprev.hch <- popwpf.hch[4:10,,,drop=FALSE]
 			asfert.hch <- 2*(btm.hch + btf.hch)/(popfwprev.hch[,-dim(popfwprev.hch)[2],,drop=FALSE]+
 										popfwprev.hch[,-1,,drop=FALSE])
 			# pasfert
@@ -342,27 +354,35 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 			tfr.hch <- apply(asfert.hch, c(2,3), sum)
 			pasfert.hch <- asfert.hch/abind(tfr.hch, NULL, along=0)[rep(1,dim(asfert.hch)[1]),,,drop=FALSE]*100
-
+			
 			# mx
-			mxm <- derive.aggregated.mx(e, "m")
-			mxf <- derive.aggregated.mx(e, "f")
-			mxm.hch <- derive.aggregated.mx(e, "m.hch")
-			mxf.hch <- derive.aggregated.mx(e, "f.hch")
+			etmp$pop01m <- abind(array(etmp$obs$pop01m[dim(etmp$obs$pop01m)[1]-1,], dim=c(1, dim(etmp$pop01m)[2])), etmp$pop01m, along=1)
+			etmp$pop01f <- abind(array(etmp$obs$pop01f[dim(etmp$obs$pop01f)[1]-1,], dim=c(1, dim(etmp$pop01f)[2])), etmp$pop01f, along=1)
+			etmp$pop01m.hch <- abind(array(etmp$obs$pop01m[dim(etmp$obs$pop01m)[1]-1,], dim=c(1, dim(etmp$pop01m.hch)[2])), etmp$pop01m.hch, along=1)
+			etmp$pop01f.hch <- abind(array(etmp$obs$pop01f[dim(etmp$obs$pop01f)[1]-1,], dim=c(1, dim(etmp$pop01f.hch)[2])), etmp$pop01f.hch, along=1)
+			for(par in c('popwpm', 'popwpf', 'popwpm.hch', 'popwpf.hch', 'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch')) 
+				etmp[[par]] <- get(par)
+			mxm <- derive.aggregated.mx(etmp, "m")
+			mxf <- derive.aggregated.mx(etmp, "f")
+			mxm.hch <- derive.aggregated.mx(etmp, "m.hch")
+			mxf.hch <- derive.aggregated.mx(etmp, "f.hch")
 			
 			# asfert, pasfert, mx for observed data
-			for(par in c('deathsm', 'deathsf')) e$obs[[par]] <- observed[[par]]
-			e$obs$totpm <- abind(aggr.obs.dataM[,-1], along=3)
-			e$obs$totpf <- abind(aggr.obs.dataF[,-1], along=3)
+			for(par in c('deathsm', 'deathsf')) etmp$obs[[par]] <- observed[[par]]
+			etmp$obs$popwpm <- abind(aggr.obs.dataM, along=3)
+			etmp$obs$popwpf <- abind(aggr.obs.dataF, along=3)
+			etmp$obs$pop01m <- rbind(rep(NA, ncol(etmp$obs$pop01m)), etmp$obs$pop01m)
+			etmp$obs$pop01f <- rbind(rep(NA, ncol(etmp$obs$pop01f)), etmp$obs$pop01f)
 			observed <- within(observed, {
-				tmp <- abind(aggr.obs.dataF[4:10, , drop=FALSE], NULL, along=3)
+				tmp <- etmp$obs$popwpf[4:10,,,drop=FALSE]
 				if(dim(tmp)[2] > dim(btf)[2]+1) # if dimension of births doesn't match population
 					tmp <- tmp[,-(1:(dim(tmp)[2]-dim(btf)[2]-1)),, drop=FALSE]
 				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
 				tfr <- apply(asfert, c(2,3), sum)
 				pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 				rm(tmp, tfr)
-				mxm <- derive.aggregated.mx(e$obs, "m")
-				mxf <- derive.aggregated.mx(e$obs, "f")
+				mxm <- derive.aggregated.mx(etmp$obs, "m")
+				mxf <- derive.aggregated.mx(etmp$obs, "f")
 			})
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  migm, migf,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, mxm.hch, mxf.hch, 
@@ -445,13 +465,14 @@ compute.pop01.and.deaths01 <- function(births, mx, sex) {
 
 derive.aggregated.mx <- function(e, suffix) {
 	d <- e[[paste0('deaths', suffix)]]
-	pop <- e[[paste0('totp', suffix)]]
-	mx <- d/pop
+	pop <- e[[paste0('popwp', suffix)]]
+	mx <- 2*d/(pop[,2:dim(pop)[2],,drop=FALSE]+pop[,1:(dim(pop)[2]-1),,drop=FALSE])
 	# split first age category (0-4) into 0-1 and 1-4
 	d01 <- e[[paste0('death01', suffix)]]
 	pop01 <- e[[paste0('pop01', suffix)]]
-	mx01 <- d01/pop01
-	mx14 <- (d[1,,] - d01)/(pop[1,,] - pop01)
+	mx01 <- 2*d01/(pop01[2:nrow(pop01),,drop=FALSE] + pop01[1:(nrow(pop01)-1),,drop=FALSE])
+	popd <- pop[1,,] - pop01
+	mx14 <- 2*(d[1,,] - d01)/(popd[2:nrow(popd),,drop=FALSE] + popd[1:(nrow(popd)-1),,drop=FALSE])
 	dim(mx01) <- c(1,dim(mx01))
 	dim(mx14) <- c(1,dim(mx14))
 	return(abind(mx01, mx14, mx[-1,,,drop=FALSE], along=1))
