@@ -1551,10 +1551,15 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'ex', 'ax'), ...){
+LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), ...){
 	colname <- match.arg(colname)
 	if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
 	return(apply(mx, 2, .doLifeTableMxCol, colname=colname, ...))
+}
+
+.collapse.sx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
+	sx.start <- c(LT$sx[1:2], (LT$Lx[1] + LT$Lx[2])/5)[age05]
+	return(c(sx.start, LT$sx[-(1:2)]))
 }
 
 .collapse.dx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {

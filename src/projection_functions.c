@@ -194,6 +194,8 @@ void LifeTable(int *sex, int *nage, double *mx,
 		dx[i] = lx[i] - lx[i+1];
 	}	
 	get_sx(Lx, sx, *nage, *nage);
+	/* the above call assumed the first age category is 0-5 but it is 0-1 */
+	sx[0] = sx[0]*5;
 }
 
 
@@ -453,8 +455,10 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		cdeathsf[i] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
 		/* convert cohort deaths into period deaths */
 		for(i=1; i<adim; ++i) {
-        	deathsm[i + jve*adim] = cdeathsm[i-1]*((5*lm[i]-Lxm[i])/(Lxm[i-1]-Lxm[i]))  + cdeathsm[i] * ((Lxm[i] - 5*lm[i+1])/(Lxm[i]-Lxm[i+1]));
-        	deathsf[i + jve*adim] = cdeathsf[i-1]*((5*lf[i]-Lxf[i])/(Lxf[i-1]-Lxf[i]))  + cdeathsf[i] * ((Lxf[i] - 5*lf[i+1])/(Lxf[i]-Lxf[i+1]));
+        	/*deathsm[i + jve*adim] = cdeathsm[i-1]*((5*lm[i]-Lxm[i])/(Lxm[i-1]-Lxm[i]))  + cdeathsm[i] * ((Lxm[i] - 5*lm[i+1])/(Lxm[i]-Lxm[i+1]));
+        	deathsf[i + jve*adim] = cdeathsf[i-1]*((5*lf[i]-Lxf[i])/(Lxf[i-1]-Lxf[i]))  + cdeathsf[i] * ((Lxf[i] - 5*lf[i+1])/(Lxf[i]-Lxf[i+1]));*/
+        	deathsm[i + jve*adim] = cdeathsm[i + jve*adim];
+        	deathsf[i + jve*adim] = cdeathsf[i + jve*adim];
         }
 	}	
 }	

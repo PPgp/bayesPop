@@ -458,6 +458,8 @@ compute.pop01.and.deaths01 <- function(births, mx, sex) {
 		pop01[,itraj] <- births[,itraj] * (1 - qx[1,] + qx[1,] * ax[1,])
 		death01.lowerT <- births[,itraj] * (1 - sx[1,,itraj])
 		death01[,itraj] <- death01.lowerT + death01.lowerT/(1-ax[1,])
+		#death01[,itraj] <- death01.lowerT
+		#stop('')
 	}
 	return(list(pop=pop01, deaths=death01))
 }
@@ -473,6 +475,7 @@ derive.aggregated.mx <- function(e, suffix) {
 	mx01 <- 2*d01/(pop01[2:nrow(pop01),,drop=FALSE] + pop01[1:(nrow(pop01)-1),,drop=FALSE])
 	popd <- pop[1,,] - pop01
 	mx14 <- 2*(d[1,,] - d01)/(popd[2:nrow(popd),,drop=FALSE] + popd[1:(nrow(popd)-1),,drop=FALSE])
+	#stop('')
 	dim(mx01) <- c(1,dim(mx01))
 	dim(mx14) <- c(1,dim(mx14))
 	return(abind(mx01, mx14, mx[-1,,,drop=FALSE], along=1))
