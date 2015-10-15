@@ -384,11 +384,11 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
         	mxtm[i]=mxm[i + jve*adimmx];
         	mxtf[i]=mxf[i + jve*adimmx];
         }
-        LifeTableC(1, 27, mxtm, Lxm, lm);
-        LifeTableC(2, 27, mxtf, Lxf, lf);
+        /*LifeTableC(1, 27, mxtm, Lxm, lm);
+        LifeTableC(2, 27, mxtf, Lxf, lf);*/
         cdeathsm[0] = deathsm[jve*adim];
         cdeathsf[0] = deathsf[jve*adim];
-        /* one part of the lexis triangle */
+        /* one part */
         for(i=1; i<(adim-1); ++i) {
             cdeathsm[i] = popm[i + j*adim]*(1-srm[i + jve*adim])/srm[i + jve*adim];
             cdeathsf[i] = popf[i + j*adim]*(1-srf[i + jve*adim])/srf[i + jve*adim];
@@ -396,7 +396,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
         i = 26; /* last age group */
 		cdeathsm[i] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
 		cdeathsf[i] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
-		/* add the other part of the lexis triangle to get period deaths */
+		/* add another part - results in cohort deaths? */
 		for(i=1; i<adim; ++i) {
         	deathsm[i + jve*adim] = 0.5*(cdeathsm[i] + popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]));
         	deathsf[i + jve*adim] = 0.5*(cdeathsf[i] + popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]));
