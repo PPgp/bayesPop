@@ -13,29 +13,37 @@ double sum(double *x, int dim) {
 	return(s);
 }
 
-
-void doLifeTable(int sex, int nage, double *mx, 
-				double *Lx, double *lx, double *qx, double *ax) {
-	
-	int i;
-
+double * get_a05(double mx0, int sex) {
+	static double ax[2];
 	if(sex > 1) {/* female*/
-		if (mx[0] < 0.107) {
-			ax[0] = 0.053 + 2.8 * mx[0];      /*1a0*/
-			ax[1] = 1.522 - 1.518 * mx[0];    /*4a1*/
+		if (mx0 < 0.107) {
+			ax[0] = 0.053 + 2.8 * mx0;      /*1a0*/
+			ax[1] = 1.522 - 1.518 * mx0;    /*4a1*/
 		} else {
 			ax[0] = 0.35;
 			ax[1] = 1.361;
 		}
 	} else { /* male */
-		if (mx[0] < 0.107) {
-			ax[0] = 0.045 + 2.684 * mx[0];
-			ax[1] = 1.651 - 2.816 * mx[0];
+		if (mx0 < 0.107) {
+			ax[0] = 0.045 + 2.684 * mx0;
+			ax[1] = 1.651 - 2.816 * mx0;
 		} else {
 			ax[0] = 0.33;
 			ax[1] = 1.352;
 		}
 	}
+	return(ax);
+}
+
+void doLifeTable(int sex, int nage, double *mx, 
+				double *Lx, double *lx, double *qx, double *ax) {
+	
+	int i;
+	double *tmpa;
+
+	tmpa = get_a05(mx[0], sex);
+	ax[0] = tmpa[0];
+	ax[1] = tmpa[1];
 	qx[0] = mx[0] / (1 + (1 - ax[0]) * mx[0]);                    /* 1q0 */	
 	qx[1] = 4 * mx[1] / (1 + (4 - ax[1]) * mx[1]);				  /* 4q1 */	
 	lx[0] = 1;                                                    /* l0 */
@@ -139,16 +147,13 @@ void LCEoKtC(int sex, double *ax, double *bx,
 }
 
 void get_sx(double *LLm, double *sx, int n, int Ldim) {
+	/* compute survival ratios from Lx where the first age group is 0-5 (also for Lx)*/
 	int i, oei;
 	double sumLL;
 	oei=n-1;
-	/*Rprintf("\nSR oei=%i", oei);
-	Rprintf("\nLLm0=%lf", LLm[0]);*/
 	/* Survival Ratios */
     sx[0] = LLm[0] / 5.0;
-    /*Rprintf("\nsx[0]=%lf\n", sx[0]);*/
 	for(i=1; i < oei; ++i) {
-		/*Rprintf("i=%i, LLm[i]=%lf, LLm[i-1]=%lf, ", i, LLm[i], LLm[i-1]);*/
 		if(LLm[i-1] == 0) sx[i] = exp(-5);
 		else sx[i] = LLm[i]/LLm[i-1];
 	}
@@ -186,6 +191,8 @@ void LifeTable(int *sex, int *nage, double *mx,
 		dx[i] = lx[i] - lx[i+1];
 	}	
 	get_sx(Lx, sx, *nage, *nage);
+	/* the above call assumed the first age category is 0-5 but here it is 0-1 */
+	sx[0] = sx[0]*5;
 }
 
 
@@ -226,54 +233,6 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 		for (i=0; i < 26; ++i) {
 			LLm[i + pred*27] = Lm[i];
 		}
-	}
-}
-
-void compute_deaths(double births, int adim, int jve, double *pop, double *L, double *lx, double *deaths) {
-	/* function not used */
-	double Dc[27], Db, fx[27], sd;
-	int i;
-	Db = births * (1-L[0]/(5*lx[1])); /* deaths at birth */
-	/*Rprintf("\nbirths: %lf Db: %lf", births, Db);*/
-	for(i=0; i<(adim-1); ++i) {
-		/*Dc[i] = L[i] - L[i+1];*/ /* cohort deaths */
-		Dc[i] = pop[i + jve*adim] * (1-(L[i + 1]/L[i]));
-	}
-	for(i=0; i<(adim-1); ++i) {
-		fx[i] = (L[i]-5*lx[i + 2])/(L[i]-L[i+1]); /*splitting factors*/
-	}
-	/*deaths[jve*adim] = 100*(Db + Dc[0] * fx[0]);*/
-	deaths[jve*adim] = (Db + Dc[0] * (L[0]-5*lx[1])/(L[0]-L[1]));
-	for(i=1; i<(adim-1); ++i) {
-		deaths[i + jve*adim] = (Dc[i-1] * (1-fx[i-1]) + Dc[i] * fx[i]);
-	}
-	i = adim-1;
-	Dc[i] = (pop[i-1 + jve*adim]+pop[i+ jve*adim])*(1-(L[i]/(L[i]+L[i - 1])));
-	deaths[i + jve*adim] = (Dc[i-1] * fx[i-1] + Dc[i]);
-	sd = 0;
-	Rprintf("\ni\t\tLx\t\tlx\t\tsx\t\tN\t\tDc\t\tfx\t\tD");
-	for(i=0; i<(adim-1); ++i) {
-		Rprintf("\n%i:\t%f\t%f\t%f\t%f\t%f\t%f\t%f", i, L[i], lx[i], L[i+1]/L[i], pop[i+ jve*adim], Dc[i], fx[i], deaths[i + jve*adim]);
-		sd += deaths[i + jve*adim];
-	}
-	
-	Rprintf("\nsum D=%f\n", sd);
-}
-
-void get_VE_from_LT(int *N, int *Sex, double *Mx, double *Births, double *pop, double *Sr, double *Deaths) {
-	/* function not used */
-	double LLm[21], sx[21], mxm[22], lm[22];
-	int i, j;
-	for (j=0; j < *N; ++j) {
-		for (i=0; i < 22; ++i) {
-			mxm[i] = Mx[i + j*22];
-		}
-		LifeTableC(*Sex, 21, mxm, LLm, lm);
-		get_sx21_21(LLm, sx);
-		for (i=0; i < 21; ++i) {
-			Sr[i + j*21] = sx[i];
-		}
-		/*compute_deaths(*Births, 21, j, pop, LLm, lm, Deaths);*/
 	}
 }
 
@@ -337,7 +296,6 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
-				  /*double *Lm, double *Lf, double *lxm, double *lxf,*/
 				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];

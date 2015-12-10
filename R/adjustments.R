@@ -150,6 +150,7 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	res <- array(NA, c(length(countries), length(ages), ncol(dataset)-2))
 	for(i in 1:length(countries)) {
 		idx <- which(dataset$country_code==countries[i])
+		if(length(idx) == 0) next
 		tmp <- dataset[idx,colidx]
 		rownames(tmp) <- age.vector
 		res[i,,] <- as.matrix(tmp[ages,])

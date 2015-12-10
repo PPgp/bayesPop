@@ -316,6 +316,9 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			# pasfert
 			tfr <- apply(asfert, c(2,3), sum)
 			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
+			tfr.hch <- apply(asfert.hch, c(2,3), sum)
+			pasfert.hch <- asfert.hch/abind(tfr.hch, NULL, along=0)[rep(1,dim(asfert.hch)[1]),,,drop=FALSE]*100
+			
 			# TODO: mxm, mxf, mxm.hch, mxf.hch
 			
 			# asfert, pasfert for observed data
@@ -330,7 +333,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 				# TODO: mxm, mxf, mxm.hch, mxf.hch
 			})
 			save(btm, btf, deathsm, deathsf, migm, migf, asfert, pasfert,
-				btm.hch, btf.hch, deathsm.hch, deathsf.hch, 
+				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch,
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}		
 		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
