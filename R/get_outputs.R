@@ -1313,3 +1313,14 @@ get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F"
 	par <- list(TFR="TFRpred", e0M="e0Mpred", e0F="e0Fpred", migM="migMpred", migF="migFpred")
 	return(e$trajectory.indices[[par[[what[1]]]]])
 }
+
+get.trajectories.close.to <- function(pred, country, quant=0.5, values=NULL, nr.traj=1, ...) {
+	# Return trajectories close to the given quantile, or close to the given values
+	trajectories <- get.pop.trajectories(pred, country, ...)$trajectories
+	if(is.null(values)) {
+		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
+	}
+	sumerrors <- apply(abs(trajectories - values), 2, sum)
+	sorterrors.idx <- order(sumerrors)
+    return(list(trajectories=trajectories[,sorterrors.idx[1:nr.traj]], index=sorterrors.idx[1:nr.traj]))
+}
