@@ -343,7 +343,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]); /* assures population is not negative */
 			popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
 			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
-            popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
+			popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
 		/* Age 130+ */
 		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim];
@@ -375,12 +375,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
 		}
 		deathsm[jve*adim] = bm * (1-srm[jve*adim]);
-        deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
-        for(i=1; i<(adim-1); ++i) {
-        	deathsm[i + jve*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
-            deathsf[i + jve*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
+		deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
+		for(i=1; i<(adim-1); ++i) {
+			deathsm[i + jve*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
+			deathsf[i + jve*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
 		}
-        i = 26;
+		i = 26;
 		deathsm[i + jve*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
 		deathsf[i + jve*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
 	}	
