@@ -501,36 +501,36 @@ get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
-	if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
-	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]))
-	sx[,,1] <- sx1
-	dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
-	if(dim(mxm)[3] <= 1) return(sx)
-	for (itraj in 2:dim(mxm)[3]) {
-		sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05)
-	}
-	return (sx)
-	
-	# sx21 <- dim(mxm)[1] < 27
-	# for (itraj in 1:dim(mxm)[3]) {
-		# LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
-		# if(itraj == 1) {
-			# if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
-			# sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
-			# sr <- rep(0, dim(LLm)[1])
-		# }
-		# sx[,, itraj] <- apply(LLm, 2, 
-							# function(x, sr) {
-								# if(!any(is.na(x))) {
-									# res.sr <- if(sx21) .C("get_sx21_21", as.numeric(x), sx=sr)
-												# else .C("get_sx27", as.numeric(x), sx=sr)
-									# return(res.sr$sx)
-								# } else return(rep(NA, length(x)))
-							# }, sr)
-	# }
+	# sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
+	# if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
+	# sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]))
+	# sx[,,1] <- sx1
 	# dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
+	# if(dim(mxm)[3] <= 1) return(sx)
+	# for (itraj in 2:dim(mxm)[3]) {
+		# sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05)
+	# }
 	# return (sx)
+	
+	sx21 <- dim(mxm)[1] < 27
+	for (itraj in 1:dim(mxm)[3]) {
+		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
+		if(itraj == 1) {
+			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
+			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
+			sr <- rep(0, dim(LLm)[1])
+		}
+		sx[,, itraj] <- apply(LLm, 2, 
+							function(x, sr) {
+								if(!any(is.na(x))) {
+									res.sr <- if(sx21) .C("get_sx21_21", as.numeric(x), sx=sr)
+												else .C("get_sx27", as.numeric(x), sx=sr)
+									return(res.sr$sx)
+								} else return(rep(NA, length(x)))
+							}, sr)
+	}
+	dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
+	return (sx)
 }
 
 get.popVE.trajectories.and.quantiles <- function(pop.pred, country, 
