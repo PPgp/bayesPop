@@ -90,7 +90,8 @@ void doLifeTable(int sex, int nage, double *mx,
 	
 	/* Next line throws an exception in projection, not life table calculations; reason ? */
 	/* TB: added missing ax for last, open-ended age group */ 
-	/* ax[nage] = Lx[nage];*/
+  /* test after declaration in predict.pop was changed */
+	ax[nage] = Lx[nage];
 	
 	/*Rprintf("\nLTend\n");*/
 }
