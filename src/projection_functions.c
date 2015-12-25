@@ -51,8 +51,11 @@ void doLifeTable(int sex, int nage, double *mx,
 				double *Lx, double *lx, double *qx, double *ax) {
 	
 	int i;
-	double *tmpa;
-
+  double k;     /* correcting factor in Greville approximation */
+	double *tmpa; /* pointer to estimated ax[0] and ax[1] values */
+	int nage1;
+	nage1 = nage -1;
+	
 	tmpa = get_a05(mx[0], sex);
 	ax[0] = tmpa[0];
 	ax[1] = tmpa[1];
@@ -64,33 +67,41 @@ void doLifeTable(int sex, int nage, double *mx,
 	Lx[0] =  lx[1] + ax[0] * (lx[0] - lx[1]);                     /* 1L0 */
 	Lx[1] =  4 * lx[2] + ax[1] * (lx[1] - lx[2]);                 /* 4L1 */
 		
-    /*Rprintf("\nnage=%i, L0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", nage, Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
-    /* Age 5-9, .... 125-129 
-	 Greville formula used in Mortpak and UN MLT (1982)*/
-    /* TB: corrected for age group 3 (5-9), tentativley set to 2.5 or n/2 */
-    ax[2] = 2.5;
+  /*Rprintf("\nnage=%i, L0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", nage, Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
+  /* Age 5-9, .... 125-129 
+  Greville formula used in Mortpak and UN MLT (1982)*/
+  /* TB: corrected for age group 3 (5-9), tentativley set to 2.5 or n/2 */
+  ax[2] = 2.5;
     
-    for(i = 3; i < nage; ++i) {
-      ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
-      /* correcting out-of (reasonable) bounds ax for older ages             */ 
-      /* 0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
-      if(i > 9 && ax[i] < 0.97) {
-        ax[i] = 0.97;
+  for(i = 3; i < nage1; ++i) {
+    k     = 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN));
+    ax[i] = 2.5 - (25 / 12.0) * (mx[i] - k);
+    }
+    /* penultimate ax calculated with k from previous age group */
+    ax[nage1] = 2.5 - (25 / 12.0) * (mx[i] - k);
+  
+  /* correcting out-of (reasonable) bounds ax for older ages             */ 
+  /* 0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
+  for(i = 10; i < nage; i++) {
+    if(ax[i] < 0.97) {
+       ax[i] = 0.97;
       }
     }
+  
+  /* caculate life table variables from mx and ax */
 	for(i = 2; i < nage; ++i) {		
 		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
 		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
 		lx[i+1] = lx[i] * (1-qx[i]);
 		Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
 	}
+	
 	/* Open ended age interval */
 	Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); /* Assuming Mx levels off at age 130 */
 	qx[nage] = 1.0;
 	
-	/* Next line throws an exception in projection, not life table calculations; reason ? */
 	/* TB: added missing ax for last, open-ended age group */ 
-  /* test after declaration in predict.pop was changed */
+  /*  worked after declaration in predict.pop was changed */
 	ax[nage] = Lx[nage];
 	
 	/*Rprintf("\nLTend\n");*/
