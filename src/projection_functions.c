@@ -34,7 +34,19 @@ double * get_a05(double mx0, int sex) {
 	}
 	return(ax);
 }
-
+/*****************************************************************************
+ * Function calculates an abridged life table from age-specific mortality 
+ * rates
+ * Input: 
+ * * mx   age specific mortality rates 
+ * * sex  sex
+ * * nage number of age groups
+ * Output: 
+ * qx Probabilities of dying
+ * lx Survivors to exact age
+ * Lx Person years lived
+ * ax proportion of years lived by those who died
+ *****************************************************************************/
 void doLifeTable(int sex, int nage, double *mx, 
 				double *Lx, double *lx, double *qx, double *ax) {
 	
@@ -45,7 +57,7 @@ void doLifeTable(int sex, int nage, double *mx,
 	ax[0] = tmpa[0];
 	ax[1] = tmpa[1];
 	qx[0] = mx[0] / (1 + (1 - ax[0]) * mx[0]);                    /* 1q0 */	
-	qx[1] = 4 * mx[1] / (1 + (4 - ax[1]) * mx[1]);				  /* 4q1 */	
+	qx[1] = 4 * mx[1] / (1 + (4 - ax[1]) * mx[1]);				        /* 4q1 */	
 	lx[0] = 1;                                                    /* l0 */
 	lx[1] = lx[0] * (1 - qx[0]);                                  /* l1 */
 	lx[2] = lx[1] * (1 - qx[1]);                                  /* l5 = l1 * (1-4q1) */
@@ -55,12 +67,17 @@ void doLifeTable(int sex, int nage, double *mx,
     /*Rprintf("\nnage=%i, L0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", nage, Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
     /* Age 5-9, .... 125-129 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
-	for(i = 2; i < nage; ++i) {
-		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
-		if(i > 9 && ax[i] < 0.97) { /*0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
-			ax[i] = 0.97;
-		}
-	}
+    /* TB: corrected for age group 3 (5-9), tentativley set to 2.5 or n/2 */
+    ax[2] = 2.5;
+    
+    for(i = 3; i < nage; ++i) {
+      ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
+      /* correcting out-of (reasonable) bounds ax for older ages             */ 
+      /* 0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
+      if(i > 9 && ax[i] < 0.97) {
+        ax[i] = 0.97;
+      }
+    }
 	for(i = 2; i < nage; ++i) {		
 		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
 		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
@@ -70,6 +87,11 @@ void doLifeTable(int sex, int nage, double *mx,
 	/* Open ended age interval */
 	Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); /* Assuming Mx levels off at age 130 */
 	qx[nage] = 1.0;
+	
+	/* Next line throws an exception in projection, not life table calculations; reason ? */
+	/* TB: added missing ax for last, open-ended age group */ 
+	/* ax[nage] = Lx[nage];*/
+	
 	/*Rprintf("\nLTend\n");*/
 }
 
