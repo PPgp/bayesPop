@@ -1617,7 +1617,9 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
 	Lx <- lx <- qx <- Tx <- sx <- dx <- rep(0, nage)
-	ax <- rep(0, 27)
+	# Alert: possible conflict with previous declarations; change to ax <- rep(0, nage)
+	#ax <- rep(0, 27)
+	ax <- rep(0, nage)
 	nagem1 <- nage-1
 	nas <- rep(NA,nage)
 	if(!any(is.na(mx))) {
