@@ -13,6 +13,13 @@ double sum(double *x, int dim) {
 	return(s);
 }
 
+/*****************************************************************************
+ * Function returns the ax for ages 0 and 1-4 (abridged life table)
+ * based on mx(0) and sex
+ * Formulas re-estimates from the Coale/Demeny separation factors
+ * on mx(0) insted of qx(0)
+ * Source from Preston et al. 2001, p.48
+ *****************************************************************************/
 double * get_a05(double mx0, int sex) {
 	static double ax[2];
 	if(sex > 1) {/* female*/
@@ -110,6 +117,7 @@ void doLifeTable(int sex, int nage, double *mx,
 	/*Rprintf("\nLTend\n");*/
 }
 
+/* Function returns collapsed Lx and lx columns of life table*/
 void LifeTableC(int sex, int nage, double *mxm, 
 				double *LLm, double *lm) {
 	double ax[27], qx[28], L[28];
@@ -188,8 +196,8 @@ void get_sx(double *LLm, double *sx, int n, int Ldim) {
 	int i, oei;
 	double sumLL;
 	oei=n-1;
-	/* Survival Ratios */
-    sx[0] = LLm[0] / 5.0;
+	/* Survival Ratios, radix of life table assumed to be 1.0 */
+	sx[0] = LLm[0] / 5.0;
 	for(i=1; i < oei; ++i) {
 		if(LLm[i-1] == 0) sx[i] = exp(-5);
 		else sx[i] = LLm[i]/LLm[i-1];
@@ -368,7 +376,22 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]);
 	}
 }
-
+/*****************************************************************************
+ * Core population projection function TotalPopProjection
+ * Called from function StoPopProj in predict.pop.R
+ * Parameter
+ * int *npred                 number of prediction intervals (? time points)
+ * double *MIGm, *MIGf        male, female migration by age
+ * int *migr, *migc           rows, columns of migration array
+ * int *MIGtype               type of migration adjustement
+ * double *srm, *srf          male, female survivor ration by age
+ * double *asfr               age-specific fertility rates 
+ * double *srb                sex ratio at birth
+ * double *popm, *popf        male, female population by age
+ * double *totp               total population by age 
+ * double *btagem, *btagef    male, female births by age of mother
+ * double *deathsm, *deathsf  male, female deaths by age
+******************************************************************************/
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
@@ -380,7 +403,21 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
+	
+	/* adim is an offset representing time, necessary to access and store two-dimensional data 
+	organised by age and time/period into a one-dimensional vector requiered by accessing c from R
+	the expression 
+	 popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
+	 reads forj = 1; j = 1; adim = 27
+	 popm[1 + 1*adim] = popm[0 + 0*adim] * srm[1 + 1*adim];
+	 popm[1 + 27] = popm[0 + 0] * srm[1 + 27];
+	 the sam in multidimensional fashion:
+ 	 popm[1][t+1] = popm[0][t] * srm[1][t+1]
+	 TB: By combining the population at time t=0 with survivor ratios from time t = 1, there could be 
+	     an unwanted shift in projecting; or the survivor ratios for time t=0 must be empty/not defined 
+	*/ 
 	adim=27;
+	
 	for(j=0; j<ncol; ++j) {
 		for(i=0; i<nrow; ++i) {		
 			migm[i][j] = MIGm[i + j*nrow];
@@ -413,6 +450,10 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 		/* Compute ages >=5 */
+    
+    /*TB: replace (j-1) with jve where appropriate */	
+    /*    further simplification would mean to replace jve*adim 
+          with another variable toffset (= jve*adim)*/
 		for(i=1; i<(adim-1); ++i) {		
 			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
 			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];
