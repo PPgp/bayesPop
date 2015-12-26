@@ -377,7 +377,7 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 	}
 }
 /*****************************************************************************
- * Core population projection function TotalPopProjection
+ * Core population projection function TotalPopProj
  * Called from function StoPopProj in predict.pop.R
  * Parameter
  * int *npred                 number of prediction intervals (? time points)
