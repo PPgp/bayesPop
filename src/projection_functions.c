@@ -14,10 +14,11 @@ double sum(double *x, int dim) {
 }
 
 /*****************************************************************************
- * Function returns the ax for ages 0 and 1-4 (abridged life table)
- * based on mx(0) and sex
+ * Function returns the years lived by those who died in the age interval (ax)
+ * for ages 0 and 1-4 (abridged life table)
+ * based on mx(0,1) and sex
  * Formulas re-estimates from the Coale/Demeny separation factors
- * on mx(0) insted of qx(0)
+ * on mx(0,1) insted of qx(0,1)
  * Source from Preston et al. 2001, p.48
  *****************************************************************************/
 double * get_a05(double mx0, int sex) {
@@ -254,8 +255,10 @@ void LifeTable(int *sex, int *nage, double *mx,
 	/* TB: sx */
 	/* first age group is survival from births to age 0-5 */
 	sx[0] = (Lx[0] + Lx[1]) / 5*lx[0];
+	
 	/* second age group is survival age 0-5 to age 5 - 10 */
 	sx[1] = Lx[2] / (Lx[0] + Lx[1]);
+	
 	/* middle age groups  */
 	for(i = 2; i < *nage-1; ++i) {
 	  sx[i] = Lx[i+1] / Lx[i];
@@ -400,21 +403,17 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
 	int i,j, jve, adim, nrow, ncol, n;
+	int t, t1;
+	
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
 	
-	/* adim is an offset representing time, necessary to access and store two-dimensional data 
+	/* adim is an offset (representing time), which necessary to access and store two-dimensional data 
 	organised by age and time/period into a one-dimensional vector requiered by accessing c from R
 	the expression 
-	 popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
-	 reads forj = 1; j = 1; adim = 27
-	 popm[1 + 1*adim] = popm[0 + 0*adim] * srm[1 + 1*adim];
-	 popm[1 + 27] = popm[0 + 0] * srm[1 + 27];
-	 the sam in multidimensional fashion:
- 	 popm[1][t+1] = popm[0][t] * srm[1][t+1]
-	 TB: By combining the population at time t=0 with survivor ratios from time t = 1, there could be 
-	     an unwanted shift in projecting; or the survivor ratios for time t=0 must be empty/not defined 
+	TB: By combining the population at time t=0 with survivor ratios from time t = 1, there could be 
+	    an unwanted shift in projecting; or the survivor ratios for time t=0 must be empty/not defined. 
 	*/ 
 	adim=27;
 	
@@ -447,13 +446,27 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
 		jve = j-1;
+    /* testing replacing j and j-1 */
+	  t= j*adim;
+	  t1 = (j-1) *adim;
+		/* Hana S.*/
 		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
-		/* Compute ages >=5 */
+	  /* TB
+	   * Time index (j) is indexing: 
+	   * * time points  (for stock data, such as populations) 
+	   * * time periods (for period data, such as vital events)
+	   * For period data, the time index j is actually referring to period [j, j + 5] or (j,5)
+	   * This means, index j translated into years (2015, for example), refers 
+	   * to 2015 for stock data (populations)
+	   * to 2015-2020 for period data/vital events. 
+	   */
+
+	   /* Compute ages >=5 */
     
     /*TB: replace (j-1) with jve where appropriate */	
     /*    further simplification would mean to replace jve*adim 
-          with another variable toffset (= jve*adim)*/
+          with another variable t.offset (= jve*adim)*/
 		for(i=1; i<(adim-1); ++i) {		
 			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
 			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];

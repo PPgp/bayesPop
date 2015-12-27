@@ -1565,20 +1565,21 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
   return(c(dx.start, LT$dx[-(1:2)]))
 }
 
+# enabled, added ax
 .collapse.ax <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  ax.start <- c(LT$ax[1:2], NA)[age05]
+  ax.start <- c(LT$ax[1:2], LT$ax)[age05]
   return(c(ax.start, LT$ax[-(1:2)]))
 }
-
+# enabled, added Tx
 .collapse.Tx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  Tx.start <- c(LT$Tx[1:2], LT$Tx[1] + Tx[2])[age05]
+  Tx.start <- c(LT$Tx[1:2], LT$Tx[1])[age05]
   return(c(Tx.start, LT$Tx[-(1:2)]))
 }
-
+# corrected ex
 .collapse.ex <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  lx <- .collapse.lx(LT, ...)
-  Tx <- .collapse.Tx(LT, ...)
-  ex.start <- c(LT$ex[1:2], Tx[1]/lx[1])[age05]
+  #lx <- .collapse.lx(LT, ...)
+  #Tx <- .collapse.Tx(LT, ...)
+  ex.start <- c(LT$ex[1:2], LT$ex[1])[age05]
   return(c(ex.start, LT$ex[-(1:2)]))
 }
 
