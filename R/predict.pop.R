@@ -1569,7 +1569,7 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 
 # enabled, added ax
 .collapse.ax <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  ax.start <- c(LT$ax[1:2], LT$ax)[age05]
+  ax.start <- c(LT$ax[1:2], ((LT$Lx[1]+LT$Lx[2]-5*LT$lx[3])/(LT$dx[1]+LT$dx[2])))[age05]
   return(c(ax.start, LT$ax[-(1:2)]))
 }
 # enabled, added Tx
@@ -1591,7 +1591,8 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 .collapse.lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  lx.start <- LT$lx[c(1,2,2)][age05]
+  lx.start <- LT$lx[1][age05]
+  #lx.start <- LT$lx[c(1,2,2)][age05]
   return(c(lx.start, LT$lx[-(1:2)]))
 }
 
