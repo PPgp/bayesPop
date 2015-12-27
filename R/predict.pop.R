@@ -1240,7 +1240,9 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
   #stop('')
   res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
             srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
-            srb=as.numeric(as.matrix(inputs$SRB)), popm=popm, popf=popf, totp=totp,
+            srb=as.numeric(as.matrix(inputs$SRB)), 
+            mxm=LT$mx[[1]], mxf=LT$mx[[2]],
+            popm=popm, popf=popf, totp=totp,
             btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
             deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
   )
