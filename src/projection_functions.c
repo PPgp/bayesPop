@@ -118,7 +118,9 @@ void doLifeTable(int sex, int nage, double *mx,
 	/*Rprintf("\nLTend\n");*/
 }
 
+
 /* Function returns collapsed Lx and lx columns of life table*/
+/* function call doLifeTable first, then collapsesLx and lx  */
 void LifeTableC(int sex, int nage, double *mxm, 
 				double *LLm, double *lm) {
 	double ax[27], qx[28], L[28];
