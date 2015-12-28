@@ -282,7 +282,12 @@ void LifeTable(int *sex, int *nage, double *mx,
 	*/
 }
 
-
+/*****************************************************************************
+ * Lee Carter model
+ * Produces a projection of age -specific mortality rates
+ * (more)
+ * 
+ *****************************************************************************/
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
 		double *lx, double *Mx) {
@@ -406,7 +411,21 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	double Lxm[27], Lxf[27], lm[27], lf[27], mxtm[28], mxtf[28], cdeathsm[27], cdeathsf[27];
 	int i,j, jve, adim, adimmx, nrow, ncol, n;
 	int t, t1;
-	
+  int debug;/* testing*/
+  debug = 0;
+  debug = 1;
+
+  /*if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);*/
+  if(debug==1){ 
+    Rprintf("\nmxf[0]=%lf", mxf[0]);
+    Rprintf("\nmxf[1]=%lf", mxf[1]);
+    Rprintf("\nmxf[2]=%lf", mxf[2]);
+    Rprintf("\nmxf[3]=%lf", mxf[3]);
+    Rprintf("\nmxf[4]=%lf", mxf[4]);
+
+    }
+  
+  
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
