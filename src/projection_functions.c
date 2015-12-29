@@ -12,6 +12,17 @@ double sum(double *x, int dim) {
 	for (i=0; i<dim; ++i) s+=x[i];
 	return(s);
 }
+/*****************************************************************************
+temporary function
+ * function to print content of an array to console
+ *****************************************************************************/
+void printArray(double *a, int count) {
+   int i;
+   for (i = 0; i < count; i++) {
+     printf("\n[%d] = %f", i, a[i]);
+   }
+   printf("\n");
+ }
 
 /*****************************************************************************
  * Function returns the years lived by those who died in the age interval (ax)
@@ -390,10 +401,10 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
  * Core population projection function TotalPopProj
  * Called from function StoPopProj in predict.pop.R
  * Parameter
- * int *npred                 number of prediction intervals (? time points)
+ * int    *npred              number of prediction intervals (? time points)
  * double *MIGm, *MIGf        male, female migration by age
- * int *migr, *migc           rows, columns of migration array
- * int *MIGtype               type of migration adjustement
+ * int    *migr, *migc        rows, columns of migration array
+ * int    *MIGtype            type of migration adjustement
  * double *srm, *srf          male, female survivor ration by age
  * double *asfr               age-specific fertility rates 
  * double *srb                sex ratio at birth
@@ -419,12 +430,13 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 
   /*if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);*/
   if(debug==1){ 
+    /*
     Rprintf("\nmxf[0]=%lf", mxf[0]);
     Rprintf("\nmxf[1]=%lf", mxf[1]);
     Rprintf("\nmxf[2]=%lf", mxf[2]);
     Rprintf("\nmxf[3]=%lf", mxf[3]);
     Rprintf("\nmxf[4]=%lf", mxf[4]);
-
+    */
     }
   
   
@@ -562,7 +574,15 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		  cdeathsm[i] = 0.5*(cdeathsm[i] + popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]));
 		  cdeathsf[i] = 0.5*(cdeathsf[i] + popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]));
 		}
-		/* period deaths */
+
+		/**************************************************************************/
+		if((debug==1) && (j==(n-16))){		
+		  printArray(mxtf, adimmx);
+		  printArray(srf, adim);
+		}	  
+		/**************************************************************************/
+		
+				/* period deaths */
 		LifeTableC(1, 27, mxtm, Lxm, lm);
 		LifeTableC(2, 27, mxtf, Lxf, lf);
 		for(i=1; i<adim; ++i) {
