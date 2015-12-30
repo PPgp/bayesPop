@@ -19,9 +19,9 @@ temporary function
 void printArray(double *a, int count) {
    int i;
    for (i = 0; i < count; i++) {
-     printf("\n[%d] = %f", i, a[i]);
+     Rprintf("\n[%d] = %f", i, a[i]);
    }
-   printf("\n");
+   Rprintf("\n");
  }
 
 /*****************************************************************************
@@ -412,6 +412,10 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
  * double *totp               total population by age 
  * double *btagem, *btagef    male, female births by age of mother
  * double *deathsm, *deathsf  male, female deaths by age
+ ------------------------------------------------------------------------------
+ TB: replaced expressions (j-1) with jve (jve <- j-1 )where appropriate 	
+     Note that more simplification is possible by replacing jve*adim 
+     with another variable t.offset (<= jve*adim)
 ******************************************************************************/
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
@@ -425,21 +429,10 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	int i,j, jve, adim, adimmx, nrow, ncol, n;
 	int t, t1;
   int debug;/* testing*/
+  
   debug = 0;
-  debug = 1;
+  
 
-  /*if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);*/
-  if(debug==1){ 
-    /*
-    Rprintf("\nmxf[0]=%lf", mxf[0]);
-    Rprintf("\nmxf[1]=%lf", mxf[1]);
-    Rprintf("\nmxf[2]=%lf", mxf[2]);
-    Rprintf("\nmxf[3]=%lf", mxf[3]);
-    Rprintf("\nmxf[4]=%lf", mxf[4]);
-    */
-    }
-  
-  
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
@@ -451,7 +444,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	    an unwanted shift in projecting; or the survivor ratios for time t=0 must be empty/not defined. 
 	*/ 
 	adim=27;
-	adimmx=adim+1; /* check*/
+	adimmx=adim+1; 
 	
 	for(j=0; j<ncol; ++j) {
 		for(i=0; i<nrow; ++i) {		
@@ -482,38 +475,33 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
 		jve = j-1;
-    /* testing replacing j and j-1 */
+    
+    /* later: test replacing j and j-1 */
 	  t= j*adim;
 	  t1 = (j-1) *adim;
-		/* Hana S.*/
+
+	  		/* Hana S.*/
 		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
-	  /* TB
-	   * Time index (j) is indexing: 
-	   * * time points  (for stock data, such as populations) 
-	   * * time periods (for period data, such as vital events)
-	   * For period data, the time index j is actually referring to period [j, j + 5] or (j,5)
-	   * This means, index j translated into years (2015, for example), refers 
-	   * to 2015 for stock data (populations)
-	   * to 2015-2020 for period data/vital events. 
-	   */
 
 	   /* Compute ages >=5 */
-    
-    /*TB: replace (j-1) with jve where appropriate */	
-    /*    further simplification would mean to replace jve*adim 
-          with another variable t.offset (= jve*adim)*/
 		for(i=1; i<(adim-1); ++i) {		
-			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
-			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];
+		  popm[i + j*adim] = popm[i-1 + jve*adim] * srm[i + jve*adim];
+			popf[i + j*adim] = popf[i-1 + jve*adim] * srf[i + jve*adim];
 			totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]); /* assures population is not negative */
 			popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
 			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
 			popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
 		/* Age 130+ */
-		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim];
-		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim];
+		/* TB: The follwing assumes, incorrectly, that population's  last, open-ended age group 
+		       is at 130 while it is achived unly afetr 30 yeras of progressively adding one age 
+		       to the inial age groups that end at age 100.
+		       The error is in most cases small, but may be signifivant for countries like
+		       Japan, with a very old population and a high life expectancy.
+		*/
+		popm[26 + j*adim] = (popm[26 + jve*adim] + popm[25 + jve*adim]) * srm[26 + jve*adim];
+		popf[26 + j*adim] = (popf[26 + jve*adim] + popf[25 + jve*adim]) * srf[26 + jve*adim];
 		totmigm[26][jve] = fmax(migm[26][jve], -1*popm[26 + j*adim]);
 		popm[26 + j*adim] = popm[26 + j*adim] + totmigm[26][jve];
 		totmigf[26][jve] = fmax(migf[26][jve], -1*popf[26 + j*adim]);
@@ -521,7 +509,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		/* birth in 5-yrs */
 		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
-			bt[i-3] = (popf[i + (j-1)*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
+			bt[i-3] = (popf[i + jve*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
 			btagem[i-3+jve*7] = bt[i-3] * srb_ratio;
 			btagef[i-3+jve*7] = bt[i-3] - btagem[i-3+jve*7];
 		}
@@ -546,12 +534,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		
 		/* code from wpp2015
 		for(i=1; i<(adim-1); ++i) {
-			deathsm[i + jve*adim] = popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]);
-			deathsf[i + jve*adim] = popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]);
+			deathsm[i + jve*adim] = popm[i-1 + jve*adim]*(1-srm[i + jve*adim]);
+			deathsf[i + jve*adim] = popf[i-1 + jve*adim]*(1-srf[i + jve*adim]);
 		}
 		i = 26;
-		deathsm[i + jve*adim] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
-		deathsf[i + jve*adim] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
+		deathsm[i + jve*adim] = (popm[i + jve*adim]+popm[i-1 + jve*adim])*(1-srm[i + jve*adim]);
+		deathsf[i + jve*adim] = (popf[i + jve*adim]+popf[i-1 + jve*adim])*(1-srf[i + jve*adim]);
 		*/
 		
 		for(i=0; i<adimmx; ++i) {
@@ -562,17 +550,17 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		cdeathsf[0] = deathsf[jve*adim];
 		/* one part */
 		for(i=1; i<(adim-1); ++i) {
-		  cdeathsm[i] = popm[i + j*adim]*(1-srm[i + jve*adim])/srm[i + jve*adim];
+    	cdeathsm[i] = popm[i + j*adim]*(1-srm[i + jve*adim])/srm[i + jve*adim];
 		  cdeathsf[i] = popf[i + j*adim]*(1-srf[i + jve*adim])/srf[i + jve*adim];
 		}
 		i = 26; /* last age group */
-		cdeathsm[i] = (popm[i + (j-1)*adim]+popm[i-1 + (j-1)*adim])*(1-srm[i + jve*adim]);
-		cdeathsf[i] = (popf[i + (j-1)*adim]+popf[i-1 + (j-1)*adim])*(1-srf[i + jve*adim]);
+		cdeathsm[i] = (popm[i + jve*adim]+popm[i-1 + jve*adim])*(1-srm[i + jve*adim]);
+		cdeathsf[i] = (popf[i + jve*adim]+popf[i-1 + jve*adim])*(1-srf[i + jve*adim]);
 		
 		/* add another part - results in cohort deaths? */
 		for(i=1; i<adim; ++i) {
-		  cdeathsm[i] = 0.5*(cdeathsm[i] + popm[i-1 + (j-1)*adim]*(1-srm[i + jve*adim]));
-		  cdeathsf[i] = 0.5*(cdeathsf[i] + popf[i-1 + (j-1)*adim]*(1-srf[i + jve*adim]));
+		  cdeathsm[i] = 0.5*(cdeathsm[i] + popm[i-1 + jve*adim]*(1-srm[i + jve*adim]));
+		  cdeathsf[i] = 0.5*(cdeathsf[i] + popf[i-1 + jve*adim]*(1-srf[i + jve*adim]));
 		}
 
 		/**************************************************************************/
