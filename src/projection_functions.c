@@ -13,8 +13,7 @@ double sum(double *x, int dim) {
 	return(s);
 }
 /*****************************************************************************
-temporary function
- * function to print content of an array to console
+temporary function: prints content of an array to console
  *****************************************************************************/
 void printArray(double *a, int count) {
    int i;
