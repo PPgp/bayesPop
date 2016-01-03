@@ -129,17 +129,22 @@ void doLifeTable(int sex, int nage, double *mx,
 }
 
 
-/* Function returns collapsed Lx and lx columns of life table*/
-/* function call doLifeTable first, then collapsesLx and lx  */
-void LifeTableC(int sex, int nage, double *mxm, 
+/* Function returns collapsed Lx and lx columns of life table */
+/* function calls doLifeTable first, then collapsesLx and lx  */
+/* TB: added missing collapsing of lx column                  */
+/*     candidate for renaming parameters for consistency      */
+/*     also check dimenisioning of parameter                  */
+void LifeTableC(int sex, int nage, double *mx, 
 				double *LLm, double *lm) {
 	double ax[27], qx[28], L[28];
 	int i;
-	doLifeTable(sex, nage, mxm, L, lm, qx, ax);
+	doLifeTable(sex, nage, mx, L, lm, qx, ax);
 	/* collapse 1L0 and 4L1 into 5L0 */
 	LLm[0] = L[0] + L[1];
+	lm[0] = lm[0];
 	for(i = 1; i < nage; ++i) {
 		LLm[i] = L[i+1];
+	  lm[i] = lm[i+1];
 	}			
 }
 
@@ -425,10 +430,11 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
 	double Lxm[27], Lxf[27], lm[27], lf[27], mxtm[28], mxtf[28], cdeathsm[27], cdeathsf[27];
+	double dfw, dbw; /* forward and backward estimated deaths */
 	int i,j, jve, adim, adimmx, nrow, ncol, n;
 	int t, t1;
-  int debug;/* testing*/
   
+  int debug;/* testing*/
   debug = 0;
   
 
@@ -449,11 +455,13 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		for(i=0; i<nrow; ++i) {		
 			migm[i][j] = MIGm[i + j*nrow];
 			migf[i][j] = MIGf[i + j*nrow];
+/*      Rprintf("\n age=%i, \t time=%i, \t migm[i][j]=%f, \t migf[i][j]=%f", i, j, migm[i][j], migf[i][j]);*/
 		}
 		for(i=nrow; i<nrow+6; ++i) {
 			migm[i][j] = 0;
 			migf[i][j] = 0;
 		}
+		
 		switch (*MIGtype) {
 			case 0: /* migration evenly distributed over each interval (MigCode=0) */
 				for(i=1; i<nrow+6; ++i) {
@@ -471,6 +479,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				break;
 		}
 	}
+	
 	/* Population projection for one trajectory */
 	for(j=1; j<(n+1); ++j) {
 		jve = j-1;
@@ -479,7 +488,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	  t= j*adim;
 	  t1 = (j-1) *adim;
 
-	  		/* Hana S.*/
+	  /* Hana S.*/
 		/* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
 			   i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
 
@@ -492,6 +501,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
 			popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
+
 		/* Age 130+ */
 		/* TB: The follwing assumes, incorrectly, that population's  last, open-ended age group 
 		       is at 130 while it is achived unly afetr 30 yeras of progressively adding one age 
@@ -505,7 +515,8 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		popm[26 + j*adim] = popm[26 + j*adim] + totmigm[26][jve];
 		totmigf[26][jve] = fmax(migf[26][jve], -1*popf[26 + j*adim]);
 		popf[26 + j*adim] = popf[26 + j*adim] + totmigf[26][jve];
-		/* birth in 5-yrs */
+	
+		/* birth during 5-yrs */
 		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
 			bt[i-3] = (popf[i + jve*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
@@ -515,24 +526,25 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		b = sum(bt, 7);
 		bm = b * srb_ratio;
 		bf = b / (1 + srb[jve]);
-		/* age 0-4 */	
+		
+		/* births surviving to age 0-4 */	
 		popm[j*adim] = bm * srm[jve*adim];
 		popf[j*adim] = bf * srf[jve*adim];
 		totmigm[0][jve] = fmax(mmult * migm[0][jve], -1*popm[j*adim]);
 		popm[j*adim] = popm[j*adim] + totmigm[0][jve];
 		totmigf[0][jve] = fmax(mmult * migf[0][jve], -1*popf[j*adim]);
 		popf[j*adim] = popf[j*adim] + totmigf[0][jve];
-		
+
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
 		}
-    /* surviving births */
-		deathsm[jve*adim] = bm * (1-srm[jve*adim]);
-		deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
 		
 		/* code from wpp2015
-		for(i=1; i<(adim-1); ++i) {
+		 deathsm[jve*adim] = bm * (1-srm[jve*adim]);
+		 deathsf[jve*adim] = bf * (1-srf[jve*adim]);                
+		 
+		 for(i=1; i<(adim-1); ++i) {
 			deathsm[i + jve*adim] = popm[i-1 + jve*adim]*(1-srm[i + jve*adim]);
 			deathsf[i + jve*adim] = popf[i-1 + jve*adim]*(1-srf[i + jve*adim]);
 		}
@@ -541,40 +553,110 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		deathsf[i + jve*adim] = (popf[i + jve*adim]+popf[i-1 + jve*adim])*(1-srf[i + jve*adim]);
 		*/
 		
+
+		/**************************************************************************/
+		/* cohort deaths                                                          */
+		/* Calculated by a combination of forward-backward estimation (UN ABACUS) */
+		/* df deaths by forward projection    PART1 in ABACUS                     */
+		/* db deaths by backward projection   C in ABACUS                         */
+		/* 1. Deaths accuring to births                                           */
+		/* 2. Deaths occuring to closed age groups (middle age groups)            */
+		/* 3. Deaths accuring to last-opended age group                           */ 
+		/**************************************************************************/
+
+		/* deaths aoocuring to births */
+		dfw = bm * (1-srm[jve*adim]);
+    dbw = popm[1 + j*adim] *((1-srm[jve*adim])/srm[jve*adim]);
+		cdeathsm[0] = 0.5* (dfw + dbw);
+    dfw = bf * (1-srf[jve*adim]);
+    dbw = popf[1 + j*adim] *((1-srf[jve*adim])/srf[jve*adim]);
+    cdeathsm[0] = 0.5* (dfw + dbw);
+    /* more compact, but less readable */
+    /* cdeathsm[0] = 0.5* (bm * (1-srm[jve*adim]) + (popm[1 + j*adim] *(1-srm[jve*adim])/srm[jve*adim]));*/
+    /* cdeathsm[0] = 0.5* (bf * (1-srf[jve*adim]) + (popf[1 + j*adim] *(1-srf[jve*adim])/srf[jve*adim]));*/
+    
+    /* Testing 
+      deathsm[jve*adim] = cdeathsm[0];
+      deathsf[jve*adim] = cdeathsf[0];
+    */
+		
+		/* closed age groups */
+		for(i=1; i<(adim-1); ++i) {
+		  dfw = popm[i-1 + jve*adim] * srm[i + jve*adim];
+      dbw = popm[i + jve*adim] * (1-srm[i + jve*adim])/srm[i + jve*adim];
+      cdeathsm[i] = 0.5 * (dfw + dbw);
+    
+      dfw = popf[i-1 + jve*adim] * srf[i + jve*adim];
+      dbw = popf[i + jve*adim] * (1-srf[i + jve*adim])/srf[i + jve*adim];
+      cdeathsf[i] = 0.5 * (dfw + dbw);
+      
+      /* testing 
+       * deathsm[i + jve*adim] = cdeathsm[i];
+       * deathsf[i + jve*adim] = cdeathsf[i];
+       */
+		}
+		
+		/* check age indexes*/
+		/* last age group */
+		i = 26; 
+		dfw = (popm[i + jve*adim]+popm[i-1 + jve*adim])*(1-srm[i + jve*adim]);
+	  dbw = popm[i + jve*adim] * (1-srm[i + jve*adim])/srm[i + jve*adim];
+		cdeathsm[i] = 0.5 * (dfw + dbw);
+
+		dfw = (popf[i + jve*adim]+popf[i-1 + jve*adim])*(1-srf[i + jve*adim]);
+		dbw = popf[i + jve*adim] * (1-srf[i + jve*adim])/srf[i + jve*adim];
+		cdeathsf[i] = 0.5 * (dfw + dbw);
+
+		/* testing 
+		 * 		deathsm[i + jve*adim] = cdeathsm[i];
+		 * 		deathsf[i + jve*adim] = cdeathsf[i];
+		 */
+
+		/**************************************************************************/
+		/* period deaths                                                          */
+		/* 1. prepare separation factors                                          */
+		/* 2. split cohor deaths into lexis triangles                             */
+		/* 3. reaarrange lexis triangles into period deaths (period-age format    */ 
+		/**************************************************************************/
+
 		for(i=0; i<adimmx; ++i) {
 		  mxtm[i]=mxm[i + jve*adimmx];
 		  mxtf[i]=mxf[i + jve*adimmx];
 		}
-		cdeathsm[0] = deathsm[jve*adim];
-		cdeathsf[0] = deathsf[jve*adim];
-		/* one part */
-		for(i=1; i<(adim-1); ++i) {
-    	cdeathsm[i] = popm[i + j*adim]*(1-srm[i + jve*adim])/srm[i + jve*adim];
-		  cdeathsf[i] = popf[i + j*adim]*(1-srf[i + jve*adim])/srf[i + jve*adim];
-		}
-		i = 26; /* last age group */
-		cdeathsm[i] = (popm[i + jve*adim]+popm[i-1 + jve*adim])*(1-srm[i + jve*adim]);
-		cdeathsf[i] = (popf[i + jve*adim]+popf[i-1 + jve*adim])*(1-srf[i + jve*adim]);
-		
-		/* add another part - results in cohort deaths? */
-		for(i=1; i<adim; ++i) {
-		  cdeathsm[i] = 0.5*(cdeathsm[i] + popm[i-1 + jve*adim]*(1-srm[i + jve*adim]));
-		  cdeathsf[i] = 0.5*(cdeathsf[i] + popf[i-1 + jve*adim]*(1-srf[i + jve*adim]));
-		}
 
+		/* Function creates an abridged life table, noatbly for columns Lx and lx */		
+		
+		LifeTableC(1, 27, mxtm, Lxm, lm);
+		LifeTableC(2, 27, mxtf, Lxf, lf);
+		
+		debug = 1;
 		/**************************************************************************/
 		if((debug==1) && (j==(n-16))){		
 		  printArray(mxtf, adimmx);
-		  printArray(srf, adim);
+		  printArray(Lxf, adim);
+		  printArray(lf, adim);
 		}	  
-		/**************************************************************************/
+		/***************************************************************************/
 		
-				/* period deaths */
-		LifeTableC(1, 27, mxtm, Lxm, lm);
-		LifeTableC(2, 27, mxtf, Lxf, lf);
+		
+		
+		double fcm, fcf;
+		
+		/* first age group*/
+		fcm =(Lxm[0]-5.0*lm[1])/(Lxm[0] -Lxm[1]);
+		fcf =(Lxf[0]-5.0*lf[1])/(Lxf[0]- Lxf[1]);
+		debug =1 ;
+		if(debug==1)  Rprintf("\nfcm = %f, fcf = %f", fcm, fcf);
+		
+		
+		deathsm[jve*adim] = cdeathsm[0] + cdeathsm[1+jve*adim]*fcm;
+		deathsf[jve*adim] = cdeathsf[0] + cdeathsf[1+jve*adim]*fcf;
+		
 		for(i=1; i<adim; ++i) {
-		  deathsm[i + jve*adim] = cdeathsm[i-1]*((5*lm[i]-Lxm[i])/(Lxm[i-1]-Lxm[i])) + cdeathsm[i] * ((Lxm[i] - 5*lm[i+1])/(Lxm[i]-Lxm[i+1]));
-		  deathsf[i + jve*adim] = cdeathsf[i-1]*((5*lf[i]-Lxf[i])/(Lxf[i-1]-Lxf[i])) + cdeathsf[i] * ((Lxf[i] - 5*lf[i+1])/(Lxf[i]-Lxf[i+1]));
+		  deathsm[i + jve*adim] = cdeathsm[i-1]*((5*lm[i]-Lxm[i])/(Lxm[i-1]-Lxm[i])) 
+		                          + cdeathsm[i] * ((Lxm[i] - 5*lm[i+1])/(Lxm[i]-Lxm[i+1]));
+		  deathsf[i + jve*adim] = cdeathsf[i-1]*((5*lf[i]-Lxf[i])/(Lxf[i-1]-Lxf[i])) 
+		                          + cdeathsf[i] * ((Lxf[i] - 5*lf[i+1])/(Lxf[i]-Lxf[i+1]));
 		}
 	}	
 }	
