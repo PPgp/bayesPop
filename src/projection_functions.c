@@ -631,7 +631,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		LifeTableC(1, adim, mxtm, Lxm, lxm);
 		LifeTableC(2, adim, mxtf, Lxf, lxf);
 		
-		debug = 1;
+		
 		/**************************************************************************/
 		if((debug==1) && (j==(n-16))){		
 		  printArray(mxtf, adimmx);
