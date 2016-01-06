@@ -1566,19 +1566,17 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 .collapse.ax <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	ax.start <- c(LT$ax[1:2], NA)[age05]
+	ax.start <- c(LT$ax[1:2], ((LT$Lx[1]+LT$Lx[2]-5*LT$lx[3])/(LT$dx[1]+LT$dx[2])))[age05]
 	return(c(ax.start, LT$ax[-(1:2)]))
 }
 
 .collapse.Tx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	Tx.start <- c(LT$Tx[1:2], LT$Tx[1] + Tx[2])[age05]
+	Tx.start <- c(LT$Tx[1:2], LT$Tx[1])[age05]
 	return(c(Tx.start, LT$Tx[-(1:2)]))
 }
 
 .collapse.ex <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	lx <- .collapse.lx(LT, ...)
-	Tx <- .collapse.Tx(LT, ...)
-	ex.start <- c(LT$ex[1:2], Tx[1]/lx[1])[age05]
+	ex.start <- c(LT$ex[1:2], LT$ex[1])[age05]
 	return(c(ex.start, LT$ex[-(1:2)]))
 }
 
@@ -1617,7 +1615,7 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female')){
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
 	Lx <- lx <- qx <- Tx <- sx <- dx <- rep(0, nage)
-	ax <- rep(0, 27)
+	ax <- rep(0, nage)
 	nagem1 <- nage-1
 	nas <- rep(NA,nage)
 	if(!any(is.na(mx))) {

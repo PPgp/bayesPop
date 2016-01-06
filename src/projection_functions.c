@@ -12,7 +12,26 @@ double sum(double *x, int dim) {
 	for (i=0; i<dim; ++i) s+=x[i];
 	return(s);
 }
+/*****************************************************************************
+temporary function
+ * function to print content of an array to console
+ *****************************************************************************/
+void printArray(double *a, int count) {
+	int i;
+	for (i = 0; i < count; i++) {
+		Rprintf("\n[%d] = %f", i, a[i]);
+	}
+	Rprintf("\n");
+}
 
+/*****************************************************************************
+ * Function returns the years lived by those who died in the age interval (ax)
+ * for ages 0 and 1-4 (abridged life table)
+ * based on mx(0,1) and sex
+ * Formulas re-estimates from the Coale/Demeny separation factors
+ * on mx(0,1) insted of qx(0,1)
+ * Source from Preston et al. 2001, p.48
+ *****************************************************************************/
 double * get_a05(double mx0, int sex) {
 	static double ax[2];
 	if(sex > 1) {/* female*/
@@ -34,12 +53,27 @@ double * get_a05(double mx0, int sex) {
 	}
 	return(ax);
 }
-
+/*****************************************************************************
+ * Function calculates an abridged life table from age-specific mortality 
+ * rates
+ * Input: 
+ * * mx   age specific mortality rates 
+ * * sex  sex
+ * * nage number of age groups
+ * Output: 
+ * qx Probabilities of dying
+ * lx Survivors to exact age
+ * Lx Person years lived
+ * ax proportion of years lived by those who died
+ *****************************************************************************/
 void doLifeTable(int sex, int nage, double *mx, 
 				double *Lx, double *lx, double *qx, double *ax) {
 	
 	int i;
-	double *tmpa;
+	double k;     /* correcting factor in Greville approximation */
+	double *tmpa; /* pointer to estimated ax[0] and ax[1] values */
+	int nage1;
+	nage1 = nage -1;
 
 	tmpa = get_a05(mx[0], sex);
 	ax[0] = tmpa[0];
@@ -55,24 +89,49 @@ void doLifeTable(int sex, int nage, double *mx,
     /*Rprintf("\nnage=%i, L0=%f, ax0-1=%f %f, l1-2=%f %f, mx0-1=%f %f", nage, Lx[0], ax[0], ax[1], lx[1], lx[2], mx[0], mx[1]);*/
     /* Age 5-9, .... 125-129 
 	 Greville formula used in Mortpak and UN MLT (1982)*/
-	for(i = 2; i < nage; ++i) {
-		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN)));
-		if(i > 9 && ax[i] < 0.97) { /*0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
+	/* TB: corrected for age group 3 (5-9), tentativley set to 2.5 or n/2 */
+	/*  ax[2] = 2.5; */
+
+	k     = 0.1 * log(fmax(mx[4] / fmax(mx[2], DBL_MIN), DBL_MIN));
+	ax[2] = 2.5 - (25 / 12.0) * (mx[2] - k);
+
+	for(i = 3; i < nage1; ++i) {
+		k     = 0.1 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN));
+		ax[i] = 2.5 - (25 / 12.0) * (mx[i] - k);
+	}
+	/* penultimate ax calculated with k from previous age group */
+	ax[nage1] = 2.5 - (25 / 12.0) * (mx[i] - k);
+
+	/* correcting out-of (reasonable) bounds ax for older ages             */ 
+	/* 0.97=1-5*exp(-5)/(1-exp(-5)), for constant mu=1, Kannisto assumption*/
+	for(i = 10; i < nage; i++) {
+		if(ax[i] < 0.97) {
 			ax[i] = 0.97;
 		}
 	}
+	
+	/* caculate life table variables from mx and ax */
 	for(i = 2; i < nage; ++i) {		
 		/*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
 		qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
 		lx[i+1] = lx[i] * (1-qx[i]);
 		Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
 	}
+	
 	/* Open ended age interval */
 	Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); /* Assuming Mx levels off at age 130 */
 	qx[nage] = 1.0;
+	
+	/* TB: added missing ax for last, open-ended age group */ 
+	/*  worked after declaration in predict.pop was changed */
+	ax[nage] = Lx[nage];
+
 	/*Rprintf("\nLTend\n");*/
 }
 
+
+/* Function returns collapsed Lx and lx columns of life table*/
+/* function call doLifeTable first, then collapsesLx and lx  */
 void LifeTableC(int sex, int nage, double *mxm, 
 				double *LLm, double *lm) {
 	double ax[27], qx[28], L[28];
@@ -151,7 +210,7 @@ void get_sx(double *LLm, double *sx, int n, int Ldim) {
 	int i, oei;
 	double sumLL;
 	oei=n-1;
-	/* Survival Ratios */
+	/* Survival Ratios, radix of life table assumed to be 1.0  */
     sx[0] = LLm[0] / 5.0;
 	for(i=1; i < oei; ++i) {
 		if(LLm[i-1] == 0) sx[i] = exp(-5);
@@ -179,11 +238,49 @@ void get_sx21_21(double *LLm, double *sx) {
 	get_sx(LLm, sx, 21, 21);
 }
 
+/*****************************************************************************
+ * Wrapper for abridged life table function, 
+ * called from R in predict.pop
+ * TB: adding missing life table variables  Tx, sx and dx
+ *     and correcting error in sx (larger than 1, shifted index)
+ *****************************************************************************/
+
 void LifeTable(int *sex, int *nage, double *mx, 
 				double *Lx, double *lx, double *qx, double *ax, double *Tx, double *sx, double *dx) {
 	int i;
 	
+	/* original implementation lacking Tx, sx, dx */
 	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
+	
+	/* calculating additional life table columns dx, Tx, sx */
+
+	/* TB: dx */
+	for(i = 0; i < *nage; ++i) {
+		dx[i] = lx[i] - lx[i+1];
+	}
+	dx[*nage] = lx[*nage];
+
+	/*TB: Tx */
+	Tx[*nage] = Lx[*nage];
+	for (i = *nage-1; i >= 0; i--) {
+		Tx[i] = Tx[i+1] + Lx[i];
+	}       
+	/* TB: sx */
+	/* first age group is survival from births to age 0-5 */
+	sx[0] = (Lx[0] + Lx[1]) / 5*lx[0];
+
+	/* second age group is survival age 0-5 to age 5 - 10 */
+	sx[1] = Lx[2] / (Lx[0] + Lx[1]);
+
+	/* middle age groups  */
+	for(i = 2; i < *nage-1; ++i) {
+		sx[i] = Lx[i+1] / Lx[i];
+	}
+	/* last but one age group */
+	sx[*nage-1] = Lx[*nage] / (Lx[*nage-1]+Lx[*nage]);
+	sx[*nage]= 0.0;
+	
+	/* obsolete
 	Tx[*nage] = Lx[*nage];
 	dx[*nage] = lx[*nage];
 	for (i = *nage-1; i >= 0; i--) {
@@ -191,11 +288,19 @@ void LifeTable(int *sex, int *nage, double *mx,
 		dx[i] = lx[i] - lx[i+1];
 	}	
 	get_sx(Lx, sx, *nage, *nage);
+	*/
 	/* the above call assumed the first age category is 0-5 but here it is 0-1 */
+	/*
 	sx[0] = sx[0]*5;
+	*/
 }
 
-
+/*****************************************************************************
+ * Lee Carter model
+ * Produces a projection of age -specific mortality rates
+ * (more)
+ * 
+ *****************************************************************************/
 void LC(int *Npred, int *Sex, double *ax, double *bx, 
 		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
 		double *lx, double *Mx) {
@@ -292,7 +397,26 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]);
 	}
 }
-
+/*****************************************************************************
+ * Core population projection function TotalPopProj
+ * Called from function StoPopProj in predict.pop.R
+ * Parameter
+ * int    *npred              number of prediction intervals (? time points)
+ * double *MIGm, *MIGf        male, female migration by age
+ * int    *migr, *migc        rows, columns of migration array
+ * int    *MIGtype            type of migration adjustement
+ * double *srm, *srf          male, female survivor ration by age
+ * double *asfr               age-specific fertility rates 
+ * double *srb                sex ratio at birth
+ * double *popm, *popf        male, female population by age
+ * double *totp               total population by age 
+ * double *btagem, *btagef    male, female births by age of mother
+ * double *deathsm, *deathsf  male, female deaths by age
+ ------------------------------------------------------------------------------
+ TB: replaced expressions (j-1) with jve (jve <- j-1 )where appropriate        
+     Note that more simplification is possible by replacing jve*adim 
+     with another variable t.offset (<= jve*adim)
+******************************************************************************/
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *popm, double *popf, double *totp, 
@@ -346,6 +470,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
 		}
 		/* Age 130+ */
+		/* TB: The follwing assumes, incorrectly, that population's  last, open-ended age group 
+				is at 130 while it is achived unly afetr 30 yeras of progressively adding one age 
+				to the inial age groups that end at age 100.
+				The error is in most cases small, but may be signifivant for countries like
+				Japan, with a very old population and a high life expectancy.
+		*/
 		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim];
 		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim];
 		totmigm[26][jve] = fmax(migm[26][jve], -1*popm[26 + j*adim]);
