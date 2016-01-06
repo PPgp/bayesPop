@@ -522,7 +522,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 
 		if((debug==1) && (j==1)){
 		  for(i=0; i<adim; i++) {
-		    Rprintf("\n i=%i, srf[i]=%15.10f", i, srf[i + jve*adim]  );
+		    Rprintf("\n i=%i, srm[i]=%15.10f", i, srm[i + jve*adim]  );
 		  }
 		}
 
@@ -566,14 +566,15 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
     dbw = popm[i + j*adim] *((1-srm[i + jve*adim])/srm[i + jve*adim]);
 		cdeathsm[0] = 0.5* (dfw + dbw);
 
+		if((debug==1) && (j==1)){
+		  Rprintf("\n first age group cohort deaths");
+		  Rprintf("\n i=%i, bm=%f, popm[i+j*adim]= %f, (1-srmf[i+jve*adim]=%15.10f, dfw=%f, dbw=%f", i, bm, popm[i + j*adim], (1-srm[i + jve*adim]), dfw, dbw);
+		}
+
     dfw = bf * (1-srf[jve*adim]);
     dbw = popf[i + j*adim] *((1-srf[i + jve*adim])/srf[i + jve*adim]);
     cdeathsf[0] = 0.5* (dfw + dbw);
 
-    if((debug==1) && (j==1)){
-      Rprintf("\n first age group cohort deaths");
-      Rprintf("\n i=%i, bf=%f, popf[i+j*adim]= %f, (1-srf[i+jve*adim]=%15.10f, dfw=%f, dbw=%f", i, bf, popf[i + j*adim], (1-srf[i + jve*adim]), dfw, dbw);
-    }
 
     /* more compact, but less readable */
     /* cdeathsm[0] = 0.5* (bm * (1-srm[jve*adim]) + (popm[1 + j*adim] *(1-srm[jve*adim])/srm[jve*adim]));*/
@@ -587,14 +588,14 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		  dfw = popm[i-1 + jve*adim] * (1-srm[i + jve*adim]);
       dbw = popm[i + j*adim] * (1-srm[i + jve*adim])/srm[i + jve*adim];
       cdeathsm[i] = 0.5 * (dfw + dbw);
+      if((debug==1) && (j==1)){
+        Rprintf("\n i=%i, popm[i-1 + jve*adim]= %f, srm[i + jve*adim]=%15.10f, popm[i + j*adim]=%15.10f, dfw=%f, dbw=%f", i, popm[i-1 + jve*adim], srm[i + jve*adim], popm[i + j*adim], dfw, dbw);
+      }
+
 
       dfw = popf[i-1 + jve*adim] * (1-srf[i + jve*adim]);
       dbw = popf[i + j*adim] * (1-srf[i + jve*adim])/srf[i + jve*adim];
       cdeathsf[i] = 0.5 * (dfw + dbw);
-
-      if((debug==1) && (j==1)){
-        Rprintf("\n i=%i, popf[i-1 + jve*adim]= %f, srm[i + jve*adim]=%15.10f, popf[i + j*adim]=%15.10f, dfw=%f, dbw=%f", i, popf[i-1 + jve*adim], srm[i + jve*adim], popf[i + j*adim], dfw, dbw);
-      }
 
 		}
 
@@ -634,15 +635,15 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		  ii = i + 1;
 		  csfm[i] = (Lxm[i]-5.0*lxm[ii])/(Lxm[i] - Lxm[ii]);
 		  csff[i] = (Lxf[i]-5.0*lxf[ii])/(Lxf[i] - Lxf[ii]);
-		  if((debug==1) && (j==1))  Rprintf("\n i= %i, Lxf[i]=%15.10f, Lxf[ii]=%15.10f, Lxf[i]-Lxf[ii]=%15.10f, csff[i] = %15.10f",i, Lxf[i], Lxf[ii], (Lxf[i]-Lxf[ii]), csff[i]);
+		  if((debug==1) && (j==1))  Rprintf("\n i= %i, Lxm[i]=%15.10f, Lxm[ii]=%15.10f, Lxm[i]-Lxf[ii]=%15.10f, csfm[i] = %15.10f",i, Lxm[i], Lxm[ii], (Lxm[i]-Lxm[ii]), csfm[i]);
 		}
 		/**************************************************************************/
 		if((debug==1) && (j==1)){
-		  printArray(mxtf, adimmx);
-		  printArray(Lxf, adim);
-		  printArray(lxf, adim);
-		  printArray(csff, adim1);
-		  printArray(cdeathsf,26);
+		  printArray(mxtm, adimmx);
+		  printArray(Lxm, adim);
+		  printArray(lxm, adim);
+		  printArray(csfm, adim1);
+		  printArray(cdeathsm,26);
 		}
 		/***************************************************************************/
 
@@ -651,7 +652,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		deathsf[jve*adim] = cdeathsf[0] + cdeathsf[1]*csff[0];
 		if((debug==1) && (j==1))  {
       Rprintf("\n first age group period deaths");
-		  Rprintf("\n deathsf[jve*adim]=%15.10f, cdeathsf[0]=%15.10f, cdeathsf[1]=%15.10f,csff[0]=%15.10f", deathsf[jve*adim], cdeathsf[0], cdeathsf[1], csff[0]);
+		  Rprintf("\n deathsm[jve*adim]=%15.10f, cdeathsm[0]=%15.10f, cdeathsm[1]=%15.10f,csfm[0]=%15.10f", deathsm[jve*adim], cdeathsm[0], cdeathsm[1], csfm[0]);
 		}
 
 		/* middle age groups */
@@ -659,7 +660,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		  deathsm[i + jve*adim] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
 		  deathsf[i + jve*adim] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
 
-      if((debug==1) && (j==1))  Rprintf("\n i=%i, deathsf[i + jve*adim]=%15.10f, cdeathsf[i]=%15.10f, (1-csff[i-1])=%15.10f, cdeathsf[i+1]=%15.10f, csff[i]=%15.10f", i, deathsf[i + jve*adim], cdeathsf[i], (1-csff[i-1]), cdeathsf[i+1], csff[i]);
+      if((debug==1) && (j==1))  Rprintf("\n i=%i, deathsm[i + jve*adim]=%15.10f, cdeathsm[i]=%15.10f, (1-csfm[i-1])=%15.10f, cdeathsm[i+1]=%15.10f, csfm[i]=%15.10f", i, deathsm[i + jve*adim], cdeathsm[i], (1-csff[i-1]), cdeathsm[i+1], csfm[i]);
  		}
 
 	}
