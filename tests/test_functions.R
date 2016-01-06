@@ -272,8 +272,8 @@ test.life.table <- function(){
 	test.name <- 'Life Tables'
 	sim.dir <- tempfile()
 	# this is the Example from LifeTableMx
-	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2012,
-    			present.year=2010, keep.vital.events=TRUE, fixed.mx=TRUE, fixed.pasfr=TRUE)
+	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015,
+    			present.year=2015, keep.vital.events=TRUE, fixed.mx=TRUE, fixed.pasfr=TRUE)
 	# get male mortality rates from 2020 for age groups 0-1, 1-4, 5-9, ...
 	mx <- pop.byage.table(pred, expression="MEC_M{c(-1,0,2:27)}")[,1]
 	LT <- LifeTableMx(mx)

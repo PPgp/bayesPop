@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 5.5-0\cr
-Date: \tab 2015-10-1\cr
+Version: \tab 6.0-0\cr
+Date: \tab 2016-1-6\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
 }
@@ -22,7 +22,7 @@ The main function is called \code{\link{pop.predict}}. It uses trajectories of T
 
 
 \author{
-Hana Sevcikova, Adrian Raftery
+Hana Sevcikova, Adrian Raftery, Thomas Buettner
 
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }

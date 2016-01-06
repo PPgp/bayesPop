@@ -1603,9 +1603,13 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 .doLifeTableMxCol <- function(mx, colname, age05=c(FALSE, FALSE, TRUE), ...) {
 	# age05 determines the inclusion of ages 0-1, 1-4, 0-4
 	LT <- LifeTableMx(mx, ...)
-	if(all(age05==c(TRUE, TRUE, FALSE))) # no collapsing
-		return(LT[,colname])
-	return(do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05)))
+	if(all(age05==c(TRUE, TRUE, FALSE))) { # no collapsing
+		result <- LT[,colname]
+		names(result) <- rownames(LT)
+	} else {
+		result <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
+		names(result) <- c(c('0-1', '1-4', '0-4')[age05], rownames(LT)[-(1:2)])
+	return(result)
 }
 
 
