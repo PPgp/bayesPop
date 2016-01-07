@@ -28,18 +28,25 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
 		if(verbose) cat('Loading ', my.locations.file, '.\n')
 	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
-	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
-	else {
+	if(is.null(countries)) {
+		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
+			stop('Prediction in ', output.dir,
+				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
+	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
-								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, verbose=verbose)
+								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, all.countries=FALSE, 
+								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
+												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
+								verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
-		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
+		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, all.countries=FALSE, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -117,6 +124,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	# remove big or redundant items from inputs to be saved
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
+		
 	for(cidx in 1:ncountries) {
 		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
@@ -129,7 +137,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
 			cat(' (', nr.traj, ' trajectories )')
-		
+		migr.modified <- .set.inp.migration.if.needed(inp, inpc, country)
+		if(migr.modified) {
+			for(what.mig in c('MIGm', 'MIGf')) {
+				inp.to.save[[what.mig]] <- inp[[what.mig]]
+				inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
+			}
+		}
 		npred <- min(nrow(inpc$TFRpred), nr_project)
 		npredplus1 <- npred+1
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, 
@@ -293,6 +307,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		country.row <- UNlocations[country.idx,c('country_code', 'name')]
 		colnames(country.row) <- c('code', 'name')
 		
+
+		
 		if(!exists('bayesPop.prediction')) { # first pass
 			bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= country %in% pred$countries[,'code']) 
 					else structure(list(
@@ -352,6 +368,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 												quantPropFage[cidx,,,,drop=FALSE], along=1)
 			bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
 		}
+		if(migr.modified)
+			bayesPop.prediction$inputs <- inp.to.save
 		save(bayesPop.prediction, file=prediction.file)
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
@@ -367,7 +385,8 @@ load.wpp.dataset <- function(...)
 read.bayesPop.file <- function(file)
 	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
-load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, verbose=FALSE) {
+load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
+						all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -476,22 +495,47 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	 	if('migrationM' %in% wppds$results[,'Item'])
 			MIGm <- load.wpp.dataset('migrationM', wpp.year)
 		else {
-			recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
-			MIGm <- recon.mig$male
+			if(all.countries) { # reconstruct migration for all countries
+				recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
+				MIGm <- recon.mig$male
+			} else {
+				if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a priovous simulation for different country
+					MIGm <- existing.mig$MIGm
+				} else {
+					# Projection for a subset of countries, therefore migration will be recontructed later (in get.country.inputs).
+					# Here create only a dataframe filled with NAs (its structure is taken from the wpp2012 dataset) 
+					MIGm <- load.wpp.dataset('migrationM', 2012)
+					MIGm[,!colnames(MIGm) %in% c("country", "country_code", "age")] <- NA
+				}
+			}
 		}
 	} else MIGm <- read.pop.file(inputs[['migM']])
 	if(is.null(inputs[['migF']])) {
 		if('migrationF' %in% wppds$results[,'Item'])
 			MIGf <- load.wpp.dataset('migrationF', wpp.year)
 		else {
-			if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
-			else MIGf <- recon.mig$female
+			if(all.countries) { # reconstruct migration for all countries
+				if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
+				else MIGf <- recon.mig$female
+			} else { # see the comment for MIGm above
+				if (!is.null(existing.mig)) { 
+					MIGf <- existing.mig$MIGf
+				} else {
+					MIGf <- load.wpp.dataset('migrationF', 2012)
+					MIGf[,!colnames(MIGm) %in% c("country", "country_code", "age")] <- NA
+				}
+			}
 		}
 	} else MIGf <- read.pop.file(inputs[['migF']])
 	if(!is.null(obs.periods)) {
-		avail.obs.periods <- is.element(obs.periods, colnames(MIGm))
-		observed$MIGm <- MIGm[,c('country_code', 'age', obs.periods[avail.obs.periods])]
-		observed$MIGf <- MIGf[,c('country_code', 'age', obs.periods[avail.obs.periods])]
+		if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a priovous simulation for different country
+			observed$MIGm <- existing.mig$obsMIGm
+			observed$MIGf <- existing.mig$obsMIGf
+		} else {
+			avail.obs.periods <- is.element(obs.periods, colnames(MIGm))
+			observed$MIGm <- MIGm[,c('country_code', 'age', obs.periods[avail.obs.periods])]
+			observed$MIGf <- MIGf[,c('country_code', 'age', obs.periods[avail.obs.periods])]
+		}
 	}
 	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
@@ -596,6 +640,24 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	return(inp)
+}
+
+.set.inp.migration.if.needed <- function(inputs, inpc, country) {
+	# If the age-specific migration values in "inputs" are NA 
+	# (e.g. because it was reconstructed later in the code), 
+	# replace those with values from the country-specific inputs.
+	migr.modified <- FALSE
+	for(what.mig in c('MIGm', 'MIGf')) {
+		cidx <- which(inputs[[what.mig]]$country_code==country)
+		cols <- intersect(colnames(inputs[[what.mig]]), colnames(inpc[[what.mig]]))
+		if(any(!is.na(inputs[[what.mig]][cidx,cols]))) next
+		inputs[[what.mig]][cidx,cols] <- inpc[[what.mig]][,cols]
+		cidx <- which(inputs$observed[[what.mig]]$country_code==country)
+		cols <- intersect(colnames(inputs$observed[[what.mig]]), colnames(inpc$observed[[what.mig]]))
+		inputs$observed[[what.mig]][cidx,cols] <- inpc$observed[[what.mig]][,cols]
+		migr.modified <- TRUE
+	}
+	return(migr.modified)
 }
 
 .load.wpp.traj <- function(type, wpp.year, median.only=FALSE) {
@@ -810,6 +872,26 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
+	# generate sex and age-specific migration if needed
+	if((!is.null(inpc[['MIGm']]) & all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) & all(is.na(inpc[['MIGf']])))) {
+		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, verbose=FALSE)
+		mig.pair <- list(MIGm="male", MIGf="female")
+		for(what.mig in names(mig.pair)) {
+			if(!is.null(inpc[[what.mig]]) & all(is.na(inpc[[what.mig]]))) {
+				# extact predicted migration
+				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
+				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
+				rownames(inpc[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
+				# extact observed migration
+				if(!is.null(obs[[what.mig]])) {
+					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]]))
+					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
+					rownames(obs[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
+				}
+			}
+		}
+	}
+
 	what.traj <- list(TFRpred='TFR', e0Mpred='male e0', e0Fpred='female e0')
 	medians <- list()
 	lyears <- length(inputs$proj.years)
@@ -1609,6 +1691,7 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 	} else {
 		result <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
 		names(result) <- c(c('0-1', '1-4', '0-4')[age05], rownames(LT)[-(1:2)])
+	}
 	return(result)
 }
 
