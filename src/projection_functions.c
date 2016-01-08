@@ -436,6 +436,9 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 double csfm[27],csff[27]; /* cohort separation factor males, females*/
 int i,j, jve, adim, adim1, adimmx, nrow, ncol, n;
 int t, t1;
+int const male = 1;
+int const female = 2;
+
 
 int debug;/* testing*/
 debug = 1;
@@ -466,7 +469,7 @@ for(j=0; j<ncol; ++j) {
     migm[i][j] = 0;
     migf[i][j] = 0;
   }
-  
+  mmult = 1; /* warning if not initalized */
   switch (*MIGtype) {
   case 0: /* migration evenly distributed over each interval (MigCode=0) */
     for(i=1; i<nrow+6; ++i) {
@@ -626,8 +629,8 @@ for(j=1; j<(n+1); ++j) {
     mxtf[i]=mxf[i + jve*adimmx];
     /*if (j==1) Rprintf("\n adimmx = %i, [i] = %i, mxtm[i] = %15.10f, mxm[i + jve*adimmx] = %15.10f",adimmx, i, mxtm[i], mxm[i + jve*adimmx]);*/
   }
-  LifeTableC(1, adim1, mxtm, Lxm, lxm);
-  LifeTableC(2, adim1, mxtf, Lxf, lxf);
+  LifeTableC(male, adim1, mxtm, Lxm, lxm);
+  LifeTableC(female, adim1, mxtf, Lxf, lxf);
   
   
   /* cohort-period separation factors */
@@ -643,16 +646,16 @@ for(j=1; j<(n+1); ++j) {
   
   /**************************************************************************/
   if((debug==1) && (j==1)){
-  /*  Rprintf("\n mxtm, adimmx");
-    printArray(mxtm, adimmx);
-    Rprintf("\n Lxm, adim");
+  /*    Rprintf("\n Lxm, adim");
     printArray(Lxm, adim);
     Rprintf("\n lxm, adim");
     printArray(lxm, adim);
    */
+    Rprintf("\n mxtm, adimmx");
+    printArray(mxtm, adimmx);
     Rprintf("\n csfm, adim");
     printArray(csfm, adim);
-    Rprintf("\n csfm[25]=%f, Lxm[25]= %15.10f, Lxm[26]= %15.10f, lxm[26]== %15.10f", csfm[25], Lxm[25], Lxm[26], lxm[26]);
+    Rprintf("\n csfm[25]=%f, Lxm[25]= %e, Lxm[26]= %e, lxm[26]== %ef", csfm[25], Lxm[25], Lxm[26], lxm[26]);
     Rprintf("\n cdeathsm,adim");
     printArray(cdeathsm,adim);
   }
