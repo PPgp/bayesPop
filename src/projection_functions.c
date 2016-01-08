@@ -18,7 +18,7 @@ double sum(double *x, int dim) {
 void printArray(double *a, int count) {
   int i;
   for (i = 0; i < count; i++) {
-    Rprintf("\n[%d] = %15.10f", i, a[i]);
+    Rprintf("\n[%d] = %18.15f", i, a[i]);
   }
   Rprintf("\n");
 }
@@ -144,7 +144,7 @@ void LifeTableC(int sex, int nage, double *mx,
   /* collapse 1L0 and 4L1 into 5L0 */
   LLm[0] = L[0] + L[1];
   lm[0] = lm[0];
-  for(i = 1; i < nage; ++i) {
+  for(i = 1; i <= nage; ++i) {
     LLm[i] = L[i+1];
     lm[i] = lm[i+1];
   }
@@ -646,16 +646,16 @@ for(j=1; j<(n+1); ++j) {
   
   /**************************************************************************/
   if((debug==1) && (j==1)){
-  /*    Rprintf("\n Lxm, adim");
-    printArray(Lxm, adim);
-    Rprintf("\n lxm, adim");
+  /*Rprintf("\n lxm, adim");
     printArray(lxm, adim);
    */
     Rprintf("\n mxtm, adimmx");
     printArray(mxtm, adimmx);
+    Rprintf("\n Lxm, adim");
+    printArray(Lxm, adim);
+    Rprintf("\n csfm[25]=%f, Lxm[25]= %e, Lxm[26]= %e, lxm[26]== %ef", csfm[25], Lxm[25], Lxm[26], lxm[26]);
     Rprintf("\n csfm, adim");
     printArray(csfm, adim);
-    Rprintf("\n csfm[25]=%f, Lxm[25]= %e, Lxm[26]= %e, lxm[26]== %ef", csfm[25], Lxm[25], Lxm[26], lxm[26]);
     Rprintf("\n cdeathsm,adim");
     printArray(cdeathsm,adim);
   }
