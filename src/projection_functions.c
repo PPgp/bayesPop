@@ -137,20 +137,21 @@ ax[nage] = Lx[nage];
 /*     also check dimenisioning of parameter                  */
 void LifeTableC(int sex, int nage, double *mx,
                 double *LLm, double *lm) {
-  /* life table varaibles returned from doLifeTable */
-  double ax[nage+1], qx[nage+1], L[nage+1];
+  /* life table variables returned from doLifeTable */
+  /* tets with nage = last index, hence ax[nage], ..*/
+  /*double ax[nage+1], qx[nage+1], L[nage+1];*/
+  double ax[nage], qx[nage], L[nage];
   int i;
+  
   doLifeTable(sex, nage, mx, L, lm, qx, ax);
   /* collapse 1L0 and 4L1 into 5L0 */
   LLm[0] = L[0] + L[1];
   lm[0] = lm[0];
-  for(i = 1; i <= nage; ++i) {
+  for(i = 1; i < nage; ++i) {
     LLm[i] = L[i+1];
     lm[i] = lm[i+1];
   }
 }
-
-
 
 double get_constrained_mortality(double a, double b, double k, double constraint) {
   double mx;
@@ -629,8 +630,9 @@ for(j=1; j<(n+1); ++j) {
     mxtf[i]=mxf[i + jve*adimmx];
     /*if (j==1) Rprintf("\n adimmx = %i, [i] = %i, mxtm[i] = %15.10f, mxm[i + jve*adimmx] = %15.10f",adimmx, i, mxtm[i], mxm[i + jve*adimmx]);*/
   }
-  LifeTableC(male, adim1, mxtm, Lxm, lxm);
-  LifeTableC(female, adim1, mxtf, Lxf, lxf);
+  /* testing calling with adim = 27, last index*/
+  LifeTableC(male, adim1+1, mxtm, Lxm, lxm);
+  LifeTableC(female, adim1+1, mxtf, Lxf, lxf);
   
   
   /* cohort-period separation factors */
