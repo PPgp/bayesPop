@@ -156,7 +156,7 @@ void LifeTableC(int sex, int nage, double *mx,
   /* collapse 1L0 and 4L1 into 5L0 */
   Lxx[0] = Lx[0] + Lx[1];
   lxx[0] = lx[0];
-  for(i = 1; i < nage-1; ++i) {
+  for(i = 1; i < nage; ++i) {
     Lxx[i] = Lx[i+1];
     lxx[i] = lx[i+1];
   }
@@ -455,7 +455,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 
 
 int debug;/* testing*/
-debug = 1;
+debug = 0;
 
 nrow = *migr;
 ncol = *migc;
@@ -688,7 +688,7 @@ for(j=0; j<ncol; ++j) {
       csfm[i] = (Lxm[i]-5.0*lxm[ii])/(Lxm[i] - Lxm[ii]);
       csff[i] = (Lxf[i]-5.0*lxf[ii])/(Lxf[i] - Lxf[ii]);
     }
-    
+   /* last age group (open ended) */ 
     csfm[adim1] = 1.0; 
     csff[adim1] = 1.0;
     
@@ -701,7 +701,29 @@ for(j=0; j<ncol; ++j) {
       printArray(cdeathsm,adim);
       
     }
-      
+    /***************************************************************************/
+    /* period deaths first age group*/
+    deathsm[jve*adim] = cdeathsm[0] + cdeathsm[1]*csfm[0];
+    deathsf[jve*adim] = cdeathsf[0] + cdeathsf[1]*csff[0];
+    i=0;  
+    
+    if((debug==1) && (j==1)) {
+      Rprintf("\n  first age group period deaths, j= %i, i= %i, adim= %i, jve*adim= %i", j, i, adim, i+jve*adim); 
+      Rprintf("\n deathsm[j*adim]=%15.10f, cdeathsm[0]=%15.10f, cdeathsm[1]=%15.10f,csfm[0]=%15.10f", deathsm[jve*adim], cdeathsm[0], cdeathsm[1], csfm[0]); 
+    }
+    
+    /* period deaths middle age groups */
+    for(i=1; i<adim1; ++i) {
+      deathsm[i + jve*adim] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
+      deathsf[i + jve*adim] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
+      if((debug==1) && (j==1))  
+        Rprintf("\n middle age group period deaths, j= %i, i= %i, adim= %i, i+jve*adim= %i, deathsm[i+jve*adim]= %f", j, i, adim, (i+jve*adim), deathsm[i+jve*adim]);
+    }
+
+    /* last, open-ended age group, one less than for population  */
+    i = adim1;
+    /* pending */
+
   }
 }
 
