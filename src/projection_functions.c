@@ -18,7 +18,7 @@ double sum(double *x, int dim) {
 void printArray(double *a, int count) {
   int i;
   for (i = 0; i < count; i++) {
-    Rprintf("\n[%d] = %18.15f", i, a[i]);
+    Rprintf("\n[%i] = %18.15f", i, a[i]);
   }
   Rprintf("\n");
 }
@@ -113,9 +113,9 @@ for(i = 10; i < nage; i++) {
 /* caculate life table variables from mx and ax */
 for(i = 2; i < nage; ++i) {
   /*Rprintf("ax%i=%f, mx%i=%f", i, ax[i], i-1, mx[i-1]);*/
-  qx[i] = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
+  qx[i]   = 5 * mx[i] / (1 + (5 - ax[i]) * mx[i]);
   lx[i+1] = lx[i] * (1-qx[i]);
-  Lx[i] = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
+  Lx[i]   = 5 * lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
 }
 
 /* Open ended age interval */
@@ -136,20 +136,29 @@ ax[nage] = Lx[nage];
 /*     candidate for renaming parameters for consistency      */
 /*     also check dimenisioning of parameter                  */
 void LifeTableC(int sex, int nage, double *mx,
-                double *LLm, double *lm) {
+                double *Lxx, double *lxx) {
   /* life table variables returned from doLifeTable */
-  /* tets with nage = last index, hence ax[nage], ..*/
-  /*double ax[nage+1], qx[nage+1], L[nage+1];*/
-  double ax[nage], qx[nage], L[nage];
+  /* need to be declared with nage+1 elements       */
+  /* Lx[nage+1]
+   * lx[nage+1]
+   * qx[nage+1]
+   * ax[nage+1];
+   * input todoLifeTableC mx is declared outside
+   * output from LifeTableC Lxx, lxx is declared 
+   * with nage-1 elements outside 
+   */
+  
+  double Lx[nage+1], lx[nage+1], qx[nage+1], ax[nage+1];
   int i;
-  Rprintf("\n LifeTableC nage = %i, sex = %i", nage, sex);
-  doLifeTable(sex, nage, mx, L, lm, qx, ax);
+  
+  /* do life table called with nage as last index */
+  doLifeTable(sex, nage, mx, Lx, lx, qx, ax);
   /* collapse 1L0 and 4L1 into 5L0 */
-  LLm[0] = L[0] + L[1];
-  lm[0] = lm[0];
+  Lxx[0] = Lx[0] + Lx[1];
+  lxx[0] = lx[0];
   for(i = 1; i < nage-1; ++i) {
-    LLm[i] = L[i+1];
-    lm[i] = lm[i+1];
+    Lxx[i] = Lx[i+1];
+    lxx[i] = lx[i+1];
   }
 }
 
@@ -432,13 +441,17 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 ) {
   double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
   double b, bt[7], bm, bf, mmult, srb_ratio;
-  double Lxm[27], Lxf[27], lxm[27], lxf[27], cdeathsm[27], cdeathsf[27], mxtm[28], mxtf[28];
-  double dfw, dbw;          /* forward and backward estimated deaths */
-double csfm[27],csff[27]; /* cohort separation factor males, females*/
-int i,j, jve, adim, adim1, adimmx, nrow, ncol, n;
-int t, t1;
-int const male = 1;
-int const female = 2;
+  double Lxm[27], Lxf[27], lxm[27], lxf[27];
+  double cdeathsm[27], cdeathsf[27];
+  double mxtm[28], mxtf[28];
+  /* forward and backward estimated deaths */
+  double dfw, dbw;        
+  /* cohort separation factor males, females*/
+  double csfm[27],csff[27]; 
+  int i,j, jve, adim, adim1, adimmx, nrow, ncol, n;
+  int t, t1;
+  int const male = 1;
+  int const female = 2;
 
 
 int debug;/* testing*/
@@ -492,6 +505,10 @@ for(j=0; j<ncol; ++j) {
   /* Population projection for one trajectory */
   for(j=1; j<(n+1); ++j) {
     jve = j-1;
+/*
+ * Rprintf("\n   first age group projected population, j= %i, i= %i, adim= %i, i+jve*adim= %i", j, 0, adim, 0+j*adim);
+ */
+    
     
     /* later: test replacing j and j-1 
      * t= j*adim;
@@ -504,12 +521,16 @@ for(j=0; j<ncol; ++j) {
     
     /* Compute ages >=5 */
     for(i=1; i<adim1; ++i) {
+/*
+ *    Rprintf("\n  middle age group projected population, j= %i, i= %i, adim= %i, i+jve*adim= %i", j, i, adim, i+j*adim);
+ */
+   
       popm[i + j*adim] = popm[i-1 + jve*adim] * srm[i + jve*adim];
       popf[i + j*adim] = popf[i-1 + jve*adim] * srf[i + jve*adim];
       totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]); /* assures population is not negative */
-    popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
-    totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
-    popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
+      popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
+      totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
+      popf[i + j*adim] = popf[i + j*adim] + totmigf[i][jve];
     }
     
     /* Age 130+ */
@@ -526,7 +547,12 @@ for(j=0; j<ncol; ++j) {
     popm[26 + j*adim] = popm[26 + j*adim] + totmigm[26][jve];
     totmigf[26][jve] = fmax(migf[26][jve], -1*popf[26 + j*adim]);
     popf[26 + j*adim] = popf[26 + j*adim] + totmigf[26][jve];
-    /* 
+ /*
+  * Rprintf("\n    last age group projected population, j= %i, i= %i, adim= %i, i+jve*adim= %i", j, 26, adim, 26+j*adim);
+  */
+    
+    
+        /* 
      if((debug==1) && (j==1)){
      for(i=0; i<adim; i++) {
      Rprintf("\n i=%i, srm[i]=%15.10f", i, srm[i + jve*adim]  );
@@ -578,24 +604,22 @@ for(j=0; j<ncol; ++j) {
     dfw = bf * (1-srf[jve*adim]);
     dbw = popf[i + j*adim] *((1-srf[i + jve*adim])/srf[i + jve*adim]);
     cdeathsf[i] = 0.5* (dfw + dbw);
+
+   if((debug==1) && (j==1))		Rprintf("\n first age group cohort deaths1: , cdeathsm[0]=%15.10f",cdeathsm[0]);
     
-    if((debug==1) && (j==1))		Rprintf("\n first age group cohort deaths1: , cdeathsm[0]=%15.10f",cdeathsm[0]);
+   
     
     /* more compact, but less readable */
     /* cdeathsm[0] = 0.5* (bm * (1-srm[jve*adim]) + (popm[1 + j*adim] *(1-srm[jve*adim])/srm[jve*adim]));*/
     /* cdeathsm[0] = 0.5* (bf * (1-srf[jve*adim]) + (popf[1 + j*adim] *(1-srf[jve*adim])/srf[jve*adim]));*/
-    
-    if((debug==1) && (j==1))Rprintf("\n other age groups cohort deaths");
+
     /* closed age groups */
     for(i=1; i<adim1; ++i) {
       /* males */
       dfw = popm[i-1 + jve*adim] * (1-srm[i + jve*adim]);
       dbw = popm[i + j*adim] * (1-srm[i + jve*adim])/srm[i + jve*adim];
       cdeathsm[i] = 0.5 * (dfw + dbw);
-      if((debug==1) && (j==1)){
-        Rprintf("\n i=%i, popm[i-1 + jve*adim]= %f, srm[i + jve*adim]=%15.10f, popm[i + j*adim]=%15.10f, dfw=%f, dbw=%f", i, popm[i-1 + jve*adim], srm[i + jve*adim], popm[i + j*adim], dfw, dbw);
-      }
-      
+
       /* females */
       dfw = popf[i-1 + jve*adim] * (1-srf[i + jve*adim]);
       dbw = popf[i + j*adim] * (1-srf[i + jve*adim])/srf[i + jve*adim];
@@ -632,10 +656,32 @@ for(j=0; j<ncol; ++j) {
     }
     /* worked when calling with adim = 27, last index of abridged life table */
     /* Note that results have last index at adim1 = 26! */
+
     LifeTableC(male, adim, mxtm, Lxm, lxm);
-    LifeTableC(female, adim, mxtf, Lxf, lxf);
     
-    /* cohort-period separation factors */
+    if((debug==1) && (j==1)){
+      Rprintf("\n cdeathsm after male LT, adim");
+      printArray(cdeathsm,adim);
+    }
+
+    LifeTableC(female, adim, mxtf, Lxf, lxf);
+
+    if((debug==1) && (j==1)){
+      Rprintf("\n cdeathsf after female LT, adim");
+      printArray(cdeathsf,adim);
+    }
+
+    if((debug==1) && (j==1)){
+
+    Rprintf("\n testing Lxm, lxm");
+    Rprintf("\n adimmx=%i, adim=%i", adimmx, adim);
+    printArray(mxtm,adimmx);
+    printArray(Lxm, adim);
+    printArray(lxm, adim);
+    printArray(cdeathsm,adim);
+  }  
+
+  /* cohort-period separation factors */
     int ii;
     for(i=0; i<adim1; ++i) {
       ii = i + 1;
@@ -646,51 +692,16 @@ for(j=0; j<ncol; ++j) {
     csfm[adim1] = 1.0; 
     csff[adim1] = 1.0;
     
-    /**************************************************************************/
+    
+    
     if((debug==1) && (j==1)){
-    /*Rprintf("\n lxm, adim");
-      printArray(lxm, adim);
-    
-      Rprintf("\n mxtm, adimmx");
-      printArray(mxtm, adimmx);
-      Rprintf("\n Lxm, adim");
-      printArray(Lxm, adim);
-      Rprintf("\n csfm[25]=%f, Lxm[25]= %e, Lxm[26]= %e, lxm[26]== %ef", csfm[25], Lxm[25], Lxm[26], lxm[26]);
-      Rprintf("\n csfm, adim");
-      printArray(csfm, adim);
-     */
-    Rprintf("\n cdeathsm,adim");
-    printArray(cdeathsm,adim);
+      Rprintf("\n csfm,adim1= %i", adim);
+      printArray(csfm,adim);
+      Rprintf("\n cdeathsm after csfm,adim");
+      printArray(cdeathsm,adim);
       
     }
-    /***************************************************************************/
-    
-    /* period deaths first age group*/
-/*
-    deathsm[j*adim] = cdeathsm[0] + cdeathsm[1]*csfm[0];
-    deathsf[j*adim] = cdeathsf[0] + cdeathsf[1]*csff[0];
-*/
-    if((debug==1) && (j==1))  {
-      Rprintf("\n first age group period deaths, j= %i, adim= %i", j, adim);
-      /* Rprintf("\n deathsm[j*adim]=%15.10f, cdeathsm[0]=%15.10f, cdeathsm[1]=%15.10f,csfm[0]=%15.10f", deathsm[j*adim], cdeathsm[0], cdeathsm[1], csfm[0]); */
       
-    }
-    
-/* period deaths middle age groups */
-    for(i=1; i<adim1; ++i) {
-      /*
-       deathsm[i + j*adim] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
-      deathsf[i + j*adim] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
-      if((debug==1) && (j==1))  Rprintf("\n i=%i, deathsm[i + j*adim]=%15.10f, cdeathsm[i]=%15.10f, (1-csfm[i-1])=%15.10f, cdeathsm[i+1]=%15.10f, csfm[i]=%15.10f", i, deathsm[i + j*adim], cdeathsm[i], (1-csff[i-1]), cdeathsm[i+1], csfm[i]);
-*/    
-      Rprintf("\n middle age group period deaths, j= %i, adim= %i", j, adim);
-    }
-    /* last, open-ended age group */
-    /* last age group of period deaths is one less than for population  */
-    i = adim1;
-    /* pending */
-    
-    
   }
 }
 
