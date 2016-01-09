@@ -949,10 +949,25 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 
+get.pop.expr <- function(expression, pop.pred, observed=FALSE, ...) {
+	# Return trajectories or observed values for any expression
+	if(observed) 
+		return(get.pop.observed.from.expression(expression, pop.pred, ...))
+	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
+	# TODO: it doesn't work if expression is given for multiple ages (using {})
+	# if(!is.null(result$index) && !is.null(result$trajectories)) 
+		# return(switch(length(dim(result$trajectories)),
+					# result$trajectories[result$index],
+					# result$trajectories[,result$index],
+					# result$trajectories[,,result$index],
+					# result$trajectories[,,,result$index]
+					# ))
+	return(result$trajectories)
+}
+
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, 
 													adj.to.file=NULL, adj.country=NULL, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
-	#stop('')
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
@@ -1152,7 +1167,7 @@ age.func <- function(data, fun="*") {
 	# It applies the given function to data and the corresponding age (middle of the age category)
 	if(is.character(fun)) fun <- .remove.trailing.spaces(fun) 
 	age <- as.integer(dimnames(data)[[2]])
-	all.ages <- aperm(array(seq(2, by=5, length=27), 
+	all.ages <- aperm(array(seq(2.5, by=5, length=27), 
 						c(27,dim(data)[[1]],dim(data)[[3]],dim(data)[[4]])), 
 					c(2,1,3,4)) # to assure elementwise operations
 	return(do.call(fun, list(data, all.ages[,age,,,drop=FALSE])))
@@ -1323,6 +1338,7 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 }
 
 get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F", "migM", "migF")) {
+	# provides indices to the trajectories of TFR, e0 and migration
 	country.object <- get.country.object(country, country.table=pop.pred$countries)
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country.object$code, e))
@@ -1331,12 +1347,13 @@ get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F"
 	return(e$trajectory.indices[[par[[what[1]]]]])
 }
 
-get.trajectories.close.to <- function(pred, country, quant=0.5, values=NULL, nr.traj=1, ...) {
+get.trajectories.close.to <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, values=NULL, nr.traj=1, ...) {
 	# Return trajectories close to the given quantile, or close to the given values
-	trajectories <- get.pop.trajectories(pred, country, ...)$trajectories
-	if(is.null(values)) {
+	trajectories <- if(!is.null(country)) get.pop.trajectories(pop.pred, country, ...)$trajectories else
+						get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+	if(is.null(trajectories)) return(NULL)
+	if(is.null(values))
 		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
-	}
 	sumerrors <- apply(abs(trajectories - values), 2, sum)
 	sorterrors.idx <- order(sumerrors)
     return(list(trajectories=trajectories[,sorterrors.idx[1:nr.traj]], index=sorterrors.idx[1:nr.traj]))

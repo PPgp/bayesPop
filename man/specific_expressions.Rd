@@ -27,13 +27,13 @@ where \eqn{R_c(x)} denotes the country-specific percent age-specific fertility f
 \code{\link{pop.expressions}}
 }
 \examples{
-# Run pop.predict with storing vital events
 \dontrun{
 sim.dir <- tempfile()
+# Run pop.predict with storing vital events
 pred <- pop.predict(countries=c("Germany", "France"), nr.traj=3, 
            keep.vital.events=TRUE, output.dir=sim.dir)
 # plot the mean age of childbearing 
-pop.trajectories.plot(pred, expression=mac.expression("FR"))
+pop.trajectories.plot(pred, expression=mac.expression("FR"), cex.main = 0.7)
 unlink(sim.dir, recursive=TRUE)}}
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the

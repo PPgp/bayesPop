@@ -11,10 +11,11 @@ Aggregation of existing countries' population projections into projections of gi
 \usage{
 pop.aggregate(pop.pred, regions, 
     input.type = c('country', 'region'), name = input.type,
-    inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL), 
+    inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL),
     my.location.file = NULL, verbose = FALSE, \dots)
     
-get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, write.to.cache = TRUE)
+get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, 
+    write.to.cache = TRUE)
 }
 
 \arguments{
@@ -31,7 +32,7 @@ get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, write.to.cache
 \item{my.location.file}{User-defined location file that can contain other agreggation groups than the default UN location file. It should have the same structure as the \code{\link[wpp2012]{UNlocations}} dataset, see below.}
 \item{verbose}{Logical switching log messages on and off.}
 \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
-\item{write.to.cache}{Logical controlling if other functions are allowed to write the cache of this prediction object (see Details of \code{\link{get.pop.prediction}}).}
+\item{write.to.cache}{Logical controlling if functions operating on this object are allowed to write into its cache (see Details of \code{\link{get.pop.prediction}}).}
 \item{\dots}{Additional arguments.}
 }
 \details{
@@ -98,7 +99,7 @@ pred <- pop.predict(countries=c(528,218,450), output.dir=sim.dir)
 aggr <- pop.aggregate(pred, 900) # aggregating World (i.e. all countries available in pred)
 pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
 # countries over which we aggregated:
-UNlocations[is.element(UNlocations[,'country_code'], aggr$aggregated.countries[['900']]),]
+UNlocations[UNlocations[,'country_code'] %in% aggr$aggregated.countries[['900']],]
 unlink(sim.dir, recursive=TRUE)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
