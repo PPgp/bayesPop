@@ -1556,55 +1556,56 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
   if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
   return(apply(mx, 2, .doLifeTableMxCol, colname=colname, ...))
 }
+# following helper functions for collapsed life table columns,
+# rewritten without age05 logic 
 
 .collapse.sx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  sx.start <- c(LT$sx[1:2], (LT$Lx[1] + LT$Lx[2])/5)[age05]
-  return(c(sx.start, LT$sx[-(1:2)]))
+  # sx does not need to be collapsed, as all elements refer to a five-year age group
+  # removed last age group so to assure same length as all other columns after collapsing
+  # sx.start <- (LT$Lx[1] + LT$Lx[2])/(5*LT$lx[1])
+  return(LT$sx[-length(LT$sx)])
 }
 
 .collapse.dx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  dx.start <- c(LT$dx[1:2], LT$dx[1] + LT$dx[2])[age05]
+  dx.start <- LT$dx[1] + LT$dx[2]
   return(c(dx.start, LT$dx[-(1:2)]))
 }
 
-# enabled, added ax
 .collapse.ax <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  ax.start <- c(LT$ax[1:2], ((LT$Lx[1]+LT$Lx[2]-5*LT$lx[3])/(LT$dx[1]+LT$dx[2])))[age05]
+  ax.start <-  (LT$Lx[1]+LT$Lx[2]-5*LT$lx[3])/(LT$dx[1]+LT$dx[2])
   return(c(ax.start, LT$ax[-(1:2)]))
 }
-# enabled, added Tx
+
 .collapse.Tx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  Tx.start <- c(LT$Tx[1:2], LT$Tx[1])[age05]
+  Tx.start <- LT$Tx[1]
   return(c(Tx.start, LT$Tx[-(1:2)]))
 }
-# corrected ex
+
 .collapse.ex <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  #lx <- .collapse.lx(LT, ...)
-  #Tx <- .collapse.Tx(LT, ...)
-  ex.start <- c(LT$ex[1:2], LT$ex[1])[age05]
+  ex.start <- LT$ex[1]
   return(c(ex.start, LT$ex[-(1:2)]))
 }
 
 .collapse.Lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  Lx.start <- c(LT$Lx[1:2], LT$Lx[1] + LT$Lx[2])[age05]
+  Lx.start <- LT$Lx[1] + LT$Lx[2]
   return(c(Lx.start, LT$Lx[-(1:2)]))
 }
 
 .collapse.lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  lx.start <- LT$lx[1][age05]
-  #lx.start <- LT$lx[c(1,2,2)][age05]
+  lx.start <- LT$lx[1]
   return(c(lx.start, LT$lx[-(1:2)]))
 }
 
 .collapse.qx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  qx.start <- c(LT$qx[1:2], 1-(LT$lx[3]/LT$lx[1]))[age05]
+  qx.start <- 1-(LT$lx[3]/LT$lx[1])
   return(c(qx.start, LT$qx[-(1:2)]))
 }
 
 .collapse.mx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-  mx.start <- c(LT$mx[1:2], (LT$lx[1] - LT$lx[3])/(LT$Lx[1] + LT$Lx[2]))[age05]
+  mx.start <- (LT$lx[1] - LT$lx[3])/(LT$Lx[1] + LT$Lx[2])
   return(c(mx.start, LT$mx[-(1:2)]))
 }
+# end of helper function for collapsing life table columns
 
 .doLifeTableMxCol <- function(mx, colname, age05=c(FALSE, FALSE, TRUE), ...) {
   # age05 determines the inclusion of ages 0-1, 1-4, 0-4
