@@ -1638,8 +1638,16 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 .collapse.sx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	sx.start <- c(LT$sx[1:2], (LT$Lx[1] + LT$Lx[2])/5)[age05]
-	return(c(sx.start, LT$sx[-(1:2)]))
+	# sx does not need to be collapsed, as all elements refer to a five-year age group
+	# for collapsed format remove last age group so to assure same length as all other columns after collapsing	
+	#sx.start <- c(LT$sx[1:2], (LT$Lx[1] + LT$Lx[2])/5)[age05]
+	#return(c(sx.start, LT$sx[-(1:2)]))
+	return(switch(sum(age05)+1,
+				LT$sx[c(-1, -length(LT$sx))], # unuseful case of all values FALSE
+				LT$sx[-length(LT$sx)], # one value TRUE (collapsed life table)
+				LT$sx, # two values TRUE (abridged life table)
+				c(LT$sx[1], LT$sx) # unuseful case of all values TRUE
+				))
 }
 
 .collapse.dx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
@@ -1653,12 +1661,12 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 .collapse.Tx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	Tx.start <- c(LT$Tx[1:2], LT$Tx[1])[age05]
+	Tx.start <- c(LT$Tx[c(1,2,1)])[age05]
 	return(c(Tx.start, LT$Tx[-(1:2)]))
 }
 
 .collapse.ex <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	ex.start <- c(LT$ex[1:2], LT$ex[1])[age05]
+	ex.start <- c(LT$ex[c(1,2,1)])[age05]
 	return(c(ex.start, LT$ex[-(1:2)]))
 }
 
@@ -1668,7 +1676,7 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 .collapse.lx <- function(LT, age05=c(FALSE, FALSE, TRUE)) {
-	lx.start <- LT$lx[c(1,2,2)][age05]
+	lx.start <- LT$lx[c(1,2,1)][age05]
 	return(c(lx.start, LT$lx[-(1:2)]))
 }
 

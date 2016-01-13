@@ -949,20 +949,20 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 
-get.pop.expr <- function(expression, pop.pred, observed=FALSE, ...) {
-	# Return trajectories or observed values for any expression
+get.pop.ex <- function(expression, pop.pred, observed=FALSE, ...) {
+	# Return trajectories or observed values for an expression (defined by time)
 	if(observed) 
 		return(get.pop.observed.from.expression(expression, pop.pred, ...))
 	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
-	# TODO: it doesn't work if expression is given for multiple ages (using {})
-	# if(!is.null(result$index) && !is.null(result$trajectories)) 
-		# return(switch(length(dim(result$trajectories)),
-					# result$trajectories[result$index],
-					# result$trajectories[,result$index],
-					# result$trajectories[,,result$index],
-					# result$trajectories[,,,result$index]
-					# ))
-	return(result$trajectories)
+	return(result$trajectories[,result$index])
+}
+
+get.pop.exba <- function(expression, pop.pred, observed=FALSE, ...) {
+	# Return trajectories or observed values for an expression (defined by age, i.e. includes {})
+	if(observed) 
+		return(get.pop.observed.from.expression.multiple.age(expression, pop.pred, ...))
+	result <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred, ...)
+	return(result$trajectories[,,result$index])
 }
 
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, 
@@ -1349,8 +1349,12 @@ get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F"
 
 get.trajectories.close.to <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, values=NULL, nr.traj=1, ...) {
 	# Return trajectories close to the given quantile, or close to the given values
-	trajectories <- if(!is.null(country)) get.pop.trajectories(pop.pred, country, ...)$trajectories else
-						get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+	if(!is.null(country)) {
+		country.object <- get.country.object(country, country.table=pop.pred$countries)
+		trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
+	} else {
+		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+	}
 	if(is.null(trajectories)) return(NULL)
 	if(is.null(values))
 		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
