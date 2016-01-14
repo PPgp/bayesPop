@@ -41,7 +41,7 @@ Function \code{LifeTableMxCol} returns one given column of the life table, possi
 Preston, P., Heuveline, P., Guillot, M. (2001): Demography. Blackwell Publishing Ltd.
 }
 \author{
-Hana Sevcikova, Nan Li, Patrick Gerland
+Hana Sevcikova, Thomas Buettner, Nan Li, Patrick Gerland
 }
 
 \seealso{

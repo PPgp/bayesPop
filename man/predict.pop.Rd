@@ -92,7 +92,7 @@ H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Spec
 %Working Paper 150. Center for Statistics and the Social Sciences, University of Washington. \url{http://www.csss.washington.edu/Papers/2015/wp150.pdf} 
 }
 \author{
-Hana Sevcikova, based on code of Nan Li and helpful comments from Patrick Gerland
+Hana Sevcikova, Thomas Buettner, based on code of Nan Li and helpful comments from Patrick Gerland
 }
 %\note{
 %%  ~~further notes~~
