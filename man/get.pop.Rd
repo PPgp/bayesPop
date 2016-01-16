@@ -1,7 +1,10 @@
 \name{pop.trajectories}
 \alias{get.pop}
+\alias{get.pop.ex}
+\alias{get.pop.exba}
 \alias{pop.trajectories}
 \alias{get.trajectory.indices}
+\alias{get.trajectories.close.to}
 \title{
 Accessing Trajectories
 }
@@ -36,6 +39,7 @@ get.trajectories.close.to(pop.pred, country = NULL, expression = NULL,
   \item{what}{A character string that defines to which component should the indices link to. Allowable options are \dQuote{TFR}, \dQuote{e0M} (male life expectancy), \dQuote{e0F} (female life expectancy), \dQuote{migM} (male migration), \dQuote{migF} (female migration).}
   \item{quant}{Quantile used to select the closest trajectories to.}
   \item{values}{Vector of values used to select the closest trajectories to. If it is not of length 1, it has to be of the same length as the number of time periods. If it is not given, \code{quant} is used.}
+  \item{nr.traj}{Number of trajectories to return. This argument can be passed to any of the functions that contains \dots.}
   \item{\dots}{Additional argument passed to the underlying functions. In case of \code{get.pop}, \code{get.pop.ex} and  \code{get.pop.exba}, this is only used for \code{observed=FALSE}. It can be either \code{nr.traj} giving the number of trajectories or logical \code{typical.trajectory}.}
 }
 
@@ -74,15 +78,15 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
-# observed female of Netherlands by age; 1x21x13x1 array
+# observed female of Netherlands by age; 1x21x14x1 array
 popFNL <- get.pop("PNL_F{}", pred, observed=TRUE)
 
 # observed migration for all countries in the prediction object,
-# here 2 countries; 2x1x13x1 array
+# here 2 countries; 2x1x14x1 array
 migAll <- get.pop("GXXX", pred, observed=TRUE)
 
 # projection population for Ecuador with 3 trajectories; 
-# 1x1x19x3 array
+# 1x1x18x3 array
 popEcu <- get.pop("P218", pred, observed=FALSE)
 
 # the above is equivalent to 

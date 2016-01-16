@@ -170,6 +170,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			migFntraj <- if(is.null(inpc[['migFpred']])) 1 else dim(inpc[['migFpred']])[2]  
 			migm <- array(0, dim=c(21, npredplus1, migMntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
 			migf <- array(0, dim=c(21, npredplus1, migFntraj), dimnames=list(ages[1:21], present.and.proj.years, NULL))
+			# extend current mx to 27 age groups
+			Kan.present <- KannistoAxBx.joint(inpc$MXm[,ncol(inpc$MXm), drop=FALSE], inpc$MXf[,ncol(inpc$MXf), drop=FALSE], compute.AxBx=FALSE)
 		}
 		debug <- FALSE
 		#stop('')
@@ -216,11 +218,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				asfert[,2:npredplus1,itraj] <- asfr
 				asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 				pasfert[,2:npredplus1,itraj] <- pasfr*100
-				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
+				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]				
 				mxm[,2:npredplus1,itraj] <- LTres$mx[[1]]
-				mxm[1:dim(MxKan[[1]]$mx)[1],1,itraj] <- MxKan[[1]]$mx[,dim(MxKan[[1]]$mx)[2]]
+				mxm[1:length(Kan.present$male$mx),1,itraj] <- Kan.present$male$mx
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
-				mxf[1:dim(MxKan[[2]]$mx)[1],1,itraj] <- MxKan[[2]]$mx[,dim(MxKan[[2]]$mx)[2]]
+				mxf[1:length(Kan.present$female$mx),1,itraj] <- Kan.present$female$mx
 				migtraj <- min(itraj, migMntraj)
 				migm[,2:npredplus1,migtraj] <- migpred[['M']]
 				migm[1:dim(inpc$observed$MIGm)[1],1,migtraj] <- inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
@@ -1186,7 +1188,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	npoints <- 4
 	age.group <- (21-npoints+1):21
 	data <- data.frame(sex=c(rep(1,npoints), rep(0,npoints)), age=c(age.group, age.group))
-	mxc <- rbind(male.mx[age.group, 1:ne], female.mx[age.group, 1:ne])
+	mxc <- rbind(male.mx[age.group, 1:ne, drop=FALSE], female.mx[age.group, 1:ne, drop=FALSE])
 	logit.mxc <- log(mxc) - log(1-mxc)
 	if(joint) {
 		for(j in 1:ne) {		

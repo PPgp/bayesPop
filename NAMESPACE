@@ -1,6 +1,6 @@
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2015, plyr, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, parallel, abind, wpp2015, wpp2012, plyr, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")

@@ -274,10 +274,19 @@ test.life.table <- function(){
 	# this is the Example from LifeTableMx
 	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015,
     			present.year=2015, keep.vital.events=TRUE, fixed.mx=TRUE, fixed.pasfr=TRUE)
-	# get male mortality rates from 2020 for age groups 0-1, 1-4, 5-9, ...
+	# get male mortality rates from current year for age groups 0-1, 1-4, 5-9, ...
 	mx <- pop.byage.table(pred, expression="MEC_M{c(-1,0,2:27)}")[,1]
 	LT <- LifeTableMx(mx)
 	stopifnot(all(dim(LT) == c(28,10)))
 	stopifnot(!any(is.na(LT)))
+	sx1 <- as.double(LifeTableMxCol(mx, 'sx', age05=c(FALSE, FALSE, TRUE)))
+	sx2 <- get.pop.exba("SEC_M{1:27}", pred, observed=TRUE)
+	sx2 <- as.double(sx2[,ncol(sx2)])
+	sxpred <- get.pop.exba("SEC_M{1:27}", pred, observed=FALSE)
+	sx3 <- as.double(sxpred[,1,1])
+	stopifnot(all.equal(sx1[1:19], sx2[1:19], sx3[1:19]))
+	sx4 <- as.double(LifeTableMxCol(pop.byage.table(pred, expression="MEC_M{age.index01(27)}", year=2053)[,1], 'sx', age05=c(FALSE, FALSE, TRUE)))
+	sx5 <- as.double(sxpred[,"2053",1])
+	stopifnot(all.equal(sx4, sx5))
 	unlink(sim.dir, recursive=TRUE)
 }

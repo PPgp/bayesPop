@@ -449,7 +449,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	/* cohort separation factor males, females*/
 	double csfm[27],csff[27]; 
 	int i,j, jve, adim, adim1, adimmx, nrow, ncol, n;
-	int t, t1;
+	/* int t, t1; */
 	int const male = 1;
 	int const female = 2;
 
