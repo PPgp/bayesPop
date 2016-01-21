@@ -164,7 +164,7 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 	sex <- match.arg(sex)
 	if(is.null(data)) data <- pop.pred$inputs$pop.matrix
 	if(sex == 'both') {
-		data <- data[['male']][,colnames(data[['male']])] + data[['female']][,colnames(data[['male']])]
+		data <- data[['male']][,colnames(data[['male']]),drop=FALSE] + data[['female']][,colnames(data[['male']]),drop=FALSE]
 	} else data <- data[[sex]]
 	country.idx <- grep(paste('^', country, '_', sep='', collapse='|'), rownames(data), value=FALSE)
 	data <- data[country.idx,]
