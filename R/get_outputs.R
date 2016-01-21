@@ -167,7 +167,7 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 		data <- data[['male']][,colnames(data[['male']]),drop=FALSE] + data[['female']][,colnames(data[['male']]),drop=FALSE]
 	} else data <- data[[sex]]
 	country.idx <- grep(paste('^', country, '_', sep='', collapse='|'), rownames(data), value=FALSE)
-	data <- data[country.idx,]
+	data <- data[country.idx,, drop=FALSE]
 	if(is.null(pop.pred$proj.years.pop)) {
 		coln <- as.integer(colnames(data))
 		if(coln[1] %% 5 != 0) # column names should be the end of 5-year interval (not the middle)
@@ -191,8 +191,8 @@ get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 	age.idx <- data.age$age.idx
 	if(age[1]=='psr')  # potential support ratio
 		return(colSums(data[get.psr.nominator.index(),])/colSums(data[get.psr.denominator.startindex():nrow(data),]))
-	if(sum.over.ages) return(colSums(data[age.idx,]))
-	return(data[age.idx,])
+	if(sum.over.ages) return(colSums(data[age.idx,,drop=FALSE]))
+	return(data[age.idx,,drop=FALSE])
 }
 
 get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE) {
