@@ -279,6 +279,10 @@ test.life.table <- function(){
 	LT <- LifeTableMx(mx)
 	stopifnot(all(dim(LT) == c(28,10)))
 	stopifnot(!any(is.na(LT)))
+	mxf <- pop.byage.table(pred, expression="MEC_F{age.index01(27)}", year=2020)[,1]
+	LT <- LifeTableMx(mxf, sex="Female", include01=FALSE)
+	stopifnot(all(dim(LT) == c(28,10)))
+	stopifnot(!any(is.na(LT)))
 	sx1 <- as.double(LifeTableMxCol(mx, 'sx', age05=c(FALSE, FALSE, TRUE)))
 	sx2 <- get.pop.exba("SEC_M{1:27}", pred, observed=TRUE)
 	sx2 <- as.double(sx2[,ncol(sx2)])

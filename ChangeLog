@@ -1,3 +1,9 @@
+6.0-1 (01/29/2016)
+-----
+Option of collapsed life table added to the function LifeTableMx (argument include01).
+
+Bug found by Marta Anacka fixed (matrix collapsed to vector if only one year of observed data given).
+
 6.0-0 (01/15/2016)
 -----
 Added support for wpp2015.

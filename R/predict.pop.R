@@ -1708,26 +1708,32 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female')){
-	
+LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
+	# The first two elements of mx must correspond to 0-1 and 1-4. 
+	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
 	sex <- match.arg(sex)
 	sex <- list(Male=1, Female=2)[[sex]]
 	nage <- length(mx)
-	Lx <- lx <- qx <- Tx <- sx <- dx <- rep(0, nage)
-	ax <- rep(0, nage)
+	Lx <- lx <- qx <- Tx <- sx <- dx <- ax <- rep(0, nage)
 	nagem1 <- nage-1
-	nas <- rep(NA,nage)
-	if(!any(is.na(mx))) {
-		LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
+	resage <- c(if(include01) c(0,1) else 0, seq(5, by=5, length=nage-2))
+	nresage <- length(resage)
+	nas <- rep(NA,nresage)
+	if(any(is.na(mx))) # there are NAs in mx
+		return(data.frame(age=resage, mx=mx[1:nresage], qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas))
+	
+	LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
 					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx, dx=dx)
-		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$dx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=nas)
-		l <- min(length(LTC$ax), nrow(LT))
-		LT$ax[1:l] <- LTC$ax[1:l]
-		LT$ax[nage] <- LT$ex[nage]
-	} else # there are NAs in mx
-		LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					mx=mx, qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas)
+	LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
+					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$dx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=LTC$ax)
+	LT$ax[nage] <- LT$ex[nage]
+	if(!include01) { # collapse 0-1 and 1-5 into 0-5
+		age05 <- c(FALSE, FALSE, TRUE)
+		LTres <- data.frame(age=resage)
+		for(colname in colnames(LT)[-1])
+			LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
+		LT <- LTres
+	}
 	return(LT)
 }
 
