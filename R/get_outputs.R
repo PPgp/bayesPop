@@ -1072,6 +1072,8 @@ get.pop.observed.from.expression.all.countries <- function(expression, pop.pred,
 }
 
 pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'country')) {
+	if(length(dim(data1))==length(dim(data2)) && all(dim(data1)==dim(data2))) 
+		return(do.call(.remove.trailing.spaces(fun), list(data1, data2)))
 	split.along <- match.arg(split.along)
 	if(dim(data1)[3] != dim(data2)[3])
 		stop('Mismatch in time dimension.', dim(data1)[3], ' vs. ', dim(data2)[3])
