@@ -10,5 +10,6 @@ test.expressions()
  # test.prediction.with.prob.migration()
  # test.expressions.with.VE(map=FALSE)
  # test.regional.aggregation()
-
+ # test.life.table()
+ 
 options(warn=warn$warn)

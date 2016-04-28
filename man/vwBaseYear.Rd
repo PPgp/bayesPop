@@ -1,19 +1,19 @@
 \name{vwBaseYear}
 \alias{vwBaseYear}
-\alias{vwBaseYear2008}
 \alias{vwBaseYear2010}
 \alias{vwBaseYear2012}
+\alias{vwBaseYear2015}
 \docType{data}
 \title{
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country. The 2012 dataset also gives information on country's specifics regarding mortality and fertility age patterns.
+Datasets giving information on the baseyear and type of migration for each country. The 2012 and 2015 datasets also give information on country's specifics regarding mortality and fertility age patterns.
 }
 \usage{
-    data(vwBaseYear2008)
-    data(vwBaseYear2010) 
-    data(vwBaseYear2012)  
+    data(vwBaseYear2015)
+    data(vwBaseYear2012) 
+    data(vwBaseYear2010)  
 }
 \format{
   A data frame containing the following variables:
@@ -33,16 +33,16 @@ Datasets giving information on the baseyear and type of migration for each count
   }
 }
 \details{
-There is one record for each country.
+There is one record for each country. See Sevcikova et al (2015) on how information from the various columns is used for projections.
 }
 \source{
 Data provided by the United Nations Population Division.
 }
-%\references{
-%%  ~~ possibly secondary sources and usages ~~
-%}
+\references{
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{http://arxiv.org/abs/1503.05215}
+}
 \examples{
-data(vwBaseYear2012)
-str(vwBaseYear2012)
+data(vwBaseYear2015)
+str(vwBaseYear2015)
 }
 \keyword{datasets}

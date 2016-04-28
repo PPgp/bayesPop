@@ -51,10 +51,10 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 178	Congo	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
 184	Cook Islands	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
 188	Costa Rica	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
-384	Côte d'Ivoire	DG	0	1950	9	1	Model life tables	CD North	1	1	Global Norm	0	0	0
+384	Cote d'Ivoire	DG	0	1950	9	1	Model life tables	CD North	1	1	Global Norm	0	0	0
 191	Croatia	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
 192	Cuba	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
-531	Curaçao	CS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+531	Curacao	CS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
 196	Cyprus	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
 203	Czech Republic	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
 408	Dem. People's Rep. of Korea	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
@@ -168,7 +168,7 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 634	Qatar	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
 410	Republic of Korea	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	1	0
 498	Republic of Moldova	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
-638	Réunion	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+638	Reunion	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
 642	Romania	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
 643	Russian Federation	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
 646	Rwanda	TS	0	1950	9	1	Model life tables	CD North	1	0	Global Norm	0	0	0
