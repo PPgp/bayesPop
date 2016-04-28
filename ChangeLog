@@ -1,3 +1,24 @@
+6.0-1 (01/29/2016)
+-----
+Option of collapsed life table added to the function LifeTableMx (argument include01).
+
+Bug found by Marta Anacka fixed (matrix collapsed to vector if only one year of observed data given).
+
+6.0-0 (01/15/2016)
+-----
+Added support for wpp2015.
+
+Life table functions revisited. (Thomas Buettner)
+
+Cohort deaths converted to period deaths. (Thomas Buettner)
+
+Bug in present mortality rates fixed.
+
+Added functions get.pop.ex and get.pop.exba for retrieving results of expressions.
+
+Added a function for linking given population trajectories to the probabilistic 
+input components (migration, TFR, e0). Called "get.trajectories.close.to".
+
 5.4-0 (7/17/2014)
 -----
 A few fixes in adjustments.

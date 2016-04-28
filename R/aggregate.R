@@ -279,10 +279,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			if(cidx == 1) {
 				for(par in aggr.quantities.all)
 					assign(par, e[[par]])
-				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,]
-				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,]
+				aggr.obs.dataM <- obs.data[['male']][country.obs.idx,, drop=FALSE]
+				aggr.obs.dataF <- obs.data[['female']][country.obs.idx,, drop=FALSE]
 				rownames(aggr.obs.dataM) <- rownames(aggr.obs.dataF) <- sub(paste(countries[cidx], '_', sep=''), 
-																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,]))
+																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,, drop=FALSE]))
 				if(has.vital.events) {
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
@@ -316,18 +316,24 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			# pasfert
 			tfr <- apply(asfert, c(2,3), sum)
 			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
+			tfr.hch <- apply(asfert.hch, c(2,3), sum)
+			pasfert.hch <- asfert.hch/abind(tfr.hch, NULL, along=0)[rep(1,dim(asfert.hch)[1]),,,drop=FALSE]*100
+			
+			# TODO: mxm, mxf, mxm.hch, mxf.hch
+			
 			# asfert, pasfert for observed data
 			observed <- within(observed, {
 				tmp <- abind(aggr.obs.dataF[4:10, , drop=FALSE], NULL, along=3)
-				if(dim(tmp)[2] > dim(btf)[2]+1) # if dimension of births doesn't math population
+				if(dim(tmp)[2] > dim(btf)[2]+1) # if dimension of births doesn't match population
 					tmp <- tmp[,-(1:(dim(tmp)[2]-dim(btf)[2]-1)),, drop=FALSE]
 				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
 				tfr <- apply(asfert, c(2,3), sum)
 				pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 				rm(tmp, tfr)
+				# TODO: mxm, mxf, mxm.hch, mxf.hch
 			})
 			save(btm, btf, deathsm, deathsf, migm, migf, asfert, pasfert,
-				btm.hch, btf.hch, deathsm.hch, deathsf.hch, 
+				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch,
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}		
 		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)

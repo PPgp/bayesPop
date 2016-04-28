@@ -1,12 +1,12 @@
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2012, plyr, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, parallel, abind, wpp2015, wpp2012, plyr, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
 importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", "sd")
-importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim")
+importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 
 #exportPattern("^[[:alpha:]]+")
 useDynLib(bayesPop)
@@ -37,11 +37,15 @@ pop.cleanup.cache,
 LifeTableMx,
 LifeTableMxCol,
 get.pop,
+get.pop.ex,
+get.pop.exba,
 pop.trajectories,
 get.trajectory.indices,
+get.trajectories.close.to,
 cohorts,
 pop.cohorts.plot,
-mac.expression
+mac.expression,
+age.specific.migration
 )
 
 # register S3 methods
