@@ -164,11 +164,15 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 	sex <- match.arg(sex)
 	if(is.null(data)) data <- pop.pred$inputs$pop.matrix
 	if(sex == 'both') {
-		data <- data[['male']][,colnames(data[['male']])] + data[['female']][,colnames(data[['male']])]
+		data <- data[['male']][,colnames(data[['male']]),drop=FALSE] + data[['female']][,colnames(data[['male']]),drop=FALSE]
 	} else data <- data[[sex]]
 	country.idx <- grep(paste('^', country, '_', sep='', collapse='|'), rownames(data), value=FALSE)
-	data <- data[country.idx,]
-	if(is.null(pop.pred$proj.years.pop)) colnames(data) <- as.integer(colnames(data)) + 2
+	data <- data[country.idx,, drop=FALSE]
+	if(is.null(pop.pred$proj.years.pop)) {
+		coln <- as.integer(colnames(data))
+		if(coln[1] %% 5 != 0) # column names should be the end of 5-year interval (not the middle)
+			colnames(data) <- as.integer(colnames(data)) + 2
+	}
 	max.age <- as.integer(round(nrow(data)/length(country),0))
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	age.idx <- age.idx[age.idx <= max.age]
@@ -187,8 +191,8 @@ get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 	age.idx <- data.age$age.idx
 	if(age[1]=='psr')  # potential support ratio
 		return(colSums(data[get.psr.nominator.index(),])/colSums(data[get.psr.denominator.startindex():nrow(data),]))
-	if(sum.over.ages) return(colSums(data[age.idx,]))
-	return(data[age.idx,])
+	if(sum.over.ages) return(colSums(data[age.idx,,drop=FALSE]))
+	return(data[age.idx,,drop=FALSE])
 }
 
 get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE) {
@@ -497,24 +501,31 @@ get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	sx21 <- dim(mxm)[1] < 27
-	for (itraj in 1:dim(mxm)[3]) {
-		LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
-		if(itraj == 1) {
-			if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
-			sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
-			sr <- rep(0, dim(LLm)[1])
-		}
-		sx[,, itraj] <- apply(LLm, 2, 
-							function(x, sr) {
-								if(!any(is.na(x))) {
-									res.sr <- if(sx21) .C("get_sx21_21", as.numeric(x), sx=sr)
-												else .C("get_sx27", as.numeric(x), sx=sr)
-									return(res.sr$sx)
-								} else return(rep(NA, length(x)))
-							}, sr)
-	}
+	# sx21 <- dim(mxm)[1] < 27
+	# for (itraj in 1:dim(mxm)[3]) {
+		# LLm <- LifeTableMxCol(mxm[,, itraj, drop=FALSE], colname='Lx', sex=sex, age05=age05)
+		# if(itraj == 1) {
+			# if(is.null(dim(LLm))) LLm <- abind(LLm, along=2)
+			# sx <- array(0, dim=c(dim(LLm)[1], dim(LLm)[2], dim(mxm)[3]), dimnames=vector("list", 3))
+			# sr <- rep(0, dim(LLm)[1])
+		# }
+		# sx[,, itraj] <- apply(LLm, 2, function(x, sr) { if(!any(is.na(x))) {
+															# res.sr <- if(sx21) .C("get_sx21_21", as.numeric(x), sx=sr)
+																		# else .C("get_sx27", as.numeric(x), sx=sr)
+															# return(res.sr$sx)
+														# } 
+														# return(rep(NA, length(x)))
+													# }, sr)
+	# }
+	
+	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
+	if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
+	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]))
+	sx[,,1] <- sx1
 	dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
+	if(dim(mxm)[3] <= 1) return(sx) # one trajectory
+	for (itraj in 2:dim(mxm)[3]) 
+		sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05)
 	return (sx)
 }
 
@@ -938,10 +949,25 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 
+get.pop.ex <- function(expression, pop.pred, observed=FALSE, ...) {
+	# Return trajectories or observed values for an expression (defined by time)
+	if(observed) 
+		return(get.pop.observed.from.expression(expression, pop.pred, ...))
+	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
+	return(result$trajectories[,result$index])
+}
+
+get.pop.exba <- function(expression, pop.pred, observed=FALSE, ...) {
+	# Return trajectories or observed values for an expression (defined by age, i.e. includes {})
+	if(observed) 
+		return(get.pop.observed.from.expression.multiple.age(expression, pop.pred, ...))
+	result <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred, ...)
+	return(result$trajectories[,,result$index])
+}
+
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, 
 													adj.to.file=NULL, adj.country=NULL, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
-	#stop('')
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
 	traj.idx <- NULL
@@ -1046,7 +1072,7 @@ get.pop.observed.from.expression.all.countries <- function(expression, pop.pred,
 }
 
 pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'country')) {
-	if(length(dim(data1))==length(dim(data2)) && all(dim(data1)==dim(data2)))
+	if(length(dim(data1))==length(dim(data2)) && all(dim(data1)==dim(data2))) 
 		return(do.call(.remove.trailing.spaces(fun), list(data1, data2)))
 	split.along <- match.arg(split.along)
 	if(dim(data1)[3] != dim(data2)[3])
@@ -1143,7 +1169,7 @@ age.func <- function(data, fun="*") {
 	# It applies the given function to data and the corresponding age (middle of the age category)
 	if(is.character(fun)) fun <- .remove.trailing.spaces(fun) 
 	age <- as.integer(dimnames(data)[[2]])
-	all.ages <- aperm(array(seq(2, by=5, length=27), 
+	all.ages <- aperm(array(seq(2.5, by=5, length=27), 
 						c(27,dim(data)[[1]],dim(data)[[3]],dim(data)[[4]])), 
 					c(2,1,3,4)) # to assure elementwise operations
 	return(do.call(fun, list(data, all.ages[,age,,,drop=FALSE])))
@@ -1314,10 +1340,27 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 }
 
 get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F", "migM", "migF")) {
+	# provides indices to the trajectories of TFR, e0 and migration
 	country.object <- get.country.object(country, country.table=pop.pred$countries)
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country.object$code, e))
 		return (NULL)
 	par <- list(TFR="TFRpred", e0M="e0Mpred", e0F="e0Fpred", migM="migMpred", migF="migFpred")
 	return(e$trajectory.indices[[par[[what[1]]]]])
+}
+
+get.trajectories.close.to <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, values=NULL, nr.traj=1, ...) {
+	# Return trajectories close to the given quantile, or close to the given values
+	if(!is.null(country)) {
+		country.object <- get.country.object(country, country.table=pop.pred$countries)
+		trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
+	} else {
+		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+	}
+	if(is.null(trajectories)) return(NULL)
+	if(is.null(values))
+		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
+	sumerrors <- apply(abs(trajectories - values), 2, sum)
+	sorterrors.idx <- order(sumerrors)
+    return(list(trajectories=trajectories[,sorterrors.idx[1:nr.traj]], index=sorterrors.idx[1:nr.traj]))
 }

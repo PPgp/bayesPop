@@ -57,7 +57,7 @@ Depending on the context from which the expression is called, the trajectory dim
 	Works like \code{gmedian} but gives the grouped mean.
 	
 \item \code{age.func(data, fun="*")} \cr
-	This function applies \code{fun} to \code{data} and the corresponding age. The default case would multiply data by the corresponding age. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
+	This function applies \code{fun} to \code{data} and the corresponding age (the middle point of each age category). The default case would multiply data by the corresponding age. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
 
 \item \code{drop.age(data)} \cr
 	Drops the age dimension of the data. For example, if two basic components are combined where one is used within the \code{apply} function, the other will need to change its dimension in order to have conformable arrays. For example, \cr
@@ -90,21 +90,22 @@ sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
 # median age of women in child-bearing ages in Netherlands and all countries - trajectories
-pop.trajectories.plot(pred, nr.traj=50,
+pop.trajectories.plot(pred, nr.traj=0,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
-pop.trajectories.plotAll(pred, nr.traj=50, 
+pop.trajectories.plotAll(pred, nr.traj=0, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 
 # mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
-# for the mean age of childbearing, see ?mac.expression
+# - gives the same results as with "pop.apply(P528_F{4:10}, gmean, cats=seq(15, by=5, length=8))"
+# - for the mean age of childbearing, see ?mac.expression
 
 # migration per capita by age
 pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
 
 \dontrun{
-# potential support ratio - map
+# potential support ratio - map (with only two countries)
 pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")}
 
 # proportion of 0-4 years old to whole population - export to an ASCII file
@@ -113,12 +114,16 @@ write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=dir)
 unlink(dir)
 
 \dontrun{
-# These are vital events only available if keep.vital.events=TRUE in pop.predict 
+# These are vital events only available if keep.vital.events=TRUE in pop.predict, e.g.
+# sim.dir.tmp <- tempfile()
+# pred <- pop.predict(countries="Netherlands", nr.traj=3, 
+#           				keep.vital.events=TRUE, output.dir=sim.dir.tmp)
 # log female mortality rate by age for Netherlands in 2050, including 0-1 and 1-4 age groups
 pop.byage.plot(pred, expression="log(MNL_F{age.index01(27)})", year=2050)
 
 # trajectories of male 1q0 and table of 5q0 for Netherlands
 pop.trajectories.plot(pred, expression="QNLD_M[-1]")
-pop.trajectories.table(pred, expression="QNLD_M[1]")}
+pop.trajectories.table(pred, expression="QNLD_M[1]")
+# unlink(sim.dir.tmp)}
 }
 \keyword{documentation}
