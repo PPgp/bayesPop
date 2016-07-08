@@ -718,6 +718,10 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
+		if(rate < 0 && is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
+			msched <- popM[1:21]/pop
+			fsched <- popF[1:21]/pop
+		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
@@ -1158,7 +1162,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	femaleArray <- matrix(0, nrow=nAgeGroups, ncol=npred)
 
 	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
-	#Handle Croatia separately because of some bad data
+	#Handle Croatia separately because of some bad data (doesn't apply to wpp2015)
 	#Use 2010-2015 schedules, which aren't messed up.
 	# if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
 		# maleVec <- inputs$MIGm[inputs$MIGm$country_code==191, first.year.period]
@@ -1171,11 +1175,11 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# }
 	sched.country <- country
 	first.year <- FALSE
-	# Replace Bahrain and Saudi Arabia with schedule from Qatar 
+	# Replace Bahrain and Saudi Arabia with schedule from Qatar (doesn't apply to wpp2015)
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548)) { 
+	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
@@ -1189,11 +1193,15 @@ migration.age.schedule <- function(country, npred, inputs) {
 		first.year.period <- inputs$year.of.migration.schedule
 		first.year <- TRUE
 	}
-	if(first.year) { # take a one year as age-schedule for all future years
+	if(first.year) { # take one year as the age-schedule for all future years
 		cix <- rep(which(colnames(inputs$MIGm)==first.year.period), length(col.idx))
 		if(length(cix)==0) stop("Time period ", first.year.period, " not found in the migration data.")
 		maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
 		femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
+		if(is.gcc(country)) { # no child hump for GCC countries
+			maleVec[1:2,] <- maleVec[c(3,3),]
+			femaleVec[1:2,] <- femaleVec[c(3,3),]
+		}
 	} else {# take all years starting from present year
 	  	maleVec <- as.matrix(inputs$MIGm[cidxM,col.idx])
     	femaleVec <- as.matrix(inputs$MIGf[cidxF,col.idx])
@@ -1219,22 +1227,28 @@ migration.age.schedule <- function(country, npred, inputs) {
     	femaleArray[,which(!non.zero)] <- matrix(modelF, nrow=nAgeGroups, ncol=sum(!non.zero))
     }
 
-    # special handling for negative rates
+    # special handling for negative and positive migration rates
     negM <- negF <- NULL
-    if(is.gcc(country)) { # set negatives to zero
+    # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
+    if(is.gcc(country)) { 
     	negM <- maleArray
     	negM[negM<0] <- 0
     	negF <- femaleArray
     	negF[negF<0] <- 0
+    	# rescale the rest
     	tot <- apply(negM+negF, 2, sum)
     	negM <- t(apply(negM, 1, '/', tot))
     	negF <- t(apply(negF, 1, '/', tot))
+    	
+    	
     }
-    if(country == 818) { # Egypt (special handling when rate positive)
+    # For Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
+    if(country == 818) {
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0
     	negF <- femaleArray
     	femaleArray[femaleArray<0] <- 0
+    	# rescale the rest
     	tot <- apply(maleArray + femaleArray, 2, sum)
     	maleArray <- t(apply(maleArray, 1, '/', tot))
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
