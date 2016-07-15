@@ -720,6 +720,10 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
 		if(rate < 0 && is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
 			msched <- popM[1:21]/pop
+			smsched <- sum(msched)
+			msched[4:9] <- 2*msched[4:9]/3.
+			msched[10:21] <- 2*msched[10:21] # more weight to older people
+			msched <- smsched*msched/sum(msched) # rescale
 			fsched <- popF[1:21]/pop
 		}
 		# age-specific migration counts		
