@@ -1279,7 +1279,9 @@ PopProjNoMigr <- function(npred, pop0, LT, asfr, srb, country.name=NULL, keep.vi
 	isNegative <- 0
 	res <- .C("PopProjNoMigration", as.integer(nproj), 
 			srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
-			srb=as.numeric(as.matrix(srb)), returnNothingIfNegative=as.integer(returnIfNegative), 
+			srb=as.numeric(as.matrix(srb)), 
+			mxm=LT$mx[[1]], mxf=LT$mx[[2]],
+			returnNothingIfNegative=as.integer(returnIfNegative), 
 			popm=popm, popf=popf, totp=totp,
 			btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
 			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
