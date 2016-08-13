@@ -875,11 +875,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	# generate sex and age-specific migration if needed
-	if((!is.null(inpc[['MIGm']]) & all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) & all(is.na(inpc[['MIGf']])))) {
+	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
 		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, verbose=FALSE)
 		mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
-			if(!is.null(inpc[[what.mig]]) & all(is.na(inpc[[what.mig]]))) {
+			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
 				# extact predicted migration
 				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
 				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
@@ -1806,7 +1806,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	for(icountry in 1:lcountries) {
 		if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
 		country <- countries[icountry]
-		country.name <- as.character(mig$name[icountry])
+		country.name <- as.character(mig[mig$country_code==country, 'name'])
 		# filter country data
 		popm.obs <- popm0[popm0$country_code==country, popm0.num.cols]
 		popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
