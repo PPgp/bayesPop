@@ -207,17 +207,26 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			# New population counts
 			res.env$totpm[,,time] <- res.env$totpm[,,time] + res.env$migrationm[,,time]
 			res.env$totpf[,,time] <- res.env$totpf[,,time] + res.env$migrationf[,,time]
-			res.env$totp[,time] <- apply(res.env$totpm[,,time] + res.env$totpf[,,time], 2, sum)
+			spop <- res.env$totpm[,,time] + res.env$totpf[,,time]
+			res.env$totp[,time] <- if(dim(res.env$totp)[1]==1) sum(spop) else apply(spop, 2, sum) # distinction if there is only one country
 			if(itraj == nr.traj) { # half a child variants
 				res.env$totpm.hch[,,time,] <- res.env$totpm.hch[,,time,] + res.env$migrationm.hch[,,time,]
 				res.env$totpf.hch[,,time,] <- res.env$totpf.hch[,,time,] + res.env$migrationf.hch[,,time,]
-				res.env$totp.hch[,time,] <- apply(res.env$totpm.hch[,,time,] + res.env$totpf.hch[,,time,], c(2,3), sum)
+				spop <- res.env$totpm.hch[,,time,] + res.env$totpf.hch[,,time,]
+				margin <- if(dim(res.env$totp)[1]==1) 2 else c(2,3) # distinction if there is only one country
+				res.env$totp.hch[,time,] <-  apply(spop, margin, sum)
 			}
 			popM.prev <- res.env$totpm[,,time]
 			popF.prev <- res.env$totpf[,,time]
+			if(is.null(dim(popM.prev))) # one country only; dimension dropped
+				popM.prev <- abind(popM.prev, along=2)
+			if(is.null(dim(popF.prev))) 
+				popF.prev <- abind(popF.prev, along=2)
 			if(itraj == nr.traj) {
 				popM.hch.prev <- res.env$totpm.hch[,,time,]
 				popF.hch.prev <- res.env$totpf.hch[,,time,]
+				if(length(dim(popM.hch.prev)) < 3) popM.hch.prev <- abind(popM.hch.prev, along=1.5)
+				if(length(dim(popF.hch.prev)) < 3) popF.hch.prev <- abind(popF.hch.prev, along=1.5)
 			}
 		} # end time
 		if(keep.vital.events) {
@@ -372,7 +381,7 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 	country.codes.char <- as.character(country.codes)
 	data(land_area_wpp2012)
 
-	pop <- colSums(env$totpm[,,time] + env$totpf[,,time])
+	pop <- drop(colSums(env$totpm[,,time, drop=FALSE] + env$totpf[,,time, drop=FALSE]))
 	for(cidx in 1:nr.countries) {
 		inpc <- inputs[[country.codes.char[cidx]]]
 		migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[cidx], 
@@ -395,6 +404,10 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 	}
 	e$popm <- env$totpm[,,time]
 	e$popf <- env$totpf[,,time]
+	# for cases when dimension is dropped (if there is one country)
+	if(is.null(dim(e$popm))) e$popm <- abind(e$popm, along=2)
+	if(is.null(dim(e$popf))) e$popf <- abind(e$popf, along=2)
+	
 	if(rebalance) {
 		rebalance.migration2groups(e, pop, itraj)			
 		negatives <- as.character(country.codes[unique(e$negatives)])
@@ -405,7 +418,7 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 
 	if(itraj==nr.traj) {
 		for(variant in 1:2){
-			pop <- colSums(env$totpm.hch[,,time,variant] + env$totpf.hch[,,time,variant])
+			pop <- drop(colSums(env$totpm.hch[,,time,variant, drop=FALSE] + env$totpf.hch[,,time,variant, drop=FALSE]))
 			for(cidx in 1:nr.countries) {
 				inpc <- inputs[[as.character(country.codes[cidx])]]
 				fixed.rate <- if(!is.null(env$mig.rate)) median(env$mig.rate[cidx,time+1,]) else NULL
@@ -424,6 +437,10 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 			}
 			e$popm <- env$totpm.hch[,,time,variant]
 			e$popf <- env$totpf.hch[,,time,variant]
+			# for cases when dimension is dropped (if there is one country)
+			if(is.null(dim(e$popm))) e$popm <- abind(e$popm, along=2)
+			if(is.null(dim(e$popf))) e$popf <- abind(e$popf, along=2)
+
 			if(rebalance) {
 				rebalance.migration2groups(e, pop, variant)			
 				negatives <- as.character(country.codes[unique(e$negatives)])

@@ -901,21 +901,29 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	# generate sex and age-specific migration if needed
-	if((!is.null(inpc[['MIGm']]) & all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) & all(is.na(inpc[['MIGf']])))) {
-		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, verbose=FALSE)
+	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
+		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=unique(c(country, 156)), verbose=FALSE) # include China because of possible using it for migration age profiles
 		mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
-			if(!is.null(inpc[[what.mig]]) & all(is.na(inpc[[what.mig]]))) {
+			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
 				# extact predicted migration
-				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
-				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
-				rownames(inpc[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
+				this.mig <- mig.recon[[mig.pair[[what.mig]]]]
+				this.country.mig <- this.mig[this.mig$country_code==country,]
+				cols <- intersect(colnames(this.mig), colnames(inpc[[what.mig]]))
+				inpc[[what.mig]][,cols] <- as.matrix(this.country.mig[,cols])
+				rownames(inpc[[what.mig]]) <- 1:nrow(this.country.mig)
+				inputs[[what.mig]][inputs[[what.mig]]$country_code==country,cols] <- inpc[[what.mig]][,cols]
+				if(country != 156) {
+					this.156.mig <- this.mig[this.mig$country_code==156,]
+					inputs[[what.mig]][inputs[[what.mig]]$country_code==156,cols] <- this.156.mig[,cols]
+				}
 				# extact observed migration
 				if(!is.null(obs[[what.mig]])) {
-					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]]))
-					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
-					rownames(obs[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
+					cols <- intersect(colnames(this.mig), colnames(obs[[what.mig]]))
+					obs[[what.mig]][,cols] <- as.matrix(this.country.mig[,cols])
+					rownames(obs[[what.mig]]) <- 1:nrow(this.country.mig)
 				}
+				#stop('')
 			}
 		}
 	}
@@ -1866,7 +1874,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	for(icountry in 1:lcountries) {
 		if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
 		country <- countries[icountry]
-		country.name <- as.character(mig$name[icountry])
+		country.name <- as.character(mig[mig$country_code==country, 'name'])
 		# filter country data
 		popm.obs <- popm0[popm0$country_code==country, popm0.num.cols]
 		popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
