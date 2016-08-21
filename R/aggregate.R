@@ -233,13 +233,13 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 	status.for.gui <- paste('out of', nreg, 'regions.')
 	gui.options <- list()
 	has.vital.events <- FALSE
-	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch')
-	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
-								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch',
+	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch',
 								'migm', 'migf')
+	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
+								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch')
 	# The next two lines need to be there for the R checker to get to know these objects
-	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- NULL
-	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
+	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- migm <- migf <- NULL
+	btm <- btf <- deathsm <- deathsf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
@@ -300,7 +300,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 				}
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, migm, migf, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
 		if(has.vital.events) {
 			# asfert
@@ -332,7 +332,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 				rm(tmp, tfr)
 				# TODO: mxm, mxf, mxm.hch, mxf.hch
 			})
-			save(btm, btf, deathsm, deathsf, migm, migf, asfert, pasfert,
+			save(btm, btf, deathsm, deathsf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch,
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}		

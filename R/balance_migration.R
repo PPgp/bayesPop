@@ -1021,13 +1021,22 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 					res.env[[par]] <- abind(existing.env[[par]], res.env[[par]], along=length(dim(res.env[[par]])))
 			}
 		}
-		observed <- obs
-		trajectory.indices <- inpc$trajectory.indices
-		with(res.env, {
+		if(chunk == nr.chunks) { # at the end save additional stuff 
+			observed <- obs
+			trajectory.indices <- inpc$trajectory.indices
+			with(res.env, {
+				save(totp, totpm, totpf, migm, migf, trajectory.indices, file = file.name)
+				if(keep.vital.events) 
+					save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, 
+							observed, file=file.name.ve)
+			})
+		} else { # doesn't need to store everything, just the chunked arrays
+			with(res.env, {
 				save(totp, totpm, totpf, migm, migf, file = file.name)
 				if(keep.vital.events) 
 					save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name.ve)
-		})
+			})
+		}
 		if(chunk < nr.chunks) return(NULL)
 		# last chunk computes the quantiles
 		stotpm <- colSums(res.env$totpm, na.rm=TRUE)
