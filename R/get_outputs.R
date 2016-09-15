@@ -462,6 +462,7 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 		}
 		res <- abind(res, along=3)
 	}
+	res[is.na(res)] <- 0
 	return(res)
 }
 
