@@ -543,12 +543,18 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
  	
  	#if (!is.element(event, input.indicators)) {
+
 		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
 		if (!file.exists(traj.file) && !is.element(event, input.indicators)) 
 			return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 		myenv <- new.env()
 		if (file.exists(traj.file)) load(traj.file, envir=myenv)
 		if(is.observed) myenv <- myenv$observed
+		else {
+			if(is.element(event, input.indicators) && ! 'migm' %in% ls(myenv)) 
+ 				load(file.path(pop.output.directory(pop.pred), paste('totpop_country', country, '.rda', sep='')), envir=myenv)
+ 		}
+ 		
 	#}
 	max.age.index.allowed <- 27
 	min.age.index.allowed <- 1

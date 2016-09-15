@@ -906,7 +906,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
 			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
-				# extact predicted migration
+				# extract predicted migration
 				this.mig <- mig.recon[[mig.pair[[what.mig]]]]
 				this.country.mig <- this.mig[this.mig$country_code==country,]
 				cols <- intersect(colnames(this.mig), colnames(inpc[[what.mig]]))
