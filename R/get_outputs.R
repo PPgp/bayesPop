@@ -250,6 +250,8 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		if(is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env)
 	}
+	e$totpf[is.na(e$totpf)] <- 0
+	e$totpm[is.na(e$totpm)] <- 0
 	sex <- match.arg(sex)
 	max.age <- dim(e$totpf)[1] # should be 27
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
