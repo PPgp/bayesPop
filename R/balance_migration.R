@@ -573,7 +573,7 @@ do.pop.predict.one.country.no.migration.half.child <- function(time, country.nam
 }
 
 
-project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rmax=NULL, relaxed.bounds=FALSE, is.small=FALSE){
+project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rlim=c(NULL, NULL), relaxed.bounds=FALSE, is.small=FALSE){
 # Based on Jon Azose code 
 #######################
 #Project migration for a single country one time point into the future
@@ -604,7 +604,8 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	#xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
-	if(!is.null(rmax)) xmax <- min(xmax, rmax)
+	if(!is.null(rlim[2])) xmax <- min(xmax, rlim[2])
+	if(!is.null(rlim[1])) xmin <- max(xmin, rlim[1])
 	if(#(has.relaxedB || is.small) && 
 		xmin > xmax) {
 		avg <- (xmin + xmax)/2.
@@ -709,37 +710,30 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	land.area <- NA
 	if(country.code %in% land_area_wpp2012$country_code)
 		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
-	i <- 1
+	i <- 0
 	k <- 1
 	zero.constant <- get.zero.constant()
 	warns <- NULL
-	while(TRUE) {
+	popM21 <- popM[1:21]
+	popF21 <- popF[1:21]
+	popMdistr <- popM21/pop
+	popFdistr <- popF21/pop
+	emigrant.rate.bound <- -0.8
+	while(i <= 1000) {
+		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
-					rmax=if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL,
+					rlim=c(if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL, 
+						if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL),
 					relaxed.bounds=time < 6, is.small=pop < 200
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
 					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
-		#mig.count <- ((1+rate)^5 - 1) * pop.prev # instanteneous rate
 		mig.count <- rate * pop
-		#if(is.gcc(country.code)) { # cap to historical maximum
-		#	mig.count <- min(mig.count, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)))
-		#}
-		# if(!is.na(land.area) && (pop + mig.count)/land.area > 44) { # check density
-			# if(k<100) {
-				# k <- k+1
-				# next 
-			# }
-			# warns <- c(warns, 'migration truncated due to high density')
-			# mig.count <- 44 * land.area - pop
-			# rate <- mig.count/pop
-			# #warning('Density too high for ', country.code, ' (', (pop + mig.count)/land.area, ')', immediate.=TRUE)
-		# }
 		schedMname <- 'M'
 		schedFname <- 'F'
 		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
@@ -748,29 +742,39 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		if(rate < 0 && is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
-			msched <- popM[1:21]/pop
-			smsched <- sum(msched)
-			msched[4:7] <- msched[4:7]/3.
-			msched[8:14] <- 3*msched[8:14] # more weight to older people
-			msched <- smsched*msched/sum(msched) # rescale
-			fsched <- popF[1:21]/pop
+		if(rate < 0) {
+			if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
+				msched <- popM21/pop
+				smsched <- sum(msched)
+				msched[4:7] <- msched[4:7]/3.
+				msched[8:14] <- 3*msched[8:14] # more weight to older people
+				msched <- smsched*msched/sum(msched) # rescale
+				fsched <- popF21/pop
+			} else {
+				denom <- sum(msched * popMdistr + fsched * popFdistr)
+				denom2 <- c(msched, fsched)/denom
+				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				msched <- msched * popMdistr / denom
+				fsched <- fsched * popFdistr / denom
+			}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 		if(!is.null(fixed.rate) || rate == 0) break
-		if(all(popM[1:21] + migM >= zero.constant) && all(popF[1:21] + migF >= zero.constant))  break # assure positive count
-		i <- i+1
-		#break
-		if(i>1 && ((sum(popM[1:21][abs(msched)>0]) + sum(popF[1:21][abs(fsched)>0]) + mig.count) > zero.constant)
+		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
+		lower.bounds <- c(popM21 + emigrant.rate.bound * popM21, popF21 + emigrant.rate.bound * popF21)
+		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
+		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
 				) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
-			while(any(c(popM[1:21] + migM, popF[1:21] + migF) < zero.constant)) { 
-				isneg <- prev.isneg | (c(popM[1:21] + migM, popF[1:21] + migF) < zero.constant)
-				shifts <- -c(migM + popM[1:21], migF + popF[1:21])
+			#while(any(c(popM21 + migM, popF21 + migF) < zero.constant)) {
+			while(any(c(popM21 + migM, popF21 + migF) < lower.bounds)) { 
+				isneg <- prev.isneg | (c(popM21 + migM, popF21 + migF) < lower.bounds)
+				shifts <- -c(migM + popM21, migF + popF21) + lower.bounds
+				#stop('')
 				shifts[!isneg] <- 0
 				shifts[prev.isneg] <- 0
 				if(sum(shifts)==0) {sample.new.rate <- TRUE; break}
@@ -1178,8 +1182,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548)) { 
-		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu
+	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
 		   first.year <- TRUE
