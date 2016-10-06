@@ -743,20 +743,26 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
 		if(rate < 0) {
-			if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
-				msched <- popM21/pop
-				smsched <- sum(msched)
-				msched[4:7] <- msched[4:7]/3.
-				msched[8:14] <- 3*msched[8:14] # more weight to older people
-				msched <- smsched*msched/sum(msched) # rescale
-				fsched <- popF21/pop
-			} else {
+			# if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
+				# msched <- popM21/pop
+				# smsched <- sum(msched)
+				# msched[4:7] <- msched[4:7]/3.
+				# msched[8:14] <- 3*msched[8:14] # more weight to older people
+				# msched <- smsched*msched/sum(msched) # rescale
+				# fsched <- popF21/pop
+			# } else {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
 				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
 				msched <- msched * popMdistr / denom
 				fsched <- fsched * popFdistr / denom
-			}
+				if(is.gcc(country.code)) { # more weight to older male
+					smsched <- sum(msched)
+					msched[4:7] <- msched[4:7]/3.
+					msched[8:14] <- 3*msched[8:14] # more weight to older people
+					msched <- smsched*msched/sum(msched) # rescale
+				}
+			#}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
