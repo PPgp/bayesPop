@@ -1183,7 +1183,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	#if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
