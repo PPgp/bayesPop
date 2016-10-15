@@ -744,12 +744,12 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
 		if(rate < 0) {
 			 # if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
-				# # msched <- popM21/pop
-				# smsched <- sum(msched)
-				# msched[4:7] <- msched[4:7]/3.
-				# msched[8:14] <- 3*msched[8:14] # more weight to older male
-				# msched <- smsched*msched/sum(msched) # rescale
-				# # fsched <- popF21/pop
+				# msched <- popM21/pop
+				smsched <- sum(msched)
+				msched[4:7] <- msched[4:7]/3.
+				msched[8:14] <- 3*msched[8:14] # more weight to older male
+				msched <- smsched*msched/sum(msched) # rescale
+				# fsched <- popF21/pop
 			 # } #else {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
