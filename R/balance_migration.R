@@ -1183,8 +1183,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	#if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
-	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	#if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
@@ -1237,7 +1237,11 @@ migration.age.schedule <- function(country, npred, inputs) {
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
     if(is.gcc(country)) { 
     	negM <- maleArray
-    	negM[negM<0] <- 0
+    	#negM[negM<0] <- 0
+    	negM[] <- 0
+    	stop('')
+    	negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
+    	negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
     	negF <- femaleArray
     	negF[negF<0] <- 0
     	# rescale the rest
