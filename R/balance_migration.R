@@ -1239,7 +1239,6 @@ migration.age.schedule <- function(country, npred, inputs) {
     	negM <- maleArray
     	#negM[negM<0] <- 0
     	negM[] <- 0
-    	stop('')
     	negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
     	negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
     	negF <- femaleArray
