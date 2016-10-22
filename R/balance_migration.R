@@ -719,6 +719,11 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
 	emigrant.rate.bound <- -0.8
+	compute.a.gcc <- function(b, C, D)
+		return((1-b*D)/C)
+	compute.b.gcc <- function(M, A, B, C, D)
+		return((C*M - A)/(C*B-A*D))
+	
 	while(i <= 1000) {
 		i <- i + 1
 		if(is.null(fixed.rate)) {
@@ -742,15 +747,32 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
+		# if(is.gcc(country.code)) { # find a and b parameters for a shift up or down
+			# negs <- c(msched < 0, fsched < 0)
+			# posits <-  c(msched >= 0, fsched >= 0)
+			# prod <- c(msched * popMdistr, fsched * popFdistr) 
+			# A <- sum(prod[posits])
+			# B <- sum(prod[negs])
+			# C <- sum(c(msched, fsched)[posits])
+			# D <- sum(c(msched, fsched)[negs])
+			# b <- compute.b.gcc(rate, A, B, C, D)
+			# sched <- c(msched, fsched)
+			# stop('')
+			# sched[posits] <- sched[posits]*compute.a.gcc(b, C, D)
+			# sched[negs] <- sched[negs]*b
+			# sched <- sched/sum(sched)
+			# msched <- sched[1:21]
+			# fsched <- sched[22:42]
+		# }
 		if(rate < 0) {
-			 # if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
+			  #if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
 				# msched <- popM21/pop
 				#smsched <- sum(msched)
 				#msched[4:7] <- msched[4:7]/3.
 				#msched[8:14] <- 3*msched[8:14] # more weight to older male
 				#msched <- smsched*msched/sum(msched) # rescale
 				# fsched <- popF21/pop
-			 # } #else {
+			  #} #else {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
 				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
@@ -1183,8 +1205,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
-	#if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	#if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
@@ -1235,21 +1257,19 @@ migration.age.schedule <- function(country, npred, inputs) {
     # special handling for negative and positive migration rates
     negM <- negF <- NULL
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
-    if(is.gcc(country)) { 
-    	negM <- maleArray
-    	#negM[negM<0] <- 0
-    	negM[] <- 0
-    	negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
-    	negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
-    	negF <- femaleArray
-    	negF[negF<0] <- 0
-    	# rescale the rest
-    	tot <- apply(negM+negF, 2, sum)
-    	negM <- t(apply(negM, 1, '/', tot))
-    	negF <- t(apply(negF, 1, '/', tot))
-    	
-    	
-    }
+    # if(is.gcc(country)) { 
+    	# negM <- maleArray
+    	# #negM[negM<0] <- 0
+    	# negM[] <- 0
+    	# negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
+    	# negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
+    	# negF <- femaleArray
+    	# negF[negF<0] <- 0
+    	# # rescale the rest
+    	# tot <- apply(negM+negF, 2, sum)
+    	# negM <- t(apply(negM, 1, '/', tot))
+    	# negF <- t(apply(negF, 1, '/', tot))  	
+    # }
     # For Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
     if(country == 818) {
     	negM <- maleArray
