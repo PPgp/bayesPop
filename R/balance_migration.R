@@ -1184,8 +1184,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# original code by Jon Azose
 	nAgeGroups <- 21
 	#Initialize male and female matrices.
-	maleArray <- matrix(0, nrow=nAgeGroups, ncol=npred)
-	femaleArray <- matrix(0, nrow=nAgeGroups, ncol=npred)
+	
 
 	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
 	#Handle Croatia separately because of some bad data (doesn't apply to wpp2015)
@@ -1205,8 +1204,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# if(country %in% c(682, 48)) {
 		   # sched.country <- 634
 	# }
-	#if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
-	if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
+	#if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
@@ -1215,61 +1214,77 @@ migration.age.schedule <- function(country, npred, inputs) {
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
-	
+	if(is.gcc(country)) {
+		cidxM.neg <- which(inputs$MIGm$country_code==country)
+		cidxF.neg <- which(inputs$MIGf$country_code==country)
+		first.year.neg <- FALSE
+	}
 	if(!is.null(inputs$year.of.migration.schedule)) { 
 		first.year.period <- inputs$year.of.migration.schedule
 		first.year <- TRUE
+		if(is.gcc(country)) first.year.neg <- TRUE
 	}
-	if(first.year) { # take one year as the age-schedule for all future years
-		cix <- rep(which(colnames(inputs$MIGm)==first.year.period), length(col.idx))
-		if(length(cix)==0) stop("Time period ", first.year.period, " not found in the migration data.")
-		maleVec <- as.matrix(inputs$MIGm[cidxM,cix])
-		femaleVec <- as.matrix(inputs$MIGf[cidxF,cix])
-		if(is.gcc(country)) { # no child hump for GCC countries
-			maleVec[1:2,] <- maleVec[c(3,3),]
-			femaleVec[1:2,] <- femaleVec[c(3,3),]
+	get.schedule <- function(fyear, idxM, idxF) {
+		maleArr <- matrix(0, nrow=nAgeGroups, ncol=npred)
+		femaleArr <- matrix(0, nrow=nAgeGroups, ncol=npred)
+		if(fyear) { # take one year as the age-schedule for all future years
+			cix <- rep(which(colnames(inputs$MIGm)==first.year.period), length(col.idx))
+			if(length(cix)==0) stop("Time period ", first.year.period, " not found in the migration data.")
+			maleV <- as.matrix(inputs$MIGm[idxM,cix])
+			femaleV <- as.matrix(inputs$MIGf[idxF,cix])
+			#if(is.gcc(country)) { # no child hump for GCC countries
+			#	maleVec[1:2,] <- maleVec[c(3,3),]
+			#	femaleVec[1:2,] <- femaleVec[c(3,3),]
+			#}
+		} else {# take all years starting from present year
+		  	maleV <- as.matrix(inputs$MIGm[idxM,col.idx])
+	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
 		}
-	} else {# take all years starting from present year
-	  	maleVec <- as.matrix(inputs$MIGm[cidxM,col.idx])
-    	femaleVec <- as.matrix(inputs$MIGf[cidxF,col.idx])
+	    colnames(maleV) <- colnames(femaleV) <- colnames(inputs$MIGm)[col.idx]
+	    tot <- colSums(maleV+femaleV)
+	    if(any(tot == 0)) {
+			#Pull a model schedule to use in scenarios where the projection is 0
+			#Use China's 2010-2015 data as the model
+			modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
+			modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, first.year.period]
+			modeltot <- sum(modelmaleVec+modelfemaleVec)
+			modelM <- modelmaleVec/modeltot
+			modelF <- modelfemaleVec/modeltot
+		}
+		non.zero <- tot != 0
+		if(any(non.zero)) {
+			maleArr[,which(non.zero)] <- t(apply(maleV[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
+	    	femaleArr[,which(non.zero)] <- t(apply(femaleV[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
+	    }
+	    if(any(!non.zero)) {
+	    	maleArr[,which(!non.zero)] <- matrix(modelM, nrow=nAgeGroups, ncol=sum(!non.zero))
+	    	femaleArr[,which(!non.zero)] <- matrix(modelF, nrow=nAgeGroups, ncol=sum(!non.zero))
+	    }
+	    return(list(maleArr, femaleArr))
 	}
-    colnames(maleVec) <- colnames(femaleVec) <- colnames(inputs$MIGm)[col.idx]
-    tot <- colSums(maleVec+femaleVec)
-    if(any(tot == 0)) {
-		#Pull a model schedule to use in scenarios where the projection is 0
-		#Use China's 2010-2015 data as the model
-		modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
-		modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, first.year.period]
-		modeltot <- sum(modelmaleVec+modelfemaleVec)
-		modelM <- modelmaleVec/modeltot
-		modelF <- modelfemaleVec/modeltot
-	}
-	non.zero <- tot != 0
-	if(any(non.zero)) {
-		maleArray[,which(non.zero)] <- t(apply(maleVec[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
-    	femaleArray[,which(non.zero)] <- t(apply(femaleVec[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
-    }
-    if(any(!non.zero)) {
-    	maleArray[,which(!non.zero)] <- matrix(modelM, nrow=nAgeGroups, ncol=sum(!non.zero))
-    	femaleArray[,which(!non.zero)] <- matrix(modelF, nrow=nAgeGroups, ncol=sum(!non.zero))
-    }
-
+	scheds <- get.schedule(first.year, cidxM, cidxF)
+	maleArray <- scheds[[1]]
+	femaleArray <- scheds[[2]]
+	
     # special handling for negative and positive migration rates
     negM <- negF <- NULL
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
-    # if(is.gcc(country)) { 
-    	# negM <- maleArray
-    	# #negM[negM<0] <- 0
-    	# negM[] <- 0
-    	# negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
-    	# negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
-    	# negF <- femaleArray
-    	# negF[negF<0] <- 0
-    	# # rescale the rest
-    	# tot <- apply(negM+negF, 2, sum)
-    	# negM <- t(apply(negM, 1, '/', tot))
-    	# negF <- t(apply(negF, 1, '/', tot))  	
-    # }
+    if(is.gcc(country)) {
+    	neg.scheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
+    	negM <- -neg.scheds[[1]]
+    	negF <- -neg.scheds[[2]]
+    	#negM <- maleArray
+    	negM[negM<0] <- 0
+    	#negM[] <- 0
+    	#negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
+    	#negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
+    	#negF <- femaleArray
+    	negF[negF<0] <- 0
+    	# rescale the rest
+    	tot <- apply(negM+negF, 2, sum)
+    	negM <- t(apply(negM, 1, '/', tot))
+    	negF <- t(apply(negF, 1, '/', tot))  	
+    }
     # For Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
     if(country == 818) {
     	negM <- maleArray
