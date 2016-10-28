@@ -1240,6 +1240,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 		  	maleV <- as.matrix(inputs$MIGm[idxM,col.idx])
 	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
 		}
+		total.mig.positive <- (colSums(maleV) + colSums(femaleV)) > 0
 		if(!is.null(scale.to.totals)) {
 			maleV <- t(scale.to.totals$M * apply(maleV, 1, '/', colSums(maleV)))
 			femaleV <- t(scale.to.totals$F * apply(femaleV, 1, '/', colSums(femaleV)))
@@ -1268,7 +1269,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	    	maleArr[,which(!non.zero)] <- matrix(modelM, nrow=nAgeGroups, ncol=sum(!non.zero))
 	    	femaleArr[,which(!non.zero)] <- matrix(modelF, nrow=nAgeGroups, ncol=sum(!non.zero))
 	    }
-	    return(list(maleArr, femaleArr))
+	    return(list(maleArr, femaleArr, total.mig.positive))
 	}
 	scale.to.totals <- NULL
 	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
@@ -1283,8 +1284,9 @@ migration.age.schedule <- function(country, npred, inputs) {
     negM <- negF <- NULL
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
     if(is.gcc(country)) {
-    	negM <- -unscheds[[1]]
-    	negF <- -unscheds[[2]]
+    	# turn all years as if positive migration
+    	negM <- -t(apply(unscheds[[1]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
+    	negF <- -t(apply(unscheds[[2]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
     	#negM <- maleArray
     	negM[negM<0] <- 0
     	#negM[] <- 0
