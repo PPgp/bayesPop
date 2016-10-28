@@ -1224,7 +1224,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 		first.year <- TRUE
 		if(is.gcc(country)) first.year.neg <- TRUE
 	}
-	get.schedule <- function(fyear, idxM, idxF) {
+	get.schedule <- function(fyear, idxM, idxF, scale.to.totals=NULL) {
 		maleArr <- matrix(0, nrow=nAgeGroups, ncol=npred)
 		femaleArr <- matrix(0, nrow=nAgeGroups, ncol=npred)
 		if(fyear) { # take one year as the age-schedule for all future years
@@ -1240,6 +1240,10 @@ migration.age.schedule <- function(country, npred, inputs) {
 		  	maleV <- as.matrix(inputs$MIGm[idxM,col.idx])
 	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
 		}
+		if(!is.null(scale.to.totals)) {
+			maleV <- t(scale.to.totals$M * apply(maleV, 1, '/', colSums(maleV)))
+			femaleV <- t(scale.to.totals$F * apply(femaleV, 1, '/', colSums(femaleV)))
+		}
 	    colnames(maleV) <- colnames(femaleV) <- colnames(inputs$MIGm)[col.idx]
 	    tot <- colSums(maleV+femaleV)
 	    if(any(tot == 0)) {
@@ -1247,6 +1251,10 @@ migration.age.schedule <- function(country, npred, inputs) {
 			#Use China's 2010-2015 data as the model
 			modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
 			modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, first.year.period]
+			if(!is.null(scale.to.totals)) {
+				modelmaleVec <- scale.to.totals$M[1] * modelmaleVec/sum(modelmaleVec)
+				modelfemaleVec <- scale.to.totals$F[1] * modelfemaleVec/sum(modelfemaleVec)
+			}
 			modeltot <- sum(modelmaleVec+modelfemaleVec)
 			modelM <- modelmaleVec/modeltot
 			modelF <- modelfemaleVec/modeltot
@@ -1262,7 +1270,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	    }
 	    return(list(maleArr, femaleArr))
 	}
-	scheds <- get.schedule(first.year, cidxM, cidxF)
+	scale.to.totals <- NULL
+	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
+    	unscheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
+    	scale.to.totals <- list(M=colSums(unscheds[[1]]), F=colSums(unscheds[[2]]))
+    }
+	scheds <- get.schedule(first.year, cidxM, cidxF, scale.to.totals=scale.to.totals)
 	maleArray <- scheds[[1]]
 	femaleArray <- scheds[[2]]
 	
@@ -1270,9 +1283,8 @@ migration.age.schedule <- function(country, npred, inputs) {
     negM <- negF <- NULL
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
     if(is.gcc(country)) {
-    	neg.scheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
-    	negM <- -neg.scheds[[1]]
-    	negF <- -neg.scheds[[2]]
+    	negM <- -unscheds[[1]]
+    	negF <- -unscheds[[2]]
     	#negM <- maleArray
     	negM[negM<0] <- 0
     	#negM[] <- 0
