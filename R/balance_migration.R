@@ -1285,9 +1285,26 @@ migration.age.schedule <- function(country, npred, inputs) {
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
     if(is.gcc(country)) {
     	# turn all years as if positive migration
-    	negM <- -t(apply(unscheds[[1]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	negF <- -t(apply(unscheds[[2]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	#negM <- maleArray
+    	#stop('')
+    	negMun <- -t(apply(unscheds[[1]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
+    	negFun <- -t(apply(unscheds[[2]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
+    	#negM <- -t(apply(maleArray, 1, function(x) ifelse(unscheds[[3]], x, -x)))
+    	#negF <- -t(apply(femaleArray, 1, function(x) ifelse(unscheds[[3]], x, -x)))
+    	# shift maximum of China's curve to the maximum of the UN curve
+    	wmaxMun <- apply(negMun, 2, which.max)
+    	wmaxFun <- apply(negFun, 2, which.max)
+    	wmaxM <- apply(maleArray, 2, which.max)
+    	wmaxF <- apply(femaleArray, 2, which.max)
+    	difM <- pmax(1, wmaxMun - wmaxM)
+    	difF <- pmax(1, wmaxFun - wmaxF)
+    	negM <- maleArray
+    	negM[1:2,] <- 0
+    	negF <- femaleArray
+    	negF[1:2,] <- 0
+    	for(i in 1:ncol(negM)) {
+    		negM[,i] <- c(rep(0, difM[i]), negM[1:(nrow(negM)-difM[i]),i])
+    		negF[,i] <- c(rep(0, difF[i]), negF[1:(nrow(negF)-difF[i]),i])
+    	}
     	negM[negM<0] <- 0
     	#negM[] <- 0
     	#negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
