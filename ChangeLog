@@ -1,3 +1,11 @@
+6.0-3 (11/29/2016)
+-----
+Added CITATION file and updated references with bayesPop JSS paper. 
+	
+Function get.trajectories.close.to renamed to extract.trajectories.eq; added functions
+extract.trajectories.ge and extract.trajectories.le.
+	
+	
 6.0-2 (11/21/2016)
 -----
 Added arguments to age.specific.migration (rescale, ages.to.zero).

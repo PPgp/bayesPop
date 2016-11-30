@@ -1349,8 +1349,8 @@ get.trajectory.indices <- function(pop.pred, country, what=c("TFR", "e0M", "e0F"
 	return(e$trajectory.indices[[par[[what[1]]]]])
 }
 
-get.trajectories.close.to <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, values=NULL, nr.traj=1, ...) {
-	# Return trajectories close to the given quantile, or close to the given values
+extract.trajectories.eq <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, values=NULL, nr.traj=1, ...) {
+	# Return trajectories close to the given quantile, or close to the given values, including their index
 	if(!is.null(country)) {
 		country.object <- get.country.object(country, country.table=pop.pred$countries)
 		trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
@@ -1364,3 +1364,32 @@ get.trajectories.close.to <- function(pop.pred, country=NULL, expression=NULL, q
 	sorterrors.idx <- order(sumerrors)
     return(list(trajectories=trajectories[,sorterrors.idx[1:nr.traj]], index=sorterrors.idx[1:nr.traj]))
 }
+
+.extract.trajectories <- function(fun, pop.pred, country=NULL, expression=NULL, quant=0.5, 
+									values=NULL, all=TRUE, ...) {
+	if(!is.null(country)) {
+		country.object <- get.country.object(country, country.table=pop.pred$countries)
+		trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
+	} else {
+		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+	}
+	if(is.null(trajectories)) return(NULL)
+	if(is.null(values))
+		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
+	all.any <- if(all) 'all' else 'any'
+	residx <- which(apply(do.call(fun, list(trajectories, values)), 2, all.any))
+    return(list(trajectories=trajectories[,residx], index=residx))										
+}
+
+extract.trajectories.ge <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, 
+									values=NULL, all=TRUE, ...) {
+	# Return trajectories greater than the given quantile, or greater than the given values
+	return(.extract.trajectories('>=', pop.pred, country, expression, quant, values, all, ...))
+}
+
+extract.trajectories.le <- function(pop.pred, country=NULL, expression=NULL, quant=0.5, 
+									values=NULL, all=TRUE, ...) {
+	# Return trajectories greater than the given quantile, or greater than the given values
+	return(.extract.trajectories('<=', pop.pred, country, expression, quant, values, all, ...))
+}
+

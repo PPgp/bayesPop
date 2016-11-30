@@ -83,6 +83,12 @@ There is also a help function available that generates an expression for the mea
 
 \note{The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.}
 
+\references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+}
+
 \author{Hana Sevcikova, Adrian Raftery}
 \seealso{\code{\link{mac.expression}}, \code{\link{get.pop}}, \code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, \code{\link{write.pop.projection.summary}}.}
 \examples{

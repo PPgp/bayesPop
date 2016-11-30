@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 6.0-2\cr
-Date: \tab 2016-11-21\cr
+Version: \tab 6.0-3\cr
+Date: \tab 2016-11-29\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{https://bayespop.csss.washington.edu}\cr 
 }
@@ -27,6 +27,10 @@ Hana Sevcikova, Adrian Raftery, Thomas Buettner
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }
 \references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+
 A. E. Raftery,  N. Li, H. Sevcikova, P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
 
 P. Gerland, A. E. Raftery, H. Sevcikova, N. Li, D. Gu, T. Spoorenberg, L. Alkema, B. K. Fosdick, J. L. Chunn, N. Lalic, G. Bay, T. Buettner, G. K. Heilig,  J. Wilmoth (2014). World Population Stabilization Unlikely This Century. Science 346:234-237.
