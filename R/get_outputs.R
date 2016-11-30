@@ -1359,8 +1359,8 @@ extract.trajectories.eq <- function(pop.pred, country=NULL, expression=NULL, qua
 	}
 	if(is.null(trajectories)) return(NULL)
 	if(is.null(values))
-		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
-	sumerrors <- apply(abs(trajectories - values), 2, sum)
+		values <- apply(trajectories[2:nrow(trajectories),], 1, quantile, quant, na.rm=TRUE)
+	sumerrors <- apply(abs(trajectories[2:nrow(trajectories),] - values), 2, sum)
 	sorterrors.idx <- order(sumerrors)
     return(list(trajectories=trajectories[,sorterrors.idx[1:nr.traj]], index=sorterrors.idx[1:nr.traj]))
 }
@@ -1375,9 +1375,9 @@ extract.trajectories.eq <- function(pop.pred, country=NULL, expression=NULL, qua
 	}
 	if(is.null(trajectories)) return(NULL)
 	if(is.null(values))
-		values <- apply(trajectories, 1, quantile, quant, na.rm=TRUE)
+		values <- apply(trajectories[2:nrow(trajectories),], 1, quantile, quant, na.rm=TRUE)
 	all.any <- if(all) 'all' else 'any'
-	residx <- which(apply(do.call(fun, list(trajectories, values)), 2, all.any))
+	residx <- which(apply(do.call(fun, list(trajectories[2:nrow(trajectories),], values)), 2, all.any))
     return(list(trajectories=trajectories[,residx], index=residx))										
 }
 

@@ -46,7 +46,7 @@ extract.trajectories.le(pop.pred, country = NULL, expression = NULL,
   \item{expression}{Expression defining the trajectories measure. For syntax see \code{\link{pop.expressions}}. It must be define by age (i.e. contain curly braces) if used in \code{get.pop.exba}, and the opposite applies to \code{get.pop.ex}.}
   \item{what}{A character string that defines to which component should the indices link to. Allowable options are \dQuote{TFR}, \dQuote{e0M} (male life expectancy), \dQuote{e0F} (female life expectancy), \dQuote{migM} (male migration), \dQuote{migF} (female migration).}
   \item{quant}{Quantile used to select the closest trajectories to.}
-  \item{values}{Vector of values used to select the closest trajectories to. If it is not of length 1, it has to be of the same length as the number of time periods. If it is not given, \code{quant} is used.}
+  \item{values}{Vector of values used to select the closest trajectories to. If it is not of length 1, it has to be of the same length as the number of projected time periods. If it is not given, \code{quant} is used.}
   \item{nr.traj}{Number of trajectories to return. This argument can be passed to any of the functions that contains \dots.}
   \item{all}{Logical indicating if the corresponding condition should apply to all time periods of a trajectory. If it is \code{FALSE}, a trajectory is extracted if the condition is fulfilled in at least one time period.}
   \item{\dots}{Additional argument passed to the underlying functions. In case of \code{get.pop}, \code{get.pop.ex} and  \code{get.pop.exba}, this is only used for \code{observed=FALSE}. It can be either \code{nr.traj} giving the number of trajectories or logical \code{typical.trajectory}.}
