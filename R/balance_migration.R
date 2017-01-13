@@ -747,7 +747,14 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		# if(is.gcc(country.code)) { # find a and b parameters for a shift up or down
+		if(is.gcc(country.code)) { 
+			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
+			insched <- inpc$migration.age.schedule[['M']][,time] # China
+			Ict <- (11.8 + 1.065 * max(rate, 0))/5.
+	  		Oct <- Ict - rate
+	  		inrate <- insched/sum(insched) * Ict
+	  		outrate <- Oct*modeloutsched
+	  		msched <- inrate - outrate
 			# negs <- c(msched < 0, fsched < 0)
 			# posits <-  c(msched >= 0, fsched >= 0)
 			# prod <- c(msched * popMdistr, fsched * popFdistr) 
@@ -756,14 +763,14 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			# C <- sum(c(msched, fsched)[posits])
 			# D <- sum(c(msched, fsched)[negs])
 			# b <- compute.b.gcc(rate, A, B, C, D)
-			# sched <- c(msched, fsched)
-			# stop('')
+			 sched <- c(msched, fsched)
+			 stop('')
 			# sched[posits] <- sched[posits]*compute.a.gcc(b, C, D)
 			# sched[negs] <- sched[negs]*b
-			# sched <- sched/sum(sched)
-			# msched <- sched[1:21]
-			# fsched <- sched[22:42]
-		# }
+			 sched <- sched/sum(sched)
+			 msched <- sched[1:21]
+			 fsched <- sched[22:42]
+		}
 		if(rate < 0) {
 			  #if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
 				# msched <- popM21/pop
@@ -1210,6 +1217,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 		# 364, 376, # Iran, Israel - no need in wpp2015
 		   sched.country <- 156 # China
 		   first.year <- TRUE
+		   # The China schedule has larger migration for female, so rescale
+		   scale.to.totals <- list(M=0.5, F=0.5) 
 	}
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
@@ -1274,7 +1283,9 @@ migration.age.schedule <- function(country, npred, inputs) {
 	scale.to.totals <- NULL
 	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
     	unscheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
-    	scale.to.totals <- list(M=colSums(unscheds[[1]]), F=colSums(unscheds[[2]]))
+    	scale <- c(colSums(unscheds[[1]]), colSums(unscheds[[2]]))
+    	scale <- scale/sum(scale)
+    	scale.to.totals <- list(M=scale[1], F=scale[2])
     }
 	scheds <- get.schedule(first.year, cidxM, cidxF, scale.to.totals=scale.to.totals)
 	maleArray <- scheds[[1]]
@@ -1284,37 +1295,13 @@ migration.age.schedule <- function(country, npred, inputs) {
     negM <- negF <- NULL
     # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
     if(is.gcc(country)) {
-    	# turn all years as if positive migration
-    	#stop('')
-    	negMun <- -t(apply(unscheds[[1]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	negFun <- -t(apply(unscheds[[2]], 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	#negM <- -t(apply(maleArray, 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	#negF <- -t(apply(femaleArray, 1, function(x) ifelse(unscheds[[3]], x, -x)))
-    	# shift maximum of China's curve to the maximum of the UN curve
-    	wmaxMun <- apply(negMun, 2, which.max)
-    	wmaxFun <- apply(negFun, 2, which.max)
-    	wmaxM <- apply(maleArray, 2, which.max)
-    	wmaxF <- apply(femaleArray, 2, which.max)
-    	difM <- pmax(1, wmaxMun - wmaxM)
-    	difF <- pmax(1, wmaxFun - wmaxF)
-    	negM <- maleArray
-    	negM[1:2,] <- 0
-    	negF <- femaleArray
-    	negF[1:2,] <- 0
-    	for(i in 1:ncol(negM)) {
-    		negM[,i] <- c(rep(0, difM[i]), negM[1:(nrow(negM)-difM[i]),i])
-    		negF[,i] <- c(rep(0, difF[i]), negF[1:(nrow(negF)-difF[i]),i])
-    	}
-    	negM[negM<0] <- 0
-    	#negM[] <- 0
-    	#negM[7:13,] <- c(0.2617, 0.2283, 0.1955, 0.1764, 0.0987, 0.0247, 0.0148) # out-migration schedule from Oman 1998
-    	#negM <- t(colSums(maleArray)*apply(negM, 1, '/', colSums(negM))) # rescale male only
-    	#negF <- femaleArray
-    	negF[negF<0] <- 0
-    	# rescale the rest
-    	tot <- apply(negM+negF, 2, sum)
-    	negM <- t(apply(negM, 1, '/', tot))
-    	negF <- t(apply(negF, 1, '/', tot))  	
+    	negF <- femaleArray # female gets China schedule
+    	# male - use model out-migration schedule (derived from SA)
+    	negM <- matrix(c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0), nrow=nAgeGroups, ncol=npred)
+    	# rescale
+    	#tot <- apply(negM+negF, 2, sum)
+    	#negM <- t(apply(negM, 1, '/', tot))
+    	#negF <- t(apply(negF, 1, '/', tot))  	
     }
     # For Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
     if(country == 818) {
