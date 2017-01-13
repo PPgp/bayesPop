@@ -748,45 +748,29 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
 		if(is.gcc(country.code)) { 
-			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
-			insched <- inpc$migration.age.schedule[['M']][,time] # China
-			Ict <- (11.8 + 1.065 * max(rate, 0))/5.
+		    modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
+			  insched <- inpc$migration.age.schedule[['M']][,time] # China
+			  Ict <- (11.8 + 1.065 * max(rate, 0))/5.
 	  		Oct <- Ict - rate
-	  		inrate <- insched/sum(insched) * Ict
-	  		outrate <- Oct*modeloutsched
-	  		msched <- inrate - outrate
-			# negs <- c(msched < 0, fsched < 0)
-			# posits <-  c(msched >= 0, fsched >= 0)
-			# prod <- c(msched * popMdistr, fsched * popFdistr) 
-			# A <- sum(prod[posits])
-			# B <- sum(prod[negs])
-			# C <- sum(c(msched, fsched)[posits])
-			# D <- sum(c(msched, fsched)[negs])
-			# b <- compute.b.gcc(rate, A, B, C, D)
-			 sched <- c(msched, fsched)
-			 stop('')
-			# sched[posits] <- sched[posits]*compute.a.gcc(b, C, D)
-			# sched[negs] <- sched[negs]*b
+	  		sum.msched <- sum(insched) # proportion of male
+	  		insched <- c(insched, fsched)
+	  		outsched <- c(sum.msched*modeloutsched, fsched)
+	  		inrate <- insched * Ict
+	  		outrate <- Oct*outsched
+	  		netrate <- inrate - outrate
+	  		sched <- netrate/sum(netrate)
 			 sched <- sched/sum(sched)
+			 #if(netrate[5]<0) stop('')
 			 msched <- sched[1:21]
 			 fsched <- sched[22:42]
 		}
 		if(rate < 0) {
-			  #if(is.gcc(country.code)) { # For GCC and negative rates, use population schedule in order not to depopulate age groups
-				# msched <- popM21/pop
-				#smsched <- sum(msched)
-				#msched[4:7] <- msched[4:7]/3.
-				#msched[8:14] <- 3*msched[8:14] # more weight to older male
-				#msched <- smsched*msched/sum(msched) # rescale
-				# fsched <- popF21/pop
-			  #} #else {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
 				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				stop('')
 				msched <- msched * popMdistr / denom
 				fsched <- fsched * popFdistr / denom
-
-			#}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
@@ -1297,7 +1281,9 @@ migration.age.schedule <- function(country, npred, inputs) {
     if(is.gcc(country)) {
     	negF <- femaleArray # female gets China schedule
     	# male - use model out-migration schedule (derived from SA)
-    	negM <- matrix(c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0), nrow=nAgeGroups, ncol=npred)
+    	negMvec <- c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0)
+    	negMvec <- negMvec/sum(negMvec)
+    	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)
     	# rescale
     	#tot <- apply(negM+negF, 2, sum)
     	#negM <- t(apply(negM, 1, '/', tot))
