@@ -746,7 +746,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		 if(is.gcc(country.code)) { 
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
-			Ict <- (11.8 + 1.065 * max(rate, 0))/5.
+			#Ict <- (11.8 + 1.065 * max(rate, 0))/5.
+			Ict <- 0.05914 + 1.065 * max(rate, 0)
 	  		Oct <- Ict - rate
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
