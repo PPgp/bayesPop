@@ -760,16 +760,36 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			 #if(rate>0) stop('')
 			 msched <- sched[1:21]
 			 fsched <- sched[22:42]
+			 # check depopulation for negative rates
+			 isneg <- netrate < 0
+			 denom <- sum((abs(msched) * popMdistr)) + sum((abs(fsched) * popFdistr))
+			 Rxw <- sched/denom
+			 # which age groups would be depopulated
+			 isdepop <- abs(emigrant.rate.bound) < abs(rate) * abs(Rxw)
+			 idepop <- which(isneg & isdepop)
+			 if(length(idepop) > 0) {
+			   delta <- (abs(emigrant.rate.bound) - abs(rate) * Rxw[idepop])*denom
+			    netrate[idepop] <- netrate[idepop] -  delta
+			    sumdelta <- sum(delta)
+			    # if(country.code==634) stop('')
+			    # sumdelta should be negative, so this decreases the inflow
+			    inrate[-idepop] <- inrate[-idepop] + inrate[-idepop]/sum(inrate[-idepop])*sumdelta
+			    netrate[-idepop] <- inrate[-idepop] - outrate[-idepop]
+			    sched <- netrate/sum(netrate)
+			    msched <- sched[1:21]
+			    fsched <- sched[22:42]
+			    denom <- sum(msched * popMdistr + fsched * popFdistr)
+			 }
+			 msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
+			 fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
 		}
-		if(rate < 0) {
-			#if(!is.gcc(country.code)) {
+		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
 				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
 				#stop('')
 				msched <- msched * popMdistr / denom
 				fsched <- fsched * popFdistr / denom
-			#}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
