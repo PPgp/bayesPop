@@ -751,7 +751,9 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		Oct <- Ict - rate
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
-	  		outsched <- c(modeloutsched, fsched)
+	  		outmodsched <- c(modeloutsched, fsched)
+	  		outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
 	  		netrate <- inrate - outrate
@@ -762,26 +764,39 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			 fsched <- sched[22:42]
 			 # check depopulation for negative rates
 			 isneg <- netrate < 0
-			 denom <- sum((abs(msched) * popMdistr)) + sum((abs(fsched) * popFdistr))
-			 Rxw <- sched/denom
+			 netmiggcc <- mig.count*sched
+			 idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
+			 #denom <- sum((abs(msched) * popMdistr)) + sum((abs(fsched) * popFdistr))
+			 #Rxw <- sched/denom
 			 # which age groups would be depopulated
-			 isdepop <- abs(emigrant.rate.bound) < abs(rate) * abs(Rxw)
-			 idepop <- which(isneg & isdepop)
+			 #isdepop <- abs(emigrant.rate.bound) < abs(rate) * abs(Rxw)
+			 #idepop <- which(isneg & isdepop)
 			 if(length(idepop) > 0) {
-			   delta <- (abs(emigrant.rate.bound) - abs(rate) * Rxw[idepop])*denom
-			    netrate[idepop] <- netrate[idepop] -  delta
-			    sumdelta <- sum(delta)
+			   delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
+			   delta.abs.sum <- sum(delta.abs[idepop])
+			   netmiggcc.mod <- netmiggcc
+			   # add delta to depopulated age groups
+			   netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
+			   # remove the total amount of shifter migration from the remaining age groups
+			   netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
+			   sched <- netmiggcc.mod/mig.count # should sum to 1 
+			   #delta <- (abs(emigrant.rate.bound) - abs(rate) * Rxw[idepop])*denom
+			   #delta <- delta.abs/abs(mig.count)
+			   #if(!all.equal(sum(sched), 1)) stop('')
+			    #netrate[idepop] <- netrate[idepop] -  delta
+			    #sched[idepop] <- sched[idepop] -  delta[idepop]
+			    #sumdelta <- sum(delta[idepop])
 			    # if(country.code==634) stop('')
 			    # sumdelta should be negative, so this decreases the inflow
-			    inrate[-idepop] <- inrate[-idepop] + inrate[-idepop]/sum(inrate[-idepop])*sumdelta
-			    netrate[-idepop] <- inrate[-idepop] - outrate[-idepop]
-			    sched <- netrate/sum(netrate)
+			    #inrate[-idepop] <- inrate[-idepop] + inrate[-idepop]/sum(inrate[-idepop])*sumdelta
+			    #netrate[-idepop] <- inrate[-idepop] - outrate[-idepop]
+			    #sched <- netrate/sum(netrate)
 			    msched <- sched[1:21]
 			    fsched <- sched[22:42]
-			    denom <- sum(msched * popMdistr + fsched * popFdistr)
+			    #denom <- sum(msched * popMdistr + fsched * popFdistr)
 			 }
-			 msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
-			 fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
+			 #msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
+			 #fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
