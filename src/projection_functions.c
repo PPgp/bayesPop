@@ -652,13 +652,11 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	}	
 }	
 
-/*TODO: sync with changes in TotalPopProj*/
 void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, double *srb, 
 				double *mxm, double *mxf,
 				  int *returnNothingIfNegative,
 				  double *popm, double *popf, double *totp, 
-				  double *btagem, double *btagef, double *deathsm, double *deathsf,
-				  int *isNegative
+				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double b, bt[7], bm, bf, srb_ratio;
 	double Lxm[27], Lxf[27], lxm[27], lxf[27];
@@ -690,38 +688,29 @@ void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, doub
 			   i.e. pop[0] is the current period, whereas sr[0] etc. is the first projection period.*/
 		/* Compute ages >=5 */
 		for(i=1; i<(adim-1); ++i) {	
-			popm[i + j*adim] = popm[i-1 + (j-1)*adim] * srm[i + jve*adim];
-			popf[i + j*adim] = popf[i-1 + (j-1)*adim] * srf[i + jve*adim];
-			if(returnNothingIfNegative[0] == 1 && ((popm[i + j*adim]) < 0 || ((popf[i + j*adim]) < 0))) {
-				isNegative[0] = -1;
-				return;
-			}
+			popm[i + j*adim] = popm[i-1 + jve*adim] * srm[i + jve*adim];
+			popf[i + j*adim] = popf[i-1 + jve*adim] * srf[i + jve*adim];
 		}
 		/* Age 130+ */
-		popm[26 + j*adim] = (popm[26 + (j-1)*adim] + popm[25 + (j-1)*adim]) * srm[26 + jve*adim];
-		popf[26 + j*adim] = (popf[26 + (j-1)*adim] + popf[25 + (j-1)*adim]) * srf[26 + jve*adim];
-		if(returnNothingIfNegative[0] == 1 && ((popm[26 + j*adim]) < 0 || ((popf[26 + j*adim]) < 0))) {
-				isNegative[0] = -1;
-				return;
-		}
+		popm[26 + j*adim] = (popm[26 + jve*adim] + popm[25 + jve*adim]) * srm[26 + jve*adim];
+		popf[26 + j*adim] = (popf[26 + jve*adim] + popf[25 + jve*adim]) * srf[26 + jve*adim];
+
 		/* calculating births, total, male, female */
 		/* birth in 5-yrs */
 		srb_ratio = srb[jve] / (1 + srb[jve]);
 		for(i=3; i<10; ++i) {
-			bt[i-3] = (popf[i + (j-1)*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
+			bt[i-3] = (popf[i + jve*adim] + popf[i + j*adim]) * asfr[i-3 + jve*7] * 0.5;
 			btagem[i-3+jve*7] = bt[i-3] * srb_ratio;
 			btagef[i-3+jve*7] = bt[i-3] - btagem[i-3+jve*7];
 		}
 		b = sum(bt, 7);
 		bm = b * srb_ratio;
 		bf = b - bm; /* avoids rounding errors, replaces bf = b / (1 + srb[jve]); */
+
 		/* age 0-4 */
 		popm[j*adim] = bm * srm[jve*adim];
 		popf[j*adim] = bf * srf[jve*adim];
-		if(returnNothingIfNegative[0] == 1 && ((popm[j*adim]) < 0 || (popf[j*adim] < 0))) {
-				isNegative[0] = -1;
-				return;
-		}		
+	
 		/* get total for all ages */
 		for(i=0; i<adim; ++i) {
 			totp[j] += popm[i + j*adim]+popf[i + j*adim];
