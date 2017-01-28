@@ -436,10 +436,8 @@ void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Birth
 void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 				  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
 				  double *mxm, double *mxf,
-				  int *returnNothingIfNegative,
 				  double *popm, double *popf, double *totp, 
-				  double *btagem, double *btagef, double *deathsm, double *deathsf,
-				  double *finmigrm, double *finmigrf, int *isNegative
+				  double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
@@ -515,10 +513,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		for(i=1; i<adim1; ++i) {
 			popm[i + j*adim] = popm[i-1 + jve*adim] * srm[i + jve*adim];
 			popf[i + j*adim] = popf[i-1 + jve*adim] * srf[i + jve*adim];
-			if(returnNothingIfNegative[0] == 1 && ((totmigm[i][jve] + popm[i + j*adim]) < 0 || ((totmigf[i][jve]+popf[i + j*adim]) < 0))) {
-            		isNegative[0] = -1;
-				return;
-            }
 			totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + j*adim]); /* assures population is not negative */
 			popm[i + j*adim] = popm[i + j*adim] + totmigm[i][jve];
 			totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + j*adim]);
@@ -527,10 +521,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		/* i = adim1 */
 		popm[26 + j*adim] = (popm[26 + jve*adim] + popm[25 + jve*adim]) * srm[26 + jve*adim];
 		popf[26 + j*adim] = (popf[26 + jve*adim] + popf[25 + jve*adim]) * srf[26 + jve*adim];
-		if(returnNothingIfNegative[0] == 1 && ((migm[26][jve] + popm[26 + j*adim]) < 0 || ((migf[26][jve]+popf[26 + j*adim]) < 0))) {
-			isNegative[0] = -1;
-			return;
-		}
 		totmigm[26][jve] = fmax(migm[26][jve], -1*popm[26 + j*adim]);
 		popm[26 + j*adim] = popm[26 + j*adim] + totmigm[26][jve];
 		totmigf[26][jve] = fmax(migf[26][jve], -1*popf[26 + j*adim]);
@@ -550,16 +540,10 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 		
 		/* births surviving to age 0-4 */
 		popm[j*adim] = bm * srm[jve*adim];
-		totmigm[0][jve] = mmult * migm[0][jve];
 		popf[j*adim] = bf * srf[jve*adim];
-		totmigf[0][jve] = mmult * migf[0][jve];
-		if(returnNothingIfNegative[0] == 1 && ((totmigm[0][jve] + popm[j*adim]) < 0 || ((totmigf[0][jve]+popf[j*adim]) < 0))) {
-			isNegative[0] = -1;
-			return;
-		}
-		totmigm[0][jve] = fmax(totmigm[0][jve], -1*popm[j*adim]);
+		totmigm[0][jve] = fmax(mmult * migm[0][jve], -1*popm[j*adim]);
 		popm[j*adim] = popm[j*adim] + totmigm[0][jve];
-		totmigf[0][jve] = fmax(totmigf[0][jve], -1*popf[j*adim]);
+		totmigf[0][jve] = fmax(mmult * migf[0][jve], -1*popf[j*adim]);
 		popf[j*adim] = popf[j*adim] + totmigf[0][jve];
 		
 		/* get total for all ages */
@@ -668,6 +652,7 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	}	
 }	
 
+/*TODO: sync with changes in TotalPopProj*/
 void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, double *srb, 
 				double *mxm, double *mxf,
 				  int *returnNothingIfNegative,

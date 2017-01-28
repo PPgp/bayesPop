@@ -85,6 +85,12 @@ Results of the aggregations are stored in the same top directory as the \code{po
 Object of class \code{\link{bayesPop.prediction}} containing the aggregated results. In addition it contains elements \code{aggregation.method} giving the \code{input.type} used, and \code{aggregated.countries} which is a list of countries aggregated for each region. 
 }
 
+\references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+}
+
 \author{
 Hana Sevcikova, Adrian Raftery
 }

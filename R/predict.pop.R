@@ -29,14 +29,18 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
 		if(verbose) cat('Loading ', my.locations.file, '.\n')
 	} else bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose=verbose)
-	if(is.null(countries)) inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
-	else {
+	if(is.null(countries)) {
+		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
+			stop('Prediction in ', output.dir,
+				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
+	}else {
 		if(has.pop.prediction(output.dir) && !replace.output && !rebalance.migration) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, all.countries=FALSE, 
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
-													obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf), 
+												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
 								verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
@@ -132,6 +136,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	# remove big or redundant items from inputs to be saved
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
+		
 	for(cidx in 1:ncountries) {
 		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
@@ -224,7 +229,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				asfert[,2:npredplus1,itraj] <- asfr
 				asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 				pasfert[,2:npredplus1,itraj] <- pasfr*100
-				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
+				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]				
 				mxm[,2:npredplus1,itraj] <- LTres$mx[[1]]
 				mxm[1:length(Kan.present$male$mx),1,itraj] <- Kan.present$male$mx
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
@@ -310,6 +315,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#save updated meta file
 		country.row <- UNlocations[country.idx,c('country_code', 'name')]
 		colnames(country.row) <- c('code', 'name')
+		
+
 		
 		if(!exists('bayesPop.prediction')) { # first pass
 			bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= country %in% pred$countries[,'code']) 
@@ -556,7 +563,6 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
-
 	# Get migration trajectories if available
 	migMpred <- migFpred <- NULL
 	for(sex in c('M', 'F')) {
@@ -917,7 +923,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 					this.156.mig <- this.mig[this.mig$country_code==156,]
 					inputs[[what.mig]][inputs[[what.mig]]$country_code==156,cols] <- this.156.mig[,cols]
 				}
-				# extact observed migration
+				# extract observed migration
 				if(!is.null(obs[[what.mig]])) {
 					cols <- intersect(colnames(this.mig), colnames(obs[[what.mig]]))
 					obs[[what.mig]][,cols] <- as.matrix(this.country.mig[,cols])
@@ -1380,25 +1386,23 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 	btageM <- btageF <- matrix(0, nrow=7, ncol=npred) # births by age of mother and sex of child
 	deathsM <- deathsF <- finmigrM <- finmigrF <- matrix(0, nrow=27, ncol=npred)
 	nproj <- npred
-	migM <- as.matrix(mig.pred[['M']])
-	returnIfNegative <- 1
-	isNegative <- 0
-	while(TRUE) {
-		res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), 
-			as.numeric(as.matrix(mig.pred[['F']])), nrow(migM), ncol(migM), as.integer(mig.type),
-			srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
-			srb=as.numeric(as.matrix(srb)), mxm=LT$mx[[1]], mxf=LT$mx[[2]],
-			returnNothingIfNegative=as.integer(returnIfNegative), 
-			popm=popm, popf=popf, totp=totp,
-			btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
-			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
-			finmigrm=as.numeric(finmigrM), finmigrf=as.numeric(finmigrF), isNegative=as.integer(isNegative)
-			)
-		if(returnIfNegative==1 && res$isNegative < 0) {
-			warning('Negative population for ', country.name, '. Counts adjusted.', immediate.=TRUE)
-			returnIfNegative <- 0
-		} else break
-	}
+	migM <- as.matrix(if(!is.null(mig.pred[['M']])) mig.pred[['M']] else inputs[['MIGm']])
+	migF <- as.matrix(if(!is.null(mig.pred[['F']])) mig.pred[['F']] else inputs[['MIGf']])
+	#migM <- as.matrix(if(!is.null(mig.pred[['M']])) apply(mig.pred[['M']], 2, '/', popm[1:21,1]) else inputs[['MIGm']])
+	#migF <- as.matrix(if(!is.null(mig.pred[['F']])) apply(mig.pred[['F']], 2, '/', popf[1:21,1]) else inputs[['MIGf']])
+	#stop('')
+	res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
+		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
+		srb=as.numeric(as.matrix(inputs$SRB)), 
+		mxm=LT$mx[[1]], mxf=LT$mx[[2]],
+		popm=popm, popf=popf, totp=totp,
+		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
+		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
+		)
+	
+ 	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
+	if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
+
 	vital.events <- list()
 	if(keep.vital.events) {
 		vital.events$mbt <- res$btagem
