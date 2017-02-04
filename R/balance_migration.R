@@ -1206,29 +1206,18 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, nr.
 
 
 migration.age.schedule <- function(country, npred, inputs) {
-	# original code by Jon Azose
+	####################################
+	# Set future migration age schedules. 
+	# Most countries get the UN future schedule. 
+	# In cases in which the UN schedule is messy, use Rogers-Castro (i.e. China) schedule.
+	# Special handling of the GCC countries.
+	# Original code by Jon Azose
+	####################################
 	nAgeGroups <- 21
-	#Initialize male and female matrices.
-	
-
-	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
-	#Handle Croatia separately because of some bad data (doesn't apply to wpp2015)
-	#Use 2010-2015 schedules, which aren't messed up.
-	# if(country == 191 && is.null(inputs$year.of.migration.schedule)) {
-		# maleVec <- inputs$MIGm[inputs$MIGm$country_code==191, first.year.period]
-		# femaleVec <- inputs$MIGf[inputs$MIGf$country_code==191, first.year.period];
-		# tot <- sum(maleVec+femaleVec)
-		# #Set all future migration schedules for Croatia to match that one.
-		# croatiaM <- matrix(rep(maleVec/tot, npred), nrow=nAgeGroups)
-		# croatiaF <- matrix(rep(femaleVec/tot, npred), nrow=nAgeGroups)		
-		# return(list(M=croatiaM, F=croatiaF))
-	# }
 	sched.country <- country
-	first.year <- FALSE
-	# Replace Bahrain and Saudi Arabia with schedule from Qatar (doesn't apply to wpp2015)
-	# if(country %in% c(682, 48)) {
-		   # sched.country <- 634
-	# }
+	first.year <- FALSE # indicates if the schedule is taken from one time period only (defined by first.year.period)
+	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
+	
 	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 	#if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
 		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
@@ -1333,13 +1322,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	maleArray <- t(apply(maleArray, 1, '/', tot))
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
-    # if(country %in% c(528, 756)) { # Netherlands, Switzerland  (get Czech schedule for negative schedules)
-    	# maleVec <- inputs$MIGm[inputs$MIGm$country_code==203, first.year.period]
-    	# femaleVec <- inputs$MIGf[inputs$MIGf$country_code==203, first.year.period]
-    	# tot <- sum(maleVec+femaleVec)
-    	# negM <- matrix(maleVec/tot, nrow=nAgeGroups, ncol=ncol(maleArray))
-    	# negF <- matrix(femaleVec/tot, nrow=nAgeGroups, ncol=ncol(femaleArray))
-    # }
+
 	return(list(M=maleArray, F=femaleArray, Mnegative=negM, Fnegative=negF))
 }
 

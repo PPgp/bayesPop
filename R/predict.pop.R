@@ -19,7 +19,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, replace.output=FALSE, 
-						use.migration.model=FALSE, rebalance.migration=FALSE,
+						use.migration.model=FALSE, balance.migration=FALSE,
 						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
@@ -35,7 +35,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
 	}else {
-		if(has.pop.prediction(output.dir) && !replace.output && !rebalance.migration) {
+		if(has.pop.prediction(output.dir) && !replace.output && !balance.migration) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, all.countries=FALSE, 
@@ -50,11 +50,13 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, all.countries=FALSE, verbose=verbose)
 	}
 	outdir <- file.path(output.dir, 'predictions')
-	if(use.migration.model || rebalance.migration) {
-		if(replace.output) { # keep the directory if not replace.output, so that one can start at higher trajectory
+	if(use.migration.model || balance.migration) {
+		balargs <- list(...)
+		if(replace.output || ('start.traj.index' %in% names(balargs) && balargs['start.traj.index']==1)) { 
 			unlink(outdir, recursive=TRUE)
 			.remove.cache.file(outdir)
 		}
+		# else keep the directory if not replace.output, so that one can start at higher trajectory
 	} else {
 		if(!prediction.exist) {
 			if(!replace.output && has.pop.prediction(sim.dir=output.dir))
@@ -83,14 +85,14 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		} else
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	} 
-	if(use.migration.model || rebalance.migration)
+	if(use.migration.model || balance.migration)
 		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
-					function.inputs=inputs, 
-					rebalance=rebalance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
+					function.inputs=inputs, rebalance=balance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 
 		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, function.inputs=inputs, verbose=verbose)
+					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
+					function.inputs=inputs, verbose=verbose)
 
 	invisible(get.pop.prediction(output.dir))
 }
@@ -118,9 +120,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	nages <- length(ages)
 	if(!file.exists(outdir)) 
 		dir.create(outdir, recursive=TRUE)
-	prediction.file <- file.path(outdir, 'prediction.rda')
 	present.and.proj.years <- c(inp$estim.years[length(inp$estim.years)], inp$proj.years)
 	present.and.proj.years.pop <- present.and.proj.years + 2
+	prediction.file <- file.path(outdir, 'prediction.rda')
 	quantiles.to.keep <- get.quantiles.to.keep()
 	nquant <- length(quantiles.to.keep)
 	PIs_cqp <- quantM <- quantF <- array(NA, c(ncountries, nquant, nr_project+1),
@@ -235,10 +237,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
 				mxf[1:length(Kan.present$female$mx),1,itraj] <- Kan.present$female$mx
 				migtraj <- min(itraj, migMntraj)
-				migm[,2:npredplus1,migtraj] <- popres$mmigr # migpred[['M']]
+				migm[,2:npredplus1,migtraj] <- migpred[['M']]
 				migm[1:dim(inpc$observed$MIGm)[1],1,migtraj] <- inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
 				migtraj <- min(itraj, migFntraj)
-				migf[,2:npredplus1,migtraj] <- popres$fmigr # migpred[['F']]
+				migf[,2:npredplus1,migtraj] <- migpred[['F']]
 				migf[1:dim(inpc$observed$MIGf)[1],1,migtraj] <- inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
 			}
 		}
@@ -1378,22 +1380,20 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	return(result)
 }
 
-StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL, country.name=NULL, keep.vital.events=FALSE) {
+StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred, mig.type=NULL, country.name=NULL, keep.vital.events=FALSE) {
 	popm <- popf <- matrix(0, nrow=27, ncol=npred+1)
 	popm[,1] <- c(pop0$M, rep(0, 27-length(pop0$M)))
 	popf[,1] <- c(pop0$F, rep(0, 27-length(pop0$F)))
 	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))
 	btageM <- btageF <- matrix(0, nrow=7, ncol=npred) # births by age of mother and sex of child
-	deathsM <- deathsF <- finmigrM <- finmigrF <- matrix(0, nrow=27, ncol=npred)
+	deathsM <- deathsF <- matrix(0, nrow=27, ncol=npred)
 	nproj <- npred
-	migM <- as.matrix(if(!is.null(mig.pred[['M']])) mig.pred[['M']] else inputs[['MIGm']])
-	migF <- as.matrix(if(!is.null(mig.pred[['F']])) mig.pred[['F']] else inputs[['MIGf']])
-	#migM <- as.matrix(if(!is.null(mig.pred[['M']])) apply(mig.pred[['M']], 2, '/', popm[1:21,1]) else inputs[['MIGm']])
-	#migF <- as.matrix(if(!is.null(mig.pred[['F']])) apply(mig.pred[['F']], 2, '/', popf[1:21,1]) else inputs[['MIGf']])
+	migM <- as.matrix(mig.pred[['M']])
+	migF <- as.matrix(mig.pred[['F']])
 	#stop('')
 	res <- .C("TotalPopProj", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
-		srb=as.numeric(as.matrix(inputs$SRB)), 
+		srb=as.numeric(as.matrix(srb)), 
 		mxm=LT$mx[[1]], mxf=LT$mx[[2]],
 		popm=popm, popf=popf, totp=totp,
 		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
@@ -1410,7 +1410,7 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred=NULL, mig.type=NULL,
 		vital.events$mdeaths <- res$deathsm
 		vital.events$fdeaths <- res$deathsf
 	}
-	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmigr=res$finmigrm, fmigr=res$finmigrf), vital.events))
+	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf), vital.events))
 }
 
 
