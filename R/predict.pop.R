@@ -1831,7 +1831,8 @@ create.pop.cluster <- function(nr.nodes, ...) {
 
 age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
-									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=TRUE) {
+									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
+									depratio.file=NULL, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1873,6 +1874,20 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		countries <- countries[countries %in% locs[locs$location_type==4, "country_code"]]
 	} else mig <- mig[which(mig$country_code %in% countries),]
+	depratio.correction <- FALSE
+	if (!is.null(depratio.file)) {
+		#rda file; must have objects depratioM and depratioF
+		# which are matrices with three columns (for age groups 0-4, 5-9, 10-14).
+		# They represent ratios of that age group to age group 20-25.
+		# Rownames should be country codes.
+		edr <- new.env()
+		load(depratio.file, envir=edr)
+		if(exists(depratioM, envir=edr) || exists(depratioF, envir=edr))
+			stop(paste(depratio.file, "must contain objects called depratioM and depratioF\nContains: ", ls(edr))
+		if(ncol(depratioM) < 3 || ncol(depratioF) < 3)
+			stop("Objects depratioM and depratioF must contain at least 3 columns.")
+		depratio.correction <- TRUE
+	}
 	all.migM <- all.migF <- NULL
 	lcountries <- length(countries)
 	for(icountry in 1:lcountries) {
@@ -1940,6 +1955,12 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				}
 				netmigM <- migdata[['M']]
 				netmigF <- migdata[['F']]
+				if(depratio.correction) {
+					# correct dependency ratio
+					country.char <- as.character(country)
+					if(country.char %in% rownames(depratioM)) netmigM[1:3] <- netmigM[5]*depratioM[country.char,1:3]
+					if(country.char %in% rownames(depratioF)) netmigF[1:3] <- netmigF[5]*depratioF[country.char,1:3]
+				}
 				if(rescale) {
 					s <- sum(netmigM + netmigF)
 					netmigM <- netmigM/s * totmigy
