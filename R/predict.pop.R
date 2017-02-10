@@ -875,11 +875,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	# generate sex and age-specific migration if needed
-	if((!is.null(inpc[['MIGm']]) & all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) & all(is.na(inpc[['MIGf']])))) {
+	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
 		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, verbose=FALSE)
 		mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
-			if(!is.null(inpc[[what.mig]]) & all(is.na(inpc[[what.mig]]))) {
+			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
 				# extact predicted migration
 				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
 				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
@@ -1758,11 +1758,13 @@ create.pop.cluster <- function(nr.nodes, ...) {
 }
 
 age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
-	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over the ages,
+	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
 	# therefore it is smoothed (in a double pass through the smoother).
+	# If raw residuals are desired, set smooth=FALSE, rescale=FALSE and ages.to.zero=c().
 	if(verbose) {
 		status.text <- paste('Reconstructing sex- and age-specific migration from', paste0('wpp', wpp.year, ' '))
 		cat('\n', status.text)
@@ -1804,7 +1806,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	for(icountry in 1:lcountries) {
 		if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
 		country <- countries[icountry]
-		country.name <- as.character(mig$name[icountry])
+		country.name <- as.character(mig[mig$country_code==country, 'name'])
 		# filter country data
 		popm.obs <- popm0[popm0$country_code==country, popm0.num.cols]
 		popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
@@ -1848,7 +1850,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 					       migdata[[sex]][i] <- migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
 					  	}
 					}
-					migdata[[sex]][18:21] <- 0
+					migdata[[sex]][ages.to.zero] <- 0
 					if(smooth) { #smoothing					
 						for(izig in 1:2) { # two passes of smoothing
 							# are there significant zig-zags?						
@@ -1859,17 +1861,18 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 							cs <- cumsum(c(TRUE, tops)) # consider first point as top
 							if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
 								migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
-								migdata[[sex]][18:21] <- 0
+								migdata[[sex]][ages.to.zero] <- 0
 							} else break
 						}
 					}
 				}
-				# rescale
 				netmigM <- migdata[['M']]
 				netmigF <- migdata[['F']]
-				s <- sum(netmigM + netmigF)
-				netmigM <- netmigM/s * totmigy
-				netmigF <- netmigF/s * totmigy
+				if(rescale) {
+					s <- sum(netmigM + netmigF)
+					netmigM <- netmigM/s * totmigy
+					netmigF <- netmigF/s * totmigy
+				}
 			}
 			this.all.migM <- cbind(this.all.migM, netmigM)
 			this.all.migF <- cbind(this.all.migF, netmigF)

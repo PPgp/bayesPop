@@ -1,0 +1,22 @@
+bibentry(bibtype = "Article",
+  title        = "{bayesPop}: Probabilistic Population Projections",
+  author       = c(person(given = "Hana",
+                          family = "\\v{S}ev\\v{c}\\'{\\i}kov\\'{a}"),
+                   person(given = c("Adrian", "E."),
+                          family = "Raftery",
+                          email = "raftery@uw.edu")),
+  journal      = "Journal of Statistical Software",
+  year         = "2016",
+  volume       = "75",
+  number       = "5",
+  pages        = "1--29",
+  doi          = "10.18637/jss.v075.i05",
+
+  header       = "To cite bayesPop in publications use:",
+  textVersion  =
+  paste("Hana Sevcikova, Adrian E. Raftery (2016).",
+        "bayesPop: Probabilistic Population Projections.",
+        "Journal of Statistical Software, 75(5), 1-29.",
+        "doi:10.18637/jss.v075.i05")
+)
+
