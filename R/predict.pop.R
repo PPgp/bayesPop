@@ -1831,7 +1831,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 			mortMy <- mortM[,year.col]
 			mortFy <- mortF[,year.col]
 			sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
-       		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
+      sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
 			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
 			else {			
@@ -1844,11 +1844,17 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {
-					if(mtype == 0) {					
-					 	migdata[[sex]] <- 2*migdata[[sex]]
-					 	for(i in 2:max.ages) {
-					       migdata[[sex]][i] <- migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
-					  	}
+					if(mtype == 0) { 
+					  # Migration distributed across the time interval.
+					  # In projections in this case, the migration is derived as 
+					  # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
+					  # Thus, here is the reverse of that. 
+					  # However, it can yield zig-zags, which are removed in the smoothing step.
+					  migdata[[sex]][1] <- 2*migdata[[sex]][1]
+						for(i in 2:max.ages) {
+					       migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+						}
+					  #stop('')
 					}
 					migdata[[sex]][ages.to.zero] <- 0
 					if(smooth) { #smoothing					
