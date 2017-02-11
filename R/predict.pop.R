@@ -1814,7 +1814,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 			load(depratio, envir=edr)
 		else data("migdepratio", envir=edr)
 		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
-			stop(depratio.file, " must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
+			stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
 		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
 				|| !all(c('country_code', "period") %in% colnames(edr$depratioF)))
 			stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
@@ -1898,10 +1898,10 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				if(depratio.correction) {
 					# correct dependency ratio
 					cntry <- country
-					rowM <- subset(edr$depratioM, country_code==cntry & period==year.col)
-					if(nrow(rowM) > 0 && !any(is.na(rowM[,ratio.colsM]))) netmigM[1:3] <- as.double(netmigM[5]*rowM[,ratio.colsM])
-					rowF <- subset(edr$depratioF, country_code==cntry & period==year.col)
-					if(nrow(rowF) > 0 && !any(is.na(rowF[,ratio.colsF]))) netmigF[1:3] <- as.double(netmigF[5]*rowF[,ratio.colsF])
+					rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
+					if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
+					rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
+					if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
 				}
 				if(rescale) {
 					s <- sum(netmigM + netmigF)

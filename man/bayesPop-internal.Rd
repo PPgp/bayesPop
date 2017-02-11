@@ -18,6 +18,8 @@
 \alias{read.pop.file}
 \alias{runKannisto}
 \alias{migdepratio}
+\alias{depratioM}
+\alias{depratioF}
 
 \title{
 Internal Functions and datasets of bayesPop
