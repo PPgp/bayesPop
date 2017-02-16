@@ -1831,7 +1831,8 @@ create.pop.cluster <- function(nr.nodes, ...) {
 
 age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
-									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=TRUE) {
+									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
+									depratio=TRUE, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1873,6 +1874,26 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		countries <- countries[countries %in% locs[locs$location_type==4, "country_code"]]
 	} else mig <- mig[which(mig$country_code %in% countries),]
+	depratio.correction <- FALSE
+	if (depratio == TRUE || is.character(depratio)) {
+		# if it's character it is a name of an rda file; if it's TRUE, take the default file.
+		# must have objects depratioM and depratioF
+		# which are data frames with columns country_code, period and three dependency ratio 
+		# columns (for age groups 0-4, 5-9, 10-14).
+		# They represent ratios of that age group to age group 20-25.
+		edr <- new.env()
+		if(is.character(depratio))
+			load(depratio, envir=edr)
+		else data("migdepratio", envir=edr)
+		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
+			stop(depratio.file, " must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
+		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
+				|| !all(c('country_code', "period") %in% colnames(edr$depratioF)))
+			stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
+		ratio.colsM <- (1:ncol(edr$depratioM))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+		ratio.colsF <- (1:ncol(edr$depratioF))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+		depratio.correction <- TRUE
+	}
 	all.migM <- all.migF <- NULL
 	lcountries <- length(countries)
 	for(icountry in 1:lcountries) {
@@ -1903,7 +1924,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 			mortMy <- mortM[,year.col]
 			mortFy <- mortF[,year.col]
 			sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
-      sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
+      		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
 			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
 			else {			
@@ -1949,6 +1970,14 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				}
 				netmigM <- migdata[['M']]
 				netmigF <- migdata[['F']]
+				if(depratio.correction) {
+					# correct dependency ratio
+					cntry <- country
+					rowM <- subset(edr$depratioM, country_code==cntry & period==year.col)
+					if(nrow(rowM) > 0 && !any(is.na(rowM[,ratio.colsM]))) netmigM[1:3] <- as.double(netmigM[5]*rowM[,ratio.colsM])
+					rowF <- subset(edr$depratioF, country_code==cntry & period==year.col)
+					if(nrow(rowF) > 0 && !any(is.na(rowF[,ratio.colsF]))) netmigF[1:3] <- as.double(netmigF[5]*rowF[,ratio.colsF])
+				}
 				if(rescale) {
 					s <- sum(netmigM + netmigF)
 					netmigM <- netmigM/s * totmigy
