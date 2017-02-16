@@ -1922,11 +1922,14 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 					  # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
 					  # Thus, here is the reverse of that. 
 					  # However, it can yield zig-zags, which are removed in the smoothing step.
-					  migdata[[sex]][1] <- 2*migdata[[sex]][1]
-						for(i in 2:max.ages) {
-					       migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
-						}
+					  #migdata[[sex]][1] <- 2*migdata[[sex]][1]
+						#for(i in 2:max.ages) {
+					  #      migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+						#}
 					  #stop('')
+					  origmig <- migdata[[sex]]
+					  migdata[[sex]][18:21] <- 0
+					  for(i in 18:2) migdata[[sex]][i-1] <- (2*origmig[i] - migdata[[sex]][i])/sxdata[[sex]][i]
 					}
 					migdata[[sex]][ages.to.zero] <- 0
 					if(smooth) { #smoothing					
