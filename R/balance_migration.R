@@ -1,4 +1,4 @@
-if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2012"))
+if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2015"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
 									rebalance=TRUE, use.migration.model=TRUE, start.traj.index=1, 
@@ -422,7 +422,7 @@ get.balanced.migration <- function(itraj, time, country.codes, inputs, nr.traj, 
 	pop <- rep(NA, nr.countries)
 	names(pop) <- country.codes
 	country.codes.char <- as.character(country.codes)
-	data(land_area_wpp2012)
+	data(land_area_wpp2015)
 
 	pop <- drop(colSums(env$totpm[,,time, drop=FALSE] + env$totpf[,,time, drop=FALSE]))
 	for(cidx in 1:nr.countries) {
@@ -600,8 +600,6 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	#fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
 	fun.max <- paste0("max.multiplicative.pop.change", if(isGCC) "" else ".no.gcc", if(relaxed) ".small" else "")
 	fun.min <- paste0("min.multiplicative.pop.change", if(relaxed) ".small" else "")
-	#xmin <- .get.rate.limit(oldRates, nrates, fun.min, max, nperiods=6)
-	#xmax <- .get.rate.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	if(!is.null(rlim[2])) xmax <- min(xmax, rlim[2])
@@ -612,31 +610,9 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 		xmin <- avg - 1e-3
 		xmax <- avg + 1e-3 
 	}
-	
-  #while(newRate < -0.33 || newRate > 0.665)
   	determ.part <- mu + phi*(oldRate-mu)
   	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
-  	#newRate <- rtruncnorm(n=1, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
-  	#newRate <- rnorm(n=1,mean=0, sd=sigma) + determ.part
-  	#if (isGCC) stop('')
-	# r <- 1
-	# while(r < 1000000) {
-		# newRate <- mu + phi*(oldRate-mu) + rnorm(n=1,mean=0,sd=sigma)
-		# if(is.migrate.within.permissible.range(c(oldRates, newRate), nrates+1, isGCC, fun.min, fun.max)) return(newRate)
-		# r <- r+1
-	# }
-	# stop("Can't simulate new migration rate for country ", country.code)
-	#if(is.na(newRate)) stop('Migration rate is NA')
 	return(newRate)
-}
-
-.get.rate.limit <- function(rates, n, cumfun, fun, nperiods=12) {
-	res <- do.call(cumfun, list(1))
-	for(i in 2:min(nperiods,n+1)) {
-		s <- sum(rates[(n-i+2):n])
-		res <- c(res, do.call(cumfun, list(i)) - s)
-	}
-	return(do.call(fun, list(res)))
 }
 
 .get.rate.mult.limit <- function(rates, n, cumfun, fun, nperiods=6) {
@@ -708,8 +684,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 													fixed.rate=NULL, warn.template=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
-	if(country.code %in% land_area_wpp2012$country_code)
-		land.area <- land_area_wpp2012[land_area_wpp2012$country_code==country.code,'land_area']
+	if(country.code %in% land_area_wpp2015$country_code)
+		land.area <- land_area_wpp2015[land_area_wpp2015$country_code==country.code,'land_area']
 	i <- 0
 	k <- 1
 	zero.constant <- get.zero.constant()
@@ -746,8 +722,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		 if(is.gcc(country.code)) { 
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
-			#Ict <- (11.8 + 1.065 * max(rate, 0))/5.
-			Ict <- 0.05914 + 1.065 * max(rate, 0)
+			#Ict <- 0.047913 + 1.094881 * max(rate, 0)
+			Ict <- 0.056 + 1.071 * max(rate, 0)
 	  		Oct <- Ict - rate
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
@@ -758,19 +734,12 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		outrate <- Oct*outsched
 	  		netrate <- inrate - outrate
 	  		sched <- netrate/sum(netrate)
-			 #sched <- sched/sum(sched)
-			 #if(rate>0) stop('')
 			 msched <- sched[1:21]
 			 fsched <- sched[22:42]
 			 # check depopulation for negative rates
 			 isneg <- netrate < 0
 			 netmiggcc <- mig.count*sched
 			 idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
-			 #denom <- sum((abs(msched) * popMdistr)) + sum((abs(fsched) * popFdistr))
-			 #Rxw <- sched/denom
-			 # which age groups would be depopulated
-			 #isdepop <- abs(emigrant.rate.bound) < abs(rate) * abs(Rxw)
-			 #idepop <- which(isneg & isdepop)
 			 if(length(idepop) > 0) {
 			   delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
 			   delta.abs.sum <- sum(delta.abs[idepop])
@@ -780,17 +749,6 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			   # remove the total amount of shifter migration from the remaining age groups
 			   netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
 			   sched <- netmiggcc.mod/mig.count # should sum to 1 
-			   #delta <- (abs(emigrant.rate.bound) - abs(rate) * Rxw[idepop])*denom
-			   #delta <- delta.abs/abs(mig.count)
-			   #if(!all.equal(sum(sched), 1)) stop('')
-			    #netrate[idepop] <- netrate[idepop] -  delta
-			    #sched[idepop] <- sched[idepop] -  delta[idepop]
-			    #sumdelta <- sum(delta[idepop])
-			    # if(country.code==634) stop('')
-			    # sumdelta should be negative, so this decreases the inflow
-			    #inrate[-idepop] <- inrate[-idepop] + inrate[-idepop]/sum(inrate[-idepop])*sumdelta
-			    #netrate[-idepop] <- inrate[-idepop] - outrate[-idepop]
-			    #sched <- netrate/sum(netrate)
 			    msched <- sched[1:21]
 			    fsched <- sched[22:42]
 			    #denom <- sum(msched * popMdistr + fsched * popFdistr)
@@ -831,10 +789,6 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
-				#tsched.neg <- sum(c(msched,fsched)[isneg])
-				#tsched.notneg <- sum(c(msched,fsched)[!isneg])
-				#msched[!isneg[1:21]] <- (1-tsched.neg) * msched[!isneg[1:21]]/tsched.notneg
-				#fsched[!isneg[22:length(shifts)]] <- (1-tsched.neg) * fsched[!isneg[22:length(shifts)]]/tsched.notneg
 				migM <- mig.count * msched
 				migF <- mig.count * fsched
 				prev.isneg <- isneg
@@ -976,9 +930,9 @@ labor.countries <- function()
 	
 prop.labor.migration <- function()
 	return(data.frame(country_code=c(
-			 784, #United Arab Emirates
+			 784, # United Arab Emirates
 			 48,  # Bahrain
-			 414, #Kuwait
+			 414, # Kuwait
 			 512, # Oman
 			 634, # Qatar
 			 682, # Saudi Arabia
@@ -987,7 +941,7 @@ prop.labor.migration <- function()
 			 360, # Indonesia
 			 356, # India
 			 586, # Pakistan
-			 608 # Philippines
+			 608  # Philippines
 			),
 			proportion=c(
 				 0.933289201047455,   
@@ -1217,15 +1171,16 @@ migration.age.schedule <- function(country, npred, inputs) {
 	sched.country <- country
 	first.year <- FALSE # indicates if the schedule is taken from one time period only (defined by first.year.period)
 	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
+	scale.to.totals <- NULL
 	
-	if(is.gcc(country) || country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
-	#if(country %in% c(28, 52, 531,  462, 562, 630, 662, 548, 764, 312)) { 
-		# Antigua and Barbuda, Barbados, Curacao, Maldives, Niger, Puerto Rico, and Saint Lucia, Vanuatu, Thailand, Guadeloupe
-		# 364, 376, # Iran, Israel - no need in wpp2015
-		   sched.country <- 156 # China
+	# Country can take a schedule from a different country, e.g. China
+	if(inputs[['MIGtype']][,"MigAgeSchedule"] > 0) {
+		   sched.country <- inputs[['MIGtype']][,"MigAgeSchedule"]
 		   first.year <- TRUE
-		   # The China schedule has larger migration for female, so rescale
-		   scale.to.totals <- list(M=0.5, F=0.5) 
+	}
+	# Should the Male/Female ratio be kept or set equal. E.g. China schedule has larger migration for female, so rescale
+	if(inputs[['MIGtype']][,"MigAgeEqualMFratio"] == 1) 
+		scale.to.totals <- list(M=0.5, F=0.5) 
 	}
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
@@ -1248,10 +1203,6 @@ migration.age.schedule <- function(country, npred, inputs) {
 			if(length(cix)==0) stop("Time period ", first.year.period, " not found in the migration data.")
 			maleV <- as.matrix(inputs$MIGm[idxM,cix])
 			femaleV <- as.matrix(inputs$MIGf[idxF,cix])
-			#if(is.gcc(country)) { # no child hump for GCC countries
-			#	maleVec[1:2,] <- maleVec[c(3,3),]
-			#	femaleVec[1:2,] <- femaleVec[c(3,3),]
-			#}
 		} else {# take all years starting from present year
 		  	maleV <- as.matrix(inputs$MIGm[idxM,col.idx])
 	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
@@ -1268,10 +1219,9 @@ migration.age.schedule <- function(country, npred, inputs) {
 			#Use China's 2010-2015 data as the model
 			modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
 			modelfemaleVec <- inputs$MIGf[inputs$MIGf$country_code==156, first.year.period]
-			if(!is.null(scale.to.totals)) {
-				modelmaleVec <- scale.to.totals$M[1] * modelmaleVec/sum(modelmaleVec)
-				modelfemaleVec <- scale.to.totals$F[1] * modelfemaleVec/sum(modelfemaleVec)
-			}
+			modelscale <- if(is.null(scale.to.totals)) list(M=0.5, F=0.5) else scale.to.totals	
+			modelmaleVec <- modelscale$M[1] * modelmaleVec/sum(modelmaleVec)
+			modelfemaleVec <- modelscale$F[1] * modelfemaleVec/sum(modelfemaleVec)
 			modeltot <- sum(modelmaleVec+modelfemaleVec)
 			modelM <- modelmaleVec/modeltot
 			modelF <- modelfemaleVec/modeltot
@@ -1287,7 +1237,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	    }
 	    return(list(maleArr, femaleArr, total.mig.positive))
 	}
-	scale.to.totals <- NULL
+
 	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
     	unscheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
     	scale <- c(colSums(unscheds[[1]]), colSums(unscheds[[2]]))
@@ -1299,20 +1249,17 @@ migration.age.schedule <- function(country, npred, inputs) {
 	
     # special handling for negative and positive migration rates
     negM <- negF <- NULL
-    # For GCCs, if negative migration rate, set negative schedules to zero, since they would mean in-migration
+
     if(is.gcc(country)) {
-    	negF <- femaleArray # female gets China schedule
+    	negF <- femaleArray # female gets China schedule; should be correctly scaled
     	# male - use model out-migration schedule (derived from SA)
-    	negMvec <- c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0)
+    	negMvec <- c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 
+    				0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0)
     	negMvec <- negMvec/sum(negMvec)
     	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)*matrix(scale[1:npred], ncol=npred, nrow=nAgeGroups, byrow=TRUE) # scale
-    	# rescale
-    	#tot <- apply(negM+negF, 2, sum)
-    	#negM <- t(apply(negM, 1, '/', tot))
-    	#negF <- t(apply(negF, 1, '/', tot))  	
     }
-    # For Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
-    if(country == 818) {
+    # For some counties like Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
+    if(inputs[['MIGtype']][,"MigAgeZeroNeg"] == 1) {
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0
     	negF <- femaleArray
@@ -1322,7 +1269,6 @@ migration.age.schedule <- function(country, npred, inputs) {
     	maleArray <- t(apply(maleArray, 1, '/', tot))
     	femaleArray <- t(apply(femaleArray, 1, '/', tot))
     }
-
 	return(list(M=maleArray, F=femaleArray, Mnegative=negM, Fnegative=negF))
 }
 

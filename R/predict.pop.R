@@ -497,12 +497,21 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
 
-	# Get migration type and base year
+	# Get migration type, base year and age-specific settings
+	vwBase.default <- read.bayesPop.file(paste0('vwBaseYear', wpp.year, '.txt'))
 	if(is.null(inputs$mig.type)) 
-		vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
-	else vwBase <- read.pop.file(inputs$mig.type)
-	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
+		vwBase <- vwBase.default 
+	else {
+		vwBase <- read.pop.file(inputs$mig.type)
+		# put into same order as vwBase.default
+		vwBase <- merge(vwBase.default[,'country_code', drop=FALSE], vwBase, by='country_code', sort=FALSE)
+	}
+	# Columns not present in the user-defined file will be taken from the default dataset
+	for(par in colnames(vwBase.default)) 
+		if(! par %in% colnames(vwBase)) vwBase[[par]] <- vwBase.default[[par]]
+	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode', 'MigAgeSchedule', 'MigAgeZeroNeg', 'MigAgeEqualMFratio')]
 
+	# Age-specific mortality and fertility settings
 	create.pattern <- function(dataset, columns) {
 		pattern <- data.frame(dataset[,'country_code'])
 		for(col in columns)
@@ -514,6 +523,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
 	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
+	
 	# Get age-specific migration
 	wppds <- data(package=paste0('wpp', wpp.year))
 	recon.mig <- NULL
