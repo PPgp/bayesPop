@@ -48,7 +48,8 @@ extract.trajectories.le,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
-age.specific.migration
+age.specific.migration,
+get.migration.thresholds
 )
 
 # register S3 methods

@@ -1,4 +1,4 @@
-if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2015"))
+if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2015", "migration.thresholds"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, function.inputs=NULL, 
 									rebalance=TRUE, use.migration.model=TRUE, start.traj.index=1, 
@@ -160,6 +160,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	debug <- FALSE
 	res.env$mig.rate <- mig.rate
 
+	migration.thresholds <= get.migration.thresholds(inp$wpp.year)
+	
 	if(parallel) {
 		nr.nodes.traj <- min(nr.nodes, nr.traj)
 		if(verbose) cat(' (in parallel on ', nr.nodes.traj, ' nodes).')
@@ -167,7 +169,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		clusterExport(cl, c("nr.traj", "country.codes",  "UNnames", "countries.input", "kannisto", "npasfr", 
 								"ages", "nvariants", "keep.vital.events", "verbose",
 								"res.env", "npred", "country.codes.char", "kantor.pasfr", 
-								"rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp"), envir=environment())
+								"rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
+								"migration.thressholds"), envir=environment())
 	} else if(verbose) cat(' (sequentially).')
 	
 	adjust.half.child <- function(values, med) {
@@ -596,16 +599,13 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	isGCC <- is.gcc(country.code)
 	has.relaxedB <- has.relaxed.bounds(country.code)  
 	relaxed <- has.relaxedB && relaxed.bounds
-	#fun.max <- paste0("cummulative.max.rate", if(isGCC) "" else ".no.gcc")
-	#fun.min <- paste0("cummulative.min.rate", if(isGCC) "" else ".no.gcc")
 	fun.max <- paste0("max.multiplicative.pop.change", if(isGCC) "" else ".no.gcc", if(relaxed) ".small" else "")
 	fun.min <- paste0("min.multiplicative.pop.change", if(relaxed) ".small" else "")
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
 	if(!is.null(rlim[2])) xmax <- min(xmax, rlim[2])
 	if(!is.null(rlim[1])) xmin <- max(xmin, rlim[1])
-	if(#(has.relaxedB || is.small) && 
-		xmin > xmax) {
+	if(xmin > xmax) {
 		avg <- (xmin + xmax)/2.
 		xmin <- avg - 1e-3
 		xmax <- avg + 1e-3 
@@ -630,54 +630,23 @@ is.gcc <- function(country)
 has.relaxed.bounds <- function(country)
 	return(country %in% c(136, 570, 584, 772, 796)) # Cayman Islands, Niue, Marshall Islands, Tokelau, Turks and Caicos Islands
 			
-max.multiplicative.pop.change <- function(l) {
-	# wpp2012
-	# switch(l, 2.087025815, 3.606344662, 4.952147194, 6.992680749, 8.194692131, 9.773177262)
-	# wpp2015
-	switch(l, 2.04157428408811, 3.54496058870786, 4.81427240609516, 6.78350174233341, 7.95488933545316, 9.49193503056661)
-}
-	
-max.multiplicative.pop.change.no.gcc <- function(l) {
-	# wpp2012
-	# switch(l, 1.409065294, 1.509547891, 1.606376672, 1.926878976, 1.892288126, 1.932271285)
-	# wpp2015
-	switch(l, 1.40906529449581, 1.50954789121653, 1.60637667154273, 1.92687897612525, 1.89228812576198, 1.94669452205643)
-}
-	
-min.multiplicative.pop.change <- function(l) {
-	# wpp2012
-	# switch(l, 0.707796098, 0.62555766, 0.567081044, 0.56605145, 0.559550789, 0.508914659)
-	# wpp2015
-	switch(l, 0.717850703699962, 0.646668153959635, 0.589239258594081, 0.5755073245726, 0.529981937762214, 0.491340651061678)
-}
+max.multiplicative.pop.change <- function(l) 
+	switch(l, migration.thresholds$cummulative.bounds$upper)
+
+max.multiplicative.pop.change.no.gcc <- function(l) 
+	switch(l, migration.thresholds$cummulative.bounds$upper.nogcc)
 	
 max.multiplicative.pop.change.no.gcc.small <- function(l)
-	switch(l, 1.59473251994369, 2.12674802921728, 2.5940342528116, 3.27346148755602, 4.38710818083359, 6.07190344426719)
+	switch(l, migration.thresholds$cummulative.bounds$upper.small)
+	
+min.multiplicative.pop.change <- function(l) 
+	switch(l, migration.thresholds$cummulative.bounds$lower)
 	
 min.multiplicative.pop.change.small <- function(l)
-	switch(l, 0.428948397185301, 0.373042042828842, 0.31526281780426, 0.24164343419914, 0.20427051444469, 0.172963052158649)
-	
-gcc.upper.threshold.wpp2012 <- function(country) {
-	switch(as.character(country),
-		'634'= 1619, # Qatar
-		'784'= 7632, # UAE
-		'414'= 1330, # Kuwait
-		'48'= 505,  # Bahrain
-		'512'= 303, # Oman
-		'682'= 3319, # SA
-		NA)
-}
+	switch(l, migration.thresholds$cummulative.bounds$lower.small)
 
-gcc.upper.threshold <- function(country) {
-    switch(as.character(country),
-        '634'= 1473, # Qatar
-	'784'= 5674, # UAE
-	'414'= 1649, # Kuwait
-	'48'= 290,   # Bahrain
-	'512'= 2253, # Oman
-	'682'= 2716, # SA
-	NA)
-}
+gcc.upper.threshold <- function(country.char) 
+	if(country.char %in% colnames(migration.thresholds$absolute.bounds)) migration.thresholds$absolute.bounds[[country.char]] else NA
 
 sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
 													popM=NULL, popF=NULL, country.code=NULL, mig.rates=NULL, 
@@ -695,7 +664,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
 	emigrant.rate.bound <- -0.8
-	
+	country.code.char <- as.character(country.code)
 	while(i <= 1000) {
 		i <- i + 1
 		if(is.null(fixed.rate)) {
@@ -703,7 +672,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			else rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
 					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
 					rlim=c(if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL, 
-						if(pop>0) min(gcc.upper.threshold(country.code)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL),
+						if(pop>0) min(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL),
 					relaxed.bounds=time < 6, is.small=pop < 200
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
@@ -722,8 +691,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		 if(is.gcc(country.code)) { 
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
-			#Ict <- 0.047913 + 1.094881 * max(rate, 0)
-			Ict <- 0.056 + 1.071 * max(rate, 0)
+			coefs <- gcc.inrate.coefs()
+			Ict <- coefs[1] + coefs[2] * max(rate, 0)
 	  		Oct <- Ict - rate
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
@@ -929,35 +898,8 @@ labor.countries <- function()
 	return(prop.labor.migration()$country_code)
 	
 prop.labor.migration <- function()
-	return(data.frame(country_code=c(
-			 784, # United Arab Emirates
-			 48,  # Bahrain
-			 414, # Kuwait
-			 512, # Oman
-			 634, # Qatar
-			 682, # Saudi Arabia
-			 50,  # Bangladesh
-			 818, # Egypt
-			 360, # Indonesia
-			 356, # India
-			 586, # Pakistan
-			 608  # Philippines
-			),
-			proportion=c(
-				 0.933289201047455,   
-				0.911919749810222,  
-				1.04330264032715,      
-				1.40418731176528,   
-				0.898226910319697,  
-				0.967835511646786,    
-				0.744625843641641,    
-				0.634207391400709,   
-				0.337688415314329,    
-				0.325522552720403,  
-				0.372455661022053,   
-				0.277753819108149
-				))
-		)
+	return(migration.thresholds$labor.proportions)
+		
 prop.labor.migration.for.country <- function(code){
 	props <- prop.labor.migration()
 	return(props[props$country_code==code,'proportion'])
@@ -1181,7 +1123,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	# Should the Male/Female ratio be kept or set equal. E.g. China schedule has larger migration for female, so rescale
 	if(inputs[['MIGtype']][,"MigAgeEqualMFratio"] == 1) 
 		scale.to.totals <- list(M=0.5, F=0.5) 
-	}
+
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
@@ -1253,8 +1195,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     if(is.gcc(country)) {
     	negF <- femaleArray # female gets China schedule; should be correctly scaled
     	# male - use model out-migration schedule (derived from SA)
-    	negMvec <- c(0.046967, 0.019589, 0.010741, 0.013833, 0.007076, 0.0146, 0.139547, 0.161774, 0.162872, 0.063039, 
-    				0.023437, 0.015625, 0.010045, 0.006696, 0.004464, 0.00279, 0.00279, 0, 0, 0, 0)
+    	negMvec <- gcc.model.outschedule()
     	negMvec <- negMvec/sum(negMvec)
     	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)*matrix(scale[1:npred], ncol=npred, nrow=nAgeGroups, byrow=TRUE) # scale
     }
@@ -1302,4 +1243,57 @@ PopProjNoMigr <- function(npred, pop0, LT, asfr, srb, country.name=NULL, keep.vi
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf), vital.events))
 }
 
+get.migration.thresholds <- function(wpp.year=2015, nperiods=6) {
+	# Setting various thresholds used in the migration model
+	
+	# Cummulative thresholds
+	do.call("data", list(paste0("migration_rates_wpp", wpp.year)))
+	rates.all <- get(paste0("migration_rates_wpp", wpp.year))
+	rates <- rates.all[,3:ncol(rates.all)]
+	rownames(rates) <- rates.all$country_code
+	# GCC plus Western Sahara & Djibouti
+	gcc.plus <- rates.all$country_code[is.gcc(rates.all$country_code) | rates.all$country_code %in% c(732, 262)] 
 
+	rMat <- 1 + rates
+	tu <- apply(rMat, 1, max)
+	tl <- apply(rMat, 1, min)
+	for (i in 2:nperiods) {
+		p <- 0*rates[,1:(ncol(rates)-i+1)] + 1 # init with 1
+		for(j in 1:i) 	
+			p <- p * rMat[,j:(ncol(rates)-i+j)]
+		tu <- cbind(tu, apply(p, 1, max))
+		tl <- cbind(tl, apply(p, 1, min))
+	}
+	upper.bounds <- apply(tu, 2, max)
+	upper.bounds.nogcc <- apply(tu[!rownames(tu) %in% gcc.plus,], 2, max)
+	lower.bounds <- apply(tl, 2, min)
+
+	df <- data.frame(upper=upper.bounds, upper.nogcc=upper.bounds.nogcc, lower=lower.bounds)
+	# need to update this
+	df$upper.small <- c(1.59473251994369, 2.12674802921728, 2.5940342528116, 3.27346148755602, 4.38710818083359, 6.07190344426719)
+	df$lower.small <- c(0.428948397185301, 0.373042042828842, 0.31526281780426, 0.24164343419914, 0.20427051444469, 0.172963052158649)
+	cumbounds <- df
+	
+	# Absolute upper bounds for GCC
+	absbounds <- data.frame(
+	        '634'= 1473, # Qatar
+			'784'= 5674, # UAE
+			'414'= 1649, # Kuwait
+			'48'= 290,   # Bahrain
+			'512'= 2253, # Oman
+			'682'= 2716, # SA
+		check.names=FALSE)
+		
+	labor.props <- data.frame(
+		country_code=c(48, 50, 818, 356, 360, 414, 512, 586, 608, 634, 682, 784),
+		proportion=c(0.981495, 0.708461, 0.50817, 0.336513, 0.2947, 1.71062, 1.083171, 0.186738, 0.133457, 0.85757, 1.035762, 0.959949)
+				)
+	labor.props <- merge(labor.props, UNlocations[,c('country_code', 'name')], sort=FALSE)
+	return(list(cummulative.bounds=cumbounds, absolute.bounds=absbounds, labor.proportions=labor.props))
+}
+
+gcc.model.outschedule <- function()
+	c(0.049662, 0.020928, 0.012675, 0.031806, 0.042943, 0.047495, 0.138648, 0.148062, 0.142722, 0.05879, 
+		0.024265, 0.016177, 0.010399, 0.006933, 0.004622, 0.002889, 0.002889, 0, 0, 0, 0)
+		
+gcc.inrate.coefs <- function() c(0.07008, 1.05246)
