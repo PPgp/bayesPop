@@ -741,6 +741,7 @@ compute.pasfr.global.norms <- function(inputs) {
 	for(norm in norms) {
 		tpasfr <- NULL
 		countries <- pattern$country_code[which(pattern[[norm]]==1)]
+		if(length(countries) == 0) next
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
 			tpasfr <- if(is.null(tpasfr)) pasfr else tpasfr + pasfr
@@ -1799,8 +1800,9 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	if(is.null(countries)) {
 		countries <- mig$country_code
 		# filter out non-countries
-		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
-		countries <- countries[countries %in% locs[locs$location_type==4, "country_code"]]
+		locs <- UNcountries()
+		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
+		countries <- countries[countries %in% locs]
 	} else mig <- mig[which(mig$country_code %in% countries),]
 	depratio.correction <- FALSE
 	if (depratio == TRUE || is.character(depratio)) {
