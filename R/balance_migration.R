@@ -172,7 +172,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 								"ages", "nvariants", "keep.vital.events", "verbose",
 								"res.env", "npred", "country.codes.char", "kantor.pasfr", 
 								"rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-								"migration.thressholds"), envir=environment())
+								"migration.thresholds"), envir=environment())
 	} else if(verbose) cat(' (sequentially).')
 	
 	adjust.half.child <- function(values, med) {
