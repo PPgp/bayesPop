@@ -160,7 +160,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	debug <- FALSE
 	res.env$mig.rate <- mig.rate
 
-	migration.thresholds <= get.migration.thresholds(inp$wpp.year)
+	#migration.thresholds <- NULL
+	#migration.thresholds <= get.migration.thresholds(inp$wpp.year)
+	assign('migration.thresholds', get.migration.thresholds(inp$wpp.year), envir=.GlobalEnv)
 	
 	if(parallel) {
 		nr.nodes.traj <- min(nr.nodes, nr.traj)
@@ -629,6 +631,8 @@ is.gcc <- function(country)
 	
 has.relaxed.bounds <- function(country)
 	return(country %in% c(136, 570, 584, 772, 796)) # Cayman Islands, Niue, Marshall Islands, Tokelau, Turks and Caicos Islands
+			
+migthresh <- function() return(migration.thresholds)	
 			
 max.multiplicative.pop.change <- function(l) 
 	switch(l, migration.thresholds$cummulative.bounds$upper)
@@ -1114,14 +1118,14 @@ migration.age.schedule <- function(country, npred, inputs) {
 	first.year <- FALSE # indicates if the schedule is taken from one time period only (defined by first.year.period)
 	first.year.period <- paste(inputs$proj.years[1]-3, inputs$proj.years[1]+2, sep='-')
 	scale.to.totals <- NULL
-	
+	mig.settings <- inputs[['MIGtype']][inputs[['MIGtype']]$country_code==country,]
 	# Country can take a schedule from a different country, e.g. China
-	if(inputs[['MIGtype']][,"MigAgeSchedule"] > 0) {
-		   sched.country <- inputs[['MIGtype']][,"MigAgeSchedule"]
+	if(mig.settings[,"MigAgeSchedule"] > 0) {
+		   sched.country <- mig.settings[,"MigAgeSchedule"]
 		   first.year <- TRUE
 	}
 	# Should the Male/Female ratio be kept or set equal. E.g. China schedule has larger migration for female, so rescale
-	if(inputs[['MIGtype']][,"MigAgeEqualMFratio"] == 1) 
+	if(mig.settings[,"MigAgeEqualMFratio"] == 1) 
 		scale.to.totals <- list(M=0.5, F=0.5) 
 
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
@@ -1200,7 +1204,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)*matrix(scale[1:npred], ncol=npred, nrow=nAgeGroups, byrow=TRUE) # scale
     }
     # For some counties like Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
-    if(inputs[['MIGtype']][,"MigAgeZeroNeg"] == 1) {
+    if(mig.settings[,"MigAgeZeroNeg"] == 1) {
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0
     	negF <- femaleArray
