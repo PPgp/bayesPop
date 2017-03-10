@@ -635,19 +635,19 @@ has.relaxed.bounds <- function(country)
 migthresh <- function() return(migration.thresholds)	
 			
 max.multiplicative.pop.change <- function(l) 
-	switch(l, migration.thresholds$cummulative.bounds$upper)
+	migration.thresholds$cummulative.bounds$upper[l]
 
 max.multiplicative.pop.change.no.gcc <- function(l) 
-	switch(l, migration.thresholds$cummulative.bounds$upper.nogcc)
+	migration.thresholds$cummulative.bounds$upper.nogcc[l]
 	
 max.multiplicative.pop.change.no.gcc.small <- function(l)
-	switch(l, migration.thresholds$cummulative.bounds$upper.small)
+	migration.thresholds$cummulative.bounds$upper.small[l]
 	
 min.multiplicative.pop.change <- function(l) 
-	switch(l, migration.thresholds$cummulative.bounds$lower)
+	migration.thresholds$cummulative.bounds$lower[l]
 	
 min.multiplicative.pop.change.small <- function(l)
-	switch(l, migration.thresholds$cummulative.bounds$lower.small)
+	migration.thresholds$cummulative.bounds$lower.small[l]
 
 gcc.upper.threshold <- function(country.char) 
 	if(country.char %in% colnames(migration.thresholds$absolute.bounds)) migration.thresholds$absolute.bounds[[country.char]] else NA
