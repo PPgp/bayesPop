@@ -150,6 +150,7 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	res <- array(NA, c(length(countries), length(ages), ncol(dataset)-2))
 	for(i in 1:length(countries)) {
 		idx <- which(dataset$country_code==countries[i])
+		if(length(idx) == 0) next
 		tmp <- dataset[idx,colidx]
 		rownames(tmp) <- age.vector
 		res[i,,] <- as.matrix(tmp[ages,])
@@ -190,7 +191,9 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 		med <- apply(q, 1, 'median')[colnames(adj.dataset[,colidx])]
 		dif <- as.matrix(med - adj.dataset[idx1,colidx])
 		res <- aaply(q[colnames(adj.dataset[,colidx]),], 2, '-', dif)
-		res <- rbind(q[1,], aperm(res, c(2,1)))
+		res <- aperm(res, c(2,1))
+		if(! rownames(q)[1] %in% rownames(res))
+			res <- rbind(q[1,], res) # add current year
 		rownames(res) <- rownames(q)
 		return(res)
 	}

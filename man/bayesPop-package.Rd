@@ -12,21 +12,25 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 5.5-0\cr
-Date: \tab 2015-10-1\cr
+Version: \tab 6.0-4\cr
+Date: \tab 2017-02-10\cr
 License: \tab GPL (>=2)\cr
-URL: \tab \url{http://bayespop.csss.washington.edu}\cr 
+URL: \tab \url{https://bayespop.csss.washington.edu}\cr 
 }
 The main function is called \code{\link{pop.predict}}. It uses trajectories of TFR from the \pkg{bayesTFR} package and life expectancy from the \pkg{bayesLife} package and for each trajectory it computes a population projection using the Cohort component method. It results in probabilistic age and sex specific projections. Various plotting functions are available for results visualization (\code{\link{pop.trajectories.plot}}, \code{\link{pop.pyramid}}, \code{\link{pop.trajectories.pyramid}}), as well as a summary function (\code{\link{summary.bayesPop.prediction}}).
 }
 
 
 \author{
-Hana Sevcikova, Adrian Raftery
+Hana Sevcikova, Adrian Raftery, Thomas Buettner
 
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 }
 \references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+
 A. E. Raftery,  N. Li, H. Sevcikova, P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
 
 P. Gerland, A. E. Raftery, H. Sevcikova, N. Li, D. Gu, T. Spoorenberg, L. Alkema, B. K. Fosdick, J. L. Chunn, N. Lalic, G. Bay, T. Buettner, G. K. Heilig,  J. Wilmoth (2014). World Population Stabilization Unlikely This Century. Science 346:234-237.

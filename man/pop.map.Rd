@@ -79,9 +79,10 @@ pop.map(pred, expression='PXXX_F[4:10] / PXXX')
 # The same with more colors
 params <- get.pop.map.parameters(pred, expression='PXXX_F[4:10] / PXXX')
 do.call('pop.map', params)
-# Another projection year on the same scale
+# Another projection year on the same color scale
 do.call('pop.map', c(list(year=2043), params))
-}	
+# Potential support ratio using googleVis
+pop.map.gvis(pred, expression="PXXX[5:13] / PXXX[14:27]")}	
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

@@ -84,6 +84,10 @@ Object of class \code{bayesPop.prediction} with the following elements:
 \item{is.aggregation}{Logical determining if this object is a result of \code{pop.predict} or \code{\link{pop.aggregate}}.}
 }
 \references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+
 A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
 
 P. Gerland, A. E. Raftery, H. Sevcikova, N. Li, D. Gu, T. Spoorenberg, L. Alkema, B. K. Fosdick, J. L. Chunn, N. Lalic, G. Bay, T. Buettner, G. K. Heilig,  J. Wilmoth (2014). World Population Stabilization Unlikely This Century. Science 346:234-237.
@@ -92,7 +96,7 @@ H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Spec
 %Working Paper 150. Center for Statistics and the Social Sciences, University of Washington. \url{http://www.csss.washington.edu/Papers/2015/wp150.pdf} 
 }
 \author{
-Hana Sevcikova, based on code of Nan Li and helpful comments from Patrick Gerland
+Hana Sevcikova, Thomas Buettner, based on code of Nan Li and helpful comments from Patrick Gerland
 }
 %\note{
 %%  ~~further notes~~

@@ -832,7 +832,7 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 				} else { # more than 9 PIs
 					cols <- rainbow(nquant, start=0.15)
 				}
-			} else col <- rep(col.pi, nquant)[1:nquant]
+			} else cols <- rep(col.pi, nquant)[1:nquant]
 			for(i in 1:nquant) {
 				rect(-quantiles[[i]]$high[,male], age.axis.at-pyr1q.half.height, 
 						-quantiles[[i]]$low[,male], age.axis.at+pyr1q.half.height, col=cols[i],
