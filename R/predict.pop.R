@@ -1791,7 +1791,7 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
+LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
 	sex <- match.arg(sex)
@@ -1800,6 +1800,7 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
 	Lx <- lx <- qx <- Tx <- sx <- dx <- ax <- rep(0, nage)
 	nagem1 <- nage-1
 	resage <- c(if(include01) c(0,1) else 0, seq(5, by=5, length=nage-2))
+	resage <- resage[resage <= open.age]
 	nresage <- length(resage)
 	nas <- rep(NA,nresage)
 	if(any(is.na(mx))) # there are NAs in mx
@@ -1812,11 +1813,34 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
 	LT$ax[nage] <- LT$ex[nage]
 	if(!include01) { # collapse 0-1 and 1-5 into 0-5
 		age05 <- c(FALSE, FALSE, TRUE)
-		LTres <- data.frame(age=resage)
+		LTres <- data.frame(age=seq(0, by=5, length=nage-1))
 		for(colname in colnames(LT)[-1])
 			LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
 		LT <- LTres
 	}
+	if(radix != 1) 
+		LT <- transform(LT, lx = lx * radix, 
+						dx = dx * radix,
+						Lx = Lx * radix,
+						Tx = Tx * radix
+					)
+	if(open.age < 130) {
+		## truncate life table with open age group < 130+ (Patrick Gerland's code)
+		LT <- LT[1:nresage,]
+		## mx for open age /* reciprocal of 1/ex for open age group*/ 
+		LT$mx[nresage] <- 1 / LT$ex[nresage]
+		LT$qx[nresage] <- NA
+		LT$dx[nresage] <- LT$lx[nresage] ## open age group dx = lx
+		LT$Lx[nresage] <- LT$Tx[nresage] ## open age group Lx = Tx
+		# Sx
+        # for open age group, e.g., 85+ 
+        ## penultimate age group -> Last entry of S(x,n) is S( 80+,5) = T( 85) / T( 80)
+        ## for open age group itself: Sx cannot be computed due to trunaction Sx <- NA
+        LT$sx[nresage-1] <- LT$Tx[nresage]/LT$Tx[nresage-1]
+        LT$sx[nresage] <- NA
+        LT$ax[nresage] <- LT$ex[nresage] ## for open age group ax = ex
+	} 
+	rownames(LT) <- c(paste(LT$age[-nresage], pmax(LT$age[-1]-1,1), sep="-"), paste0(LT$age[nresage], "+"))
 	return(LT)
 }
 

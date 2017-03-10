@@ -8,7 +8,8 @@ Life Table Functions
 Functions for obtaining life table quantities. 
 }
 \usage{
-LifeTableMx(mx, sex = c("Male", "Female"), include01 = TRUE)
+LifeTableMx(mx, sex = c("Male", "Female"), include01 = TRUE,
+	radix = 1, open.age = 130)
 
 LifeTableMxCol(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), \dots)
 }
@@ -16,6 +17,8 @@ LifeTableMxCol(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax
   \item{mx}{Vector of age-specific mortality rates nmx. The elements correspond to 1m0, 4m1, 5m5, 5m10, \dots. It can have no more than 28 elements which corresponds to age up to 130. In the \code{LifeTableMxCol} function, this argument can be a two-dimensional matrix with first dimension being the age.}
   \item{sex}{For which sex is the life table.}
   \item{include01}{Logical. If it is \code{FALSE} the first two age groups (0-1 and 1-4) are collapsed to one age group (0-4).}
+  \item{radix}{Base of the life table.}
+  \item{open.age}{Open age group. If smaller than the last age group of \code{mxm}, the life table is truncated.}
   \item{colname}{Name of the column of the life table that should be returned.}
   \item{\dots}{Arguments passed to underlying functions. Argument \code{age05} is a logical vector of size three, specifying if the age groups 0-1, 1-4 and 0-5 should be included. Default value of \code{c(FALSE, FALSE, TRUE)} includes the 0-5 age group only.}
 }
