@@ -1,3 +1,8 @@
+6.0-5
+-----
+Truncation of life tables to a given open age group (thanks to Patrick Gerland) --> Function 
+LifeTableMx has new arguments open.age and radix.
+
 6.0-4 (02/10/2017)
 -----
 Improvements in deriving age-specific migration.
