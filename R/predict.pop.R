@@ -439,57 +439,27 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	MXf <- MXf[,c('country_code', 'age', estim.periods)]
 	
 	estim.years <- cols.starty[start.index:present.index] + 3
-	# Get sex ratio at birth
-	if(is.null(inputs$srb)) 
-		SRB <- load.wpp.dataset('sexRatio', wpp.year)
-	else SRB <- read.pop.file(inputs$srb)
-	names.SRB.data <- names(SRB)
-	num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.SRB.data) # index of year-columns
-	cols.starty <- as.integer(substr(names.SRB.data[num.columns], 1,4))
-    cols.endy <- as.integer(substr(names.SRB.data[num.columns], 6,9))
-	start.index <- which((cols.starty <= present.year) & (cols.endy > present.year))
-	end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
-	if(length(end.index) == 0) {
-		end.index <- length(num.columns)
-		warning('Data for SexRatioAtBirth not available for all projection periods.\nLast projection period set to ', 
-					names.SRB.data[num.columns[end.index]])
-	}
-	proj.periods <- names.SRB.data[num.columns[start.index:end.index]]
-	obs.periods <- NULL
-	if(start.index > 1) {
-		obs.periods <- names.SRB.data[num.columns[1:(start.index-1)]]
-		observed$SRB <- SRB[,c('country_code', obs.periods)]
-	}
-	SRB <- SRB[,c('country_code', proj.periods)]
-	proj.years <- cols.starty[start.index:end.index] + 3
-	
-	# Get percentage age-specific fertility rate
-	if(is.null(inputs$pasfr)) 
-		PASFR <- load.wpp.dataset('percentASFR', wpp.year)
-	else PASFR <- read.pop.file(inputs$pasfr)
-	if(!is.null(obs.periods)) {
-		avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
-		observed$PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
-	}
-	PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
-	
-	# Get migration type and base year
-	if(is.null(inputs$mig.type)) 
-		vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
-	else vwBase <- read.pop.file(inputs$mig.type)
-	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
 
-	create.pattern <- function(dataset, columns) {
-		pattern <- data.frame(dataset[,'country_code'])
-		for(col in columns)
-			if(col %in% colnames(dataset))
-				pattern <- cbind(pattern, dataset[,col])
-		if(ncol(pattern)==1) pattern <- NULL
-		else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
-		return(pattern)
-	}
-	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
-	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
+	# Get sex ratio at birth
+	srblist <- .get.srb.data.and.time.periods(inputs$srb, present.year, end.year, wpp.year)
+	SRB <- srblist$srb
+	observed$SRB <- srblist$obs.srb
+	proj.periods <- srblist$proj.periods
+	obs.periods <- srblist$obs.periods
+	proj.years <- srblist$proj.years
+
+	# Get percentage age-specific fertility rate
+	pasfrlist <- .get.pasfr.data(inputs$pasfr, wpp.year, obs.periods, proj.periods)
+	PASFR <- pasfrlist$pasfr
+	observed$PASFR <- pasfrlist$obs.pasfr
+	
+	# Get migration type, migration base year, mx & pasfr patterns
+	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year)
+	MIGtype <- patterns$mig.type
+	MXpattern <- patterns$mx.pattern
+	PASFRpattern <- patterns$pasfr.pattern
+	
+
 	# Get age-specific migration
 	wppds <- data(package=paste0('wpp', wpp.year))
 	recon.mig <- NULL
@@ -642,6 +612,68 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	return(inp)
+}
+
+.get.srb.data.and.time.periods <- function(srb.file, present.year, end.year, wpp.year) {
+    if(is.null(srb.file)) 
+        SRB <- load.wpp.dataset('sexRatio', wpp.year)
+    else SRB <- read.pop.file(srb.file)
+    names.SRB.data <- names(SRB)
+    num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.SRB.data) # index of year-columns
+    cols.starty <- as.integer(substr(names.SRB.data[num.columns], 1,4))
+    cols.endy <- as.integer(substr(names.SRB.data[num.columns], 6,9))
+    start.index <- which((cols.starty <= present.year) & (cols.endy > present.year))
+    end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
+    if(length(end.index) == 0) {
+        end.index <- length(num.columns)
+        warning('Data for SexRatioAtBirth not available for all projection periods.\nLast projection period set to ', 
+                names.SRB.data[num.columns[end.index]])
+    }
+    proj.periods <- names.SRB.data[num.columns[start.index:end.index]]
+    obs.periods <- NULL
+    obs.SRB <- NULL
+    if(start.index > 1) {
+        obs.periods <- names.SRB.data[num.columns[1:(start.index-1)]]
+        obs.SRB <- SRB[,c('country_code', obs.periods)]
+    }
+    SRB <- SRB[,c('country_code', proj.periods)]
+    proj.years <- cols.starty[start.index:end.index] + 3
+    return(list(srb=SRB, obs.srb=obs.SRB, proj.periods=proj.periods, 
+           obs.periods=obs.periods, proj.years=proj.years))
+}
+
+.get.pasfr.data <- function(pasfr.file, wpp.year, obs.periods, proj.periods) {
+    if(is.null(pasfr.file)) 
+        PASFR <- load.wpp.dataset('percentASFR', wpp.year)
+    else PASFR <- read.pop.file(pasfr.file)
+    obs.PASFR <- NULL
+    if(!is.null(obs.periods)) {
+        avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
+        obs.PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
+    }
+    PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
+    return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
+}
+
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year) {
+    pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
+    if(is.null(pattern.file)) 
+        vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+    else vwBase <- read.pop.file(pattern.file)
+    MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
+    
+    create.pattern <- function(dataset, columns) {
+        pattern <- data.frame(dataset[,'country_code'])
+        for(col in columns)
+            if(col %in% colnames(dataset))
+                pattern <- cbind(pattern, dataset[,col])
+        if(ncol(pattern)==1) pattern <- NULL
+        else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
+        return(pattern)
+    }
+    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+    PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
+    return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
 
 .set.inp.migration.if.needed <- function(inputs, inpc, country) {
