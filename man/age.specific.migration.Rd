@@ -11,7 +11,7 @@ Reconstructs the sex- and age-specific net migration datasets out of the total n
 age.specific.migration(wpp.year = 2015, years = seq(1955, 2100, by = 5), 
     countries = NULL, smooth = TRUE, rescale = TRUE, ages.to.zero = 18:21,
     write.to.disk = FALSE, directory = getwd(), file.prefix = "migration", 
-    verbose = TRUE)
+    depratio = TRUE, verbose = TRUE)
 }
 
 \arguments{
@@ -24,6 +24,7 @@ age.specific.migration(wpp.year = 2015, years = seq(1955, 2100, by = 5),
   \item{write.to.disk}{If \code{TRUE} results are written to disk.}
   \item{directory}{Directory where to write the results if \code{write.to.disk} is \code{TRUE}.}
   \item{file.prefix}{If \code{write.to.disk} is \code{TRUE} results are written into two text files with this prefix, a letter \dQuote{M} and \dQuote{F} determining the sex, and concluded by the \dQuote{.txt} suffix. By default \dQuote{migrationM.txt} and \dQuote{migrationF.txt}.}
+  \item{depratio}{If it is \code{TRUE} it will use an internal dataset on migration dependency ratios to adjust the first three age groups. It can also be a name of a binary file containing such dataset.}
   \item{verbose}{Logical controlling the amount of output messages.}
 }
 \details{

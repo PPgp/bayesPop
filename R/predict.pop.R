@@ -779,6 +779,7 @@ compute.pasfr.global.norms <- function(inputs) {
 	for(norm in norms) {
 		tpasfr <- NULL
 		countries <- pattern$country_code[which(pattern[[norm]]==1)]
+		if(length(countries) == 0) next
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
 			tpasfr <- if(is.null(tpasfr)) pasfr else tpasfr + pasfr
@@ -1746,7 +1747,7 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
+LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
 	sex <- match.arg(sex)
@@ -1755,6 +1756,7 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
 	Lx <- lx <- qx <- Tx <- sx <- dx <- ax <- rep(0, nage)
 	nagem1 <- nage-1
 	resage <- c(if(include01) c(0,1) else 0, seq(5, by=5, length=nage-2))
+	resage <- resage[resage <= open.age]
 	nresage <- length(resage)
 	nas <- rep(NA,nresage)
 	if(any(is.na(mx))) # there are NAs in mx
@@ -1767,11 +1769,34 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE){
 	LT$ax[nage] <- LT$ex[nage]
 	if(!include01) { # collapse 0-1 and 1-5 into 0-5
 		age05 <- c(FALSE, FALSE, TRUE)
-		LTres <- data.frame(age=resage)
+		LTres <- data.frame(age=seq(0, by=5, length=nage-1))
 		for(colname in colnames(LT)[-1])
 			LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
 		LT <- LTres
 	}
+	if(radix != 1) 
+		LT <- transform(LT, lx = lx * radix, 
+						dx = dx * radix,
+						Lx = Lx * radix,
+						Tx = Tx * radix
+					)
+	if(open.age < 130) {
+		## truncate life table with open age group < 130+ (Patrick Gerland's code)
+		LT <- LT[1:nresage,]
+		## mx for open age /* reciprocal of 1/ex for open age group*/ 
+		LT$mx[nresage] <- 1 / LT$ex[nresage]
+		LT$qx[nresage] <- NA
+		LT$dx[nresage] <- LT$lx[nresage] ## open age group dx = lx
+		LT$Lx[nresage] <- LT$Tx[nresage] ## open age group Lx = Tx
+		# Sx
+        # for open age group, e.g., 85+ 
+        ## penultimate age group -> Last entry of S(x,n) is S( 80+,5) = T( 85) / T( 80)
+        ## for open age group itself: Sx cannot be computed due to trunaction Sx <- NA
+        LT$sx[nresage-1] <- LT$Tx[nresage]/LT$Tx[nresage-1]
+        LT$sx[nresage] <- NA
+        LT$ax[nresage] <- LT$ex[nresage] ## for open age group ax = ex
+	} 
+	rownames(LT) <- c(paste(LT$age[-nresage], pmax(LT$age[-1]-1,1), sep="-"), paste0(LT$age[nresage], "+"))
 	return(LT)
 }
 
@@ -1797,7 +1822,8 @@ create.pop.cluster <- function(nr.nodes, ...) {
 
 age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
-									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", verbose=TRUE) {
+									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
+									depratio=TRUE, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1836,9 +1862,30 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	if(is.null(countries)) {
 		countries <- mig$country_code
 		# filter out non-countries
-		locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
-		countries <- countries[countries %in% locs[locs$location_type==4, "country_code"]]
+		locs <- UNcountries()
+		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
+		countries <- countries[countries %in% locs]
 	} else mig <- mig[which(mig$country_code %in% countries),]
+	depratio.correction <- FALSE
+	if (depratio == TRUE || is.character(depratio)) {
+		# if it's character it is a name of an rda file; if it's TRUE, take the default file.
+		# must have objects depratioM and depratioF
+		# which are data frames with columns country_code, period and three dependency ratio 
+		# columns (for age groups 0-4, 5-9, 10-14).
+		# They represent ratios of that age group to age group 20-25.
+		edr <- new.env()
+		if(is.character(depratio))
+			load(depratio, envir=edr)
+		else data("migdepratio", envir=edr)
+		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
+			stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
+		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
+				|| !all(c('country_code', "period") %in% colnames(edr$depratioF)))
+			stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
+		ratio.colsM <- (1:ncol(edr$depratioM))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+		ratio.colsF <- (1:ncol(edr$depratioF))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+		depratio.correction <- TRUE
+	}
 	all.migM <- all.migF <- NULL
 	lcountries <- length(countries)
 	for(icountry in 1:lcountries) {
@@ -1869,7 +1916,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 			mortMy <- mortM[,year.col]
 			mortFy <- mortF[,year.col]
 			sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
-       		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
+      		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
 			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
 			else {			
@@ -1882,11 +1929,17 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {
-					if(mtype == 0) {					
-					 	migdata[[sex]] <- 2*migdata[[sex]]
-					 	for(i in 2:max.ages) {
-					       migdata[[sex]][i] <- migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
-					  	}
+					if(mtype == 0) { 
+					  # Migration distributed across the time interval.
+					  # In projections in this case, the migration is derived as 
+					  # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
+					  # Thus, here is the reverse of that. 
+					  # However, it can yield zig-zags, which are removed in the smoothing step.
+					  migdata[[sex]][1] <- 2*migdata[[sex]][1]
+						for(i in 2:max.ages) {
+					       migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+						}
+					  #stop('')
 					}
 					migdata[[sex]][ages.to.zero] <- 0
 					if(smooth) { #smoothing					
@@ -1906,6 +1959,14 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				}
 				netmigM <- migdata[['M']]
 				netmigF <- migdata[['F']]
+				if(depratio.correction) {
+					# correct dependency ratio
+					cntry <- country
+					rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
+					if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
+					rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
+					if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
+				}
 				if(rescale) {
 					s <- sum(netmigM + netmigF)
 					netmigM <- netmigM/s * totmigy
