@@ -1,3 +1,7 @@
+6.1-0 (04/21/2017)
+-----
+Added function project.pasfr for projecting PASFR outside of pop.predict (thanks to Igor Ribeiro).
+
 6.0-3 (11/29/2016)
 -----
 Added CITATION file and updated references with bayesPop JSS paper. 

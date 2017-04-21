@@ -5,7 +5,8 @@ import(
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
-importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", "sd")
+importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", 
+           "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 
 #exportPattern("^[[:alpha:]]+")
@@ -47,7 +48,8 @@ extract.trajectories.le,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
-age.specific.migration
+age.specific.migration,
+project.pasfr
 )
 
 # register S3 methods

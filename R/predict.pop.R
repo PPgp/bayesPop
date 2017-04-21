@@ -582,26 +582,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 	}
-	}
+	} # end if(!fixed.mx)
+	
 	# Get TFR
-	if(!is.null(inputs$tfr.file)) {
-		if(inputs$tfr.file == 'median_')
-			TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
-		else {
-			file.name <- inputs$tfr.file
-			if(!file.exists(file.name))
-				stop('File ', file.name, 
-					' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
-			if(verbose) cat('\nLoading ', file.name, '\n')
-			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-			TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
-			colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
-		} 
-	} else {
-		if(!is.null(inputs$tfr.sim.dir)) 
-			TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
-		else TFRpred <- .load.wpp.traj('tfr', wpp.year)
-	}
+	TFRpred <- .get.tfr.data(inputs, wpp.year, verbose=verbose)
 	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
@@ -674,6 +658,28 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
+}
+
+.get.tfr.data <- function(inputs,  wpp.year, verbose=FALSE) {
+  if(!is.null(inputs$tfr.file)) {
+    if(inputs$tfr.file == 'median_')
+      TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
+    else {
+      file.name <- inputs$tfr.file
+      if(!file.exists(file.name))
+        stop('File ', file.name, 
+             ' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
+      if(verbose) cat('\nLoading ', file.name, '\n')
+      TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+      TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
+      colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+    } 
+  } else {
+    if(!is.null(inputs$tfr.sim.dir)) 
+      TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
+    else TFRpred <- .load.wpp.traj('tfr', wpp.year)
+  }
+    return(TFRpred)
 }
 
 .set.inp.migration.if.needed <- function(inputs, inpc, country) {
