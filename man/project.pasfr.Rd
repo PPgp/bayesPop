@@ -1,5 +1,6 @@
 \name{project.pasfr}
 \alias{project.pasfr}
+\alias{project.pasfr.traj}
 
 \title{
 Projections of Percent Age-Specific Fertily Rate
@@ -10,6 +11,10 @@ The projections of percent age-specific fertility rate (PASFR) is normally compu
 \usage{
 project.pasfr(inputs = NULL, present.year = 2015, end.year = 2100, 
     wpp.year = 2015, digits = 2, out.file.name = "percentASFR.txt")
+    
+project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
+    present.year = 2015, end.year = 2100, wpp.year = 2015, 
+    digits = 2, out.file.name = "percentASFRtraj.txt")
 }
 
 \arguments{
@@ -19,9 +24,13 @@ project.pasfr(inputs = NULL, present.year = 2015, end.year = 2100,
   \item{wpp.year}{Year for which WPP data is used if one of the \code{inputs} components is left out.}
   \item{digits}{Number of decimal places in the results.}
   \item{out.file.name}{Name of the resulting file. If \code{NULL} nothing is written.}
+  \item{countries}{Vector of numerical country codes. By default the function is applied to all countries.}
+  \item{nr.traj}{Number of trajectories on which the function should be applied. By default all trajectories are taken. Otherwise they are thinned appropriately.}
 }
 \details{
-The median total fertility rate is derived from the inputs and PASFR corresponding to this median is projected using the method from Sevcikova et al (2015).
+For \code{project.pasfr}, the median total fertility rate is derived from the inputs and PASFR corresponding to this median is projected using the method from Sevcikova et al (2015).
+
+For \code{project.pasfr.traj}, the PASFR is projected for single trajectories of TFR.
 }
 \value{
 Returns invisible data frame with the projected PASFR. 
@@ -43,6 +52,9 @@ Igor Ribeiro, Hana Sevcikova
 inputs <- list(tfr.sim.dir=file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output"))
 pasfr <- project.pasfr(inputs, out.file.name=NULL)
 head(pasfr)
+
+pasfr.traj <- project.pasfr.traj(inputs, out.file.name=NULL)
+head(pasfr.traj)
 }
 
 \keyword{ datagen }% use one of  RShowDoc("KEYWORDS")

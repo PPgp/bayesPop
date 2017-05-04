@@ -1,6 +1,6 @@
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2015, wpp2012, plyr, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, parallel, abind, wpp2015, wpp2012, plyr, fields, googleVis, rworldmap, reshape2
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
@@ -49,7 +49,8 @@ cohorts,
 pop.cohorts.plot,
 mac.expression,
 age.specific.migration,
-project.pasfr
+project.pasfr,
+project.pasfr.traj
 )
 
 # register S3 methods
