@@ -1862,6 +1862,8 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	if(is.null(countries)) {
 		countries <- mig$country_code
 		# filter out non-countries
+		if(!exists("UNlocations")) 
+            bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		locs <- UNcountries()
 		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		countries <- countries[countries %in% locs]
