@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2015,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -1820,7 +1820,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
 									depratio=TRUE, verbose=TRUE) {
@@ -1862,6 +1862,8 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	if(is.null(countries)) {
 		countries <- mig$country_code
 		# filter out non-countries
+		if(!exists("UNlocations")) 
+		    bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		locs <- UNcountries()
 		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		countries <- countries[countries %in% locs]
