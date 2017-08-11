@@ -150,16 +150,16 @@ project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, presen
             last.median <- country.medians.TFRpred[length(country.medians.TFRpred)]
             country.obs.tfr <- bayesTFR:::get.tfr.reconstructed(TFRpred$tfr_matrix_reconstructed, TFRpred$mcmc.set$meta)[,country.obj$index]
             #country.obs.TFRpred <- country.obs.tfr[1:if(!is.null(TFRpred$present.year.index)) TFRpred$present.year.index else nrow(country.obs.tfr),country.obj$index]
-            country.tfr.traj <- bayesTFR:::get.tfr.trajectories(TFRpred, country=country.obj$code)
+            country.tfr.traj <- bayesTFR::get.tfr.trajectories(TFRpred, country=country.obj$code)
             #country.tfr <- c(country.obs.TFRpred, country.medians.TFRpred)
         } else {
             country.tfr.df <- TFRpred[TFRpred$country_code==country$code, c('year', 'trajectory', 'value')]
-            country.tfr.traj <- subset(country.tfr.df, year %in% c(max(obs.years), proj.years))
+            country.tfr.traj <- country.tfr.df[country.tfr.df$year %in% c(max(obs.years), proj.years),]
             country.tfr.traj <- reshape(country.tfr.traj, direction="wide", idvar="year", timevar="trajectory")
             rownames(country.tfr.traj) <- country.tfr.traj$year
             country.tfr.traj <- country.tfr.traj[,-which(colnames(country.tfr.traj)=="year")]
             last.median <- apply(country.tfr.traj, 1, median)[nrow(country.tfr.traj)]
-            country.obs <- subset(country.tfr.df, year %in% obs.years)
+            country.obs <- country.tfr.df[country.tfr.df$year %in% obs.years,]
             # should be the same values over trajectories, so take mean to collapse to one record per year
             country.obs <- aggregate(value ~ year, country.obs, mean) 
             country.obs.tfr <- country.obs$value

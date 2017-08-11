@@ -1,3 +1,7 @@
+6.1-1 (08/09/2017)
+-----
+Accent syntax changed in CITATION (request from CRAN).
+
 6.1-0 (04/21/2017)
 -----
 Added function project.pasfr for projecting PASFR outside of pop.predict (thanks to Igor Ribeiro).

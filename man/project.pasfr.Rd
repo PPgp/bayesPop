@@ -49,13 +49,14 @@ Igor Ribeiro, Hana Sevcikova
 }
 
 \examples{
+\dontrun{
 inputs <- list(tfr.sim.dir=file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output"))
 pasfr <- project.pasfr(inputs, out.file.name=NULL)
 head(pasfr)
 
 pasfr.traj <- project.pasfr.traj(inputs, out.file.name=NULL)
 head(pasfr.traj)
-}
+}}
 
 \keyword{ datagen }% use one of  RShowDoc("KEYWORDS")
 \keyword{ manip }% __ONLY ONE__ keyword per line
