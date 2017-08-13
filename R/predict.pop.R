@@ -1823,7 +1823,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
-									depratio=TRUE, verbose=TRUE) {
+									depratio=wpp.year == 2015, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1878,7 +1878,7 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 		edr <- new.env()
 		if(is.character(depratio))
 			load(depratio, envir=edr)
-		else data("migdepratio", envir=edr)
+		else do.call("data", list(paste0("migdepratio_", wpp.year), envir=edr))
 		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
 			stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
 		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
