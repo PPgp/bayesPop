@@ -294,3 +294,4 @@ test.life.table <- function(){
 	stopifnot(all.equal(sx4, sx5))
 	unlink(sim.dir, recursive=TRUE)
 }
+#TODO: test project.pasfr function
