@@ -1928,9 +1928,17 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 				B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
 				netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
 				netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
+				stop("")
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {
+				    # In wpp2017, for some past years population is reported only up to 85+. 
+				    # Set migration of the open age group to 0. 
+				    if(any(is.na(pop1m[1:max.ages]))) {
+				        # find the index of the first NA 
+				        ina <- which(is.na(migdata[[sex]])==TRUE)[1]
+				        migdata[[sex]][ina-1] = 0
+				    }
 					if(mtype == 0) { 
 					  # Migration distributed across the time interval.
 					  # In projections in this case, the migration is derived as 
