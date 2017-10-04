@@ -11,7 +11,7 @@ Functions for obtaining life table quantities.
 LifeTableMx(mx, sex = c("Male", "Female"), include01 = TRUE,
 	radix = 1, open.age = 130)
 
-LifeTableMxCol(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), \dots)
+LifeTableMxCol(mx, colname = c("Lx", "lx", "qx", "mx", "dx", "Tx", "sx", "ex", "ax"), \dots)
 }
 \arguments{
   \item{mx}{Vector of age-specific mortality rates nmx. The elements correspond to 1m0, 4m1, 5m5, 5m10, \dots. It can have no more than 28 elements which corresponds to age up to 130. In the \code{LifeTableMxCol} function, this argument can be a two-dimensional matrix with first dimension being the age.}

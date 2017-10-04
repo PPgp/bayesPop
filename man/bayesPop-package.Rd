@@ -12,8 +12,8 @@ The package allows to generate population projections for all countries of the w
 \tabular{ll}{
 Package: \tab bayesPop\cr
 Type: \tab Package\cr
-Version: \tab 6.1-1\cr
-Date: \tab 2017-08-09\cr
+Version: \tab 6.2-1\cr
+Date: \tab 2017-09-29\cr
 License: \tab GPL (>=2)\cr
 URL: \tab \url{https://bayespop.csss.washington.edu}\cr 
 }
@@ -48,10 +48,12 @@ H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Spec
 \dontrun{
 sim.dir <- tempfile()
 # Generates population projection for one country
-country <- 'Netherlands'
+country <- "Netherlands"
 pred <- pop.predict(countries=country, output.dir=sim.dir)
 summary(pred, country)
 pop.trajectories.plot(pred, country)
+dev.off()
+pop.trajectories.plot(pred, country, sum.over.ages=TRUE)
 pop.pyramid(pred, country)
 pop.pyramid(pred, country, year=2100, age=1:26)
 unlink(sim.dir, recursive=TRUE)
@@ -65,19 +67,19 @@ unlink(sim.dir, recursive=TRUE)
 # For a toy simulation, set the number of iterations (iter) 
 # to a small number.
 \dontrun{
-sim.dir.tfr <- 'directory/for/TFR'
-sim.dir.e0 <-  'directory/for/e0'
-sim.dir.pop <- 'directory/for/pop'
+sim.dir.tfr <- "directory/for/TFR"
+sim.dir.e0 <-  "directory/for/e0"
+sim.dir.pop <- "directory/for/pop"
 
 # Estimate TFR parameters (speed-up by including parallel=TRUE)
-run.tfr.mcmc(iter='auto', output.dir=sim.dir.tfr, seed=1)
+run.tfr.mcmc(iter="auto", output.dir=sim.dir.tfr, seed=1)
 
 # Predict TFR (if iter above < 4000, reduce burnin and nr.traj accordingly)
 tfr.predict(sim.dir=sim.dir.tfr, nr.traj=2000, burnin=2000)
 
 # Estimate e0 parameters (females) (speed-up by including parallel=TRUE)
 # Can be run independently of the two commands above
-run.e0.mcmc(sex='F', iter='auto', output.dir=sim.dir.e0, seed=1)
+run.e0.mcmc(sex="F", iter="auto", output.dir=sim.dir.e0, seed=1)
 
 # Predict female and male e0	
 # (if iter above < 22000, reduce burnin and nr.traj accordingly)
@@ -86,10 +88,10 @@ e0.predict(sim.dir=sim.dir.e0, nr.traj=2000, burnin=20000)
 # Population prediction
 pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
     inputs = list(tfr.sim.dir=sim.dir.tfr, 
-                  e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
-pop.trajectories.plot(pred, 'Madagascar', nr.traj=50, sum.over.ages=TRUE)
-pop.trajectories.table(pred, 'Madagascar')
+                  e0F.sim.dir=sim.dir.e0, e0M.sim.dir="joint_"))
+pop.trajectories.plot(pred, "Madagascar", nr.traj=50, sum.over.ages=TRUE)
+pop.trajectories.table(pred, "Madagascar")
 }
 }
 % reproducing example data in the package:
-% pred <- pop.predict(countries=c(528,218), nr.traj=5, output.dir=sim.dir, replace.output=TRUE)
+% pred <- pop.predict(countries=c(528,218), nr.traj=3, output.dir=sim.dir, replace.output=TRUE)

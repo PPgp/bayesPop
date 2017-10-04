@@ -1,3 +1,7 @@
+6.2-0/1 (09/29/2017)
+------
+Changes needed to work with wpp2017, including setting new default for wpp.year.
+
 6.1-1 (08/09/2017)
 -----
 Accent syntax changed in CITATION (request from CRAN).

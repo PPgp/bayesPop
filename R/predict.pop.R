@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2015,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -1215,7 +1215,6 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 			bx <- bx/sum(bx) # must sum to 1
 			return(bx)
 		}
-
 	Mxe.m <- as.matrix(male.mx)
 	Mxe.m <- rbind(Mxe.m, 
 			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
@@ -1266,9 +1265,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
-	years <- substr(colnames(male.mx),1,4)
+	years <- as.integer(substr(colnames(male.mx),1,4))
+	first.year <- years[1]
+	has.nas.in.old.ages <- FALSE
+	if(any(is.na(male.mx[21, ]))) {# remove columns that have NAs for old ages
+	    first.year <- years[which(!is.na(male.mx[21,]))[1]]
+	    start.year <- max(start.year, first.year)
+	    has.nas.in.old.ages <- TRUE
+	}
 	ns <- which(years == start.year)
-	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne])
+	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
     avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
     smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
@@ -1276,7 +1282,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
-    	aids.idx <- which(years < 1985)
+    	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     #avg.ax <- TRUE
@@ -1415,7 +1421,9 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex])[1:21,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
-		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(pop[[sex]])), 
+		p <- pop[[sex]]
+		p[is.na(p)] <- 0 # set pop for ages with NA to 0
+		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
 		#stop('')
@@ -1820,10 +1828,10 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
-									depratio=TRUE, verbose=TRUE) {
+									depratio=wpp.year == 2015, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1878,7 +1886,7 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		edr <- new.env()
 		if(is.character(depratio))
 			load(depratio, envir=edr)
-		else data("migdepratio", envir=edr)
+		else do.call("data", list(paste0("migdepratio_", wpp.year), envir=edr))
 		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
 			stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
 		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
@@ -1931,6 +1939,13 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {
+				    # In wpp2017, for some past years population is reported only up to 85+. 
+				    # Set migration of the open age group to 0. 
+				    if(any(is.na(pop1m[1:max.ages]))) {
+				        # find the index of the first NA 
+				        ina <- which(is.na(migdata[[sex]])==TRUE)[1]
+				        migdata[[sex]][ina-1] = 0
+				    }
 					if(mtype == 0) { 
 					  # Migration distributed across the time interval.
 					  # In projections in this case, the migration is derived as 
