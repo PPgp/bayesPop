@@ -6,13 +6,13 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
 	for(traj.name in names(datasets)) {
 		adj.name <- datasets[[traj.name]]
 		dif.name <- paste0('AdjDpop', adj.name)
+		
 		if(is.null(adj.env[[dif.name]])) {
 			#print(c(dif.name, adj.name))
 			q <- quant.env[[paste0('quantiles', adj.name)]]
 			adjust.quantiles(q, adj.name, wpp.year=wpp.year, env=adj.env)
 		}
 		dif <- if(length(dim(adj.env[[dif.name]]))>2) adj.env[[dif.name]][country.char,,] else adj.env[[dif.name]][country.char,,drop=FALSE]
-
 		res <- env[[traj.name]]		
 		if(length(dim(res))>2) { # includes age
 			res21 <- aaply(res[1:21,,], 3, '-', dif)
@@ -23,6 +23,7 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
 			res <- aperm(res, c(2,1))
 		}
 		if(is.list(res)) stop('')
+		if(traj.name == 'totpf') stop('')
 		env[[traj.name]] <- res
 	}
 }
@@ -122,7 +123,8 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	if(is.null(e)) e <- new.env()
 	if(!prediction.only) {
 		dataset <- paste0('pop', sex)
-		do.call('data', list(dataset, package='wpp2012', envir=e))
+		if.not.exists.load(dataset, e, ...)
+		#do.call('data', list(dataset, package='wpp2012', envir=e))
 		pop.obs <- if(sum.over.ages) sum.by.country(dataset) else sum.by.country.and.age(dataset)
 	}
 	dataset <- paste0('pop', sex, 'projMed')

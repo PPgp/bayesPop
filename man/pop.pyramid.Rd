@@ -23,17 +23,17 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
 }
 \usage{
 \method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
-	indicator = c("P", "B", "D"), pi = c(80, 95), 
+    indicator = c("P", "B", "D"), pi = c(80, 95), 
     proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    pyr1.par = list(border='black', col=NA, density=NULL, height=0.9),
+    pyr1.par = list(border="black", col=NA, density=NULL, height=0.9),
     pyr2.par = list(density = -1, height = 0.3), 
-    col.pi = NULL, ann = par('ann'), axes = TRUE, grid = TRUE, 
+    col.pi = NULL, ann = par("ann"), axes = TRUE, grid = TRUE, 
     cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
 pop.pyramidAll(pop.pred, year = NULL,
-    output.dir = file.path(getwd(), 'pop.pyramid'),
+    output.dir = file.path(getwd(), "pop.pyramid"),
     output.type = "png", one.file = FALSE, verbose = FALSE, \dots)
 	
 \method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
@@ -41,22 +41,22 @@ pop.pyramidAll(pop.pred, year = NULL,
     proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    col = rainbow, col.traj = '#00000020', lwd = 2, ann = par('ann'), axes = TRUE, 
+    col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), axes = TRUE, 
     grid = TRUE, cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
-    output.dir = file.path(getwd(), 'pop.traj.pyramid'),
+    output.dir = file.path(getwd(), "pop.traj.pyramid"),
     output.type = "png", one.file = FALSE, verbose = FALSE, \dots)
 	
 \method{plot}{bayesPop.pyramid}(x, \dots)
 
 \method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, 
-	indicator = c("P", "B", "D"), pi = c(80, 95), 
+    indicator = c("P", "B", "D"), pi = c(80, 95), 
     proportion = FALSE, age = 1:21, nr.traj = 0, sort.pi=TRUE, pop.max = NULL, \dots)
     
-\method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = 'observed', 
+\method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = "observed", 
     is.proportion = FALSE, ages = NULL, pop.max = NULL, 
-    LRmain = c('Male', 'Female'), LRcolnames = c('male', 'female'), CI = NULL, \dots)
+    LRmain = c("Male", "Female"), LRcolnames = c("male", "female"), CI = NULL, \dots)
     
 \method{get.bPop.pyramid}{matrix}(data, \dots)
 
@@ -153,16 +153,16 @@ data <- read.table(file.path(find.package("bayesPop"), "ex-data", "popestimates_
     header=TRUE, row.names=1)
 # extract data for two pyramids and put it into the right format
 head(data)
-WA <- data[,c('WA.male', 'WA.female')]; colnames(WA) <- c('male', 'female')
-King <- data[,c('King.male', 'King.female')]; colnames(King) <- c('male', 'female')
+WA <- data[,c("WA.male", "WA.female")]; colnames(WA) <- c("male", "female")
+King <- data[,c("King.male", "King.female")]; colnames(King) <- c("male", "female")
 # create and plot a bayesPop.pyramid object
-pyramid <- get.bPop.pyramid(list(WA, King), legend=c('Washington', 'King'))
-plot(pyramid, main='Population in 2011', pyr2.par=list(height=0.7, col='violet', border='violet'))
+pyramid <- get.bPop.pyramid(list(WA, King), legend=c("Washington", "King"))
+plot(pyramid, main="Population in 2011", pyr2.par=list(height=0.7, col="violet", border="violet"))
 # show data as proportions
-pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, legend=c('Washington', 'King'))
-pop.pyramid(pyramid.prop, main='Population in 2011 (proportions)',
-    pyr1.par=list(col='lightgreen', border='lightgreen', density=30), 
-    pyr2.par=list(col='darkred', border='darkred', density=50))
+pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, legend=c("Washington", "King"))
+pop.pyramid(pyramid.prop, main="Population in 2011 (proportions)",
+    pyr1.par=list(col="lightgreen", border="lightgreen", density=30), 
+    pyr2.par=list(col="darkred", border="darkred", density=50))
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

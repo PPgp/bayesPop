@@ -1,4 +1,4 @@
-project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.year=2015, digits=2, 
+project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.year=2017, digits=2, 
                           out.file.name="percentASFR.txt") {
   # Generate PASFR for given TFR using the kantorova.pasfr method.
   # This function allows to generate PASFR outside of a bayesPop simulation.
@@ -87,7 +87,7 @@ project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.yea
 }
 
 
-project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2015, end.year=2100, wpp.year=2015, 
+project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2015, end.year=2100, wpp.year=2017, 
                                digits=2, out.file.name="percentASFRtraj.txt") {
     # Generate trajectories of PASFR for given TFR using the kantorova.pasfr method.
     # ########
@@ -154,7 +154,7 @@ project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, presen
             #country.tfr <- c(country.obs.TFRpred, country.medians.TFRpred)
         } else {
             country.tfr.df <- TFRpred[TFRpred$country_code==country$code, c('year', 'trajectory', 'value')]
-            country.tfr.traj <- country.tfr.df[country.tfr.df$year > 2010,]
+            country.tfr.traj <- country.tfr.df[country.tfr.df$year %in% c(max(obs.years), proj.years),]
             country.tfr.traj <- reshape(country.tfr.traj, direction="wide", idvar="year", timevar="trajectory")
             rownames(country.tfr.traj) <- country.tfr.traj$year
             country.tfr.traj <- country.tfr.traj[,-which(colnames(country.tfr.traj)=="year")]

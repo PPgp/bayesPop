@@ -14,8 +14,8 @@ Accessing Trajectories
 Obtain projection trajectories of population and vital events/rates. \code{get.pop} allows to access trajectories using a basic component of an expression. \code{get.pop.ex} and \code{get.pop.exba} returns results of an expression defined \dQuote{by time} and \dQuote{by age}, respectively. \code{get.trajectory.indices} creates a link to the probabilistic components of the projection by providing indices to the trajectories of TFR, e0 and migration. \code{extract.trajectories.eq} returns trajectories (of population or expression) and their indices that are closest to given values or a quantile. Similarly, functions \code{extract.trajectories.ge} and \code{extract.trajectories.le} return trajectories and their indices that are greater equal and less equal, respectively, to the given values or a quantile.
 }
 \usage{
-pop.trajectories(pop.pred, country, sex = c('both', 'male', 'female'), 
-    age = 'all', ...)
+pop.trajectories(pop.pred, country, sex = c("both", "male", "female"), 
+    age = "all", ...)
 
 get.pop(object, pop.pred, aggregation = NULL, observed = FALSE, ...)
 

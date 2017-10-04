@@ -10,7 +10,7 @@ Aggregation of existing countries' population projections into projections of gi
 }
 \usage{
 pop.aggregate(pop.pred, regions, 
-    input.type = c('country', 'region'), name = input.type,
+    input.type = c("country", "region"), name = input.type,
     inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL),
     my.location.file = NULL, verbose = FALSE, \dots)
     
@@ -105,7 +105,7 @@ pred <- pop.predict(countries=c(528,218,450), output.dir=sim.dir)
 aggr <- pop.aggregate(pred, 900) # aggregating World (i.e. all countries available in pred)
 pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
 # countries over which we aggregated:
-UNlocations[UNlocations[,'country_code'] %in% aggr$aggregated.countries[['900']],]
+subset(UNlocations, country_code \%in\% aggr$aggregated.countries[["900"]])
 unlink(sim.dir, recursive=TRUE)}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

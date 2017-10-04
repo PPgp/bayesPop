@@ -2,7 +2,7 @@ useDynLib(bayesPop, .registration = TRUE)
 
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2015, wpp2012, plyr, fields, googleVis, rworldmap, reshape2
+    bayesTFR, bayesLife, parallel, abind, wpp2017, wpp2012, plyr, fields, googleVis, rworldmap, reshape2
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")

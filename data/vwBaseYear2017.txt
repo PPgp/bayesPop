@@ -1,0 +1,234 @@
+country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortalityType	AgeMortalityPattern	LatestAgeMortalityPattern	SmoothLatestAgeMortalityPattern	PasfrNorm	PasfrGlobalNorm	PasfrFarEastAsianNorm	PasfrSouthAsianNorm
+4	Afghanistan	PG	0	1950	0	0	Relational model	CD West	1	0	Global Norm	0	0	0
+8	Albania	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+12	Algeria	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+16	American Samoa	DG	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+20	Andorra	TS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+24	Angola	FP	0	1950	0	1	Model life tables	CD North	1	1	Global Norm	0	0	0
+660	Anguilla	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+28	Antigua and Barbuda	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+32	Argentina	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+51	Armenia	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+533	Aruba	DG	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+36	Australia	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+40	Austria	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+31	Azerbaijan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+44	Bahamas	DG	0	1950	9	0	Model life tables	CD West	1	1	Global Norm	0	0	0
+48	Bahrain	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+50	Bangladesh	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	1
+52	Barbados	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+112	Belarus	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+56	Belgium	TS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+84	Belize	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+204	Benin	VGT	0	1950	0	0	Model life tables	CD South	1	0	Global Norm	0	0	0
+60	Bermuda	CS	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+64	Bhutan	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+68	Bolivia (Plurinational State of)	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+70	Bosnia and Herzegovina	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+72	Botswana	KA	0	1950	0	1	Model life tables	CD West	1	1	Global Norm	0	0	0
+76	Brazil	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+92	British Virgin Islands	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+96	Brunei Darussalam	LN	0	1950	9	0	Relational model	CD West	1	1	Global Norm	0	0	0
+100	Bulgaria	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+854	Burkina Faso	VGT	0	1950	0	1	Model life tables	CD South	1	0	Global Norm	0	0	0
+108	Burundi	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+116	Cambodia	VK	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+120	Cameroon	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+124	Canada	FP	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+132	Cabo Verde	LB	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+535	Caribbean Netherlands	CS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+136	Cayman Islands	DG	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+140	Central African Republic	DG	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+148	Chad	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+830	Channel Islands	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+152	Chile	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+156	China	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+344	"China, Hong Kong SAR"	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	1	0
+446	"China, Macao SAR"	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	1	0
+158	"China, Taiwan Province of China"	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	1	0
+170	Colombia	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+174	Comoros	CS	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+178	Congo	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+184	Cook Islands	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+188	Costa Rica	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+384	Cote d'Ivoire	DG	0	1950	9	1	Model life tables	CD North	1	1	Global Norm	0	0	0
+191	Croatia	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+192	Cuba	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+531	Curacao	CS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+196	Cyprus	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+203	Czech Republic	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+408	Dem. People's Rep. of Korea	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+180	Dem. Rep. of the Congo	CS	0	1950	0	0	Relational model	CD North	0	0	Global Norm	0	0	0
+208	Denmark	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+262	Djibouti	TS	0	1950	9	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+212	Dominica	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+214	Dominican Republic	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+218	Ecuador	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+818	Egypt	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+222	El Salvador	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+226	Equatorial Guinea	DG	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+232	Eritrea	TS	0	1950	9	1	Model life tables	CD North	0	0	Global Norm	0	0	0
+233	Estonia	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+231	Ethiopia	TS	0	1950	9	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+234	Faeroe Islands	KA	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+238	Falkland Islands (Malvinas)	LB	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+242	Fiji	DG	0	1950	0	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+246	Finland	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+250	France	TS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+254	French Guiana	LB	0	1950	0	0	Model life tables	CD West	1	0	Global Norm	0	0	0
+258	French Polynesia	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+266	Gabon	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+270	Gambia	VGT	0	1950	0	0	Relational model	CD South	1	0	Global Norm	0	0	0
+268	Georgia	KA	0	1950	0	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+276	Germany	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+288	Ghana	VGT	0	1950	0	1	Model life tables	CD South	1	0	Global Norm	0	0	0
+292	Gibraltar	LB	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+300	Greece	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+304	Greenland	CS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+308	Grenada	DG	0	1950	9	0	Model life tables	CD West	1	1	Global Norm	0	0	0
+312	Guadeloupe	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+316	Guam	CS	0	1950	9	0	Model life tables	CD West	1	0	Global Norm	0	0	0
+320	Guatemala	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+324	Guinea	VGT	0	1950	0	0	Model life tables	CD South	1	0	Global Norm	0	0	0
+624	Guinea-Bissau	TS	0	1950	0	1	Relational model	CD South	1	0	Global Norm	0	0	0
+328	Guyana	LB	0	1950	9	0	Relational model	CD West	1	1	Global Norm	0	0	0
+332	Haiti	DG	0	1950	9	1	Model life tables	CD West	1	1	Global Norm	0	0	0
+336	Holy See	LB	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+340	Honduras	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+348	Hungary	VK	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+352	Iceland	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+356	India	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	1
+360	Indonesia	LN	0	1950	9	0	Relational model	CD West	1	1	Global Norm	0	0	0
+364	Iran (Islamic Republic of)	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+368	Iraq	VK	0	1950	0	0	Relational model	CD West	1	1	Global Norm	0	0	0
+372	Ireland	LB	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+833	Isle of Man	LB	1	1950	0	0	Model life tables	CD North	0	0	Global Norm	0	0	0
+376	Israel	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+380	Italy	LB	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+388	Jamaica	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+392	Japan	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	1	0
+400	Jordan	VK	0	1950	0	0	Relational model	CD West	1	1	Global Norm	0	0	0
+398	Kazakhstan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+404	Kenya	DG	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+296	Kiribati	DG	0	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+414	Kuwait	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+417	Kyrgyzstan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+418	Lao People's Dem. Republic	TS	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+428	Latvia	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+422	Lebanon	VK	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+426	Lesotho	KA	0	1950	0	1	Model life tables	CD West	1	0	Global Norm	0	0	0
+430	Liberia	DG	0	1950	0	0	Model life tables	CD South	1	1	Global Norm	0	0	0
+434	Libya	VK	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+438	Liechtenstein	VK	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+440	Lithuania	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+442	Luxembourg	TS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+450	Madagascar	VGT	0	1950	0	0	Relational model	CD North	1	1	Global Norm	0	0	0
+454	Malawi	FP	0	1950	0	1	Model life tables	CD South	1	1	Global Norm	0	0	0
+458	Malaysia	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+462	Maldives	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+466	Mali	VGT	0	1950	0	0	Relational model	CD South	1	0	Global Norm	0	0	0
+470	Malta	LB	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+584	Marshall Islands	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+474	Martinique	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+478	Mauritania	VGT	0	1950	0	0	Relational model	CD South	1	0	Global Norm	0	0	0
+480	Mauritius	CS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+175	Mayotte	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+484	Mexico	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+583	Micronesia (Fed. States of)	DG	0	1950	0	0	Relational model	CD West	1	0	Global Norm	0	0	0
+492	Monaco	TS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+496	Mongolia	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+499	Montenegro	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	0	0	Global Norm	0	0	0
+500	Montserrat	DG	1	1950	9	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+504	Morocco	VK	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+508	Mozambique	FP	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+104	Myanmar	TS	0	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+516	Namibia	KA	0	1950	0	1	Model life tables	CD West	1	0	Global Norm	0	0	0
+520	Nauru	DG	1	1950	9	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+524	Nepal	PG	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+528	Netherlands	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+540	New Caledonia	DG	0	1950	9	0	Model life tables	CD West	1	0	Global Norm	0	0	0
+554	New Zealand	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+558	Nicaragua	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+562	Niger	VGT	0	1950	0	0	Relational model	CD South	1	0	Global Norm	0	0	0
+566	Nigeria	DG	0	1950	0	1	Model life tables	CD South	1	1	Global Norm	0	0	0
+570	Niue	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+580	Northern Mariana Islands	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+578	Norway	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	0	0
+512	Oman	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+586	Pakistan	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+585	Palau	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+591	Panama	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+598	Papua New Guinea	LN	0	1950	0	0	Relational model	UN Far Eastern	1	0	Global Norm	0	0	0
+600	Paraguay	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+604	Peru	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+608	Philippines	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+616	Poland	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+620	Portugal	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+630	Puerto Rico	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+634	Qatar	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+410	Republic of Korea	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	1	1	0
+498	Republic of Moldova	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+638	Reunion	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+642	Romania	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+643	Russian Federation	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+646	Rwanda	TS	0	1950	9	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+654	Saint Helena	LB	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+659	Saint Kitts and Nevis	DG	1	1950	9	0	Age specific mortality pattern	Life Tables	0	0	Global Norm	0	0	0
+662	Saint Lucia	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+666	Saint Pierre and Miquelon	CS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+670	Saint Vincent and the Grenadines	DG	0	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+882	Samoa	DG	0	1950	9	0	Relational model	UN Far Eastern	1	0	Global Norm	0	0	0
+674	San Marino	LB	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+678	Sao Tome and Principe	LB	0	1950	9	0	Model life tables	CD North	1	0	Global Norm	0	0	0
+682	Saudi Arabia	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+686	Senegal	VGT	0	1950	0	0	Relational model	CD South	0	0	Global Norm	0	0	0
+688	Serbia	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+690	Seychelles	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+694	Sierra Leone	CS	0	1950	0	0	Relational model	CD South	1	1	Global Norm	0	0	0
+702	Singapore	LN	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	1	0
+534	Sint Maarten (Dutch part)	CS	1	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+703	Slovakia	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+705	Slovenia	VK	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+90	Solomon Islands	DG	0	1950	0	0	Relational model	CD West	1	0	Global Norm	0	0	0
+706	Somalia	TS	0	1950	0	0	Model life tables	CD North	0	0	Global Norm	0	0	0
+710	South Africa	KA	0	1950	9	1	Model life tables	UN Far Eastern	1	0	Global Norm	0	0	0
+728	South Sudan	TS	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+724	Spain	LB	0	1950	0	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+144	Sri Lanka	PG	0	1950	0	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+275	State of Palestine	VK	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+729	Sudan	TS	0	1950	0	0	Model life tables	CD North	0	0	Global Norm	0	0	0
+740	Suriname	LB	0	1950	9	0	Model life tables	CD West	1	1	Global Norm	0	0	0
+748	Swaziland	KA	0	1950	0	1	Model life tables	CD West	1	0	Global Norm	0	0	0
+752	Sweden	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+756	Switzerland	TS	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+760	Syrian Arab Republic	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+762	Tajikistan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	0	Global Norm	0	0	0
+807	TFYR Macedonia	VK	0	1950	0	0	Age specific mortality pattern	Life Tables	0	0	Global Norm	0	0	0
+764	Thailand	CS	0	1950	0	0	Model life tables	CD West	1	1	Global Norm	0	0	0
+626	Timor-Leste	LN	0	1950	9	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+768	Togo	VGT	0	1950	0	1	Model life tables	CD South	1	1	Global Norm	0	0	0
+772	Tokelau	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+776	Tonga	DG	0	1950	0	0	Relational model	UN Far Eastern	1	0	Global Norm	0	0	0
+780	Trinidad and Tobago	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+788	Tunisia	VK	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+792	Turkey	DG	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+795	Turkmenistan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+796	Turks and Caicos Islands	DG	1	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+798	Tuvalu	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+800	Uganda	DG	0	1950	0	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+804	Ukraine	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	1	Global Norm	0	0	0
+784	United Arab Emirates	FP	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+826	United Kingdom	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+834	United Republic of Tanzania	KA	0	1950	9	1	Model life tables	CD North	1	0	Global Norm	0	0	0
+840	United States of America	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	1	0	Global Norm	0	0	0
+850	United States Virgin Islands	CS	0	1950	9	0	Model life tables	UN Far Eastern	1	0	Global Norm	0	0	0
+858	Uruguay	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+860	Uzbekistan	KA	0	1950	9	0	Age specific mortality pattern	Life Tables	0	0	Global Norm	0	0	0
+548	Vanuatu	DG	0	1950	9	0	Relational model	UN Far Eastern	1	0	Global Norm	0	0	0
+862	Venezuela (Bolivarian Republic of)	LB	0	1950	9	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+704	Viet Nam	CS	0	1950	0	0	Age specific mortality pattern	Life Tables	1	1	Global Norm	0	0	0
+876	Wallis and Futuna Islands	DG	1	1950	0	0	Model life tables	UN Far Eastern	0	0	Global Norm	0	0	0
+732	Western Sahara	VK	0	1950	0	0	Model life tables	CD West	0	0	Global Norm	0	0	0
+887	Yemen	FP	0	1950	0	0	Relational model	CD West	0	0	Global Norm	0	0	0
+894	Zambia	FP	0	1950	0	1	Model life tables	CD North	1	1	Global Norm	0	0	0
+716	Zimbabwe	KA	0	1950	0	1	Model life tables	CD North	1	1	Global Norm	0	0	0
