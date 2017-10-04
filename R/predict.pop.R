@@ -1215,7 +1215,6 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 			bx <- bx/sum(bx) # must sum to 1
 			return(bx)
 		}
-
 	Mxe.m <- as.matrix(male.mx)
 	Mxe.m <- rbind(Mxe.m, 
 			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
@@ -1266,9 +1265,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
-	years <- substr(colnames(male.mx),1,4)
+	years <- as.integer(substr(colnames(male.mx),1,4))
+	first.year <- years[1]
+	has.nas.in.old.ages <- FALSE
+	if(any(is.na(male.mx[21, ]))) {# remove columns that have NAs for old ages
+	    first.year <- years[which(!is.na(male.mx[21,]))[1]]
+	    start.year <- max(start.year, first.year)
+	    has.nas.in.old.ages <- TRUE
+	}
 	ns <- which(years == start.year)
-	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne])
+	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
     avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
     smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
@@ -1276,7 +1282,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
-    	aids.idx <- which(years < 1985)
+    	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     #avg.ax <- TRUE
@@ -1415,7 +1421,9 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex])[1:21,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
-		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(pop[[sex]])), 
+		p <- pop[[sex]]
+		p[is.na(p)] <- 0 # set pop for ages with NA to 0
+		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
 		#stop('')
@@ -1928,7 +1936,6 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 				B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
 				netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
 				netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
-				stop("")
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {

@@ -111,7 +111,8 @@ pop.trajectories.table(pred,
 pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
 
 \dontrun{
-# potential support ratio - map (with only two countries)
+# potential support ratio - map (with the two countries
+#       contained in pred object)
 pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")}
 
 # proportion of 0-4 years old to whole population - export to an ASCII file

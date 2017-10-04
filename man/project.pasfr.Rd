@@ -10,10 +10,10 @@ The projections of percent age-specific fertility rate (PASFR) is normally compu
 }
 \usage{
 project.pasfr(inputs = NULL, present.year = 2015, end.year = 2100, 
-    wpp.year = 2015, digits = 2, out.file.name = "percentASFR.txt")
+    wpp.year = 2017, digits = 2, out.file.name = "percentASFR.txt")
     
 project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
-    present.year = 2015, end.year = 2100, wpp.year = 2015, 
+    present.year = 2015, end.year = 2100, wpp.year = 2017, 
     digits = 2, out.file.name = "percentASFRtraj.txt")
 }
 

@@ -87,7 +87,7 @@ project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.yea
 }
 
 
-project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2015, end.year=2100, wpp.year=2015, 
+project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2015, end.year=2100, wpp.year=2017, 
                                digits=2, out.file.name="percentASFRtraj.txt") {
     # Generate trajectories of PASFR for given TFR using the kantorova.pasfr method.
     # ########
