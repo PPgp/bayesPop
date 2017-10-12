@@ -23,7 +23,7 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
 			res <- aperm(res, c(2,1))
 		}
 		if(is.list(res)) stop('')
-		if(traj.name == 'totpf') stop('')
+		#if(traj.name == 'totpf') stop('')
 		env[[traj.name]] <- res
 	}
 }

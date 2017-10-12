@@ -294,4 +294,18 @@ test.life.table <- function(){
 	stopifnot(all.equal(sx4, sx5))
 	unlink(sim.dir, recursive=TRUE)
 }
+
+test.adjustment <- function() {
+    test.name <- 'Adjustments'
+    sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
+    pred <- get.pop.prediction(sim.dir)
+    med <- pop.trajectories.table(pred, "Ecuador")[,"median"]
+    adj.med <- pop.trajectories.table(pred, "Ecuador", adjust=TRUE)[,"median"]
+    # from wpp2017 popproj dataset:
+    #data(popproj, package="wpp2017")
+    #should.be <- unlist(subset(popproj, name=="Ecuador")[,c("2080", "2090", "2100")])
+    should.be <- c(24876.80, 24725.84, 24320.58) 
+    stopifnot(all.equal(adj.med[c("2080", "2090", "2100")], should.be, 
+                        tolerance = 0.01, check.attributes = FALSE))
+}
 #TODO: test project.pasfr function
