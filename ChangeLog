@@ -1,3 +1,8 @@
+6.2-2 (10/11/2017)
+-----
+Fixed bug in adjusting function.
+Unit test for adjustments.
+
 6.2-0/1 (09/29/2017)
 ------
 Changes needed to work with wpp2017, including setting new default for wpp.year.
