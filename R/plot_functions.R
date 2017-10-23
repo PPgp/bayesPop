@@ -353,7 +353,7 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 			age.idx <- pop.observed$age.idx
 			end.time.label <- TRUE
 		}		
-		ylim.loc <- c(min(pop.median), max(pop.median))		
+		ylim.loc <- c(min(pop.median, na.rm=TRUE), max(pop.median, na.rm=TRUE))		
 		year.label <- get.pop.observed.periods(pop.pred, end.time.only=end.time.label)[projection.index]
 		if(length(age.idx)<21) last.open <- FALSE
 	}

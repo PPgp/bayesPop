@@ -402,6 +402,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 			stop('Wrong present.year. ', present.year, ' not available in the ', dataset.name, ' file.\nAvailable years: ',
 				paste(num.columns, collapse=', '))
 		}
+		POP0[is.na(POP0)] <- 0
 		num.columns <- num.columns[which(as.integer(num.columns)<= present.year)]
 		pop.ini.matrix[[sex]] <- POP0[,num.columns, drop=FALSE]
 		dimnames(pop.ini.matrix[[sex]]) <- list(paste(POP0[,'country_code'], POP0[,'age'], sep='_'), 

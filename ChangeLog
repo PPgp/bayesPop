@@ -1,3 +1,8 @@
+6.2-3 (10/22/2017)
+-----
+Replace NA values of historical population with 0. 
+(In wpp2017 the open age group for years before 1990 is 85+ and thus the pop datasets are NA for old ages. This was problematic in various sum and plotting functions.)
+
 6.2-2 (10/11/2017)
 -----
 Fixed bug in adjusting function.
