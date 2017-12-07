@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- FALSE
+CRAN <- TRUE
 warn <- options('warn')
 options(warn=2)
 test.expressions()
