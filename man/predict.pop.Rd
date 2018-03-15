@@ -59,6 +59,8 @@ The population projection is computed using the Cohort Component method and is b
 
 The projection is generated sequentially country by country. Results are stored in a sub-directory of \code{output.dir} called \file{prediction}. There is one binary file per country, called \file{totpop_country\eqn{x}.rda}, where \eqn{x} is the country code. It contains six objects: \code{totp}, \code{totpf}, \code{totpm} (trajectories of total population, age-specific female and age-specific male, respectively),  \code{totp.hch}, \code{totpf.hch}, \code{totpm.hch} (the UN half-child variant for total population, age-specific female and age-specific male, respectively). Optionally, if \code{keep.vital.events} is \code{TRUE}, there is an additional file per country, called \file{vital_events_country\eqn{x}.rda}, containing the following objects: \code{btm}, \code{btf} (trajectories for births by age of mothers for male and female child, respectively), \code{deathsm}, \code{deathsf} (trajectories for age-specific male and female deaths, respectively), \code{asfert} (trajectories of age-specific fertility), \code{mxm}, \code{mxf} (trajectories of male and female age-specific mortality rates), \code{migm}, \code{migf} (if used, these are trajectories of male and female age-specific migration), \code{btm.hch}, \code{btf.hch}, \code{deathsm.hch}, \code{deathsf.hch}, \code{asfert.hch}, \code{mxm.hch}, \code{mxf.hch} (the UN half-child variant for age- and sex-specific births, deaths, fertility rates and mortality rates).  An object of class \code{bayesPop.prediction} is stored in the same directory in a file \file{prediction.rda}. It is updated every time a country projection is finished.
 
+See \code{\link{pop.trajectories}} for extracting trajectories.
+
 To access a previously stored prediction object, use \code{\link{get.pop.prediction}}.
 }
 \value{
@@ -103,7 +105,7 @@ Hana Sevcikova, Thomas Buettner, based on code of Nan Li and helpful comments fr
 %}
 
 \seealso{
-\code{\link{pop.trajectories.plot}}, \code{\link{pop.pyramid}}, \code{\link{get.pop.prediction}}, \code{\link{age.specific.migration}}
+\code{\link{pop.trajectories.plot}}, \code{\link{pop.pyramid}}, \code{\link{pop.trajectories}}, \code{\link{get.pop.prediction}}, \code{\link{age.specific.migration}}
 }
 \examples{
 \dontrun{

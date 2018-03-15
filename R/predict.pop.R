@@ -650,6 +650,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if(is.null(pattern.file)) 
         vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
     else vwBase <- read.pop.file(pattern.file)
+    if(!is.factor(vwBase$PasfrNorm))
+        vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
     MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
     
     create.pattern <- function(dataset, columns) {

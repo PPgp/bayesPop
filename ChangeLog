@@ -1,3 +1,10 @@
+6.2-4 (03/15/2018)
+-----
+Fixed a bug that caused the projection to fail when the option 
+stringsAsFactors was set to FALSE (reported by Jim Oeppen).
+
+Fixed an issue with PASFR when projecting beyond 2100. 
+
 6.2-3 (10/22/2017)
 -----
 Replace NA values of historical population with 0. 
