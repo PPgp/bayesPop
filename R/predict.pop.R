@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2015,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -18,7 +18,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, replace.output=FALSE, 
+						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, 
+						replace.output=FALSE, 
 						use.migration.model=FALSE, balance.migration=FALSE,
 						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
@@ -33,12 +34,12 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 			stop('Prediction in ', output.dir,
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
-		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output && !balance.migration) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
-								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, all.countries=FALSE, 
+								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, fixed.pasfr=pred$inputs$fixed.pasfr, all.countries=FALSE, 
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
 								verbose=verbose)
@@ -47,7 +48,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
-		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, all.countries=FALSE, verbose=verbose)
+		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
+		                          all.countries=FALSE, verbose=verbose)
 	}
 	outdir <- file.path(output.dir, 'predictions')
 	if(use.migration.model || balance.migration) {
@@ -87,7 +89,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 	} 
 	if(use.migration.model || balance.migration)
 		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
-					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
+					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=inp$fixed.pasfr, 
 					function.inputs=inputs, rebalance=balance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 
 		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
@@ -212,10 +214,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
-			migpred <- .get.migration.one.trajectory(FALSE, inpc, itraj)			
+			migpred <- .get.migration.one.trajectory(FALSE, inpc, itraj)
 			popres <- StoPopProj(npred, pop.ini, LTres, asfr, inpc$SRB, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
-			
+
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -412,7 +414,7 @@ read.bayesPop.file <- function(file)
 	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
-						all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
+                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -426,6 +428,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 			stop('Wrong present.year. ', present.year, ' not available in the ', dataset.name, ' file.\nAvailable years: ',
 				paste(num.columns, collapse=', '))
 		}
+		POP0[is.na(POP0)] <- 0
 		num.columns <- num.columns[which(as.integer(num.columns)<= present.year)]
 		pop.ini.matrix[[sex]] <- POP0[,num.columns, drop=FALSE]
 		dimnames(pop.ini.matrix[[sex]]) <- list(paste(POP0[,'country_code'], POP0[,'age'], sep='_'), 
@@ -464,66 +467,25 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	
 	estim.years <- cols.starty[start.index:present.index] + 3
 	# Get sex ratio at birth
-	if(is.null(inputs$srb)) 
-		SRB <- load.wpp.dataset('sexRatio', wpp.year)
-	else SRB <- read.pop.file(inputs$srb)
-	names.SRB.data <- names(SRB)
-	num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.SRB.data) # index of year-columns
-	cols.starty <- as.integer(substr(names.SRB.data[num.columns], 1,4))
-    cols.endy <- as.integer(substr(names.SRB.data[num.columns], 6,9))
-	start.index <- which((cols.starty <= present.year) & (cols.endy > present.year))
-	end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
-	if(length(end.index) == 0) {
-		end.index <- length(num.columns)
-		warning('Data for SexRatioAtBirth not available for all projection periods.\nLast projection period set to ', 
-					names.SRB.data[num.columns[end.index]])
-	}
-	proj.periods <- names.SRB.data[num.columns[start.index:end.index]]
-	obs.periods <- NULL
-	if(start.index > 1) {
-		obs.periods <- names.SRB.data[num.columns[1:(start.index-1)]]
-		observed$SRB <- SRB[,c('country_code', obs.periods)]
-	}
-	SRB <- SRB[,c('country_code', proj.periods)]
-	proj.years <- cols.starty[start.index:end.index] + 3
+	srblist <- .get.srb.data.and.time.periods(inputs$srb, present.year, end.year, wpp.year)
+    SRB <- srblist$srb
+    observed$SRB <- srblist$obs.srb
+    proj.periods <- srblist$proj.periods
+    obs.periods <- srblist$obs.periods
+    proj.years <- srblist$proj.years
 
 	# Get percentage age-specific fertility rate
-	if(is.null(inputs$pasfr)) 
-		PASFR <- load.wpp.dataset('percentASFR', wpp.year)
-	else PASFR <- read.pop.file(inputs$pasfr)
-	if(!is.null(obs.periods)) {
-		avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
-		observed$PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
-	}
-	PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
+    pasfrlist <- .get.pasfr.data(inputs$pasfr, wpp.year, obs.periods, proj.periods, 
+                                include.projection=fixed.pasfr)
+    PASFR <- pasfrlist$pasfr
+    observed$PASFR <- pasfrlist$obs.pasfr
 
-	# Get migration type, base year and age-specific settings
-	vwBase.default <- read.bayesPop.file(paste0('vwBaseYear', wpp.year, '.txt'))
-	if(is.null(inputs$mig.type)) 
-		vwBase <- vwBase.default 
-	else {
-		vwBase <- read.pop.file(inputs$mig.type)
-		# put into same order as vwBase.default
-		vwBase <- merge(vwBase.default[,'country_code', drop=FALSE], vwBase, by='country_code', sort=FALSE)
-	}
-	# Columns not present in the user-defined file will be taken from the default dataset
-	for(par in colnames(vwBase.default)) 
-		if(! par %in% colnames(vwBase)) vwBase[[par]] <- vwBase.default[[par]]
-	MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode', 'MigAgeSchedule', 'MigAgeZeroNeg', 'MigAgeEqualMFratio')]
+	# Get migration type, migration base year, mx & pasfr patterns
+    patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year)
+    MIGtype <- patterns$mig.type
+    MXpattern <- patterns$mx.pattern
+    PASFRpattern <- patterns$pasfr.pattern
 
-	# Age-specific mortality and fertility settings
-	create.pattern <- function(dataset, columns) {
-		pattern <- data.frame(dataset[,'country_code'])
-		for(col in columns)
-			if(col %in% colnames(dataset))
-				pattern <- cbind(pattern, dataset[,col])
-		if(ncol(pattern)==1) pattern <- NULL
-		else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
-		return(pattern)
-	}
-	MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
-	PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
-	
 	# Get age-specific migration
 	wppds <- data(package=paste0('wpp', wpp.year))
 	recon.mig <- NULL
@@ -656,36 +618,109 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		} else
 			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
 	}
-	}
+	} # end if(!fixed.mx)
+	
 	# Get TFR
-	if(!is.null(inputs$tfr.file)) {
-		if(inputs$tfr.file == 'median_')
-			TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
-		else {
-			file.name <- inputs$tfr.file
-			if(!file.exists(file.name))
-				stop('File ', file.name, 
-					' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
-			if(verbose) cat('\nLoading ', file.name, '\n')
-			TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-			TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
-			colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
-		} 
-	} else {
-		if(!is.null(inputs$tfr.sim.dir)) 
-			TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
-		else TFRpred <- .load.wpp.traj('tfr', wpp.year)
-	}
+	TFRpred <- .get.tfr.data(inputs, wpp.year, verbose=verbose)
 
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migration.rates', 'estim.years', 'proj.years', 'wpp.year', 
-				'start.year', 'present.year', 'end.year', 'fixed.mx', 'observed'))
+				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	return(inp)
+}
+
+.get.srb.data.and.time.periods <- function(srb.file, present.year, end.year, wpp.year) {
+    if(is.null(srb.file)) 
+        SRB <- load.wpp.dataset('sexRatio', wpp.year)
+    else SRB <- read.pop.file(srb.file)
+    names.SRB.data <- names(SRB)
+    num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.SRB.data) # index of year-columns
+    cols.starty <- as.integer(substr(names.SRB.data[num.columns], 1,4))
+    cols.endy <- as.integer(substr(names.SRB.data[num.columns], 6,9))
+    start.index <- which((cols.starty <= present.year) & (cols.endy > present.year))
+    end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
+    if(length(end.index) == 0) {
+        end.index <- length(num.columns)
+        warning('Data for SexRatioAtBirth not available for all projection periods.\nLast projection period set to ', 
+                                 names.SRB.data[num.columns[end.index]])
+    }
+    proj.periods <- names.SRB.data[num.columns[start.index:end.index]]
+    obs.periods <- NULL
+    obs.SRB <- NULL
+    if(start.index > 1) {
+        obs.periods <- names.SRB.data[num.columns[1:(start.index-1)]]
+        obs.SRB <- SRB[,c('country_code', obs.periods)]
+    }
+    SRB <- SRB[,c('country_code', proj.periods)]
+    proj.years <- cols.starty[start.index:end.index] + 3
+    return(list(srb=SRB, obs.srb=obs.SRB, proj.periods=proj.periods, 
+                        obs.periods=obs.periods, proj.years=proj.years))
+}
+
+.get.pasfr.data <- function(pasfr.file, wpp.year, obs.periods, proj.periods,
+                            include.projection=TRUE) {
+    if(is.null(pasfr.file)) 
+        PASFR <- load.wpp.dataset('percentASFR', wpp.year)
+    else PASFR <- read.pop.file(pasfr.file)
+    obs.PASFR <- NULL
+    if(!is.null(obs.periods)) {
+        avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
+        obs.PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
+    }
+    if(include.projection)
+        PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
+    else PASFR <- NULL
+    return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
+}
+
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year) {
+    pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
+    if(is.null(pattern.file)) 
+        vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+    else vwBase <- read.pop.file(pattern.file)
+    if(!is.factor(vwBase$PasfrNorm))
+        vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
+    MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
+        
+    create.pattern <- function(dataset, columns) {
+        pattern <- data.frame(dataset[,'country_code'])
+        for(col in columns)
+            if(col %in% colnames(dataset))
+                pattern <- cbind(pattern, dataset[,col])
+        if(ncol(pattern)==1) pattern <- NULL
+        else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
+        return(pattern)
+    }
+    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+    PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
+    return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
+}
+
+.get.tfr.data <- function(inputs,  wpp.year, verbose=FALSE) {
+    if(!is.null(inputs$tfr.file)) {
+        if(inputs$tfr.file == 'median_')
+            TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
+        else {
+            file.name <- inputs$tfr.file
+            if(!file.exists(file.name))
+                stop('File ', file.name, 
+                     ' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
+            if(verbose) cat('\nLoading ', file.name, '\n')
+            TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+            TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
+            colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+        } 
+    } else {
+        if(!is.null(inputs$tfr.sim.dir)) 
+            TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
+        else TFRpred <- .load.wpp.traj('tfr', wpp.year)
+    }
+    return(TFRpred)
 }
 
 .set.inp.migration.if.needed <- function(inputs, inpc, country) {
@@ -1310,9 +1345,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
-	years <- substr(colnames(male.mx),1,4)
+	years <- as.integer(substr(colnames(male.mx),1,4))
+	first.year <- years[1]
+    has.nas.in.old.ages <- FALSE
+    if(any(is.na(male.mx[21, ]))) {# remove columns that have NAs for old ages
+        first.year <- years[which(!is.na(male.mx[21,]))[1]]
+        start.year <- max(start.year, first.year)
+        has.nas.in.old.ages <- TRUE
+    }
 	ns <- which(years == start.year)
-	if(length(ns)==0) stop('start.year must be between ', years[1], ' and ', years[ne])
+	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
     avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
     smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
@@ -1320,7 +1362,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
-    	aids.idx <- which(years < 1985)
+    	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     #avg.ax <- TRUE
@@ -1424,7 +1466,6 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred, mig.type=NULL, coun
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf), vital.events))
 }
 
-
 compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years) {
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
@@ -1457,7 +1498,9 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex])[1:21,,1]
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
-		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(pop[[sex]])), 
+		p <- pop[[sex]]
+        p[is.na(p)] <- 0 # set pop for ages with NA to 0
+		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
 		#stop('')
@@ -1864,10 +1907,10 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
-									depratio=TRUE, verbose=TRUE) {
+									depratio=wpp.year == 2015, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
 	# and other available indicators. It is scaled to the total net migration for each country. 
 	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
@@ -1906,6 +1949,8 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 	if(is.null(countries)) {
 		countries <- mig$country_code
 		# filter out non-countries
+		if(!exists("UNlocations")) 
+            bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		locs <- UNcountries()
 		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
 		countries <- countries[countries %in% locs]
@@ -1920,9 +1965,9 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 		edr <- new.env()
 		if(is.character(depratio))
 			load(depratio, envir=edr)
-		else data("migdepratio", envir=edr)
+		else do.call("data", list(paste0("migdepratio_", wpp.year), envir=edr))
 		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
-			stop(depratio.file, " must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
+		    stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
 		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
 				|| !all(c('country_code', "period") %in% colnames(edr$depratioF)))
 			stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
@@ -1973,6 +2018,13 @@ age.specific.migration <- function(wpp.year=2015, years=seq(1955, 2100, by=5), c
 				migdata <- list(M=netmigM, F=netmigF)
 				sxdata <- list(M=sxm, F=sxf)
 				for(sex in c('M', 'F')) {
+				    # In wpp2017, for some past years population is reported only up to 85+. 
+                    # Set migration of the open age group to 0. 
+                    if(any(is.na(pop1m[1:max.ages]))) {
+                        # find the index of the first NA 
+                        ina <- which(is.na(migdata[[sex]])==TRUE)[1]
+                        migdata[[sex]][ina-1] = 0
+                    }
 					if(mtype == 0) { 
 					  # Migration distributed across the time interval.
 					  # In projections in this case, the migration is derived as 

@@ -1247,7 +1247,7 @@ PopProjNoMigr <- function(npred, pop0, LT, asfr, srb, country.name=NULL, keep.vi
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf), vital.events))
 }
 
-get.migration.thresholds <- function(wpp.year=2015, nperiods=6) {
+get.migration.thresholds <- function(wpp.year=2017, nperiods=6) {
 	# Setting various thresholds used in the migration model
 	
 	# Cummulative thresholds
