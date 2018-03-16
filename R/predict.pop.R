@@ -32,12 +32,12 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 			stop('Prediction in ', output.dir,
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
-		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, verbose=verbose)
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
 			inp <- load.inputs(pred$function.inputs, pred$inputs$start.year, pred$inputs$present.year, pred$inputs$end.year, 
-								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, all.countries=FALSE, 
+								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, fixed.pasfr=pred$inputs$fixed.pasfr, all.countries=FALSE, 
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
 								verbose=verbose)
@@ -46,7 +46,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
-		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, all.countries=FALSE, verbose=verbose)
+		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
+		                          all.countries=FALSE, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -388,7 +389,7 @@ read.bayesPop.file <- function(file)
 	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
-						all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
+                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -450,7 +451,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	proj.years <- srblist$proj.years
 
 	# Get percentage age-specific fertility rate
-	pasfrlist <- .get.pasfr.data(inputs$pasfr, wpp.year, obs.periods, proj.periods)
+	pasfrlist <- .get.pasfr.data(inputs$pasfr, wpp.year, obs.periods, proj.periods, 
+	                             include.projection=fixed.pasfr)
 	PASFR <- pasfrlist$pasfr
 	observed$PASFR <- pasfrlist$obs.pasfr
 	
@@ -592,7 +594,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-				'start.year', 'present.year', 'end.year', 'fixed.mx', 'observed'))
+				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -627,7 +629,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
            obs.periods=obs.periods, proj.years=proj.years))
 }
 
-.get.pasfr.data <- function(pasfr.file, wpp.year, obs.periods, proj.periods) {
+.get.pasfr.data <- function(pasfr.file, wpp.year, obs.periods, proj.periods,
+                            include.projection=TRUE) {
     if(is.null(pasfr.file)) 
         PASFR <- load.wpp.dataset('percentASFR', wpp.year)
     else PASFR <- read.pop.file(pasfr.file)
@@ -636,7 +639,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
         obs.PASFR <- PASFR[,c('country_code', 'age', obs.periods[avail.obs.periods])]
     }
-    PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
+    if(include.projection)
+        PASFR <- PASFR[,c('country_code', 'age', proj.periods)]
+    else PASFR <- NULL
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
@@ -645,6 +650,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if(is.null(pattern.file)) 
         vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
     else vwBase <- read.pop.file(pattern.file)
+    if(!is.factor(vwBase$PasfrNorm))
+        vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
     MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
     
     create.pattern <- function(dataset, columns) {
