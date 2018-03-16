@@ -12,8 +12,8 @@ Generates a world map of various population measures for a given quantile and a 
 \usage{
 pop.map(pred, sex = c("both", "male", "female"), age = "all", expression = NULL, \dots)
 
-get.pop.map.parameters(pred, expression = NULL, sex = c('both', 'male', 'female'), 
-    age = 'all', range = NULL, nr.cats = 50, same.scale = TRUE, quantile = 0.5, \dots)
+get.pop.map.parameters(pred, expression = NULL, sex = c("both", "male", "female"), 
+    age = "all", range = NULL, nr.cats = 50, same.scale = TRUE, quantile = 0.5, \dots)
     
 pop.map.gvis(pred, \dots)
 }
@@ -41,7 +41,7 @@ Function \code{pop.map.gvis} creates an interactive map using the \pkg{googleVis
 \section{Performance and Caching}{
 	If the \code{expression} argument or a non-standard combination of sex and age is used, quantiles are computed on the fly. In such a case, trajectory files for all countries have to be loaded from disk, which can be quite time expensive. Therefore a simple caching mechanism was added to the prediction object which allows re-using data from previously used expressions. The prediction object points to an environment called \code{cache} which is a collection of data arrays that are results of evaluating expressions. The space-trimmed expressions are the names of the \code{cache} entries. Every time a map function is called, it is checked if the corresponding expression is contained in the \code{cache}. If it is not the case, the quantiles are computed on the fly, otherwise the existing values are taken. 
 	
-When computing on the fly, the function tries to process it in parallel if possible, using the package \pkg{parallel}. In such a case, the computation is split into \eqn{n} nodes where \eqn{n} is either the number of cores detected automatically (default), or the value of \code{getOption('cl.cores')}. Use \code{options(cl.cores=n)} to modify the default. If a sequential processing is desired, set \code{cl.cores} to 1. 
+When computing on the fly, the function tries to process it in parallel if possible, using the package \pkg{parallel}. In such a case, the computation is split into \eqn{n} nodes where \eqn{n} is either the number of cores detected automatically (default), or the value of \code{getOption("cl.cores")}. Use \code{options(cl.cores=n)} to modify the default. If a sequential processing is desired, set \code{cl.cores} to 1. 
 
 The cache data are also stored on disk, namely in the simulation directory of the prediction object. By default, every update of the cache in memory is also updated on the disk. Thus, data expression results can be re-used in multiple R sessions. Function \code{\link{pop.cleanup.cache}} deletes the content of the cache. This behaviour can be turned off by setting the argument \code{write.to.cache=FALSE} in the \code{\link{get.pop.prediction}} function. We use this settings in the examples throughout this manual whenever the example data from the installation directory is used, in order to prevent writing into the installation directory.
 }
@@ -73,14 +73,14 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
 # Uses heat colors with seven categories by default
-pop.map(pred, sex='female', age=4:10)
+pop.map(pred, sex="female", age=4:10)
 # Female population in child-bearing age as a proportion of totals
-pop.map(pred, expression='PXXX_F[4:10] / PXXX')
+pop.map(pred, expression="PXXX_F[4:10] / PXXX")
 # The same with more colors
-params <- get.pop.map.parameters(pred, expression='PXXX_F[4:10] / PXXX')
-do.call('pop.map', params)
+params <- get.pop.map.parameters(pred, expression="PXXX_F[4:10] / PXXX")
+do.call("pop.map", params)
 # Another projection year on the same color scale
-do.call('pop.map', c(list(year=2043), params))
+do.call("pop.map", c(list(year=2043), params))
 # Potential support ratio using googleVis
 pop.map.gvis(pred, expression="PXXX[5:13] / PXXX[14:27]")}	
 }

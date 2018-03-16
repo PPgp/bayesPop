@@ -43,7 +43,7 @@ test.prediction <- function() {
 				nr.traj = 1, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040)
 	# check that it took the median TFR and not high or low
 	tfr <- get.pop("F528", pred)
-	tfr.should.be <- c(1.75, 1.77, 1.78, 1.80, 1.81, 1.82) # WPP 2015 data
+	tfr.should.be <- c(1.73, 1.75, 1.76, 1.78, 1.79, 1.80) # WPP 2017 data
 	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
 	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
@@ -51,7 +51,7 @@ test.prediction <- function() {
 				inputs=list(tfr.file='median_', e0M.file='median_'))
 	tfr <- get.pop("F528", pred)
 	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
-	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one available, because we take TFR median
+	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one is available, because we take TFR median
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
@@ -126,7 +126,7 @@ test.expressions.with.VE <- function(map=TRUE) {
 	pop.byage.plot(pred, expression='M218_F{age.index05(27)}', year=2050)
 	pop.trajectories.plot(pred, expression="pop.apply(P528_F{4:10}, gmedian, cats=seq(15, by=5, length=8))")
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=2050)
-	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1970)
+	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1990)
 	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', split.along='traj')")
 	pop.trajectories.plot(pred, expression="pop.combine(G218, P218, '/', split.along='traj')")
 	if(map) pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
@@ -294,3 +294,18 @@ test.life.table <- function(){
 	stopifnot(all.equal(sx4, sx5))
 	unlink(sim.dir, recursive=TRUE)
 }
+
+test.adjustment <- function() {
+    test.name <- 'Adjustments'
+    sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
+    pred <- get.pop.prediction(sim.dir)
+    med <- pop.trajectories.table(pred, "Ecuador")[,"median"]
+    adj.med <- pop.trajectories.table(pred, "Ecuador", adjust=TRUE)[,"median"]
+    # from wpp2017 popproj dataset:
+    #data(popproj, package="wpp2017")
+    #should.be <- unlist(subset(popproj, name=="Ecuador")[,c("2080", "2090", "2100")])
+    should.be <- c(24876.80, 24725.84, 24320.58) 
+    stopifnot(all.equal(adj.med[c("2080", "2090", "2100")], should.be, 
+                        tolerance = 0.01, check.attributes = FALSE))
+}
+#TODO: test project.pasfr function

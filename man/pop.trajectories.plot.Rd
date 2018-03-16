@@ -17,8 +17,8 @@ pop.trajectories.plot(pop.pred, country = NULL, expression = NULL, pi = c(80, 95
     sex = c("both", "male", "female"), age = "all", sum.over.ages = FALSE, 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory = FALSE,
     main = NULL, dev.ncol = 5, lwd = c(2, 2, 2, 2, 1), 
-    col = c('black', 'red', 'red', 'blue', '#00000020'), show.legend = TRUE, 
-    ann = par('ann'), \dots)
+    col = c("black", "red", "red", "blue", "#00000020"), show.legend = TRUE, 
+    ann = par("ann"), \dots)
     
 pop.trajectories.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.trajectories"),
@@ -28,11 +28,11 @@ pop.trajectories.table(pop.pred, country = NULL, expression = NULL, pi = c(80, 9
     sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE, \dots)
     
 pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL, 
-    pi = c(80, 95), sex = c('both', 'male', 'female'), 
+    pi = c(80, 95), sex = c("both", "male", "female"), 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory=FALSE,
-    xlim = NULL, ylim = NULL, xlab = '', ylab = 'Population projection', 
-    main = NULL, lwd = c(2,2,2,1), col = c('red', 'red', 'blue', '#00000020'),
-    show.legend = TRUE, add = FALSE, ann = par('ann'), type = "l", pch = NA, 
+    xlim = NULL, ylim = NULL, xlab = "", ylab = "Population projection", 
+    main = NULL, lwd = c(2,2,2,1), col = c("red", "red", "blue", "#00000020"),
+    show.legend = TRUE, add = FALSE, ann = par("ann"), type = "l", pch = NA, 
     pt.cex = 1, \dots)
     
 pop.byage.plotAll(pop.pred, 
@@ -40,7 +40,7 @@ pop.byage.plotAll(pop.pred,
     output.type="png", expression = NULL, verbose=FALSE, \dots)
 
 pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL, 
-    pi = c(80, 95), sex = c('both', 'male', 'female'), 
+    pi = c(80, 95), sex = c("both", "male", "female"), 
     half.child.variant = FALSE)
 }
 \arguments{
@@ -73,6 +73,8 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
 \code{pop.byage.plot} and \code{pop.byage.table} plots/tabulate the posterior distribution by age for a given country and time period. \code{pop.byage.plotAll} creates such plots for all countries. 
 
 The median and given probability intervals are computed using all available trajectories. Thus, \code{nr.traj} does not influence those values - it is used only to control the number of trajectories plotted.
+
+If plotting results of an expression and the function fails, to debug obtain values of that expression using the functions \code{\link{get.pop.ex}} (for \code{pop.trajectories.plot}) and \code{\link{get.pop.exba}} (for \code{pop.byage.plot}).
 }
 
 \author{
@@ -80,13 +82,18 @@ Hana Sevcikova
 }
 
 \seealso{
-\code{\link{bayesPop.prediction}}, \code{\link{summary.bayesPop.prediction}}, \code{\link{pop.pyramid}}
+\code{\link{bayesPop.prediction}}, \code{\link{summary.bayesPop.prediction}}, \code{\link{pop.pyramid}}, \code{\link{pop.expressions}}, \code{\link{get.pop}}
 }
 \examples{
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.trajectories.plot(pred, country="Ecuador", pi=c(80, 95))
 pop.trajectories.table(pred, country="Ecuador", pi=c(80, 95))
+# female population of Ecuador in child bearing ages (by time)
+pop.trajectories.plot(pred, expression="PEC_F[4:10]") 
+# Population by age in Netherands for two different years 
+pop.byage.plot(pred, country="Netherlands", year=2050)
+pop.byage.plot(pred, expression="PNL{}", year=2000)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

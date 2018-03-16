@@ -13,5 +13,6 @@ if(!CRAN) {
 	test.expressions.with.VE(map=FALSE)
 	test.regional.aggregation()
 	test.life.table()
+	test.adjustment()
 }
 options(warn=warn$warn)
