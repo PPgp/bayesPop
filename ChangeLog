@@ -1,3 +1,32 @@
+6.2-4 (03/15/2018)
+-----
+Fixed a bug that caused the projection to fail when the option 
+stringsAsFactors was set to FALSE (reported by Jim Oeppen).
+
+Fixed an issue with PASFR when projecting beyond 2100. 
+
+6.2-3 (10/22/2017)
+-----
+Replace NA values of historical population with 0. 
+(In wpp2017 the open age group for years before 1990 is 85+ and thus the pop datasets are NA for old ages. This was problematic in various sum and plotting functions.)
+
+6.2-2 (10/11/2017)
+-----
+Fixed bug in adjusting function.
+Unit test for adjustments.
+
+6.2-0/1 (09/29/2017)
+------
+Changes needed to work with wpp2017, including setting new default for wpp.year.
+
+6.1-1 (08/09/2017)
+-----
+Accent syntax changed in CITATION (request from CRAN).
+
+6.1-0 (04/21/2017)
+-----
+Added function project.pasfr for projecting PASFR outside of pop.predict (thanks to Igor Ribeiro).
+
 6.0-5
 -----
 Truncation of life tables to a given open age group (thanks to Patrick Gerland) --> Function 
@@ -13,6 +42,7 @@ Added CITATION file and updated references with bayesPop JSS paper.
 	
 Function get.trajectories.close.to renamed to extract.trajectories.eq; added functions
 extract.trajectories.ge and extract.trajectories.le.
+	
 	
 6.0-2 (11/21/2016)
 -----

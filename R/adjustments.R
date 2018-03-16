@@ -122,7 +122,8 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	if(is.null(e)) e <- new.env()
 	if(!prediction.only) {
 		dataset <- paste0('pop', sex)
-		do.call('data', list(dataset, package='wpp2012', envir=e))
+		if.not.exists.load(dataset, e, ...)
+		#do.call('data', list(dataset, package='wpp2012', envir=e))
 		pop.obs <- if(sum.over.ages) sum.by.country(dataset) else sum.by.country.and.age(dataset)
 	}
 	dataset <- paste0('pop', sex, 'projMed')
