@@ -1234,8 +1234,7 @@ PopProjNoMigr <- function(npred, pop0, LT, asfr, srb, country.name=NULL, keep.vi
 			returnNothingIfNegative=as.integer(returnIfNegative), 
 			popm=popm, popf=popf, totp=totp,
 			btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
-			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
-			isNegative=as.integer(isNegative)
+			deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
 			)
 	vital.events <- list()
 	if(keep.vital.events) {

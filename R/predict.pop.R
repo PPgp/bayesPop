@@ -685,7 +685,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     else vwBase <- read.pop.file(pattern.file)
     if(!is.factor(vwBase$PasfrNorm))
         vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
-    MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
+    MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode', 'MigAgeSchedule', 'MigAgeZeroNeg', 'MigAgeEqualMFratio')]
         
     create.pattern <- function(dataset, columns) {
         pattern <- data.frame(dataset[,'country_code'])

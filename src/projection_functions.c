@@ -653,10 +653,10 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 }	
 
 void PopProjNoMigration(int *npred, double *srm, double *srf, double *asfr, double *srb, 
-				double *mxm, double *mxf,
-				  int *returnNothingIfNegative,
-				  double *popm, double *popf, double *totp, 
-				  double *btagem, double *btagef, double *deathsm, double *deathsf
+				        double *mxm, double *mxf,
+				        int *returnNothingIfNegative,
+				        double *popm, double *popf, double *totp, 
+				        double *btagem, double *btagef, double *deathsm, double *deathsf
 					) {
 	double b, bt[7], bm, bf, srb_ratio;
 	double Lxm[27], Lxf[27], lxm[27], lxf[27];
