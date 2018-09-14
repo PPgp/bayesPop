@@ -9,7 +9,10 @@ pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
 		bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
 	else {
 		env <- globalenv()
-		assign("UNlocations", read.delim(my.location.file, comment.char='#'), envir=env)
+		if(is.character(my.location.file))
+		    locs <- read.delim(my.location.file, comment.char='#')
+		else locs <- my.location.file # data.frame
+		assign("UNlocations", locs, envir=env)
 	}
 	regions <- unique(regions)
 	method <- match.arg(input.type)
