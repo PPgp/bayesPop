@@ -2,8 +2,7 @@ if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations"))
 
 pop.predict.subnat <- function(end.year = 2050, start.year = 1950, present.year = 2015, wpp.year = 2017,
                                 output.dir = file.path(getwd(), "bayesPop.output"),
-                               locations = NULL, 
-                               scale.to.country = NULL, default.country = NULL,
+                               locations = NULL, default.country = NULL,
                         inputs = list(
                             popM = NULL,
                             popF = NULL,
@@ -32,7 +31,8 @@ pop.predict.subnat <- function(end.year = 2050, start.year = 1950, present.year 
     locs <- process.reg.locations(locations, verbose = verbose)
     if (is.null(default.country) && any(locs$location_type == 0))
         default.country <- locs[locs$location_type == 0, "country_code"][1]
-    UNlocations <<- locs
+    env <- globalenv()
+    assign("UNlocations", locs, envir=env)
     
     outdir <- file.path(output.dir, 'predictions')
     if(has.pop.prediction(sim.dir = output.dir)) {
@@ -71,8 +71,8 @@ process.reg.locations <- function(locations, verbose = FALSE) {
 
 swap.reg.code <- function(ds, table.name = "input") {
     # swap reg_code for country_code
-    if(!"reg_code" %in% colnames(ds))
-        stop(table.name, " table must have a column 'reg_code'.")
+      if(!"reg_code" %in% colnames(ds))
+          stop(table.name, " table must have a column 'reg_code'.")
     if("country_code" %in% colnames(ds)) ds$country_code <- NULL # delete if exists
     colnames(ds)[colnames(ds) == "reg_code"] <- "country_code" # swap
     ds
@@ -212,7 +212,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         if(!is.null(default.country))
             MXm <- create.dataset.from.wpp(default.country, region.codes, 'mxM', wpp.year)
         else stop("mxM must be given if there is no default.country.")
-    } else MXm <- read.pop.file(inputs$mxM)
+    } else MXm <- swap.reg.code(read.pop.file(inputs$mxM), table.name = "mxM")
     names.MXm.data <- names(MXm)
     num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.MXm.data) # index of year-columns
     cols.starty <- as.integer(substr(names.MXm.data[num.columns], 1,4))
@@ -220,7 +220,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
     present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
     #estim.periods <- names.MXm.data[num.columns[start.index:present.index]]
-    estim.periods <- names.MXm.data[num.columns[1:present.index]]
+    estim.periods <- names.MXm.data[num.columns[1:present.index]] # ?why
     start.year <- cols.starty[start.index]
     
     if(fixed.mx) {
@@ -229,9 +229,11 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         MXm.pred <- MXm[,c('country_code', 'age', proj.periods)]
     }
     MXm <- MXm[,c('country_code', 'age', estim.periods)]
-    if(is.null(inputs$mxF)) 
-        MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year)
-    else MXf <- read.pop.file(inputs$mxF)
+    if(is.null(inputs$mxF)) {
+      if(!is.null(default.country))
+          MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year)
+      else stop("mxF must be given if there is no default.country.")
+    else MXf <- swap.reg.code(read.pop.file(inputs$mxF), table.name = "mxF")
     if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
     MXf <- MXf[,c('country_code', 'age', estim.periods)]
     
@@ -241,6 +243,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     srb.data <- inputs$srb
     if(is.null(srb.data)) 
         srb.data <- create.dataset.from.wpp(default.country, region.codes, 'sexRatio', wpp.year)
+    else srb.data <- swap.reg.code(read.pop.file(srb.data), table.name = "srb")
     srblist <- .get.srb.data.and.time.periods(srb.data, present.year, end.year, wpp.year)
     SRB <- srblist$srb
     observed$SRB <- srblist$obs.srb
@@ -252,10 +255,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     pasfr.data <- inputs$pasfr
     if(is.null(pasfr.data)) 
         pasfr.data <- create.dataset.from.wpp(default.country, region.codes, 'percentASFR', wpp.year)
-    else {
-        pasfr.data <- read.pop.file(inputs$pasfr)
-        pasfr.data <- swap.reg.code(pasfr.data, table.name = "pasfr")
-    }
+    else pasfr.data <- swap.reg.code(read.pop.file(inputs$pasfr), table.name = "pasfr")
     pasfrlist <- .get.pasfr.data(pasfr.data, wpp.year, obs.periods, proj.periods, 
                                  include.projection = fixed.pasfr)
     PASFR <- pasfrlist$pasfr
@@ -267,8 +267,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                             pattern.data.def[pattern.data.def$country_code == default.country,], 
                             region.codes)
     if(!is.null(inputs$patterns)) {
-        pattern.data <- read.pop.file(inputs$patterns)
-        pattern.data <- swap.reg.code(pattern.data, table.name = "patterns")
+        pattern.data <- swap.reg.code(read.pop.file(inputs$patterns), table.name = "patterns")
         for(col in colnames(pattern.data.def)) {
             # fill-in missing columns
             if(! col %in% colnames(pattern.data))
@@ -339,9 +338,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         #stop('')
     }
     if(!is.null(inputs[['migM']])) # cannot be inputs$migM because it would take the value of inputs$migMpred
-        MIGm <- read.pop.file(inputs[['migM']])
+        MIGm <- swap.reg.code(read.pop.file(inputs[['migM']]), table.name = "migM")
     if(!is.null(inputs[['migF']])) 
-        MIGf <- read.pop.file(inputs[['migF']])
+        MIGf <- swap.reg.code(read.pop.file(inputs[['migF']]), table.name = "migF")
     if(!is.null(obs.periods)) {
         avail.obs.periods <- is.element(obs.periods, colnames(MIGm))
         observed$MIGm <- MIGm[,c('country_code', 'age', obs.periods[avail.obs.periods])]
