@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- TRUE
+CRAN <- FALSE
 warn <- options('warn')
 options(warn=2)
 test.expressions()
@@ -14,5 +14,6 @@ if(!CRAN) {
 	test.regional.aggregation()
 	test.life.table()
 	test.adjustment()
+	test.subnat()
 }
 options(warn=warn$warn)

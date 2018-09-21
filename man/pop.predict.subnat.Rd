@@ -70,19 +70,56 @@ Hana Sevcikova
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\code{\link{pop.predict}}, \code{\link[bayesTFR]{tfr.predict.subnat}}
+\code{\link{pop.predict}}, \code{\link[bayesTFR]{tfr.predict.subnat}}, \code{\link{pop.aggregate.subnat}}
 }
 \examples{
 \dontrun{
+# Subnational projections for Canada
+#########
+data.dir <- file.path(find.package("bayesPop"), "extdata")
+
+# Use national data for tfr and e0
+###
 sim.dir <- tempfile()
 pred <- pop.predict.subnat(output.dir = sim.dir,
-            locations = file.path(dir, "CANlocations.txt"),
-            inputs = list(
-                        popM = file.path(dir, "CANpopM.txt"),
-                        popF = file.path(dir, "CANpopF.txt")
+            locations = file.path(data.dir, "CANlocations.txt"),
+            inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
+                          popF = file.path(data.dir, "CANpopF.txt"),
+                          tfr.file = "median_"
                         ),
             verbose = TRUE)
+pop.trajectories.plot(pred, "Alberta", sum.over.ages = TRUE)
 unlink(sim.dir, recursive=TRUE)
+
+# Use subnational TFR simulation
+###
+# Subnational TFR projections for Canada (from ?tfr.predict.subnat)
+my.subtfr.file <- file.path(find.package("bayesTFR"), 'extdata', 'subnational_tfr_template.txt')
+tfr.nat.dir <- file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output")
+tfr.reg.dir <- tempfile()
+tfr.preds <- tfr.predict.subnat(124, my.tfr.file = my.subtfr.file,
+    sim.dir = tfr.nat.dir, output.dir = tfr.reg.dir, start.year = 2013)
+ 
+# Pop projections
+sim.dir <- tempfile()
+pred <- pop.predict.subnat(output.dir = sim.dir,
+            locations = file.path(data.dir, "CANlocations.txt"),
+            inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
+                          popF = file.path(data.dir, "CANpopF.txt"),
+                          tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124")
+                        ),
+            verbose = TRUE)
+pop.trajectories.plot(pred, "Alberta", sum.over.ages = TRUE)
+pop.pyramid(pred, "Manitoba", year = 2050)
+get.countries.table(pred)
+
+# Aggregate to country level
+aggr <- pop.aggregate.subnat(pred, regions = 124, 
+            locations = file.path(data.dir, "CANlocations.txt"))
+pop.trajectories.plot(aggr, "Canada", sum.over.ages = TRUE)
+
+unlink(sim.dir, recursive = TRUE)
+unlink(tfr.reg.dir, recursive = TRUE)
 }}
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the

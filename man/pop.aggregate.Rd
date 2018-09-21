@@ -1,6 +1,7 @@
 \name{pop.aggregate}
 \alias{pop.aggregate}
 \alias{get.pop.aggregation}
+\alias{pop.aggregate.subnat}
 
 \title{
 Aggregation of Population Projections
@@ -16,11 +17,13 @@ pop.aggregate(pop.pred, regions,
     
 get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, 
     write.to.cache = TRUE)
+    
+pop.aggregate.subnat(pop.pred, regions, locations, ..., verbose = FALSE)
 }
 
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}} containing country-specific population projections.}
-  \item{regions}{Vector of numerical codes of regions. It should correspond to values in the column \dQuote{country_code} in the \code{\link[wpp2012]{UNlocations}} dataset or in \code{my.location.file} (see below).}
+  \item{regions}{Vector of numerical codes of regions. It should correspond to values in the column \dQuote{country_code} in the \code{\link[wpp2017]{UNlocations}} dataset or in \code{my.location.file} (see below). For \code{pop.aggregate.subnat} it is a numerical code of a country over which subregions are aggregated.}
   \item{input.type}{There are two methods for aggregating projections depending on the type of inputs, \dQuote{country}- and \dQuote{region}-based, see Details. }
   \item{name}{Name of the aggregation. It becomes a part of a directory name where aggregation results are stored.}
   \item{inputs}{This argument is only used when the \dQuote{region}-based method is selected. It is a list of inputs of probabilistic components of the projection:
@@ -33,10 +36,13 @@ get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL,
 \item{verbose}{Logical switching log messages on and off.}
 \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
 \item{write.to.cache}{Logical controlling if functions operating on this object are allowed to write into its cache (see Details of \code{\link{get.pop.prediction}}).}
+\item{locations}{Name of a tab-delimited file that contains definitions of the sub-regions. It should be the same file as used for the \code{locations} argument in \code{\link{pop.predict.subnat}}.}
 \item{\dots}{Additional arguments.}
 }
 \details{
-The dataset \code{\link[wpp2012]{UNlocations}} or \code{my.location.file} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the entries with \dQuote{country_code} given in the \code{regions} argument. One can aggregate over the following location types: Type 0 means aggregating all countries of the world (or in the file), type 2 is aggregating over continents, type 3 is aggregating over regions within continents, and any other integer (except 4) correponds to user-defined aggregations. Note that type 4 is reserved as a location type of countries and thus, all aggregations are performed over entries of this type. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link[wpp2012]{UNlocations}} dataset. E.g., if \code{regions=908} (Europe) which has location type 2 in the default \code{\link[wpp2012]{UNlocations}} dataset, all countries are aggregated for which values of 908 are found in the \dQuote{area_code} column. If the location type is other than 0, 2, 3 and 4, there must be a column in the file called \dQuote{agcode_\eqn{x}} with \eqn{x} being the location type. This column is then used to match the countries to be aggregated. 
+Function \code{pop.aggregate} triggers an aggregations over countries while function \code{pop.aggregate.subnat} is used for aggregation over sub-regions to a country. The following details refer to the use of \code{pop.aggregate}. For sub-national aggregation see Example in \code{\link{pop.predict.subnat}}. 
+
+The dataset \code{\link[wpp2017]{UNlocations}} or \code{my.location.file} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the entries with \dQuote{country_code} given in the \code{regions} argument. One can aggregate over the following location types: Type 0 means aggregating all countries of the world (or in the file), type 2 is aggregating over continents, type 3 is aggregating over regions within continents, and any other integer (except 4) correponds to user-defined aggregations. Note that type 4 is reserved as a location type of countries and thus, all aggregations are performed over entries of this type. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link[wpp2012]{UNlocations}} dataset. E.g., if \code{regions=908} (Europe) which has location type 2 in the default \code{\link[wpp2012]{UNlocations}} dataset, all countries are aggregated for which values of 908 are found in the \dQuote{area_code} column. If the location type is other than 0, 2, 3 and 4, there must be a column in the file called \dQuote{agcode_\eqn{x}} with \eqn{x} being the location type. This column is then used to match the countries to be aggregated. 
 
 Consider the following example. Say we want to pair four countries (Germany [DE], France [FR], Netherlands [NL], Italy [IT]) in two different ways, so we have two overlapping grouppings, each of which has two groups (A,B): 
 \enumerate{
