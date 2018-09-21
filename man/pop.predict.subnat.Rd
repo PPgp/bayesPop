@@ -72,9 +72,19 @@ Hana Sevcikova
 \seealso{
 \code{\link{pop.predict}}, \code{\link[bayesTFR]{tfr.predict.subnat}}
 }
-%\examples{
+\examples{
+\dontrun{
+sim.dir <- tempfile()
+pred <- pop.predict.subnat(output.dir = sim.dir,
+            locations = file.path(dir, "CANlocations.txt"),
+            inputs = list(
+                        popM = file.path(dir, "CANpopM.txt"),
+                        popF = file.path(dir, "CANpopF.txt")
+                        ),
+            verbose = TRUE)
+unlink(sim.dir, recursive=TRUE)
+}}
 
-%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ distribution }% use one of  RShowDoc("KEYWORDS")
