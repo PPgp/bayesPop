@@ -233,7 +233,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
       if(!is.null(default.country))
           MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year)
       else stop("mxF must be given if there is no default.country.")
-    else MXf <- swap.reg.code(read.pop.file(inputs$mxF), table.name = "mxF")
+    } else MXf <- swap.reg.code(read.pop.file(inputs$mxF), table.name = "mxF")
     if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
     MXf <- MXf[,c('country_code', 'age', estim.periods)]
     
@@ -377,8 +377,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
             } else {
                 file.name <-  inputs$e0F.file
                 if(!file.exists(file.name))
-                    stop('File ', file.name, 
-                         ' does not exist.\nSet e0F.sim.dir, e0F.file or change WPP year.')
+                    stop('File ', file.name, ' does not exist.')
                 # comma separated trajectories file
                 if(verbose) cat('\nLoading ', file.name)
                 e0Fpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
@@ -406,8 +405,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
             else {
                 file.name <-  inputs$e0M.file
                 if(!file.exists(file.name)) 
-                    stop('File ', file.name, 
-                         ' does not exist.\nSet e0M.sim.dir, e0M.file or change WPP year.')
+                    stop('File ', file.name, ' does not exist.')
                 if(verbose) cat('\nLoading ', file.name)
                 e0Mpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
                 e0Mpred <- e0Mpred[,c('LocID', 'Year', 'Trajectory', 'e0')]
@@ -442,7 +440,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
     #stop('')
     env <- new.env()
-    data(pasfr_global_norms, envir = env)
+    do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
     return(inp)
 }
