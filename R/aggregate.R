@@ -79,7 +79,8 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		for(item in c('MIGm', 'MIGf')) inp[[item]] <- rbind(inp[[item]], mig[[item]])
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		inp$SRB <- rbind(inp$SRB, .aggregate.srb(pop.pred, countries, countries.index, id))
-		inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
+		if(inp$fixed.pasfr)
+		    inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
 		inp$MIGtype <- rbind(inp$MIGtype, .aggregate.migtype(pop.pred, countries, countries.index, id))
 		aggregated.countries[[as.character(id)]] <- countries
 		# aggregate pop.matrix

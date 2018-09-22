@@ -258,7 +258,8 @@ test.regional.aggregation <-function() {
 	e0.predict(sim.dir=sim.dir.e0, burnin=5, save.as.ascii=0)
 	# Population prediction
 	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
-    			inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
+    			inputs = list(tfr.sim.dir=sim.dir.tfr, 
+    			              e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
     options(warn=warn$warn)
 	stopifnot(pred$nr.traj==20)
 	aggr <- pop.aggregate(pred, regions=regions, input.type="region", verbose=TRUE)
@@ -328,6 +329,12 @@ test.subnat <- function() {
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
   stopifnot(dim(get.pop("P658", pred))[3] == 8) # projection until 2050
+  
+  aggr <- pop.aggregate.subnat(pred, regions = 124, 
+                locations = file.path(data.dir, "CANlocations.txt"))
+  ct <- get.countries.table(aggr)
+  stopifnot(nrow(ct) == 1)
+  stopifnot(dim(get.pop("P124", aggr))[3] == 8) # projection until 2050
   test.ok(test.name)
   unlink(sim.dir, recursive=TRUE)  
 }

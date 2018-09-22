@@ -832,7 +832,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 		return(x)
 	}
 	pattern <- inputs$PASFRpattern
-	if(is.null(pattern)) return(inputs$PASFR)
 	min.value <- 1e-3	
 	pasfr.obs <- inputs$observed$PASFR
 	
@@ -870,7 +869,8 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	}
 	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
 	startTi <- which(years == proj.years[1])
-	gnorm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
+	gnorm <- norms[[.pasfr.norm.name(
+	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
 	t.r <- years[startTi-1]
