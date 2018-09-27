@@ -324,7 +324,8 @@ test.subnat <- function() {
   pred <- pop.predict.subnat(output.dir = sim.dir,
                              locations = file.path(data.dir, "CANlocations.txt"),
                              inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
-                                           popF = file.path(data.dir, "CANpopF.txt")
+                                           popF = file.path(data.dir, "CANpopF.txt"),
+                                           patterns = file.path(data.dir, "CANpatterns.txt")
                                            ))
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada

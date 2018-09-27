@@ -8,7 +8,7 @@ Subnational Probabilistic Population Projection
 Generates trajectories of probabilistic population projection for subregions of a given country.
 }
 \usage{
-pop.predict.subnat(end.year = 2050, start.year = 1950, present.year = 2015, 
+pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2015, 
               wpp.year = 2017, output.dir = file.path(getwd(), "bayesPop.output"), 
               locations = NULL, default.country = NULL, 
               inputs = list(popM = NULL, popF = NULL, 
@@ -37,7 +37,7 @@ pop.predict.subnat(end.year = 2050, start.year = 1950, present.year = 2015,
   			\item{mxM, mxF}{Historical data and (optionally) projections of male/female age-specific death rates [\code{\link[wpp2017]{mxM}}, \code{\link[wpp2017]{mxF}}] (see also argument \code{fixed.mx}).}
   			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2017]{sexRatio}}]}
   			\item{pasfr}{Historical data and (optionally) projections of percentage age-specific fertility rate [\code{\link[wpp2017]{percentASFR}}] (see also argument \code{fixed.pasfr}).}
-  			\item{patterns}{Information on region's specifics regarding migration type, base year of the migration, mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. In addition, it can contain columns defining migration shares between the regions. These are: \code{inmigrationM_share}, \code{inmigrationF_share}, \code{outmigrationM_share}, \code{outmigrationF_share}. The sex specification and/or direction specification (in/out) can be omitted, e.g. it can be simply \code{migration_share}. If sex is omitted, Rogers Castro age schedules are used for migration.}
+  			\item{patterns}{Information on region's specifics regarding migration type, base year of the migration, mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. In addition, it can contain columns defining migration shares between the regions, see Details below.}
   			\item{migM, migF}{Projection of male/female age-specific migration as net counts on the same scale as initital population [\code{\link[wpp2012]{migrationM}}, \code{\link[wpp2012]{migrationF}}]. If not available, the migration schedules are constructed from total migration counts of the \code{default.country} derived from \code{\link[wpp2017]{migration}} using Rogers Castro for age distribution. Migration shares between region (including sex-specific shares) can be given in the \code{patterns} file, see above.}
   			\item{e0F.file}{Comma-delimited CSV file with female life expectancy. It has the same structure as the file \dQuote{ascii_trajectories.csv} generated using \code{bayesLife::\link[bayesLife]{convert.e0.trajectories}} (which currently works for country-level results only). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package (for \code{default.country}) is taken, namely the median projections as one trajectory and the low and high variants (if available) as second and third trajectory. Alternatively, this element can be the keyword \dQuote{median_} in which case only the median is taken.}
   			\item{e0M.file}{Comma-delimited CSV file containing results of male life expectancy of the same format as \code{e0F.file}. If this element is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. As in the female case, if both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, data for \code{default.country} from the corresponding \pkg{wpp} package is taken.}
@@ -51,9 +51,14 @@ pop.predict.subnat(end.year = 2050, start.year = 1950, present.year = 2015,
   \item{nr.traj, keep.vital.events, fixed.mx, fixed.pasfr, replace.output, verbose}{These arguments have the same meaning as in \code{\link{pop.predict}}.}
 }
 
-%\details{
+\details{
+Net migration can either be given as disaggregated sex- and age-specific datasets \code{migM} and \code{migF}. Alternatively, it can be given as shares between regions as columns in the \code{patterns} dataset. These are: \code{inmigrationM_share}, \code{inmigrationF_share}, \code{outmigrationM_share}, \code{outmigrationF_share}. The sex specification and/or direction specification (in/out) can be omitted, e.g. it can be simply \code{migration_share}. The function extracts the values of net migration projection on the national level and distributes it to regions according to the given shares. For positive values, it uses the inmigration shares; for negative values it uses the outmigration shares. If the in/out prefix is omitted in the column names, the given migartion shares are used for both, positive and negative net migration projection. By default, if no \code{migM} and \code{migF} neither region-specific shares are given, the distribution between regions is proportional to the size of population. The age-specific schedules follow by default the Rogers-Castro age schedules.
+
+
+
+
 %%  ~~ If necessary, more details than the description above ~~
-%}
+}
 
 \value{
 Object of class \code{\link{bayesPop.prediction}} containing the subnational projections. 
@@ -106,6 +111,7 @@ pred <- pop.predict.subnat(output.dir = sim.dir,
             locations = file.path(data.dir, "CANlocations.txt"),
             inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
                           popF = file.path(data.dir, "CANpopF.txt"),
+                          patterns = file.path(data.dir, "CANpatterns.txt"),
                           tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124")
                         ),
             verbose = TRUE)
