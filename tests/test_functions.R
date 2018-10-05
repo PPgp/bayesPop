@@ -329,13 +329,13 @@ test.subnat <- function() {
                                            ))
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
-  stopifnot(dim(get.pop("P658", pred))[3] == 8) # projection until 2050
+  stopifnot(dim(get.pop("P658", pred))[3] == 10) # projection until 2060
   
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                 locations = file.path(data.dir, "CANlocations.txt"))
   ct <- get.countries.table(aggr)
   stopifnot(nrow(ct) == 1)
-  stopifnot(dim(get.pop("P124", aggr))[3] == 8) # projection until 2050
+  stopifnot(dim(get.pop("P124", aggr))[3] == 10) # projection until 2050
   test.ok(test.name)
   unlink(sim.dir, recursive=TRUE)  
 }
