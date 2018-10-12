@@ -14,5 +14,6 @@ if(!CRAN) {
 	test.regional.aggregation()
 	test.life.table()
 	test.adjustment()
+	test.subnat()
 }
 options(warn=warn$warn)

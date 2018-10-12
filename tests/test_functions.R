@@ -258,11 +258,13 @@ test.regional.aggregation <-function() {
 	e0.predict(sim.dir=sim.dir.e0, burnin=5, save.as.ascii=0)
 	# Population prediction
 	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
-    			inputs = list(tfr.sim.dir=sim.dir.tfr, e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
+    			inputs = list(tfr.sim.dir=sim.dir.tfr, 
+    			              e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
     options(warn=warn$warn)
 	stopifnot(pred$nr.traj==20)
 	aggr <- pop.aggregate(pred, regions=regions, input.type="region", verbose=TRUE)
 	stopifnot(setequal(aggr$countries$code, regions))
+	test.ok(test.name)
 	unlink(sim.dir.tfr, recursive=TRUE)
 	unlink(sim.dir.e0, recursive=TRUE)
 	unlink(sim.dir.pop, recursive=TRUE)
@@ -270,6 +272,7 @@ test.regional.aggregation <-function() {
 
 test.life.table <- function(){
 	test.name <- 'Life Tables'
+	start.test(test.name)
 	sim.dir <- tempfile()
 	# this is the Example from LifeTableMx
 	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015,
@@ -292,11 +295,13 @@ test.life.table <- function(){
 	sx4 <- as.double(LifeTableMxCol(pop.byage.table(pred, expression="MEC_M{age.index01(27)}", year=2053)[,1], 'sx', age05=c(FALSE, FALSE, TRUE)))
 	sx5 <- as.double(sxpred[,"2053",1])
 	stopifnot(all.equal(sx4, sx5))
+	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }
 
 test.adjustment <- function() {
     test.name <- 'Adjustments'
+    start.test(test.name)
     sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
     pred <- get.pop.prediction(sim.dir)
     med <- pop.trajectories.table(pred, "Ecuador")[,"median"]
@@ -307,5 +312,33 @@ test.adjustment <- function() {
     should.be <- c(24876.80, 24725.84, 24320.58) 
     stopifnot(all.equal(adj.med[c("2080", "2090", "2100")], should.be, 
                         tolerance = 0.01, check.attributes = FALSE))
+    test.ok(test.name)
 }
+
+test.subnat <- function() {
+  test.name <- "Subnational projections"
+  start.test(test.name)
+  data.dir <- file.path(find.package("bayesPop"), "extdata")
+  # Use national data for tfr and e0
+  sim.dir <- tempfile()
+  pred <- pop.predict.subnat(output.dir = sim.dir,
+                             locations = file.path(data.dir, "CANlocations.txt"),
+                             inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
+                                           popF = file.path(data.dir, "CANpopF.txt"),
+                                           patterns = file.path(data.dir, "CANpatterns.txt")
+                                           ))
+  ct <- get.countries.table(pred)
+  stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
+  stopifnot(dim(get.pop("P658", pred))[3] == 10) # projection until 2060
+  
+  aggr <- pop.aggregate.subnat(pred, regions = 124, 
+                locations = file.path(data.dir, "CANlocations.txt"))
+  ct <- get.countries.table(aggr)
+  stopifnot(nrow(ct) == 1)
+  stopifnot(dim(get.pop("P124", aggr))[3] == 10) # projection until 2050
+  test.ok(test.name)
+  unlink(sim.dir, recursive=TRUE)  
+}
+
+
 #TODO: test project.pasfr function

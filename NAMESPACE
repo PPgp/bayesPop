@@ -17,6 +17,7 @@ useDynLib(bayesPop)
 # export functions
 export(
 pop.predict,
+pop.predict.subnat,
 pop.trajectories.plot,
 pop.trajectories.plotAll,
 pop.trajectories.table,
@@ -30,6 +31,7 @@ pop.trajectories.pyramidAll,
 get.pop.prediction,
 has.pop.prediction,
 pop.aggregate,
+pop.aggregate.subnat,
 get.pop.aggregation,
 get.bPop.pyramid,
 pop.map,

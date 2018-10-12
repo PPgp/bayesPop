@@ -601,10 +601,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	return(inp)
 }
 
-.get.srb.data.and.time.periods <- function(srb.file, present.year, end.year, wpp.year) {
-    if(is.null(srb.file)) 
+.get.srb.data.and.time.periods <- function(srb.data, present.year, end.year, wpp.year) {
+    if(is.null(srb.data)) 
         SRB <- load.wpp.dataset('sexRatio', wpp.year)
-    else SRB <- read.pop.file(srb.file)
+    else {
+        if(is.character(srb.data)) # file name
+            SRB <- read.pop.file(srb.data)
+        else SRB <- srb.data
+    }
     names.SRB.data <- names(SRB)
     num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.SRB.data) # index of year-columns
     cols.starty <- as.integer(substr(names.SRB.data[num.columns], 1,4))
@@ -629,11 +633,15 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
            obs.periods=obs.periods, proj.years=proj.years))
 }
 
-.get.pasfr.data <- function(pasfr.file, wpp.year, obs.periods, proj.periods,
+.get.pasfr.data <- function(pasfr.data, wpp.year, obs.periods, proj.periods,
                             include.projection=TRUE) {
-    if(is.null(pasfr.file)) 
+    if(is.null(pasfr.data)) 
         PASFR <- load.wpp.dataset('percentASFR', wpp.year)
-    else PASFR <- read.pop.file(pasfr.file)
+    else {
+        if(is.character(pasfr.data)) # file name
+            PASFR <- read.pop.file(pasfr.data)
+        else PASFR <- pasfr.data
+    }
     obs.PASFR <- NULL
     if(!is.null(obs.periods)) {
         avail.obs.periods <- is.element(obs.periods, colnames(PASFR))
@@ -645,14 +653,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
-.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year) {
-    pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
-    if(is.null(pattern.file)) 
-        vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
-    else vwBase <- read.pop.file(pattern.file)
-    if(!is.factor(vwBase$PasfrNorm))
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL) {
+    if(is.null(pattern.data)) {
+        pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
+        if(is.null(pattern.file)) 
+            vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+        else vwBase <- read.pop.file(pattern.file)
+    } else vwBase <- pattern.data
+    
+    if("PasfrNorm" %in% colnames(vwBase) && !is.factor(vwBase$PasfrNorm))
         vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
-    MIGtype <- vwBase[,c('country_code', 'ProjFirstYear', 'MigCode')]
     
     create.pattern <- function(dataset, columns) {
         pattern <- data.frame(dataset[,'country_code'])
@@ -663,6 +673,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
         return(pattern)
     }
+    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
     MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
@@ -821,7 +832,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 		return(x)
 	}
 	pattern <- inputs$PASFRpattern
-	if(is.null(pattern)) return(inputs$PASFR)
 	min.value <- 1e-3	
 	pasfr.obs <- inputs$observed$PASFR
 	
@@ -859,7 +869,8 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	}
 	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
 	startTi <- which(years == proj.years[1])
-	gnorm <- norms[[.pasfr.norm.name(pattern[,'PasfrNorm'])]]
+	gnorm <- norms[[.pasfr.norm.name(
+	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
 	t.r <- years[startTi-1]
@@ -1364,8 +1375,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 
 StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, country.name=NULL, keep.vital.events=FALSE) {
 	popm <- popf <- matrix(0, nrow=27, ncol=npred+1)
-	popm[,1] <- c(inputs$POPm0, rep(0, 6))
-	popf[,1] <- c(inputs$POPf0, rep(0, 6))
+	popm[,1] <- c(inputs$POPm0, rep(0, 27 - nrow(inputs$POPm0)))
+	popf[,1] <- c(inputs$POPf0, rep(0, 27 - nrow(inputs$POPf0)))
 	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))
 	btageM <- btageF <- matrix(0, nrow=7, ncol=npred) # births by age of mother and sex of child
 	deathsM <- deathsF <- matrix(0, nrow=27, ncol=npred)
