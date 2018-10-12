@@ -1,8 +1,8 @@
 \name{pop.expressions}
 \alias{pop.expressions}
-\title{Expressions as used in Population Plot Functions}
+\title{Expressions as used in Population Output Functions}
 \description{
-	Documentation of expressions supported by functions \code{\link{pop.trajectories.plot}}, \code{\link{pop.trajectories.plotAll}}, \code{\link{pop.trajectories.table}}, \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, \code{\link{pop.cohorts.plot}}, \code{\link{pop.map}}, \code{\link{pop.map.gvis}}, \code{\link{write.pop.projection.summary}}.
+	Documentation of expressions supported by functions \code{\link{pop.trajectories.plot}}, \code{\link{pop.trajectories.plotAll}}, \code{\link{pop.trajectories.table}}, \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, \code{\link{pop.cohorts.plot}}, \code{\link{pop.map}}, \code{\link{pop.map.gvis}}, \code{\link{write.pop.projection.summary}}, \code{\link{get.pop.ex}}, \code{\link{get.pop.exba}}.
 }
 \details{
 The functions above accept an argument \code{expression} which should define a population measure, i.e. a quantity that can be computed from population projections, observed population data or vital events. Such an expression is a collection of \emph{basic components} connected via usual arithmetic operators, such as \code{+},  \code{-}, \code{*}, \code{/}, \code{^}, \code{\%\%}, \code{\%/\%}, and combined using parentheses. In addition, standard R functions or predefined functions (see below) can be used within expressions.
@@ -44,9 +44,12 @@ When the expression is evaluated on a prediction object, each basic component is
 }
 
 Depending on the context from which the expression is called, the trajectory dimension of the result of the expression can be reduced by computing given quantiles, and if only one country is evaluated, the first dimension is removed. In addition, with an exception of functions \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}},  \code{\link{cohorts}}, and \code{\link{pop.cohorts.plot}}, the expression should be constructed in a way that the age dimension is eliminated. This can be done for example by using brackets to define age, by using the \code{apply} function or one of the pre-defined functions described below. When using within \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, or \code{\link{pop.cohorts.plot}}, the expression MUST include curly braces.
+
+While \code{\link{get.pop}} can be used to obtain results of a basic component, functions \code{\link{get.pop.ex}} and \code{\link{get.pop.exba}} evaluate whole expressions. 
 } 
 
 \section{Pre-defined functions}{
+The following functions can be used within an expression:
 \itemize{
 	\item \code{gmedian(f, cat)} \cr
 	It gives a median for grouped data with frequencies \code{f} and categories \code{cat}. This function is to be used in combination with \code{apply} or \code{pop.apply} (see below) along the age dimension. For example, \cr
@@ -79,6 +82,7 @@ Depending on the context from which the expression is called, the trajectory dim
 	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
 }
 There is also a help function available that generates an expression for the mean age of childbearing, see \code{\link{mac.expression}}.
+
 }
 
 \note{The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.}

@@ -1,3 +1,10 @@
+7.0-0 (10/11/2018)
+-----
+Support for subnational population projections:
+    - functions pop.predict.subnat & pop.aggregate.subnat
+    - added subnational data for Canada
+
+
 6.2-4 (03/15/2018)
 -----
 Fixed a bug that caused the projection to fail when the option 
