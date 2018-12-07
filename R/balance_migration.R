@@ -283,6 +283,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		}
 		get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
 								                ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
+		# TODO: If adjustments, it will come here
+		# 1. adjust
+		# 2. balance
+		
 		# New population counts
 		res.env$totpm <- res.env$totpm + res.env$migrationm
 		res.env$totpf <- res.env$totpf + res.env$migrationf
@@ -1048,7 +1052,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 	    if(verbose) cat('(sequentially) ... ')
 		res.list <- list()				
 		for(cidx in 1:ncountries) {
-		    if(verbose && interactive()) cat(cidx, ', ')
+		    if(verbose && interactive()) cat("\r", round(cidx/ncountries * 100), '%')
 				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
 		}
 		if(verbose) cat("\n")
