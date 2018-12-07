@@ -252,7 +252,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(time > 1) 
             do.pop.predict.one.country.no.migration(time, UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
                                                     kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj, 
-                                                    popM.prev[,cidx, drop=FALSE], popF.prev[,cidx, drop=FALSE], ages, 
+                                                    popM.prev[,cidx,,drop=FALSE], popF.prev[,cidx,,drop=FALSE], ages, 
                                                     keep.vital.events=keep.vital.events, verbose=verbose)
 	    else do.pop.predict.one.country.no.migration(time, UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
 	                                                 kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj,  
@@ -272,20 +272,17 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    for(cidx in 1:ncountries) nomigpred[[cidx]] <- wrapper.pop.predict.one.country.no.migration(cidx)
 		}
 		for(cidx in 1:ncountries) {  # collect results
-			for(par in c('totp')) res.env[[par]][cidx,time] <- nomigpred[[cidx]][[par]]
+			for(par in c('totp')) res.env[[par]][cidx,] <- nomigpred[[cidx]][[par]]
 			for(par in c('totpm', 'totpf'))#'migrationm', 'migrationf', 'migrationm.hch', 'migrationf.hch'
-				res.env[[par]][,cidx,time] <- nomigpred[[cidx]][[par]]
+				res.env[[par]][,cidx,] <- nomigpred[[cidx]][[par]]
 
 			if(keep.vital.events) {
 				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf')) # 'migm', 'migf',
-					res.env[[par]][,cidx,time] <- nomigpred[[cidx]][[par]]
+					res.env[[par]][,cidx,] <- nomigpred[[cidx]][[par]]
 			}
 		}
-		migpred <- get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
+		get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
 								                ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
-		lage <- dim(migpred$M)[1]
-		res.env$migrationm[1:lage,,] <- migpred$M
-		res.env$migrationf[1:lage,,] <- migpred$F
 		# New population counts
 		res.env$totpm <- res.env$totpm + res.env$migrationm
 		res.env$totpf <- res.env$totpf + res.env$migrationf
@@ -315,7 +312,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			save(totp, totpm, totpf, mig.rate, migm, migf, file = file.name)
 			if(keep.vital.events) {
 				file.name <- file.path(outdir.tmp, paste0('vital_events_time_', time, '.rda'))
-				save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=traj.file.name)
+				save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
 			}
 		})		
 		gc()	
@@ -422,14 +419,13 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	country.codes.char <- as.character(country.codes)
 	data(land_area_wpp2015)
 
-	pop <- drop(colSums(env$totpm[,,time, drop=FALSE] + env$totpf[,,time, drop=FALSE]))
 	for(itraj in 1:nr.traj){
 	    pop <- colSums(env$totpm[,,itraj] + env$totpf[,,itraj])
 	    for(cidx in 1:nr.countries) {
 		    inpc <- inputs[[country.codes.char[cidx]]]
 		    migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[cidx], 
-							popM=env$totpm[,cidx, time], popF=env$totpf[,cidx,time], country.code=country.codes[cidx], 
-							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[cidx,,itraj] else NULL, 
+							popM=env$totpm[,cidx, itraj], popF=env$totpf[,cidx,itraj], country.code=country.codes[cidx], 
+							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[,cidx,itraj] else NULL, 
 							fixed.rate=if(use.fixed.rate) inpc$projected.migration.rates[itraj,time] else NULL,
 							warn.template=env$warns[["_template_"]])
 		    #print(c(list(paste('Country:', country.codes.char[cidx], ', time: ', time, ', traj: ', itraj)), migpred))
@@ -958,12 +954,12 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		})
 		for(time in 1:npred) {
 			for(par in c('totp'))
-				res.env[[par]][time+1,] <- envs[[i]][[par]][cidx,]
+				res.env[[par]][time+1,] <- envs[[time]][[par]][cidx,]
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
-				res.env[[par]][,time+1,] <- envs[[i]][[par]][,cidx,]
+				res.env[[par]][,time+1,] <- envs[[time]][[par]][,cidx,]
 			if(keep.vital.events) {
 				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf'))
-					res.env[[par]][,time+1,] <- envs[[i]][[par]][,cidx,]
+					res.env[[par]][,time+1,] <- envs[[time]][[par]][,cidx,]
 			}
 		}
 		observed <- obs
