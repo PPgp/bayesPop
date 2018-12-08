@@ -30,6 +30,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		
 	mig.rate.prev <- mig.rate <- NULL
 	fixed.mig.rate <- FALSE
+	adjust.mig <- FALSE
 	if(use.migration.model) {
 		if(is.null(migration.settings$posterior) && is.null(migration.settings[['projected.rates']]))
 			stop('Argument migration.settings must either have an element "posterior" or an element "projected.rates".')
@@ -50,8 +51,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			names(mig.rate.prev) <- inp$migration.rates$country_code
 		}
 		inp$migration.rates <- inp$migration.rates[,-ncol(inp$migration.rates)] # remove the present year column as it is in mig.rate.prev
-		for(par in c('year.of.migration.schedule'))
-			if(!is.null(migration.settings[[par]])) inp[[par]] <- migration.settings[[par]]
+		for(par in c('year.of.schedule', 'adjust.to', 'adjustM.to', 'adjustF.to'))
+			if(!is.null(migration.settings[[par]])) inp[[paste0("migration.", par)]] <- migration.settings[[par]]
+		if(any(c('adjust.to', 'adjustM.to', 'adjustF.to') %in% names(migration.settings))) adjust.mig <- TRUE
+		# remove unwanted (redundant) columns
+		remove.cols <- c("country_name", "name")
+		for (par in c('migration.parameters', 'projected.migration.rates', 'migration.rates', 
+		              'migration.adjust.to', 'migration.adjustM.to', 'migration.adjustF.to')) 
+		    if(par %in% names(inp) && any(remove.cols %in% colnames(inp[[par]])))
+		        inp[[par]] <- inp[[par]][, -which(colnames(inp[[par]]) %in% remove.cols)]
 	} 
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.time.index==1 && !reformat.only) unlink(outdir.tmp, recursive=TRUE)
@@ -283,10 +291,20 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		}
 		get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
 								                ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
-		# TODO: If adjustments, it will come here
-		# 1. adjust
-		# 2. balance
-		
+
+		# Migration adjustments
+		if(adjust.mig) {
+		    # 1. adjust
+		    mig.before <- list(M = res.env$migrationm, F = res.env$migrationf)
+		    adjust.migration.if.needed(time, present.and.proj.years.pop[time], country.codes, countries.input, res.env)
+		    #mig.after <- list(M = res.env$migrationm, F = res.env$migrationf)
+		    # 2. re-balance
+		    if(rebalance)
+		        rebalance.migration.for.all.trajectories(res.env)
+		    # adjust migration rates
+		    res.env$mig.rate[time + 1,,] <- apply(res.env$migrationm + res.env$migrationf, c(2,3), sum)/apply(res.env$totpm + res.env$totpf, c(2,3), sum)
+		    #mig.after.balance <- list(M = res.env$migrationm, F = res.env$migrationf)
+        }
 		# New population counts
 		res.env$totpm <- res.env$totpm + res.env$migrationm
 		res.env$totpf <- res.env$totpf + res.env$migrationf
@@ -872,7 +890,7 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	slabor <- 0
 	if(!is.null(e$migrm.labor))
 		slabor <- sum(e$migrm.labor)
-	rebalance.migration(e, pop) # rest of the world; does not assure positve counts
+	rebalance.migration(e, pop) # rest of the world; does not assure positive counts
 	
 	if(slabor != 0) { # balancing for labor countries
 		pop.labor <- pop * (as.integer(names(pop)) %in% labor.countries())
@@ -903,6 +921,28 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	}
 	e$migrm.labor[] <- 0
 	e$migrf.labor[] <- 0
+}
+
+rebalance.migration.for.all.trajectories <- function(env) {
+    nr.traj <- dim(env$migrationm)[3]
+    e <- new.env()
+    migbalattr <- list(m = "migrm", f = "migrf")
+    migresattr <- list(m = "migrationm", f = "migrationf")
+    popbalattr <- list(m = "popm", f = "popf")
+    popresattr <- list(m = "totpm", f = "totpf")
+    for(itraj in 1:nr.traj) {
+        # prepare balancing environment
+        for(sex in c("m", "f")) {
+            e[[migbalattr[[sex]]]] <- env[[migresattr[[sex]]]][,,itraj]
+            e[[popbalattr[[sex]]]] <- env[[popresattr[[sex]]]][,,itraj]
+            # for cases when dimension is dropped (if there is one country)
+            if(is.null(dim(e[[popbalattr[[sex]]]]))) e[[popbalattr[[sex]]]] <- abind(e[[popbalattr[[sex]]]], along=2)
+        }
+        pop <- colSums(env$totpm[,,itraj] + env$totpf[,,itraj])
+        # rebalance and store results
+        rebalance.migration(e, pop, check.negatives=TRUE)
+        for(sex in c("m", "f")) env[[migresattr[[sex]]]][,,itraj] <- e[[migbalattr[[sex]]]]
+    }
 }
 
 labor.countries <- function()
@@ -1049,7 +1089,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 							restructure.pop.data.and.compute.quantiles.one.country)
 		stopCluster(cl)
 	} else { # process sequentially
-	    if(verbose) cat('(sequentially) ... ')
+	    if(verbose) cat('(sequentially) ... \n')
 		res.list <- list()				
 		for(cidx in 1:ncountries) {
 		    if(verbose && interactive()) cat("\r", round(cidx/ncountries * 100), '%')
@@ -1100,8 +1140,8 @@ migration.age.schedule <- function(country, npred, inputs) {
 		cidxF.neg <- which(inputs$MIGf$country_code==country)
 		first.year.neg <- FALSE
 	}
-	if(!is.null(inputs$year.of.migration.schedule)) { 
-		first.year.period <- inputs$year.of.migration.schedule
+	if(!is.null(inputs$migration.year.of.schedule)) { 
+		first.year.period <- inputs$migration.year.of.schedule
 		first.year <- TRUE
 		if(is.gcc(country)) first.year.neg <- TRUE
 	}
