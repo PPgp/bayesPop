@@ -157,25 +157,35 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	h5compression.level <- 0
 	with(res.env, {
 	    h5createDataset(temp.file.name, "pop/totp", c(npred, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/totpm", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level #, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/totpf", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/migrationm", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/migrationf", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/totp.hch", c(npred, ncountries, nvariants), 
-	                    storage.mode = "double", chunk=c(1, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/totpm.hch", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nvariants), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nvariants)
+	                    )
 	    h5createDataset(temp.file.name, "pop/totpf.hch", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nvariants), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nvariants)
+	                    )
 	    h5createDataset(temp.file.name, "pop/migm", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5createDataset(temp.file.name, "pop/migf", c(npred, 27, ncountries, nr.traj), 
-	                    storage.mode = "double", chunk=c(1, 27, ncountries, nr.traj), level = h5compression.level)
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	                    )
 	    h5write(country.codes, temp.file.name, "country.codes")
 	    h5write(ages, temp.file.name, "ages")
 	    h5write(nr.traj, temp.file.name, "nr.traj")
@@ -296,7 +306,19 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                                                 kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj,  
 	                                                 ages=ages, keep.vital.events=keep.vital.events, verbose=verbose)
 	}
-	
+	store.no.migration.results <- function(res) {
+	    for(par in c('totp')) 
+	        h5write(res[[par]], file=temp.file.name, 
+	                name=paste0("pop/", par), index=list(time, cidx, NULL))
+	    for(par in c('totpm', 'totpf'))
+	        h5write(res[[par]], file=temp.file.name, 
+	                name=paste0("pop/", par), index=list(time, NULL, cidx, NULL))
+	    
+	    if(keep.vital.events) {
+	        for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf')) # 'migm', 'migf',
+	            res.env[[par]][,cidx,] <- nomigpred[[cidx]][[par]]
+	    }
+	}
 	for(time in start.time.index:npred) {
 	    unblock.gtk.if.needed(paste('finished', time, status.for.gui), gui.options)
 	    if(verbose) cat('\nProcessing time period ', time)
@@ -305,22 +327,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    clusterExport(cl, c("time", "mig.rate.prev"), envir=environment())
 		    if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
 		    nomigpred <- parLapplyLB(cl, 1:ncountries, wrapper.pop.predict.one.country.no.migration)
+		    for(cidx in 1:ncountries) store.no.migration.results(cidx)
 		} else { # process sequentially
-		    nomigpred <- list()
-		    for(cidx in 1:ncountries) nomigpred[[cidx]] <- wrapper.pop.predict.one.country.no.migration(cidx)
-		}
-		for(cidx in 1:ncountries) {  # collect results
-			for(par in c('totp')) 
-			    h5write(nomigpred[[cidx]][[par]], file=temp.file.name, 
-			                              name=paste0("pop/", par), index=list(time, cidx, NULL))
-			for(par in c('totpm', 'totpf'))
-				h5write(nomigpred[[cidx]][[par]], file=temp.file.name, 
-				                        name=paste0("pop/", par), index=list(time, NULL, cidx, NULL))
-
-			if(keep.vital.events) {
-				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf')) # 'migm', 'migf',
-					res.env[[par]][,cidx,] <- nomigpred[[cidx]][[par]]
-			}
+		    for(cidx in 1:ncountries) store.no.migration.results(wrapper.pop.predict.one.country.no.migration(cidx))
 		}
 		get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
 								                ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
@@ -353,11 +362,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			popM.prev <- abind(popM.prev, along=2)
 		if(is.null(dim(popF.prev))) 
 			popF.prev <- abind(popF.prev, along=2)
-		# TODO: Are these really the same? Do we need both?
-		migm <- drop(h5read(temp.file.name, "pop/migrationm", index = list(time, NULL, NULL, NULL)))
-		migf <- drop(h5read(temp.file.name, "pop/migrationf", index = list(time, NULL, NULL, NULL)))
-		h5write(migm, file=temp.file.name, name="pop/migm", index = list(time, NULL, NULL, NULL))
-		h5write(migf, file=temp.file.name, name="pop/migf", index = list(time, NULL, NULL, NULL))
 		
 		if (any(totpm < get.zero.constant()) || any(totpf < get.zero.constant())){
 			cntries.m <- which(apply(totpm, 2, function(x) any(x < get.zero.constant())))
@@ -375,12 +379,19 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		#		file.name <- file.path(outdir.tmp, paste0('vital_events_time_', time, '.rda'))
 		#		save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
 		#	}
-		#})		
+		#})	
+		rm(totpm, totpf, spop)
 		gc()	
 	} # end time
 	
 	if(parallel) stopCluster(cl)
     } # end if(!reformat.only)
+	
+	# TODO: Are these really the same? Do we need both?
+	migm <- h5read(temp.file.name, "pop/migrationm")
+	migf <- h5read(temp.file.name, "pop/migrationf")
+	h5write(migm, file=temp.file.name, name="pop/migm")
+	h5write(migf, file=temp.file.name, name="pop/migf")
 	
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(temp.file.name, outdir, npred, countries.input, observed, kannisto, 
@@ -523,6 +534,8 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	    #env$migrationm[1:lages,,itraj] <- e$migrm + e$migrm.labor
 	    #env$migrationf[1:lages,,itraj] <- e$migrf + e$migrf.labor
 	}
+	rm(list=ls(e), envir=e)
+	rm(e)
 	return(NULL)
 }
 
