@@ -171,6 +171,12 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    h5createDataset(temp.file.name, "pop/migrationf", c(npred, 27, ncountries, nr.traj), 
 	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
 	                    )
+	    h5createDataset(temp.file.name, "pop/migrationm.labor", c(npred, 27, ncountries, nr.traj), 
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	    )
+	    h5createDataset(temp.file.name, "pop/migrationf.labor", c(npred, 27, ncountries, nr.traj), 
+	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, 27, ncountries, nr.traj)
+	    )
 	    h5createDataset(temp.file.name, "pop/totp.hch", c(npred, ncountries, nvariants), 
 	                    storage.mode = "double", level = h5compression.level#, chunk=c(1, ncountries, nr.traj)
 	                    )
@@ -300,7 +306,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(time > 1) 
             do.pop.predict.one.country.no.migration(time, UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
                                                     kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj, 
-                                                    popM.prev[,cidx,,drop=FALSE], popF.prev[,cidx,,drop=FALSE], ages, 
+                                                    drop(h5read(temp.file.name, "pop/totpm", index = list(time-1, NULL, cidx, NULL))),
+                                                    drop(h5read(temp.file.name, "pop/totpf", index = list(time-1, NULL, cidx, NULL))),
+                                                    #popM.prev[,cidx,,drop=FALSE], popF.prev[,cidx,,drop=FALSE], 
+                                                    ages, 
                                                     keep.vital.events=keep.vital.events, verbose=verbose)
 	    else do.pop.predict.one.country.no.migration(time, UNnames[cidx], countries.input[[country.codes.char[cidx]]], 
 	                                                 kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj,  
@@ -348,30 +357,30 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    #mig.after.balance <- list(M = res.env$migrationm, F = res.env$migrationf)
         }
 		# New population counts
-		totpm <- drop(h5read(temp.file.name, "pop/totpm", index = list(time, NULL, NULL, NULL)) + h5read(temp.file.name, "pop/migrationm", index = list(time, NULL, NULL, NULL)))
-		totpf <- drop(h5read(temp.file.name, "pop/totpf", index = list(time, NULL, NULL, NULL)) + h5read(temp.file.name, "pop/migrationf", index = list(time, NULL, NULL, NULL)))
+		#totpm <- drop(h5read(temp.file.name, "pop/totpm", index = list(time, NULL, NULL, NULL)) + h5read(temp.file.name, "pop/migrm", index = list(time, NULL, NULL, NULL)))
+		#totpf <- drop(h5read(temp.file.name, "pop/totpf", index = list(time, NULL, NULL, NULL)) + h5read(temp.file.name, "pop/migrf", index = list(time, NULL, NULL, NULL)))
 		#totpf <- res.env$totpf + res.env$migrationf
-		h5write(totpm, file=temp.file.name, name="pop/totpm", index = list(time, NULL, NULL, NULL))
-		h5write(totpf, file=temp.file.name, name="pop/totpf", index = list(time, NULL, NULL, NULL))
-		spop <- apply(totpm + totpf, c(2,3), sum)
-		h5write(spop, file=temp.file.name, name="pop/totp", index = list(time, NULL, NULL))
+		#h5write(totpm, file=temp.file.name, name="pop/totpm", index = list(time, NULL, NULL, NULL))
+		#h5write(totpf, file=temp.file.name, name="pop/totpf", index = list(time, NULL, NULL, NULL))
+		#spop <- apply(totpm + totpf, c(2,3), sum)
+		#h5write(spop, file=temp.file.name, name="pop/totp", index = list(time, NULL, NULL))
 		#res.env$totp <- if(dim(res.env$totp)[1]==1) sum(spop) else apply(spop, c(2,3), sum) # distinction if there is only one country
-		popM.prev <- totpm
-		popF.prev <- totpf
-		if(is.null(dim(popM.prev))) # one country only; dimension dropped
-			popM.prev <- abind(popM.prev, along=2)
-		if(is.null(dim(popF.prev))) 
-			popF.prev <- abind(popF.prev, along=2)
+		#popM.prev <- totpm
+		#popF.prev <- totpf
+		#if(is.null(dim(popM.prev))) # one country only; dimension dropped
+		#	popM.prev <- abind(popM.prev, along=2)
+		#if(is.null(dim(popF.prev))) 
+		#	popF.prev <- abind(popF.prev, along=2)
 		
-		if (any(totpm < get.zero.constant()) || any(totpf < get.zero.constant())){
-			cntries.m <- which(apply(totpm, 2, function(x) any(x < get.zero.constant())))
-			cntries.f <- which(apply(totpf, 2, function(x) any(x < get.zero.constant())))
-			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(totpm[,country,], 2, function(x) any(x<0))),
-								which(apply(totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
-			}
-		}
+		# if (any(totpm < get.zero.constant()) || any(totpf < get.zero.constant())){
+		# 	cntries.m <- which(apply(totpm, 2, function(x) any(x < get.zero.constant())))
+		# 	cntries.f <- which(apply(totpf, 2, function(x) any(x < get.zero.constant())))
+		# 	for(country in unique(c(cntries.m, cntries.f))) {
+		# 		neg.times <- unique(which(apply(totpm[,country,], 2, function(x) any(x<0))),
+		# 						which(apply(totpf[,country,], 2, function(x) any(x<0))))
+		# 		add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+		# 	}
+		# }
 		#with(res.env, {
 		#	file.name <- file.path(outdir.tmp, paste0('pop_time_', time, '.rda'))
 		#	save(totp, totpm, totpf, mig.rate, migm, migf, file = file.name)
@@ -380,8 +389,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		#		save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
 		#	}
 		#})	
-		rm(totpm, totpf, spop)
-		gc()	
+		#rm(totpm, totpf, spop)
+		#gc()	
 	} # end time
 	
 	if(parallel) stopCluster(cl)
@@ -481,61 +490,99 @@ get.balanced.migration <- function(time, country.codes, inputs, nr.traj, rebalan
 	nr.countries <- length(country.codes)
 	e <- new.env()
 	labor.codes <- labor.countries()
+	all.ages <- ages
+	lall.ages <- length(all.ages)
 	ages <- ages[1:21]
 	lages <- length(ages)
-	e$migrm <- e$migrf <- matrix(NA, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
-	e$migrm.labor <- e$migrf.labor <- matrix(0, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
+	#e$migrm <- e$migrf <- matrix(NA, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
+	#e$migrm.labor <- e$migrf.labor <- matrix(0, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
 	
-	pop <- rep(NA, nr.countries)
-	names(pop) <- country.codes
+	migrm <- migrf <- matrix(NA, ncol=nr.traj, nrow=lages, dimnames=list(ages, NULL))
+	migrm.labor <- migrf.labor <- matrix(0, ncol=nr.traj, nrow=lages, dimnames=list(ages, NULL))
+	
+	#pop <- rep(NA, nr.countries)
+	#names(pop) <- country.codes
 	country.codes.char <- as.character(country.codes)
 	data(land_area_wpp2015)
 
-	for(itraj in 1:nr.traj){
-	    totpm <- drop(h5read(env$temp.file.name, "pop/totpm", index=list(time, NULL, NULL, itraj)))
-	    totpf <- drop(h5read(env$temp.file.name, "pop/totpf", index=list(time, NULL, NULL, itraj)))
+	totpm <- totpf <- matrix(NA, ncol=nr.traj, nrow=lall.ages, dimnames=list(all.ages, NULL))
+	
+	for(cidx in 1:nr.countries) {
+	    totpm[] <- drop(h5read(env$temp.file.name, "pop/totpm", index=list(time, NULL, cidx, NULL)))
+	    totpf[] <- drop(h5read(env$temp.file.name, "pop/totpf", index=list(time, NULL, cidx, NULL)))
 	    #pop <- colSums(env$totpm[,,itraj] + env$totpf[,,itraj])
-	    dimnames(totpm) <- dimnames(totpf) <- list(c(ages, seq(105, by = 5, length = 6)), country.codes)
 	    pop <- colSums(totpm + totpf)
-	    #names(pop) <- country.codes.char
-	    for(cidx in 1:nr.countries) {
-		    inpc <- inputs[[country.codes.char[cidx]]]
-		    migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[cidx], 
-							popM=totpm[,cidx], popF=totpf[,cidx], country.code=country.codes[cidx], 
+	    inpc <- inputs[[country.codes.char[cidx]]]
+	    migrm[] <- migrf[] <- migrm.labor[] <- migrf.labor[] <- 0
+	    
+	    for(itraj in 1:nr.traj){
+	        #totpm <- drop(h5read(env$temp.file.name, "pop/totpm", index=list(time, NULL, NULL, itraj)))
+	        #totpf <- drop(h5read(env$temp.file.name, "pop/totpf", index=list(time, NULL, NULL, itraj)))
+	        #pop <- colSums(env$totpm[,,itraj] + env$totpf[,,itraj])
+	        #dimnames(totpm) <- dimnames(totpf) <- list(c(ages, seq(105, by = 5, length = 6)), country.codes)
+	        #pop <- colSums(totpm + totpf)
+	        #names(pop) <- country.codes.char
+		    migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop[itraj], 
+							popM=totpm[,itraj], popF=totpf[,itraj], country.code=country.codes[cidx], 
 							mig.rates=if(!is.null(env$mig.rate)) env$mig.rate[,cidx,itraj] else NULL, 
 							fixed.rate=if(use.fixed.rate) inpc$projected.migration.rates[itraj,time] else NULL,
 							warn.template=env$warns[["_template_"]])
 		    #print(c(list(paste('Country:', country.codes.char[cidx], ', time: ', time, ', traj: ', itraj)), migpred))
-		    e$migrm[,cidx] <- migpred$M
-		    e$migrf[,cidx] <- migpred$F
+		    migrm[,itraj] <- migpred$M
+		    migrf[,itraj] <- migpred$F
 		    if(!is.null(migpred$laborM)) {
-			    e$migrm.labor[,cidx] <- migpred$laborM
-			    e$migrf.labor[,cidx] <- migpred$laborF
+			    migrm.labor[,itraj] <- migpred$laborM
+			    migrf.labor[,itraj] <- migpred$laborF
 		    }
 		    env$mig.rate[time+1, cidx, itraj] <- migpred$rate
 		    if (!is.null(migpred$warns)) {
 			    env$warns[[country.codes.char[cidx]]] <- if(is.null(env$warns[[country.codes.char[cidx]]])) migpred$warns else
 															env$warns[[country.codes.char[cidx]]] + migpred$warns			
 		    }
-	    }
-	    e$popm <- totpm
-	    e$popf <- totpf
+	    } # end traj loop for one country
+	    # store country results 
+	    h5write(migrm, env$temp.file.name, "pop/migrationm", index = list(time, 1:lages, cidx, NULL))
+	    h5write(migrf, env$temp.file.name, "pop/migrationf", index = list(time, 1:lages, cidx, NULL))
+	    h5write(migrm.labor, env$temp.file.name, "pop/migrationm.labor", index = list(time, 1:lages, cidx, NULL))
+	    h5write(migrf.labor, env$temp.file.name, "pop/migrationf.labor", index = list(time, 1:lages, cidx, NULL))
+	} # end country loop
+	#if(time == 1) stop('')
+	# balance all trajectories
+	e$popm <- e$popf <- migm27 <- migf27 <- matrix(0, ncol=nr.countries, nrow=lall.ages, dimnames=list(all.ages, country.codes))
+	e$migrm <- e$migrf <- matrix(0, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
+	e$migrm.labor <- e$migrf.labor <- matrix(0, ncol=nr.countries, nrow=lages, dimnames=list(ages, country.codes))
+	for(itraj in 1:nr.traj){
+	    e$popm[] <- drop(h5read(env$temp.file.name, "pop/totpm", index=list(time, NULL, NULL, itraj)))
+	    e$popf[] <- drop(h5read(env$temp.file.name, "pop/totpf", index=list(time, NULL, NULL, itraj)))
+	    pop <- colSums(e$popm + e$popf)
+	    e$migrm[] <- drop(h5read(env$temp.file.name, "pop/migrationm", index=list(time, 1:lages, NULL, itraj)))
+	    e$migrf[] <- drop(h5read(env$temp.file.name, "pop/migrationf", index=list(time, 1:lages, NULL, itraj)))
+	    e$migrm.labor[] <- drop(h5read(env$temp.file.name, "pop/migrationm.labor", index=list(time, 1:lages, NULL, itraj)))
+	    e$migrf.labor[] <- drop(h5read(env$temp.file.name, "pop/migrationf.labor", index=list(time, 1:lages, NULL, itraj)))
+	    
 	    # for cases when dimension is dropped (if there is one country)
-	    if(is.null(dim(e$popm))) e$popm <- abind(e$popm, along=2)
-	    if(is.null(dim(e$popf))) e$popf <- abind(e$popf, along=2)
+	    #if(is.null(dim(e$popm))) e$popm <- abind(e$popm, along=2)
+	    #if(is.null(dim(e$popf))) e$popf <- abind(e$popf, along=2)
 	
 	    if(rebalance) {
 		    rebalance.migration2groups(e, pop, itraj)			
 		    negatives <- as.character(country.codes[unique(e$negatives)])
 		    for(country in negatives) add.pop.warn(country, time, 1, env) # 'Population negative while balancing'
 	    }
-	    h5write(e$migrm + e$migrm.labor, env$temp.file.name, "pop/migrationm", index = list(time, 1:lages, NULL, itraj))
-	    h5write(e$migrf + e$migrf.labor, env$temp.file.name, "pop/migrationf", index = list(time, 1:lages, NULL, itraj))
+	    migm27[1:lages,] <- e$migrm + e$migrm.labor
+	    migf27[1:lages,] <- e$migrf + e$migrf.labor
+	    h5write(migm27, env$temp.file.name, "pop/migm", index = list(time, NULL, NULL, itraj))
+	    h5write(migf27, env$temp.file.name, "pop/migf", index = list(time, NULL, NULL, itraj))
 	    #env$migrationm[1:lages,,itraj] <- e$migrm + e$migrm.labor
 	    #env$migrationf[1:lages,,itraj] <- e$migrf + e$migrf.labor
+	    # new population counts
+	    tpopm <- migm27 + e$popm
+	    tpopf <- migf27 + e$popf
+	    h5write(tpopm, file=env$temp.file.name, name="pop/totpm", index = list(time, NULL, NULL, itraj))
+	    h5write(tpopf, file=env$temp.file.name, name="pop/totpf", index = list(time, NULL, NULL, itraj))
+	    h5write(colSums(tpopm + tpopf), file=env$temp.file.name, name="pop/totp", index = list(time, NULL, itraj))
 	}
 	rm(list=ls(e), envir=e)
-	rm(e)
 	return(NULL)
 }
 
@@ -564,8 +611,8 @@ do.pop.predict.one.country.no.migration <- function(time, country.name, inpc, ka
 	    LTres <- modifiedLC(1, kannisto, inpc$e0Mpred[time,itraj], 
 								inpc$e0Fpred[time,itraj], verbose=verbose)		
 	    if(time > 1) { # reset initial population to the one at the previous time step
-		    pop.ini$M <- popM.prev[,1,itraj] # second dimension is equal 1 (country)
-		    pop.ini$F <- popF.prev[,1,itraj]
+		    pop.ini$M <- popM.prev[,itraj] # second dimension is equal 1 (country)
+		    pop.ini$F <- popF.prev[,itraj]
 	    }
 	    popres <- PopProjNoMigr(1, pop.ini, LTres, asfr, inpc$SRB[time], country.name=country.name,
 								keep.vital.events=keep.vital.events)
