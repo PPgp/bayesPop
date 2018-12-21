@@ -201,12 +201,44 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
         #totp.hch <- matrix(0, nrow=ncountries, ncol=nvariants, dimnames=list(country.codes, NULL))
         #totpm.hch <- totpf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
 		if(keep.vital.events) {
-		    btm <- btf <- asfert <- pasfert <- array(0, dim=c(7, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
-            deathsm <- deathsf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-            btm.hch <- btf.hch <- asfert.hch <- pasfert.hch <- array(0, dim=c(7, ncountries, nvariants), dimnames=list(NULL, country.codes, NULL))
-            deathsm.hch <- deathsf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
-            mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
-            mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
+		    h5createDataset(temp.file.name, "ve/btm", c(npred, 7, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/btf", c(npred, 7, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/asfert", c(npred, 7, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/pasfert", c(npred, 7, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/deathsm", c(npred, 27, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/deathsf", c(npred, 27, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/btm.hch", c(npred, 7, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/btf.hch", c(npred, 7, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/asfert.hch", c(npred, 7, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/pasfert.hch", c(npred, 7, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/deathsm.hch", c(npred, 27, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/deathsf.hch", c(npred, 27, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/mxm", c(npred, 28, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/mxf", c(npred, 28, ncountries, nr.traj), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/mxm.hch", c(npred, 28, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    h5createDataset(temp.file.name, "ve/mxf.hch", c(npred, 28, ncountries, nvariants), 
+		                    storage.mode = "double", level = h5compression.level)
+		    #btm <- btf <- asfert <- pasfert <- array(0, dim=c(7, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
+            #deathsm <- deathsf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
+            #btm.hch <- btf.hch <- asfert.hch <- pasfert.hch <- array(0, dim=c(7, ncountries, nvariants), dimnames=list(NULL, country.codes, NULL))
+            #deathsm.hch <- deathsf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
+            #mxm <- mxf <- array(0, dim=c(28, ncountries, nr.traj), dimnames=list(mx.ages, country.codes, NULL))
+            #mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
 		}
 		warns <- list()
 		warns[["_template_"]] <- matrix(0, nrow=get.nr.warns(), ncol=npred)
@@ -315,7 +347,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                                                 kannisto[[country.codes.char[cidx]]], kantor.pasfr[[country.codes.char[cidx]]], nr.traj,  
 	                                                 ages=ages, keep.vital.events=keep.vital.events, verbose=verbose)
 	}
-	store.no.migration.results <- function(res) {
+	store.no.migration.results <- function(res, cidx) {
 	    for(par in c('totp')) 
 	        h5write(res[[par]], file=temp.file.name, 
 	                name=paste0("pop/", par), index=list(time, cidx, NULL))
@@ -325,7 +357,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    
 	    if(keep.vital.events) {
 	        for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf')) # 'migm', 'migf',
-	            res.env[[par]][,cidx,] <- nomigpred[[cidx]][[par]]
+	            h5write(res[[par]], file=temp.file.name, 
+	                    name=paste0("ve/", par), index=list(time, NULL, cidx, NULL))
 	    }
 	}
 	for(time in start.time.index:npred) {
@@ -338,7 +371,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    nomigpred <- parLapplyLB(cl, 1:ncountries, wrapper.pop.predict.one.country.no.migration)
 		    for(cidx in 1:ncountries) store.no.migration.results(cidx)
 		} else { # process sequentially
-		    for(cidx in 1:ncountries) store.no.migration.results(wrapper.pop.predict.one.country.no.migration(cidx))
+		    for(cidx in 1:ncountries) store.no.migration.results(wrapper.pop.predict.one.country.no.migration(cidx), cidx)
 		}
 		get.balanced.migration(time, country.codes, countries.input, nr.traj, rebalance, use.migration.model,
 								                ages, res.env,  use.fixed.rate=fixed.mig.rate, verbose=verbose)
@@ -397,10 +430,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
     } # end if(!reformat.only)
 	
 	# TODO: Are these really the same? Do we need both?
-	migm <- h5read(temp.file.name, "pop/migrationm")
-	migf <- h5read(temp.file.name, "pop/migrationf")
-	h5write(migm, file=temp.file.name, name="pop/migm")
-	h5write(migf, file=temp.file.name, name="pop/migf")
+	#migm <- h5read(temp.file.name, "pop/migrationm")
+	#migf <- h5read(temp.file.name, "pop/migrationf")
+	#h5write(migm, file=temp.file.name, name="pop/migm")
+	#h5write(migf, file=temp.file.name, name="pop/migf")
 	
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(temp.file.name, outdir, npred, countries.input, observed, kannisto, 
@@ -1076,8 +1109,10 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		res.env <- new.env()
 		with(res.env, {
 			totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, dimnames=list(present.and.proj.years.pop, NULL))
-			totpm <- totpf <- migm <- migf <- array(NA, dim=c(27, npredplus1, nr.traj), 
+			totpm <- totpf <- array(NA, dim=c(27, npredplus1, nr.traj), 
 										dimnames=list(ages, present.and.proj.years.pop, NULL))
+			migm <- migf <- array(NA, dim=c(27, npredplus1, nr.traj), 
+			                      dimnames=list(ages, present.and.proj.years, NULL))
 			# values from current year
 			totp[1,] <- sum(inpc$POPm0) + sum(inpc$POPf0)
 			totpm[1:length(inpc$POPm0),1,] <- as.matrix(inpc$POPm0)[,repi]
@@ -1106,10 +1141,14 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 			for(par in c('totp'))
 				res.env[[par]][2:npredplus1,] <- drop(h5read(source.dir, paste0("pop/", par), index = list(NULL, cidx, NULL)))
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
-				res.env[[par]][,2:npredplus1,] <- drop(h5read(source.dir, paste0("pop/", par), index = list(NULL, NULL, cidx, NULL)))
+				res.env[[par]][,2:npredplus1,] <- aperm(drop(h5read(
+				        source.dir, paste0("pop/", par), 
+				        index = list(NULL, NULL, cidx, NULL))), c(2,1,3))
 			if(keep.vital.events) {
 				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf'))
-					res.env[[par]][,time+1,] <- envs[[time]][[par]][,cidx,]
+				    res.env[[par]][,2:npredplus1,] <- aperm(drop(h5read(
+				        source.dir, paste0("ve/", par), 
+				        index = list(NULL, NULL, cidx, NULL))), c(2,1,3))
 			}
 		#}
 		observed <- obs
@@ -1203,7 +1242,7 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		res.list <- list()				
 		for(cidx in 1:ncountries) {
 		    if(verbose && interactive()) cat("\r", round(cidx/ncountries * 100), '%')
-				res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
+			res.list[[cidx]] <- restructure.pop.data.and.compute.quantiles.one.country(cidx)
 		}
 		if(verbose) cat("\n")
 	}
