@@ -389,21 +389,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	return(bayesPop.prediction)
 }
 
-
-.ini.pop.res.env <- function(e, vital.events=FALSE) {
-	e$vital.events <- vital.events
-	with(e, {
-		totp[] <- totpm[] <- totpf[] <- totp.hch[] <- totpm.hch[] <- totpf.hch[] <- 0
-		migrationm[] <- migrationf[] <-  0
-		if(vital.events) {
-			btm[] <- btf[] <- deathsm[] <- deathsf[] <- btm.hch[] <- btf.hch[] <- asfert.hch[] <- 0
-			mxm[] <- mxf[] <- mxm.hch[] <- mxf.hch[] <- 0 
-			if(exists("migm")) migm[] <- migf[] <- 0
-		}
-	})
-}
-
-
 read.pop.file <- function(file) 
 	return(read.delim(file=file, comment.char='#', check.names=FALSE))
 	
