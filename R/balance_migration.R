@@ -163,6 +163,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
         totp <- matrix(0, nrow=ncountries, ncol=nr.traj, dimnames=list(country.codes, NULL))
         totpm <- totpf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
         migm <- migf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
+        warns <- list()
     })
     res.env$mig.rate <- mig.rate
     
@@ -243,11 +244,11 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	            file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
 	            save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
 	        })
-	        rm(list=c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf"), 
-	           envir=work.env)
 	    }
-	    if(time > 1) rm(list=c("popM.prev", "popF.prev"), envir=work.env)
-	    return(as.list(work.env))
+	    res <- list()
+	    for(item in c('totpm', 'totpf', 'migm', 'migf', 'warns', 'mig.rate'))
+	        res[[item]] <- work.env[[item]]
+	    return(res)
 	}
 	
 	for(time in start.time.index:npred) {
@@ -265,10 +266,16 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    }
 		}
 		# collect results
+		
 		for(itraj in 1:nr.traj) { 
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
 				res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
 			res.env$mig.rate[,,itraj] <- thispred[[itraj]]$mig.rate
+			if(!is.null(thispred[[itraj]]$warns[[country]])) {
+			    if(is.null(res.env$warns[[country]]))
+			        res.env$warns[[country]] <- thispred[[itraj]]$warns[["_template_"]]
+			    res.env$warns[[country]] <- res.env$warns[[country]] + thispred[[itraj]]$warns[[country]]
+			}
 		}
 		# Migration adjustments
 		if(adjust.mig) {
