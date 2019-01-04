@@ -214,8 +214,8 @@ adjust.migration.if.needed <- function(time, year, country.codes, inputs, env) {
         adjust$Total <- !adjust$Male && !adjust$Female && adj.names$Total %in% adjtype
         cntry <- country.codes[icntry]
         # current migration projections
-        migMage <- env$migrationm[,country.codes.char[icntry],]
-        migFage <- env$migrationf[,country.codes.char[icntry],]
+        migMage <- env$migm[,country.codes.char[icntry],]
+        migFage <- env$migf[,country.codes.char[icntry],]
         migM <- colSums(migMage)
         migF <- colSums(migFage)
         lage <- nrow(migMage)
@@ -245,7 +245,7 @@ adjust.migration.if.needed <- function(time, year, country.codes, inputs, env) {
                 adjusted[[whatadj]] <- current.mig.age[[whatadj]] + age.props * dif 
             }
         }
-        env$migrationm[,country.codes.char[icntry],] <- adjusted$Male
-        env$migrationf[,country.codes.char[icntry],] <- adjusted$Female
+        env$migm[,country.codes.char[icntry],] <- adjusted$Male
+        env$migf[,country.codes.char[icntry],] <- adjusted$Female
     }
 }
