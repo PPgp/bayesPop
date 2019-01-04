@@ -241,9 +241,19 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
 	    if(keep.vital.events) {
 	        # save vital events by trajectories so that we don't need to send it back to master 
-	        file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
-	        save(list = c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf"), 
-	             envir = work.env, file = file.name)
+	        #file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
+	        file.name <- file.path(outdir.tmp, paste0('vital_events_traj_', itraj, '.rda'))
+	        items.to.save <- c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf")
+	        store.env <- new.env()
+	        if(time == 1) { # add time dimension
+	            for(item in items.to.save)
+	                store.env[[item]] <- abind(work.env[[item]], rev.along = 3)
+	        } else {
+	            load(file.name, envir = store.env)
+	            for(item in items.to.save)
+	                store.env[[item]] <- abind(store.env[[item]], work.env[[item]], along = 1)
+	        }
+	        save(list = items.to.save, envir = store.env, file = file.name)
 	        #with(work.env, {
 	        #    save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
 	        #})
@@ -262,7 +272,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		if(parallel) {
 		    clusterExport(cl, c("time", "mig.rate"), envir=environment())
 		    if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
-		    thispred <- parLapplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
+		    thispred <- clusterApplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
 		} else { # process sequentially
 		    thispred <- list()
 		    for(itraj in 1:nr.traj) {
@@ -1081,11 +1091,11 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 				res.env[[par]][time+1,] <- envs[[time]][[par]][cidx,]
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
 				res.env[[par]][,time+1,] <- envs[[time]][[par]][,cidx,]
-			if(keep.vital.events) {
-			    for(itraj in 1:nr.traj) {
-				    for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf'))
-					    res.env[[par]][,time+1,itraj] <- envs.ve[[time]][[itraj]][[par]][,cidx]
-			    }
+		}
+		if(keep.vital.events) {
+		    for(itraj in 1:nr.traj) {
+				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf'))
+				    res.env[[par]][,2:npredplus1,itraj] <- t(envs.ve[[itraj]][[par]][,,cidx])
 			}
 		}
 		observed <- obs
@@ -1135,18 +1145,18 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		return(quant.env)
 	}
 
-	envs <- envs.ve <- list()
+	envs <- list()
 	for(time in 1:npred) {
 	    envs[[time]] <- new.env()
-	    envs.ve[[time]] <- list()
 	    load(file.path(source.dir, paste0('pop_time_', time, '.rda')), envir=envs[[time]])
-	    if(keep.vital.events) {
-	        for(itraj in 1:nr.traj) {
-	            envs.ve[[time]][[itraj]] <- new.env()
-	            load(file.path(source.dir, paste0('vital_events_time_traj_', time, '_', itraj, '.rda')), envir=envs.ve[[time]][[itraj]])
-	            #load(file.path(source.dir, paste0('vital_events_time_', time, '.rda')), envir=envs[[time]])
-	        }
-	    }
+	}
+    if(keep.vital.events) {
+        envs.ve <- list()
+	    for(itraj in 1:nr.traj) {
+            envs.ve[[itraj]] <- new.env()
+	        load(file.path(source.dir, paste0('vital_events_traj_', itraj, '.rda')), envir=envs.ve[[itraj]])
+	        #load(file.path(source.dir, paste0('vital_events_time_', time, '.rda')), envir=envs[[time]])
+	   }
 	}
 	ncountries <- nrow(envs[[1]]$totp)
 	country.codes <- rownames(envs[[1]]$totp)
