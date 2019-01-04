@@ -210,18 +210,19 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "res.env", "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
 	                    "migration.thresholds", "adjust.mig", ".ini.pop.res.env")
+	mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=.GlobalEnv))
 	if(parallel) {
 		nr.nodes.traj <- min(nr.nodes, nr.traj)
 		if(verbose) cat(' (in parallel on ', nr.nodes.traj, ' nodes).')
 		cl <- create.pop.cluster(nr.nodes.traj, ...)
 		clusterExport(cl, global.objects, envir=environment())
+		clusterExport(cl, c("create.work.env", "create.mig.env"), envir=environment())
 		clusterEvalQ(cl, {
 		    work.env <- create.work.env()
 		    work.mig.env <- create.mig.env()
 		})
 	} else {
 	    if(verbose) cat(' (sequentially).')
-	    mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=.GlobalEnv))
 	    work.env <- create.work.env()
 	    work.mig.env <- create.mig.env()
 	}
@@ -240,10 +241,13 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
 	    if(keep.vital.events) {
 	        # save vital events by trajectories so that we don't need to send it back to master 
-	        with(work.env, {
-	            file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
-	            save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
-	        })
+	        file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
+	        save(list = c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf"), 
+	             envir = work.env, file = file.name)
+	        #with(work.env, {
+	        #    save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf,  file=file.name)
+	        #})
+	        #print(file.name)
 	    }
 	    res <- list()
 	    for(item in c('totpm', 'totpf', 'migm', 'migf', 'warns', 'mig.rate'))
@@ -258,7 +262,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		if(parallel) {
 		    clusterExport(cl, c("time", "mig.rate"), envir=environment())
 		    if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
-		    thispred <- parLapplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory)
+		    thispred <- parLapplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
 		} else { # process sequentially
 		    thispred <- list()
 		    for(itraj in 1:nr.traj) {
@@ -266,7 +270,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    }
 		}
 		# collect results
-		
 		for(itraj in 1:nr.traj) { 
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
 				res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
