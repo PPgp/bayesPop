@@ -1249,9 +1249,12 @@ runKannisto <- function(inputs, start.year, ...) {
 	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
 }
 
-runKannisto.noLC <- function(inputs) {
+runKannisto.noLC <- function(inputs, observed = FALSE) {
 	# extend mx
-	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
+    if(!observed)
+	    Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
+    else
+        Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, compute.AxBx=FALSE)
 	mxMKan <- c(Kan$male, sex=1)
 	mxFKan <- c(Kan$female, sex=2)
 	return(list(male=mxMKan, female=mxFKan))
