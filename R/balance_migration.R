@@ -171,6 +171,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
     # prepare working environment for storing population for one trajectory
     create.work.env <- function() {
         work.env <- new.env()
+        mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir = work.env))
 	    with(work.env, {
             totpm <- totpf <- array(0, dim=c(27, ncountries), dimnames=list(ages, country.codes))
             migm <- migf <- array(0, dim=c(27, ncountries), dimnames=list(ages, country.codes))
@@ -212,12 +213,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
 	                    "migration.thresholds", "adjust.mig")
-	mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=.GlobalEnv))
+	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
+	work.env <- create.work.env()
+	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
 	if(parallel) {
 		nr.nodes.traj <- min(nr.nodes, nr.traj)
 		if(verbose) cat(' (in parallel on ', nr.nodes.traj, ' nodes).')
 		cl <- create.pop.cluster(nr.nodes.traj, ...)
-		clusterExport(cl, global.objects, envir=environment())
+		#clusterExport(cl, settings.env, envir=environment())
+		clusterExport(cl, c(global.objects, "global.objects"), envir=environment())
 		clusterExport(cl, c("create.work.env", "create.mig.env",
 		                    ".ini.pop.res.env", "cleanup.env"), envir=environment())
 		clusterEvalQ(cl, {
@@ -228,7 +232,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		})
 	} else {
 	    if(verbose) cat(' (sequentially).')
-	    work.env <- create.work.env()
 	    work.mig.env <- create.mig.env()
 	}
 	data(land_area_wpp2015)
@@ -368,14 +371,13 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	
 	if(parallel) stopCluster(cl)
 	else {
-	    cleanup.env(work.env)
 	    cleanup.env(work.mig.env)
 	}
-	cleanup.env(res.env)
+	rm(migration.thresholds, envir = .GlobalEnv)
     } # end if(!reformat.only)
 	
 	if(verbose) cat('\nRe-formatting data ')
-	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, countries.input, observed, kannisto, 
+	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, kannisto, 
 					present.and.proj.years, keep.vital.events, 
 					#parallel=parallel,  # this can cause memory swapping
 					parallel=FALSE, 
@@ -383,7 +385,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 					chunk.size=chunk.size, verbose=verbose)
 	if(verbose) cat(' done.\n')
 	unlink(outdir.tmp, recursive=TRUE)
-	pop.predict.half.child(res.env, outdir, present.and.proj.years)
+	pop.predict.half.child(res.env, outdir, work.env)
+	cleanup.env(res.env)
+	cleanup.env(work.env)
 	#save meta file
 	country.rows <- UNlocations[countries.idx,c('country_code', 'name')]
 	colnames(country.rows) <- c('code', 'name')
@@ -498,10 +502,15 @@ adjust.half.child <- function(values, med) {
     return(res)
 }
 
-pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
+pop.predict.half.child <- function(res.env, outdir, wenv) {
     # add res matrices
-    npredplus1 <- npred + 1
+    present.and.proj.years <- wenv$present.and.proj.years
     present.and.proj.years.pop <- present.and.proj.years + 2
+    npred <- wenv$npred
+    npredplus1 <- npred + 1
+    nvariants <- wenv$nvariants
+    ages <- wenv$ages
+    mx.ages <- wenv$mx.ages
     with(res.env, {
         totpm.hch <- totpf.hch <- array(0, dim=c(27, npredplus1, nvariants), 
                                         dimnames=list(ages, present.and.proj.years.pop, NULL))
@@ -513,9 +522,9 @@ pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
             mxm.hch <- mxf.hch <- array(0, dim=c(28, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
         }
     })
-    .ini.pop.res.env(res.env, keep.vital.events)
-    for(cidx in 1:ncountries) {
-        country <- country.codes[cidx]
+    .ini.pop.res.env(res.env, wenv$keep.vital.events)
+    for(cidx in 1:wenv$ncountries) {
+        country <- wenv$country.codes[cidx]
         file.name <- file.path(outdir, paste0('totpop_country', country, '.rda'))
         computed.env <- new.env()
         load(file.name, envir=computed.env)
@@ -525,7 +534,7 @@ pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
         medpopf <- apply(computed.env$totpf, c(1,2), "median")
         res.env$totpm.hch[,1,] <- computed.env$totpm[,1,1]
         res.env$totpf.hch[,1,] <- computed.env$totpf[,1,1]
-        if(keep.vital.events) {
+        if(wenv$keep.vital.events) {
             file.name.ve <- file.path(outdir, paste0('vital_events_country', country, '.rda'))
             computed.env.ve <- new.env()
             load(file.name.ve, envir=computed.env.ve)
@@ -538,7 +547,7 @@ pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
         popF.hch.prev[is.na(popF.hch.prev)] <- 0
         for(time in 1:npred) {
             do.pop.predict.one.country.no.migration.half.child(time, cidx, res.env, 
-                                        list(M=popM.hch.prev, F=popF.hch.prev))
+                                        list(M=popM.hch.prev, F=popF.hch.prev), wenv)
             # add migration
             res.env$totpm.hch[,time+1,] <- res.env$totpm.hch[,time+1,] + medmigm[,time+1]
             res.env$totpf.hch[,time+1,] <- res.env$totpf.hch[,time+1,] + medmigf[,time+1]
@@ -558,7 +567,7 @@ pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
         for(par in c('totp.hch', 'totpm.hch', 'totpf.hch'))
             computed.env[[par]] <- res.env[[par]]
         save(list=ls(computed.env, all.names=TRUE), envir=computed.env, file=file.name)
-        if(keep.vital.events) {
+        if(wenv$keep.vital.events) {
             for(par in c('btm.hch', 'btf.hch', 'deathsm.hch', 'deathsf.hch', 'asfert.hch', 'pasfert.hch', 'mxm.hch','mxf.hch')) 
                 computed.env.ve[[par]] <- res.env[[par]]
             save(list=ls(computed.env.ve, all.names=TRUE), envir=computed.env.ve, file=file.name.ve)
@@ -567,18 +576,18 @@ pop.predict.half.child <- function(res.env, outdir, present.and.proj.years) {
 }
 
 balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
-    lages <- length(ages21)
-    for(cidx in 1:ncountries) {
-        inpc <- countries.input[[country.codes.char[cidx]]]
+    lages <- length(res.env$ages21)
+    for(cidx in 1:res.env$ncountries) {
+        inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
                           list(M = res.env$popM.prev[,cidx,drop=FALSE],
                                F = res.env$popF.prev[,cidx,drop=FALSE])
         do.pop.predict.1country.1traj.no.migration(time, itraj, cidx, res.env, pop.ini)
         pop <- sum(res.env$totpm[,cidx] + res.env$totpf[,cidx])
-        migpred <- .get.migration.one.trajectory(use.migration.model, inpc, itraj, time, pop, 
-                                                 popM=res.env$totpm[,cidx], popF=res.env$totpf[,cidx], country.code=country.codes[cidx], 
+        migpred <- .get.migration.one.trajectory(res.env$use.migration.model, inpc, itraj, time, pop, 
+                                                 popM=res.env$totpm[,cidx], popF=res.env$totpf[,cidx], country.code=res.env$country.codes[cidx], 
                                                  mig.rates=if(!is.null(res.env$mig.rate)) res.env$mig.rate[,cidx] else NULL, 
-                                                 fixed.rate=if(fixed.mig.rate) inpc$projected.migration.rates[itraj,time] else NULL,
+                                                 fixed.rate=if(res.env$fixed.mig.rate) inpc$projected.migration.rates[itraj,time] else NULL,
                                                  warn.template=res.env$warns[["_template_"]])
         #print(c(list(paste('Country:', country.codes.char[cidx], ', time: ', time, ', traj: ', itraj)), migpred))
         work.env$migrm[,cidx] <- migpred$M
@@ -599,10 +608,10 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     #if(is.null(dim(work.env$popm))) work.env$popm <- abind(work.env$popm, along=2)
     #if(is.null(dim(work.env$popf))) work.env$popf <- abind(work.env$popf, along=2)
     
-    if(rebalance) {
+    if(res.env$rebalance) {
         pop <- colSums(res.env$totpm + res.env$totpf)
         rebalance.migration2groups(work.env, pop, itraj)			
-        negatives <- as.character(country.codes[unique(work.env$negatives)])
+        negatives <- res.env$country.codes.char[unique(work.env$negatives)]
         for(country in negatives) add.pop.warn(country, time, 1, res.env) # 'Population negative while balancing'
     }
     res.env$migm[1:lages,] <- work.env$migrm + work.env$migrm.labor
@@ -616,25 +625,25 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
 
 
 do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, pop.ini) {
-    country.name <- UNnames[cidx]
-    inpc <- countries.input[[country.codes.char[cidx]]] 
-    kann <- kannisto[[country.codes.char[cidx]]]
-    LeeC <- surv[[country.codes.char[cidx]]]
-    pasfr <- kantor.pasfr[[country.codes.char[cidx]]][[itraj]][,time,drop=FALSE]
+    country.name <- env$UNnames[cidx]
+    inpc <- env$countries.input[[env$country.codes.char[cidx]]] 
+    kann <- env$kannisto[[env$country.codes.char[cidx]]]
+    LeeC <- env$surv[[env$country.codes.char[cidx]]]
+    pasfr <- env$kantor.pasfr[[env$country.codes.char[cidx]]][[itraj]][,time,drop=FALSE]
     asfr <- pasfr
     for(i in 1:nrow(asfr)) asfr[i,] <- inpc$TFRpred[time,itraj] * asfr[i,]
-    LTres <- if(fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
+    LTres <- if(env$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
                                                         x[[2]][,time,drop=FALSE]),
                                  simplify = FALSE, USE.NAMES = TRUE) else
                     modifiedLC(1, kann, inpc$e0Mpred[time,itraj], 
-                               inpc$e0Fpred[time,itraj], verbose=verbose)
+                               inpc$e0Fpred[time,itraj], verbose=env$verbose)
     
     popres <- PopProjNoMigr(1, pop.ini, LTres, asfr, inpc$SRB[time], country.name=country.name,
-                            keep.vital.events=keep.vital.events)
+                            keep.vital.events=env$keep.vital.events)
 
     env$totpm[,cidx] <- popres$mpop[,2]
     env$totpf[,cidx] <- popres$fpop[,2]
-    if(keep.vital.events) {
+    if(env$keep.vital.events) {
         env$btm[,cidx] <- popres$mbt
         env$btf[,cidx] <- popres$fbt
         env$deathsm[,cidx] <- popres$mdeaths
@@ -644,32 +653,31 @@ do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, p
         env$mxm[,cidx] <- LTres$mx[[1]]
         env$mxf[,cidx] <- LTres$mx[[2]]
     }
-
     return(NULL)
 }
 
-do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, pop.ini) {
-    country.name <- UNnames[cidx]
-    inpc <- countries.input[[country.codes.char[cidx]]] 
-    kann <- kannisto[[country.codes.char[cidx]]]
-    LeeC <- surv[[country.codes.char[cidx]]]											    
+do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, pop.ini, wenv) {
+    country.name <- wenv$UNnames[cidx]
+    inpc <- wenv$countries.input[[wenv$country.codes.char[cidx]]] 
+    kann <- wenv$kannisto[[wenv$country.codes.char[cidx]]]
+    LeeC <- wenv$surv[[wenv$country.codes.char[cidx]]]											    
 
-	LTres <- if(fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
+	LTres <- if(wenv$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
 	                                                    x[[2]][,time,drop=FALSE]),
 	                             simplify = FALSE, USE.NAMES = TRUE) else
 	    modifiedLC(1, kann, inpc$e0Mmedian[time], 
-	               inpc$e0Fmedian[time], verbose=verbose)
+	               inpc$e0Fmedian[time], verbose=wenv$verbose)
 
-	for (variant in 1:nvariants) {
-	    pasfr <- kantor.pasfr[[country.codes.char[cidx]]][[nr.traj+variant]][,time,drop=FALSE]
+	for (variant in 1:wenv$nvariants) {
+	    pasfr <- wenv$kantor.pasfr[[wenv$country.codes.char[cidx]]][[wenv$nr.traj+variant]][,time,drop=FALSE]
 	    asfr <- pasfr
 		for(i in 1:nrow(asfr)) asfr[i,] <- inpc$TFRhalfchild[variant,time] * asfr[i,]		
         this.pop.ini <- list(M = pop.ini$M[, variant], F = pop.ini$F[, variant])
 		popres <- PopProjNoMigr(1, this.pop.ini, LTres, asfr, inpc$SRB[time], 
-								country.name=country.name, keep.vital.events=keep.vital.events)
+								country.name=country.name, keep.vital.events=wenv$keep.vital.events)
 		env$totpm.hch[,time+1, variant] <- popres$mpop[,2]
-		env$totpf.hch[,time+1,variant] <- popres$fpop[,2]
-		if(keep.vital.events) {
+		env$totpf.hch[,time+1, variant] <- popres$fpop[,2]
+		if(wenv$keep.vital.events) {
 		    env$btm.hch[,time+1,variant] <- popres$mbt
 		    env$btf.hch[,time+1,variant] <- popres$fbt
 		    env$deathsm.hch[,time+1,variant] <- popres$mdeaths
@@ -1038,7 +1046,7 @@ prop.labor.migration.for.country <- function(code){
 }
 
 
-restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, inputs, observed, kannisto, 
+restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, nr.traj, inputs, observed, kannisto, 
 									present.and.proj.years, keep.vital.events=FALSE, parallel=FALSE, nr.nodes=NULL, 
 									verbose=FALSE, ...){
 	
@@ -1152,7 +1160,6 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 	}
 	ncountries <- nrow(envs[[1]]$totp)
 	country.codes <- rownames(envs[[1]]$totp)
-	nr.traj <- ncol(envs[[1]]$totp)
 	ages <- dimnames(envs[[1]]$totpm)[[1]]
 	nages <- length(ages)
 	mx.ages <- c(0,1,ages[2:nages])
