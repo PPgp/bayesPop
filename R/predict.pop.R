@@ -96,6 +96,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
 					function.inputs=inputs, verbose=verbose)
 
+	cleanup.env(inp)
 	invisible(get.pop.prediction(output.dir))
 }
 
@@ -2074,4 +2075,9 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 	}
 	if(verbose) cat('\n')
 	return(invisible(list(male=all.migM, female=all.migF)))
+}
+
+cleanup.env <- function(env) {
+    rm(list = ls(env), envir = env)
+    rm(env)
 }
