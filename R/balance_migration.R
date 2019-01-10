@@ -120,10 +120,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	}
 	if(!is.null(mig.rate.prev)) {
 		mig.rate.prev <- mig.rate.prev[country.codes.char]
-		mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
-		if(is.null(mig.rate)) 
-		    mig.rate <- array(NA, c(npred+1, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
-        mig.rate[start.time.index,,] <- mig.rate.prev
+		#mig.rate.prev <- matrix(mig.rate.prev, nrow=length(mig.rate.prev), ncol=nr.traj)
+		#if(is.null(mig.rate)) 
+		#    mig.rate <- array(NA, c(npred+1, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
+        #mig.rate[start.time.index,,] <- mig.rate.prev
 	}
 	kannisto <- surv <- kannisto.pred <- list()
 	observed <- new.env()
@@ -186,6 +186,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    warns <- list()
 		    warns[["_template_"]] <- matrix(0, nrow=get.nr.warns(), ncol=npred)
 		    mig.rate <- array(NA, c(npred+1, ncountries), dimnames=list(NULL, country.codes))
+		    mig.rate[1,] <- mig.rate.prev
 	    })
         return(work.env)
     }
@@ -212,7 +213,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "nvariants", "keep.vital.events", "verbose",
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-	                    "migration.thresholds", "adjust.mig")
+	                    "migration.thresholds", "adjust.mig", "mig.rate.prev")
 	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
 	work.env <- create.work.env()
 	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
@@ -237,35 +238,14 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	data(land_area_wpp2015)
 	
 	predict.1time.period.1trajectory <- function(itraj, time) {
-	    #gc()
-	    #memch1a <- mem_change({
-	    with(work.mig.env, {
-	        migrm[] <- migrf[] <- migrm.labor[] <- migrf.labor[] <- 0
-	    })
-	    .ini.pop.res.env(work.env, keep.vital.events)
-	    work.env$mig.rate[] <- mig.rate[,,itraj]
-	    #})
-	    #memch1d <- mem_change({
-	    if(time > 1) {
-	        work.env$popM.prev <- popM.prev[,,itraj]
-	        work.env$popF.prev <- popF.prev[,,itraj]
-	    }
-	    #})
-        #memch2 <- mem_change({
-	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
-        #})
-        #memch3 <- mem_change({
-	    if(keep.vital.events) {
-	        # save vital events by trajectories so that we don't need to send it back to master 
-	        #file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
-	        file.name <- file.path(outdir.tmp, paste0('vital_events_traj_', itraj, '.rda'))
-	        items.to.save <- c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf")
-	        store.env <- new.env()
+	    store.traj.results <- function(items.to.save, file.name, do.load = TRUE, store.env = NULL) {
+	        if(do.load) 
+	            store.env <- new.env()
 	        if(time == 1) { # add time dimension
 	            for(item in items.to.save)
 	                store.env[[item]] <- abind(work.env[[item]], rev.along = 3)
 	        } else {
-	            load(file.name, envir = store.env)
+	            if(do.load) load(file.name, envir = store.env)
 	            for(item in items.to.save)
 	                store.env[[item]] <- abind(store.env[[item]], work.env[[item]], along = 1)
 	        }
@@ -276,18 +256,50 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	        #print(file.name)
 	        cleanup.env(store.env)
 	    }
-	    res <- list()
+	    #gc()
+	    #memch1a <- mem_change({
+	    with(work.mig.env, {
+	        migrm[] <- migrf[] <- migrm.labor[] <- migrf.labor[] <- 0
+	    })
+	    .ini.pop.res.env(work.env, keep.vital.events)
+	    #})
+	    #memch1d <- mem_change({
+	    file.name <- file.path(outdir.tmp, paste0('pop_traj_', itraj, '.rda'))
+	    store.env <- NULL
+	    if(time > 1) {
+	        store.env <- new.env()
+	        load(file.name, envir = store.env)
+	        work.env$mig.rate[] <- store.env$mig.rate[time,]
+	        work.env$popM.prev <- store.env$totpm[,time-1]
+	        work.env$popF.prev <- store.env$totpf[,time-1]
+	    } else work.env$mig.rate[] <- work.env$mig.rate.prev
+	    #})
+        #memch2 <- mem_change({
+	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
+        #})
+        #memch3 <- mem_change({
+	    items.to.save <- c('totpm', 'totpf', 'migm', 'migf', 'mig.rate')
+	    store.traj.results(items.to.save, file.name, do.load = (time == 1), store.env)
+	    if(keep.vital.events) {
+	        # save vital events by trajectories so that we don't need to send it back to master 
+	        #file.name <- file.path(outdir.tmp, paste0('vital_events_time_traj_', time, '_', itraj, '.rda'))
+	        file.name <- file.path(outdir.tmp, paste0('vital_events_traj_', itraj, '.rda'))
+	        items.to.save <- c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf")
+	        store.traj.results(items.to.save, file.name)
+	    }
+	    #res <- list()
 	    #for(item in c('warns'))
 	    #    res[[item]] <- work.env[[item]]
-	    for(item in c('totpm', 'totpf', 'migm', 'migf', 'mig.rate', 'warns'))
-	        res[[item]] <- work.env[[item]]
-	    #})
+	    #for(item in c('totpm', 'totpf', 'migm', 'migf', 'mig.rate', 'warns'))
+	    #    res[[item]] <- work.env[[item]]
+	    ##})
 	    #if(itraj %in% c(1, 2, nr.traj, nr.traj - 1)) {
 	    #    cat("\nTime: ", time, " traj: ", itraj, "\n")
 	    #    print(c(memch1a, memch1d, memch2, memch3))
 	    #    print(mem_used())
 	    #}
-	    return(res)
+	    #return(res)
+	    return(list(warns = work.env[['warns']]))
 	}
 	
 	for(time in start.time.index:npred) {
@@ -295,28 +307,29 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(verbose) cat('\nProcessing time period ', time)
 		.ini.pop.res.env(res.env, vital.events = FALSE)
 		if(parallel) {
-		    clusterExport(cl, c("time", "mig.rate"), envir=environment())
-		    if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
+		    clusterExport(cl, c("time"), envir=environment())
+		    #if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
 		    thispred <- clusterApplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
 		} else { # process sequentially
-		    thispred <- list()
+		    #thispred <- list()
 		    for(itraj in 1:nr.traj) {
-		        thispred[[itraj]] <- predict.1time.period.1trajectory(itraj, time)
+		        #thispred[[itraj]] <- 
+		        predict.1time.period.1trajectory(itraj, time)
 		    }
 		}
 		#memch1 <- mem_change({
 		# collect results
-		for(itraj in 1:nr.traj) { 
-			for(par in c('totpm', 'totpf', 'migm', 'migf'))
-				res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
-			res.env$mig.rate[,,itraj] <- thispred[[itraj]]$mig.rate
-			if(!is.null(thispred[[itraj]]$warns[[country]])) {
-			    if(is.null(res.env$warns[[country]]))
-			        res.env$warns[[country]] <- thispred[[itraj]]$warns[["_template_"]]
-			    res.env$warns[[country]] <- res.env$warns[[country]] + thispred[[itraj]]$warns[[country]]
-			}
-		}
-		rm(thispred)
+		# for(itraj in 1:nr.traj) { 
+		# 	for(par in c('totpm', 'totpf', 'migm', 'migf'))
+		# 		res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
+		# 	res.env$mig.rate[,,itraj] <- thispred[[itraj]]$mig.rate
+		# 	if(!is.null(thispred[[itraj]]$warns[[country]])) {
+		# 	    if(is.null(res.env$warns[[country]]))
+		# 	        res.env$warns[[country]] <- thispred[[itraj]]$warns[["_template_"]]
+		# 	    res.env$warns[[country]] <- res.env$warns[[country]] + thispred[[itraj]]$warns[[country]]
+		# 	}
+		# }
+		# rm(thispred)
 		#})
 		# Migration adjustments
 		if(adjust.mig) {
@@ -338,31 +351,22 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    res.env$totpf <- res.env$totpf + res.env$migf
 		}
 		#memch2 <- mem_change({
-		spop <- res.env$totpm + res.env$totpf
-		res.env$totp <- if(dim(res.env$totp)[1]==1) sum(spop) else apply(spop, c(2,3), sum) # distinction if there is only one country
-		popM.prev <- res.env$totpm
-		popF.prev <- res.env$totpf
-		if(is.null(dim(popM.prev))) # one country only; dimension dropped
-			popM.prev <- abind(popM.prev, along=2)
-		if(is.null(dim(popF.prev))) 
-			popF.prev <- abind(popF.prev, along=2)
-        mig.rate <- res.env$mig.rate
+		#spop <- res.env$totpm + res.env$totpf
+		#res.env$totp <- if(dim(res.env$totp)[1]==1) sum(spop) else apply(spop, c(2,3), sum) # distinction if there is only one country
+# 		popM.prev <- res.env$totpm
+# 		popF.prev <- res.env$totpf
+# 		if(is.null(dim(popM.prev))) # one country only; dimension dropped
+# 			popM.prev <- abind(popM.prev, along=2)
+# 		if(is.null(dim(popF.prev))) 
+# 			popF.prev <- abind(popF.prev, along=2)
+#         mig.rate <- res.env$mig.rate
 		#})
-		#memch3 <- mem_change({
-		if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
-			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
-			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
-			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-								which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
-			}
-		}#})
+		
 		#memch4 <- mem_change({
-		with(res.env, {
-			file.name <- file.path(outdir.tmp, paste0('pop_time_', time, '.rda'))
-			save(totp, totpm, totpf, mig.rate, migm, migf, file = file.name)
-		})#})
+		#with(res.env, {
+		#	file.name <- file.path(outdir.tmp, paste0('pop_time_', time, '.rda'))
+		#	save(totp, totpm, totpf, mig.rate, migm, migf, file = file.name)
+		#})#})
 		#cat("\nMain loop time: ", time, "\n")
 		#print(c(memch1, memch2, memch3, memch4))
 		#print(mem_used())
@@ -375,6 +379,17 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	}
 	rm(migration.thresholds, envir = .GlobalEnv)
     } # end if(!reformat.only)
+	
+	#memch3 <- mem_change({
+	if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
+	    cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
+	    cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
+	    for(country in unique(c(cntries.m, cntries.f))) {
+	        neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+	                            which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+	        add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+	    }
+	}#})
 	
 	if(verbose) cat('\nRe-formatting data ')
 	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, kannisto, 
