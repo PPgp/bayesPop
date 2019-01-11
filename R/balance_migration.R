@@ -626,8 +626,8 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
         }
         res.env$mig.rate[time+1, cidx] <- migpred$rate
         if (!is.null(migpred$warns)) {
-            res.env$warns[[country.codes.char[cidx]]] <- if(is.null(res.env$warns[[country.codes.char[cidx]]])) migpred$warns else
-                res.env$warns[[country.codes.char[cidx]]] + migpred$warns			
+            res.env$warns[[res.env$country.codes.char[cidx]]] <- if(is.null(res.env$warns[[res.env$country.codes.char[cidx]]])) migpred$warns else
+                res.env$warns[[res.env$country.codes.char[cidx]]] + migpred$warns			
         }
     }
     work.env$popm <- res.env$totpm
