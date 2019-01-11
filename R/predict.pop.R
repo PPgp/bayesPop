@@ -1363,6 +1363,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	data(MLTbx, envir = bx.env)
     	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
+    	cleanup.env(bx.env)
     }
     
     for(sex in c('male', 'female')) {
@@ -2073,6 +2074,7 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 		write.table(all.migF, file=file.path(directory, paste0(file.prefix, "F.txt")), sep='\t', row.names=FALSE)
 		if(verbose) cat('\nMigration files written into ', file.path(directory, paste0(file.prefix, "X.txt")))
 	}
+	if(depratio.correction) cleanup.env(edr)
 	if(verbose) cat('\n')
 	return(invisible(list(male=all.migM, female=all.migF)))
 }

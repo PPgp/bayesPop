@@ -158,16 +158,6 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	}
 	
     if(!reformat.only) {
-    # prepare environment for storing results
-    res.env <- new.env()
-    with(res.env, {
-        totp <- matrix(0, nrow=ncountries, ncol=nr.traj, dimnames=list(country.codes, NULL))
-        totpm <- totpf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-        migm <- migf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
-        warns <- list()
-    })
-    res.env$mig.rate <- mig.rate
-    
     # prepare working environment for storing population for one trajectory
     create.work.env <- function() {
         work.env <- new.env()
@@ -308,40 +298,59 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    #}
 	    #return(res)
 	    #close(fcon)
-	    return(list(warns = work.env[['warns']]))
+	    return(work.env[['warns']])
 	}
-	
+	# environment for manipulating results
+	res.env <- new.env()
+	with(res.env, {
+	    warns <- list()
+	    warns[["_template_"]] <- matrix(0, nrow=get.nr.warns(), ncol=npred)
+	})
+	if(adjust.mig) {
+	    adjust.env <- new.env()
+	    file.names <- file.path(outdir.tmp, paste0('pop_traj_', 1:nr.traj, '.rda'))
+	    items.to.adjust <- c('totpm', 'totpf', 'migm', 'migf')
+	    # add items to the results environment
+	    with(res.env, {
+	        totpm <- totpf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
+	        migm <- migf <- array(0, dim=c(27, ncountries, nr.traj), dimnames=list(ages, country.codes, NULL))
+	    })
+	}
 	for(time in start.time.index:npred) {
 	    unblock.gtk.if.needed(paste('finished', time, status.for.gui), gui.options)
 	    if(verbose) cat('\nProcessing time period ', time)
-		.ini.pop.res.env(res.env, vital.events = FALSE)
 		if(parallel) {
 		    clusterExport(cl, c("time"), envir=environment())
 		    #if(time > 1) clusterExport(cl, c("popM.prev", "popF.prev"), envir=environment())
-		    thispred <- clusterApplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
+		    thiswarns <- clusterApplyLB(cl, 1:nr.traj, predict.1time.period.1trajectory, time = time)
 		} else { # process sequentially
-		    #thispred <- list()
+		    thiswarns <- list()
 		    for(itraj in 1:nr.traj) {
-		        #thispred[[itraj]] <- 
-		        predict.1time.period.1trajectory(itraj, time)
+		        thiswarns[[itraj]] <- predict.1time.period.1trajectory(itraj, time)
 		    }
 		}
 		#memch1 <- mem_change({
 		# collect results
-		# for(itraj in 1:nr.traj) { 
+		for(itraj in 1:nr.traj) { 
 		# 	for(par in c('totpm', 'totpf', 'migm', 'migf'))
 		# 		res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
 		# 	res.env$mig.rate[,,itraj] <- thispred[[itraj]]$mig.rate
-		# 	if(!is.null(thispred[[itraj]]$warns[[country]])) {
-		# 	    if(is.null(res.env$warns[[country]]))
-		# 	        res.env$warns[[country]] <- thispred[[itraj]]$warns[["_template_"]]
-		# 	    res.env$warns[[country]] <- res.env$warns[[country]] + thispred[[itraj]]$warns[[country]]
-		# 	}
-		# }
-		# rm(thispred)
+		    if(!is.null(thiswarns[[itraj]][[country]])) {
+		 	    if(is.null(res.env$warns[[country]]))
+		 	        res.env$warns[[country]] <- thiswarns[[itraj]][["_template_"]]
+		 	    res.env$warns[[country]] <- res.env$warns[[country]] + thiswarns[[itraj]][[country]]
+		 	}
+		}
+		rm(thiswarns)
 		#})
 		# Migration adjustments
 		if(adjust.mig) {
+		    .ini.pop.res.env(res.env, vital.events = FALSE)
+		    for(itraj in 1:nr.traj) {
+		        load(file.names[itraj], envir = adjust.env)
+		        for(par in items.to.adjust)
+		            res.env[[par]][,,itraj] <- adjust.env[[par]][time,,]
+		    }
 		    # population without migration
 		    res.env$totpm <- res.env$totpm - res.env$migm
 		    res.env$totpf <- res.env$totpf - res.env$migf
@@ -353,11 +362,18 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    if(rebalance)
 		        rebalance.migration.for.all.trajectories(res.env)
 		    # adjust migration rates
-		    res.env$mig.rate[time + 1,,] <- apply(res.env$migm + res.env$migf, c(2,3), sum)/apply(res.env$totpm + res.env$totpf, c(2,3), sum)
-		    #mig.after.balance <- list(M = res.env$migrationm, F = res.env$migrationf)
+		    this.mig.rate <- apply(res.env$migm + res.env$migf, c(2,3), sum)/apply(res.env$totpm + res.env$totpf, c(2,3), sum)
 		    # New population counts
 		    res.env$totpm <- res.env$totpm + res.env$migm
 		    res.env$totpf <- res.env$totpf + res.env$migf
+		    # store back to disk
+		    for(itraj in 1:nr.traj) {
+		        load(file.names[itraj], envir = adjust.env)
+		        for(par in items.to.adjust)
+		            adjust.env[[par]][time,,] <- res.env[[par]][,,itraj]
+		        adjust.env[["mig.rate"]][time+1,] <- this.mig.rate[,itraj]
+		        save(list = ls(adjust.env), file = file.names[itraj], envir = adjust.env)
+		    }
 		}
 		#memch2 <- mem_change({
 		#spop <- res.env$totpm + res.env$totpf
@@ -390,25 +406,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
     } # end if(!reformat.only)
 	
 	#memch3 <- mem_change({
-	if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
-	    cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
-	    cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
-	    for(country in unique(c(cntries.m, cntries.f))) {
-	        neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-	                            which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-	        add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
-	    }
-	}#})
+#})
 	
 	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, kannisto, 
-					present.and.proj.years, keep.vital.events, 
-					nr.nodes=nr.nodes.cntry, verbose=verbose)
+					present.and.proj.years, res.env, keep.vital.events, verbose=verbose)
 
 	unlink(outdir.tmp, recursive=TRUE)
 	if(verbose) cat("Computing half-child variants.\n")
 	pop.predict.half.child(res.env, outdir, work.env)
 	if(verbose) cat("Storing results and cleanup.\n")
-	cleanup.env(res.env)
 	cleanup.env(work.env)
 	#save meta file
 	country.rows <- UNlocations[countries.idx,c('country_code', 'name')]
@@ -441,7 +447,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	cleanup.env(countries.input)
 	cleanup.env(kantor.pasfr)
 	cleanup.env(observed)
-	
+	cleanup.env(res.env)
 	return(bayesPop.prediction)
 }
 
@@ -1069,14 +1075,14 @@ prop.labor.migration.for.country <- function(code){
 
 
 restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, nr.traj, inputs, observed, kannisto, 
-									present.and.proj.years, keep.vital.events=FALSE, nr.nodes=NULL, 
+									present.and.proj.years, res.env, keep.vital.events=FALSE, 
 									verbose=FALSE, ...){
 	
 	restructure.pop.data.and.compute.quantiles.one.country <- function(cidx) {		
 		country <- country.codes[cidx]
-		inpc <- inputs[[country.codes[cidx]]]
-		obs <- observed[[country.codes[cidx]]]
-		MxKan <- kannisto[[country.codes[cidx]]]
+		inpc <- inputs[[country]]
+		obs <- observed[[country]]
+		MxKan <- kannisto[[country]]
 		repi <- rep(1,nr.traj) # index for repeating columns
 		
 		# prepare environment for one country results
@@ -1119,6 +1125,14 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		}
 		# total population
 		cenv$totp <- apply(cenv$totpm + cenv$totpf, c(2,3), sum, na.rm = TRUE)
+		
+		# check if any population counts negative
+		zero <- get.zero.constant()
+		if (any(cenv$totpm < zero, na.rm = TRUE) || any(cenv$totpf < zero, na.rm = TRUE)){
+		    neg.times <- unique(which(apply(cenv$totpm, 2, function(x) any(x < zero, na.rm = TRUE))),
+		                      which(apply(cenv$totpf, 2, function(x) any(x < zero, na.rm = TRUE))))
+		    add.pop.warn(country, neg.times, 5, res.env)  #'Final population negative for some age groups'
+		}
 		
 		# store results
 		observed <- obs
