@@ -2,7 +2,7 @@ useDynLib(bayesPop, .registration = TRUE)
 
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2017, wpp2012, plyr, fields, googleVis, rworldmap, reshape2
+    bayesTFR, bayesLife, parallel, abind, wpp2017, wpp2012, plyr, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
@@ -11,6 +11,7 @@ importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", 
            "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 importFrom("truncnorm", "rtruncnorm")
+importFrom("reshape2", "melt")
 
 #exportPattern("^[[:alpha:]]+")
 useDynLib(bayesPop)

@@ -163,14 +163,25 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
         work.env <- new.env()
         mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir = work.env))
 	    with(work.env, {
-            totpm <- totpf <- popM.prev <- popF.prev <- array(0, dim=c(27, ncountries), dimnames=list(ages, country.codes))
-            migm <- migf <- array(0, dim=c(27, ncountries), dimnames=list(ages, country.codes))
+	        popmigdt <- data.table(totpm = 0, totpf = 0, popM.prev = 0, popF.prev = 0, migm = 0, migf = 0,
+	                      country_code = rep(country.codes, each = nages), 
+	                      age = rep(ages, ncountries),
+	                      key = c("country_code", "age"))
 		    if(keep.vital.events) {
-		        btm <- btf <- asfert <- pasfert <- array(0, dim=c(7, ncountries), dimnames=list(NULL, country.codes))
-                deathsm <- deathsf <- array(0, dim=c(27, ncountries), dimnames=list(ages, country.codes))
+		        btm <- btf <- asfert <- pasfert <- data.table(value = 0, 
+		                                                      country_code = rep(country.codes, each = 7),
+		                                                      age = rep(1:7, ncountries),
+		                                                      key = c("country_code", "age"))
+                deathsm <- deathsf <- data.table(value = 0, 
+                                                 country_code = rep(country.codes, each = nages),
+                                                 age = rep(ages, ncountries),
+                                                 key = c("country_code", "age"))
                 #btm.hch <- btf.hch <- asfert.hch <- pasfert.hch <- array(0, dim=c(7, ncountries, nvariants), dimnames=list(NULL, country.codes, NULL))
                 #deathsm.hch <- deathsf.hch <- array(0, dim=c(27, ncountries, nvariants), dimnames=list(ages, country.codes, NULL))
-                mxm <- mxf <- array(0, dim=c(28, ncountries), dimnames=list(mx.ages, country.codes))
+                mxm <- mxf <- data.table(value = 0, 
+                                         country_code = rep(country.codes, each = nages),
+                                         age = rep(mx.ages, ncountries),
+                                         key = c("country_code", "age"))
                 #mxm.hch <- mxf.hch <- array(0, dim=c(28, ncountries, nvariants), dimnames=list(mx.ages, country.codes, NULL))
 		    }
 		    warns <- list()
@@ -230,16 +241,16 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	predict.1time.period.1trajectory <- function(itraj, time) {
 	    store.traj.results <- function(items.to.save, con, do.load = TRUE, store.env = NULL) {
 	        items.to.copy <- intersect(items.to.save, "mig.rate")
-	        items.to.add.dim <- setdiff(items.to.save, items.to.copy)
+	        #items.to.add.dim <- setdiff(items.to.save, items.to.copy)
 	        if(do.load) 
 	            store.env <- new.env()
+	        cpdt <- copy(work.env$popmigdt)[, period := time]
 	        if(time == 1) { # add time dimension
-	            for(item in items.to.add.dim) 
-	                store.env[[item]] <- abind(work.env[[item]], rev.along = 3)
+	            store.env$popmigdt <- cpdt
 	        } else {
 	            if(do.load) load(con, envir = store.env)
-	            for(item in items.to.add.dim)
-	                store.env[[item]] <- abind(store.env[[item]], work.env[[item]], along = 1)
+	            #for(item in items.to.add.dim)
+	            store.env$popmigdt <- rbind(store.env$popmigdt, cpdt)
 	        }
 	        for(item in items.to.copy) 
 	            store.env[[item]] <- work.env[[item]]
@@ -265,8 +276,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	        store.env <- new.env()
 	        load(file.name, envir = store.env)
 	        work.env$mig.rate[] <- store.env$mig.rate[time,]
-	        work.env$popM.prev[] <- store.env$totpm[time-1,,]
-	        work.env$popF.prev[] <- store.env$totpf[time-1,,]
+	        work.env$popmigdt[, popM.prev := store.env$popmigdt[period == time-1, "totpm"]]
+	        work.env$popmigdt[, popF.prev := store.env$popmigdt[period == time-1, "totpf"]]
 	    } else {
 	        work.env$mig.rate[] <- work.env$mig.rate.prev
 	    }
@@ -275,7 +286,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
         #})
         #memch3 <- mem_change({
-	    items.to.save <- c('totpm', 'totpf', 'migm', 'migf', 'mig.rate')
+	    #items.to.save <- c('totpm', 'totpf', 'migm', 'migf', 'mig.rate')
+	    items.to.save <- c('popmigdt', 'mig.rate')
 	    if(keep.vital.events) items.to.save <- c(items.to.save, c("btm", "btf", "deathsm", "deathsf", "asfert", "pasfert", "mxm", "mxf"))
 	    store.traj.results(items.to.save, file.name, do.load = (time == 1), store.env)
 	    #if(keep.vital.events) {
@@ -408,7 +420,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	#memch3 <- mem_change({
 #})
 	
-	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, kannisto, 
+	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, country.codes.char, npred, nr.traj, countries.input, observed, kannisto, 
 					present.and.proj.years, res.env, keep.vital.events, verbose=verbose)
 
 	unlink(outdir.tmp, recursive=TRUE)
@@ -492,25 +504,13 @@ add.pop.warn <- function(country, time, code, env) {
 	env$warns[[country]][code, time] <- env$warns[[country]][code, time] + 1
 }
 
-.ini.pop.res.env <- function(e, vital.events=FALSE, debug = FALSE) {
-    if(debug) {
-        print("before")
-        print(c(address(e), refs(e)))
-        if(exists('totpm', envir = e)) print(c("totpm: ", inspect("totpm", env = e)))
-        if(exists('btm', envir = e)) print(c("btm: ", inspect("btm", env = e)))
-    }
+.ini.pop.res.env <- function(e, vital.events=FALSE) {
     for(item in c('totp', 'totpm', 'totpf', 'migm', 'migf')) 
-        if(exists(item, envir = e)) e[[item]][] <- 0
+        if(item %in% colnames(e$popmig.df)) e$popmigdt[[item]] <- 0
     if(vital.events) {
         for(item in c('btm', 'btf', ' deathsm', ' deathsf', 'mxm', 'mxf'))
-            if(exists(item, envir = e)) e[[item]][] <- 0
+            if(exists(item, envir = e)) e[[item]][,value := 0]
     }
-        if(debug) {
-            print("after")
-            print(c(address(e), refs(e)))
-            if(exists('totpm', envir = e)) print(c("totpm: ", inspect("totpm", env = e)))
-            if(exists('btm', envir = e)) print(c("btm: ", inspect("btm", env = e)))
-        } 
 }
 
 get.zero.constant <- function() -1e-4
@@ -606,14 +606,17 @@ pop.predict.half.child <- function(res.env, outdir, wenv) {
 balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     lages <- length(res.env$ages21)
     for(cidx in 1:res.env$ncountries) {
+        ccode <- res.env$country.codes[cidx]
         inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
-                          list(M = res.env$popM.prev[,cidx,drop=FALSE],
-                               F = res.env$popF.prev[,cidx,drop=FALSE])
+                          list(M = res.env$popmigdt[country_code == ccode, popM.prev],
+                               F = res.env$popmigdt[country_code == ccode, popF.prev])
         do.pop.predict.1country.1traj.no.migration(time, itraj, cidx, res.env, pop.ini)
-        pop <- sum(res.env$totpm[,cidx] + res.env$totpf[,cidx])
+        pmdt <- res.env$popmigdt[country_code == ccode,]
+        pop <- sum(pmdt[, totpm] + pmdt[, totpf])
         migpred <- .get.migration.one.trajectory(res.env$use.migration.model, inpc, itraj, time, pop, 
-                                                 popM=res.env$totpm[,cidx], popF=res.env$totpf[,cidx], country.code=res.env$country.codes[cidx], 
+                                                 popM=pmdt[, totpm], popF=pmdt[, totpf], 
+                                                 country.code=ccode, 
                                                  mig.rates=if(!is.null(res.env$mig.rate)) res.env$mig.rate[,cidx] else NULL, 
                                                  fixed.rate=if(res.env$fixed.mig.rate) inpc$projected.migration.rates[itraj,time] else NULL,
                                                  warn.template=res.env$warns[["_template_"]])
@@ -630,30 +633,37 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
                 res.env$warns[[res.env$country.codes.char[cidx]]] + migpred$warns			
         }
     }
-    work.env$popm <- res.env$totpm
-    work.env$popf <- res.env$totpf
+    dtidx <- list(rep(res.env$country.codes, each = length(res.env$ages)),
+                  rep(as.integer(res.env$ages), res.env$ncountries))
+    work.env$popm <- matrix(res.env$popmigdt[dtidx, totpm], ncol = res.env$ncountries, dimnames=list(res.env$ages, res.env$country.codes.char))
+    work.env$popf <- matrix(res.env$popmigdt[dtidx, totpf], ncol = res.env$ncountries, dimnames=list(res.env$ages, res.env$country.codes.char))
     # for cases when dimension is dropped (if there is one country)
     #if(is.null(dim(work.env$popm))) work.env$popm <- abind(work.env$popm, along=2)
     #if(is.null(dim(work.env$popf))) work.env$popf <- abind(work.env$popf, along=2)
     
     if(res.env$rebalance) {
-        pop <- colSums(res.env$totpm + res.env$totpf)
+        pop1 <- res.env$popmigdt[, .(value=sum(totpm) + sum(totpf)), by = country_code]
+        setkey(pop1, country_code)
+        pop <- pop1[list(res.env$country.codes),value]
+        names(pop) <- res.env$country.codes
         rebalance.migration2groups(work.env, pop, itraj)			
         negatives <- res.env$country.codes.char[unique(work.env$negatives)]
         for(country in negatives) add.pop.warn(country, time, 1, res.env) # 'Population negative while balancing'
     }
-    res.env$migm[1:lages,] <- work.env$migrm + work.env$migrm.labor
-    res.env$migf[1:lages,] <- work.env$migrf + work.env$migrf.labor
-    
+    for(tage in rownames(work.env$migrm)) {
+        res.env$popmigdt[list(res.env$country.codes, as.integer(tage)), migm := work.env$migrm[tage,] + work.env$migrm.labor[tage,]]
+        res.env$popmigdt[list(res.env$country.codes, as.integer(tage)), migf := work.env$migrf[tage,] + work.env$migrf.labor[tage,]]
+    }
     # New population counts
-    res.env$totpm <- res.env$totpm + res.env$migm
-    res.env$totpf <- res.env$totpf + res.env$migf
+    res.env$popmigdt[, totpm := totpm + migm] 
+    res.env$popmigdt[, totpf := totpf + migf]
     return(NULL)
 }
 
 
 do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, pop.ini) {
     country.name <- env$UNnames[cidx]
+    ccode <- env$country.codes[cidx]
     inpc <- env$countries.input[[env$country.codes.char[cidx]]] 
     kann <- env$kannisto[[env$country.codes.char[cidx]]]
     LeeC <- env$surv[[env$country.codes.char[cidx]]]
@@ -669,8 +679,8 @@ do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, p
     popres <- PopProjNoMigr(1, pop.ini, LTres, asfr, inpc$SRB[time], country.name=country.name,
                             keep.vital.events=env$keep.vital.events)
 
-    env$totpm[,cidx] <- popres$mpop[,2]
-    env$totpf[,cidx] <- popres$fpop[,2]
+    env$popmigdt[country_code == ccode, totpm := popres$mpop[,2]]
+    env$popmigdt[country_code == ccode, totpf := popres$fpop[,2]]
     if(env$keep.vital.events) {
         env$btm[,cidx] <- popres$mbt
         env$btf[,cidx] <- popres$fbt
@@ -1074,12 +1084,13 @@ prop.labor.migration.for.country <- function(code){
 }
 
 
-restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, nr.traj, inputs, observed, kannisto, 
+restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, country.codes, npred, nr.traj, inputs, observed, kannisto, 
 									present.and.proj.years, res.env, keep.vital.events=FALSE, 
 									verbose=FALSE, ...){
 	
 	restructure.pop.data.and.compute.quantiles.one.country <- function(cidx) {		
 		country <- country.codes[cidx]
+		country.int <- as.integer(country)
 		inpc <- inputs[[country]]
 		obs <- observed[[country]]
 		MxKan <- kannisto[[country]]
@@ -1116,8 +1127,10 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 		})
 		# collect values from all trajectories
 		for(itraj in 1:nr.traj) {
-			for(par in c('totpm', 'totpf', 'migm', 'migf'))
-				cenv[[par]][,2:npredplus1,itraj] <- t(envs[[itraj]][[par]][,,cidx])
+			for(par in c('totpm', 'totpf', 'migm', 'migf')) {
+			    tmp <- envs[[itraj]]$popmigdt[country_code == country.int, c("age", "period", par), with = FALSE]
+				cenv[[par]][,2:npredplus1,itraj] <- as.matrix(data.table::dcast(tmp, age ~ period, value.var = par)[,age := NULL])
+			}
 		    if(keep.vital.events) {
 				for(par in c('btm', 'btf', 'deathsm', 'deathsf', 'asfert', 'pasfert', 'mxm', 'mxf'))
 				    cenv[[par]][,2:npredplus1,itraj] <- t(envs[[itraj]][[par]][,,cidx])
@@ -1189,9 +1202,8 @@ restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npr
 	    envs[[itraj]] <- new.env()
 	    load(file.path(source.dir, paste0('pop_traj_', itraj, '.rda')), envir=envs[[itraj]])
 	}
-	ncountries <- dim(envs[[1]]$totpm)[3]
-	country.codes <- dimnames(envs[[1]]$totpm)[[3]]
-	ages <- dimnames(envs[[1]]$totpm)[[2]]
+	ncountries <- length(country.codes)
+	ages <- sort(unique(envs[[1]]$popmigdt[,age]))
 	nages <- length(ages)
 	mx.ages <- c(0,1,ages[2:nages])
 	npredplus1 <- npred + 1
