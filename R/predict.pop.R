@@ -9,7 +9,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							mxF=NULL,
 							srb=NULL,
 							pasfr=NULL,
-							mig.type=NULL,
+							patterns=NULL,
 							migM=NULL,
 							migF=NULL,	
 							e0F.file=NULL, e0M.file=NULL, 
@@ -195,8 +195,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
-									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
+			if(!fixed.mx) LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
+									inpc$e0Fpred[,itraj], pattern=inpc$MXpattern,
+									verbose=verbose, debug=debug)
+			
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
@@ -674,7 +676,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
-    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
+                                          "AgeMortProjPattern", "AgeMortProjMethodWeights", "AgeMortProjAdjSR",
+                                          "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -1137,6 +1141,33 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 		kranges[[sex]]$ku <- pmax((lmin - apply(ax[[sex]], 2, max))/bx.lim[1,], machine.min)
 	}
 	return(list(bx=Bxt, kranges=kranges))
+}
+
+project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE, debug=FALSE) {
+    meth1 <- pattern$AgeMortProjMethod1
+    meth2 <- if(is.na(pattern$AgeMortProjMethod2)) "" else pattern$AgeMortProjMethod2
+    args <- list()
+    if("MLT" %in% c(meth1, meth2))
+        args[["MLT"]] <- list(type = pattern$AgeMortProjPattern, keep.lt = TRUE)
+    if("PMD" %in% c(meth1, meth2))
+        args[["PMD"]] <- list(interp.rho = TRUE, keep.lt = TRUE)
+    if("LC" %in% c(meth1, meth2))
+        args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE)
+    stop('')
+    if(pattern$AgeMortProjMethod2 == "") { # apply a single method 
+        res <- switch(pattern$AgeMortProjMethod1, 
+            LC = do.call("mortcast", c(list(eopm, eopf, args[["LC"]]))),
+            PMD = do.call("copmd", c(list(eopm, eopf, args[["PMD"]]))),
+            MLT = do.call("mltj", c(list(eopm, eopf, args[["MLT"]]))),
+            HIVmortmod = modifiedLC(npred, mxKan, eopm, eopf, verbose=verbose, debug=debug)
+        )
+    } else { # combination of two methods
+        res <- mortcast.blend(eopm, eopf, meth1 = tolower(pattern$AgeMortProjMethod1),
+                              meth2 = tolower(pattern$AgeMortProjMethod2), 
+                              kannisto.args = mxKan,
+                              meth1.args = args[[meth1]], meth1.args = args[[meth2]])
+    }
+    return(list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr)))
 }
 
 modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
