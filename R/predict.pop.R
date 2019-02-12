@@ -242,8 +242,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
-			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
-									inpc$e0Fmedian, verbose=verbose, debug=debug)
+			if(!fixed.mx) LTres <- project.mortality(npred, MxKan,  inpc$e0Mmedian, 
+			                                         inpc$e0Fmedian, pattern=inpc$MXpattern,
+			                                         verbose=verbose, debug=debug)
 			migpred.hch <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'median')
@@ -1144,57 +1145,49 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 }
 
 project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE, debug=FALSE) {
-    meth1 <- pattern$AgeMortProjMethod1
-    meth2 <- if(is.na(pattern$AgeMortProjMethod2)) "" else pattern$AgeMortProjMethod2
+    meth1 <- pattern[,"AgeMortProjMethod1"]
+    meth2 <- if(is.na(pattern[,"AgeMortProjMethod2"])) "" else pattern[,"AgeMortProjMethod2"]
     args <- list()
-    if("MLT" %in% c(meth1, meth2))
-        args[["MLT"]] <- list(type = pattern$AgeMortProjPattern, keep.lt = TRUE)
+    if("MLT" %in% c(meth1, meth2)) {
+        args[["MLT"]] <- list(type = pattern[,"AgeMortProjPattern"])
+    }
     if("PMD" %in% c(meth1, meth2))
-        args[["PMD"]] <- list(interp.rho = TRUE, keep.lt = TRUE)
-    if("LC" %in% c(meth1, meth2))
+        args[["PMD"]] <- list(
+            mxm0 = mxKan$male$mx[1:22,ncol(mxKan$male$mx)],
+            mxf0 = mxKan$female$mx[1:22,ncol(mxKan$female$mx)],
+            interp.rho = TRUE, keep.lt = TRUE
+            )
+    if("LC" %in% c(meth1, meth2) || "HIVmortmod" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE)
-    stop('')
-    if(pattern$AgeMortProjMethod2 == "") { # apply a single method 
-        res <- switch(pattern$AgeMortProjMethod1, 
-            LC = do.call("mortcast", c(list(eopm, eopf, args[["LC"]]))),
-            PMD = do.call("copmd", c(list(eopm, eopf, args[["PMD"]]))),
-            MLT = do.call("mltj", c(list(eopm, eopf, args[["MLT"]]))),
-            HIVmortmod = modifiedLC(npred, mxKan, eopm, eopf, verbose=verbose, debug=debug)
+    }
+
+    if(meth2 == "") { # apply a single method 
+        res <- switch(meth1, 
+            LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
+            PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
+            MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
+            HIVmortmod = do.call("mortcast", c(list(eopm, eopf), args[["LC"]]))
         )
     } else { # combination of two methods
-        res <- mortcast.blend(eopm, eopf, meth1 = tolower(pattern$AgeMortProjMethod1),
-                              meth2 = tolower(pattern$AgeMortProjMethod2), 
-                              kannisto.args = mxKan,
-                              meth1.args = args[[meth1]], meth1.args = args[[meth2]])
+        res <- mortcast.blend(eopm, eopf, meth1 = tolower(meth1),
+                              meth2 = tolower(meth2), 
+                              weights = eval(parse(text = pattern[,"AgeMortProjMethodWeights"])),
+                              meth1.args = args[[meth1]], meth2.args = args[[meth2]])
     }
-    return(list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr)))
+    # consolidate results which can be in different formats from teh different methods
+    if(!"mx" %in% names(res))
+        res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
+    res$male$sex <- 1
+    res$female$sex <- 2
+    if(is.null(res$sr[[1]])) {# compute survival
+        srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
+                        female = list(sex = 2, mx = res$mx[[2]]))
+        res <- survival.fromLT(npred, srinput, verbose=verbose, debug=debug)
+    }
+    #stop('')
+    return(res)
 }
 
-modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
-	eop  <- list(eopm, eopf)
-    sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
-    Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
-    #Get the projected kt from eo, and make projection of Mx
-    nproj <- npred
-    rotKan <- rotateLC(0.5*(eop[[1]]+eop[[2]]), mxKan$bx, mxKan$bux, mxKan$male$axt, mxKan$female$axt)
-    for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
-    	#print(c('sex: ', mxYKan$sex))
-    	#stop('')	 
-    	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$axt), 
-    		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), 
-    		Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
-			constrain=as.integer(mxYKan$sex == 1), 
-			#constrain=as.integer(0),
-			FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
-			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), 
-			lx=as.numeric(lx[[mxYKan$sex]]), Mx=as.numeric(Mx[[mxYKan$sex]]))
-		sr[[mxYKan$sex]] <- matrix(res$Sr, nrow=27)
-		LLm[[mxYKan$sex]] <- matrix(res$LLm, nrow=27)
-		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
-		lx[[mxYKan$sex]] <- matrix(res$lx, nrow=28)
-    }
-	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
-}
 
 survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
     sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
@@ -1217,104 +1210,31 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 
 runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
-	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, ...)
-	mxMKan <- c(Kan$male, sex=1)
-	mxFKan <- c(Kan$female, sex=2)
-	bux <- NULL
-	#if(is.null(mxMKan$bxt)) {
-		bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
-		# ultimate bx (Li, Lee, Gerland 2013)
-    	bux <- bx
-    	avg15.65 <- mean(bux[5:14])
-    	bux[1:14] <- avg15.65
-    	bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
-    	bux <- bux/sum(bux) # must sum to 1
-    #} else # aids country, bxt is a matrix
-    #	bx <- 0.5 * (mxMKan$bxt + mxFKan$bxt)
-	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
+	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, ...)
 }
 
 runKannisto.noLC <- function(inputs) {
 	# extend mx
-	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
-	mxMKan <- c(Kan$male, sex=1)
-	mxFKan <- c(Kan$female, sex=2)
-	return(list(male=mxMKan, female=mxFKan))
+	KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.from.latest.periods=99, npred=19, 
+KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.latest.periods=99, npred=19, 
 								joint=TRUE, compute.AxBx=TRUE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
-	finish.bx <- function(bx) {
-			negbx <- which(bx <= 0)
-			lnegbx <- length(negbx)
-			if(lnegbx > 0 && negbx[1] == 1) {
-				bx[1] <- 0
-				negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
-				lnegbx <- length(negbx)
-			}
-			while(lnegbx > 0) {
-				bx[negbx] <- 0.5 * bx[negbx-1]
-				negbx <- which(bx < 0)
-				lnegbx <- length(negbx)
-			}      
-			for (i in 1:27) { 
-				if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
-			}
-			bx <- bx/sum(bx) # must sum to 1
-			return(bx)
-		}
-	Mxe.m <- as.matrix(male.mx)
-	Mxe.m <- rbind(Mxe.m, 
-			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
-	Mxe.f <- as.matrix(female.mx)
-	Mxe.f <- rbind(Mxe.f, 
-			matrix(NA, nrow=28-nrow(female.mx), ncol=ncol(female.mx)))
-	ne <- ncol(Mxe.m)
-	k <- 22:28
-	npoints <- 4
-	age.group <- (21-npoints+1):21
-	data <- data.frame(sex=c(rep(1,npoints), rep(0,npoints)), age=c(age.group, age.group))
-	mxc <- rbind(male.mx[age.group, 1:ne, drop=FALSE], female.mx[age.group, 1:ne, drop=FALSE])
-	logit.mxc <- log(mxc) - log(1-mxc)
+	rownames(male.mx) <- rownames(female.mx) <- c(0,1, seq(5, by=5, length=nrow(male.mx)-2))
 	if(joint) {
-		for(j in 1:ne) {		
-			data$lmx <- logit.mxc[,j]
-			if(all(is.na(data$lmx))) next
-			fit <- lm(lmx ~ sex + age, data=data)
-			coefs <- coefficients(fit)
-			aam.female <- exp(coefs[1]) # intercept
-			aam.male <- exp(coefs[1] + coefs['sex'])
-			bbm <- coefs['age']
-			# Ages 100-105, ..., 130+
-			expterm.m <- aam.male * exp(bbm * k)	
-			Mxe.m[k, j] =  expterm.m / (1 + expterm.m)
-			expterm.f <- aam.female * exp(bbm * k)	
-			Mxe.f[k, j] =  expterm.f / (1 + expterm.f)
-		}
+	    kann <- cokannisto(male.mx, female.mx)
+	    Mxe.m <- kann$male
+	    Mxe.f <- kann$female
 	} else {
-		h <- 100 + 5 * (0:6)
-		hminus80 <- h - 80
-		lmxr <- list(M=log(male.mx[18:21, 1:ne] / (1 - male.mx[18:21, 1:ne])),
-					F=log(female.mx[18:21, 1:ne] / (1 - female.mx[18:21, 1:ne])))
-		res <- list(M=Mxe.m, F=Mxe.f)
-		for(sex in c('M', 'F')) {
-			Xm1 <- apply(lmxr[[sex]], 2, sum)
-			Xm2 <- apply((5 * (1:4) - 5) * lmxr[[sex]], 2, sum)
-			for(j in 1:ne) {		
-				aam <- exp((350 * Xm1[j] - 30 * Xm2[j]) / 500)
-				bbm <- (Xm1[j] - 4 * log(aam)) / 30
-				expterm <- aam * exp(bbm * (hminus80))
-				res[[sex]][k, j] =  expterm / (1 + expterm)
-			}
-		}
-		Mxe.m <- res$M
-		Mxe.f <- res$F
+	    Mxe.m <- kannisto(male.mx)
+	    Mxe.f <- kannisto(female.mx)
 	}
-	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
+	result <- list(male=list(mx=Mxe.m, sex = 1), female=list(mx=Mxe.f, sex = 2))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
+	ne <- ncol(Mxe.m)
 	years <- as.integer(substr(colnames(male.mx),1,4))
 	first.year <- years[1]
 	has.nas.in.old.ages <- FALSE
@@ -1335,8 +1255,9 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
-    #avg.ax <- TRUE
-    if(!avg.ax) ax.from.latest.periods <- 1
+    if(!avg.ax && !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern)) {
+        ax.latest.periods <- as.numeric(mx.pattern[,"LatestAgeMortalityPattern"])
+    }
     mlt.bx <- NULL
     if(model.bx) {
     	bx.env <- new.env()
@@ -1344,63 +1265,42 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
-    
-    for(sex in c('male', 'female')) {
-    	lMxe <- log(result[[sex]]$mx)
-    	this.ns <- if(any(is.na(lMxe[,ns:ne]))) ns + sum(apply(lMxe[,ns:ne], 2, function(z) all(is.na(z))))
-    				else ns
-    	ax.ns <- max(ne-ax.from.latest.periods+1, this.ns)
-    	x1 <- apply(lMxe[,ax.ns:ne, drop=FALSE], 1, sum, na.rm=TRUE)
-    	ax <- x1 / (ne - ax.ns + 1)
-    	if(smooth.ax) {
-    		ax.sm <- smooth.spline(ax[1:21], df=11)$y
-    		ax[2:21] <- ax.sm[2:21] # keep value the first age group
-    	}
-		kt <- rep(NA, ne)
-		kt[this.ns:ne] = apply(lMxe[,this.ns:ne, drop=FALSE], 2, sum) - sum(ax)
-		axt <- matrix(ax, nrow=28, ncol=npred)
-		if(is.aids.country) {
+    #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
+    #    ns + sum(apply(result$male$mx[,ns:ne], 2, function(z) all(is.na(z))))
+    #else ns
+    this.ns <- ns
+    ax.ns <- max(ne - ax.latest.periods+1, this.ns)
+    lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
+                                   ax.index = ax.ns:ne, ax.smooth = smooth.ax)
+
+    if(is.aids.country) { # modify ax and bx
+        for(sex in c('male', 'female')) {
+    	    lMxe <- log(result[[sex]]$mx)
+		    axt <- matrix(lc.est[[sex]]$ax, nrow=28, ncol=npred)
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
 			ax.end.sm <- smooth.spline(ax.end[1:21], df=11)$y
     		ax.end[2:21] <- ax.end.sm[2:21] # keep value the first age group
 			for (i in 1:28) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
-				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
+				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(lc.est[[sex]]$ax[i], ax.end[i]), xout=1:aids.npred)$y
 				if(aids.npred < npred)
 					axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
-		}
-		bx <- mlt.bx
-		#bxt <- NULL
-    	if(!model.bx) {
-			x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
-			x1 <- rep(NA, nrow(lMxe))
-			for (i in 1:nrow(lMxe)) 
-				x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
-			bx <- x1/x2
-			bx <- finish.bx(bx)
-			# if(is.aids.country) {
-				# bxt <- matrix(bx, nrow=28, ncol=npred)
-				# slMxe.aids <- apply(lMxe[,aids.idx, drop=FALSE], 2, sum)
-				# x1.t <- rep(NA, nrow(lMxe))
-				# for(t in 2:aids.npred) {
-					# kt.t = slMxe.aids - sum(axt[,t])
-					# x2.t <- sum(kt.t*kt.t)					
-					# for (i in 1:nrow(lMxe)) 
-						# x1.t[i] <- sum((lMxe[i,aids.idx]-axt[i,t])*kt.t)
-					# bxt.t <- x1.t/x2.t
-					# bxt[,t] <- finish.bx(bxt.t)
-				# }
-				# for(t in (aids.npred+1):npred) bxt[,t] <- bxt[,aids.npred]
-			# }
-		}
-		result[[sex]]$ax <- ax
-		result[[sex]]$axt <- axt
-		result[[sex]]$bx <- bx
-		#result[[sex]]$bxt <- bxt
-		#result[[sex]]$k0 <- kt[ne]
-		#result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
-	}
-	return(result)
+    		lc.est[[sex]]$axt <- axt
+        }
+    }
+    if(model.bx) {
+        names(mlt.bx) <- names(lc.est$male$bx)
+        lc.est$male$bx <- lc.est$female$bx <- mlt.bx
+        lc.est$bx <- (lc.est$male$bx + lc.est$female$bx)/2
+        lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
+    }
+    # merge results
+    sex.code <- list(male = 1, female = 2)
+    for(sex in c('male', 'female')) {
+        lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
+        lc.est[[sex]]$sex <- sex.code[[sex]]
+    }
+	return(lc.est)
 }
 
 
