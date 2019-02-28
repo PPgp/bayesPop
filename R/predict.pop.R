@@ -387,9 +387,6 @@ read.pop.file <- function(file)
 	
 load.wpp.dataset <- function(...)
 	bayesTFR:::load.bdem.dataset(...)
-	
-read.bayesPop.file <- function(file)
-	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
                         fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
@@ -660,7 +657,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if(is.null(pattern.data)) {
         pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
         if(is.null(pattern.file)) 
-            vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+            vwBase <- get(paste0('vwBaseYear', wpp.year))
         else vwBase <- read.pop.file(pattern.file)
     } else vwBase <- pattern.data
     
@@ -1810,7 +1807,7 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 	tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
 	pasfr <- load.wpp.dataset("percentASFR", wpp.year)
 	pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
-	vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))[,c('country_code', 'MigCode')]
+	vwBase <- get(paste0('vwBaseYear', wpp.year))[,c('country_code', 'MigCode')]
 	pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
 	max.ages <- nrow(pop.first.country)
 	ages <- 1:max.ages

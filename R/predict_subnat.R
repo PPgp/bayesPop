@@ -262,7 +262,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     observed$PASFR <- pasfrlist$obs.pasfr
     
     # Get migration type, migration base year, mx & pasfr patterns
-    pattern.data.def <- read.bayesPop.file(paste0('vwBaseYear', wpp.year, '.txt'))
+    pattern.data.def <- get(paste0('vwBaseYear', wpp.year))
     pattern.data.def <- repeat.dataset.for.regions(
                             pattern.data.def[pattern.data.def$country_code == default.country,], 
                             region.codes)
