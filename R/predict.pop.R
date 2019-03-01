@@ -664,19 +664,22 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if("PasfrNorm" %in% colnames(vwBase) && !is.factor(vwBase$PasfrNorm))
         vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
     
-    create.pattern <- function(dataset, columns) {
+    create.pattern <- function(dataset, columns, char.columns = c()) {
         pattern <- data.frame(dataset[,'country_code'])
         for(col in columns)
             if(col %in% colnames(dataset))
                 pattern <- cbind(pattern, dataset[,col])
+        for(col in char.columns)
+            if(col %in% colnames(dataset))
+                pattern <- cbind(pattern, as.character(dataset[,col]), stringsAsFactors = FALSE)
         if(ncol(pattern)==1) pattern <- NULL
-        else colnames(pattern) <- c('country_code', columns[columns %in% colnames(dataset)])
+        else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
-    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
-                                          "AgeMortProjPattern", "AgeMortProjMethodWeights", "AgeMortProjAdjSR",
-                                          "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"),
+                                char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
+                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights"))
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
