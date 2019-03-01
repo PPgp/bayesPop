@@ -18,7 +18,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, 
+						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = FALSE,
+						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
@@ -32,7 +33,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 			stop('Prediction in ', output.dir,
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
-		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, verbose=verbose)
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, 
+		                   lc.for.hiv = lc.for.hiv, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
@@ -40,6 +42,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, fixed.pasfr=pred$inputs$fixed.pasfr, all.countries=FALSE, 
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
+								lc.for.hiv = pred$inputs$lc.for.hiv,
 								verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
@@ -389,7 +392,7 @@ load.wpp.dataset <- function(...)
 	bayesTFR:::load.bdem.dataset(...)
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
-                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
+                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, lc.for.hiv = FALSE, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -457,7 +460,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	observed$PASFR <- pasfrlist$obs.pasfr
 	
 	# Get migration type, migration base year, mx & pasfr patterns
-	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year)
+	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, lc.for.hiv = lc.for.hiv)
 	MIGtype <- patterns$mig.type
 	MXpattern <- patterns$mx.pattern
 	PASFRpattern <- patterns$pasfr.pattern
@@ -594,7 +597,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'observed'))
+				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'lc.for.hiv', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -653,7 +656,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
-.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL) {
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL, lc.for.hiv = FALSE) {
     if(is.null(pattern.data)) {
         pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
         if(is.null(pattern.file)) 
@@ -680,6 +683,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"),
                                 char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
                                                  "AgeMortProjPattern", "AgeMortProjMethodWeights"))
+    if(lc.for.hiv) { # replace HIVmortmod with LC
+        for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
+            if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
+    }
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -1156,10 +1163,21 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     return(val)
 }
 
+.hiv.mortality <- function(e0m, e0f, ...) {
+    male.mx <- female.mx <- matrix(NA, nrow = 22, ncol = length(e0m), colnames = names(e0m))
+    for(i in 1:ncol(male.mx)) {
+        male.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = 3, sex = 0, ...)
+        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = 3, sex = 1, ...)
+    }
+    return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
+}
+
+
 project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE, debug=FALSE) {
     meth1 <- .pattern.value("AgeMortProjMethod1", pattern, "LC")
     meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
     if(is.na(meth2)) meth2 <- ""
+    if("HIVmortmod" %in% c(meth1, meth2)) require("HIV.LifeTables")
     args <- list()
     if("MLT" %in% c(meth1, meth2)) {
         mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
@@ -1176,16 +1194,18 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE,
             interp.rho = TRUE, keep.lt = TRUE,
             sexratio.adjust = .pattern.value("AgeMortProjAdjSR", pattern, 0) == 1
             )
-    if("LC" %in% c(meth1, meth2) || "HIVmortmod" %in% c(meth1, meth2)) {
+    if("LC" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
-
+    if("HIVmortmod" %in% c(meth1, meth2)) {
+        args[["HIVmortmod"]] <- list()
+    }
     if(meth2 == "") { # apply a single method 
         res <- switch(meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
-            HIVmortmod = do.call("mortcast", c(list(eopm, eopf), args[["LC"]]))
+            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]]))
             )
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
     } else { # combination of two methods
@@ -1232,8 +1252,7 @@ runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
 	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, 
 	                   compute.AxBx = any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, "LC"),
-	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) %in% 
-	                                            c("LC", "HIVmortmod")), ...)
+	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) == "LC"), ...)
 }
 
 runKannisto.noLC <- function(inputs) {
