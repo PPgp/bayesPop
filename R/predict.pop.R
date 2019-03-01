@@ -670,7 +670,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
             if(col %in% colnames(dataset))
                 pattern <- cbind(pattern, dataset[,col])
         if(ncol(pattern)==1) pattern <- NULL
-        else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
+        else colnames(pattern) <- c('country_code', columns[columns %in% colnames(dataset)])
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
@@ -915,12 +915,13 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	return(res.asfr)
 }
 
-.get.par.from.inputs <- function(par, inputs, country) {
+.get.par.from.inputs <- function(par, inputs, country, convert.to.matrix = TRUE) {
 	if(is.null(inputs[[par]])) return (NULL)
 	idx <- inputs[[par]][,'country_code'] == country
 	if(sum(idx)==0) return (NULL)
 	res <- inputs[[par]][idx,,drop=FALSE]
-	return (as.matrix(res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]))
+	res <- res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]
+	return (if(convert.to.matrix) as.matrix(res) else res)
 }
 
 
@@ -931,6 +932,10 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
+	}
+	for(par in c('MXpattern', 'PASFRpattern')) { # keep these datasets in data.frame format
+	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
+	    obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
@@ -1143,7 +1148,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 
 .pattern.value <- function(name, pattern, default = NULL, na.means.missing = FALSE) {
     if(is.null(pattern)) return(default)
-    val <- ifelse(name %in% colnames(pattern), pattern[, name], default)
+    val <- if(name %in% colnames(pattern)) pattern[, name] else default
     if(na.means.missing && is.na(val)) val <- default
     return(val)
 }
@@ -1223,7 +1228,7 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
 	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, 
-	                   compute.AxBx = any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, ""),
+	                   compute.AxBx = any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, "LC"),
 	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) %in% 
 	                                            c("LC", "HIVmortmod")), ...)
 }
@@ -1272,7 +1277,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
-        ax.latest.periods <- as.numeric(lpat)
+        ax.latest.periods <- max(lpat, 1) # it should not be zero
     }
     mlt.bx <- NULL
     if(model.bx) {
