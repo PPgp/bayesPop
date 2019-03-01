@@ -1141,21 +1141,35 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 	return(list(bx=Bxt, kranges=kranges))
 }
 
+.pattern.value <- function(name, pattern, default = NULL, na.means.missing = FALSE) {
+    if(is.null(pattern)) return(default)
+    val <- ifelse(name %in% colnames(pattern), pattern[, name], default)
+    if(na.means.missing && is.na(val)) val <- default
+    return(val)
+}
+
 project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE, debug=FALSE) {
-    meth1 <- pattern[,"AgeMortProjMethod1"]
-    meth2 <- if(is.na(pattern[,"AgeMortProjMethod2"])) "" else pattern[,"AgeMortProjMethod2"]
+    meth1 <- .pattern.value("AgeMortProjMethod1", pattern, "LC")
+    meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
+    if(is.na(meth2)) meth2 <- ""
     args <- list()
     if("MLT" %in% c(meth1, meth2)) {
-        args[["MLT"]] <- list(type = pattern[,"AgeMortProjPattern"])
+        mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
+        if(is.null(mlttype)) {
+            warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used.")
+            mlttype <- "CD_West"
+        }
+        args[["MLT"]] <- list(type = mlttype)
     }
     if("PMD" %in% c(meth1, meth2))
         args[["PMD"]] <- list(
-            mxm0 = mxKan$male$mx[1:22,ncol(mxKan$male$mx)],
-            mxf0 = mxKan$female$mx[1:22,ncol(mxKan$female$mx)],
-            interp.rho = TRUE, keep.lt = TRUE
+            mxm0 = mxKan$male$mx.orig[,ncol(mxKan$male$mx)],
+            mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
+            interp.rho = TRUE, keep.lt = TRUE,
+            sexratio.adjust = .pattern.value("AgeMortProjAdjSR", pattern, 0) == 1
             )
     if("LC" %in% c(meth1, meth2) || "HIVmortmod" %in% c(meth1, meth2)) {
-        args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE)
+        args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
 
     if(meth2 == "") { # apply a single method 
@@ -1164,14 +1178,15 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE,
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
             HIVmortmod = do.call("mortcast", c(list(eopm, eopf), args[["LC"]]))
-        )
+            )
+        res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
     } else { # combination of two methods
         res <- mortcast.blend(eopm, eopf, meth1 = tolower(meth1),
                               meth2 = tolower(meth2), 
-                              weights = eval(parse(text = pattern[,"AgeMortProjMethodWeights"])),
+                              weights = eval(parse(text = .pattern.value("AgeMortProjMethodWeights", pattern, c(1, 0.5)))),
                               meth1.args = args[[meth1]], meth2.args = args[[meth2]])
     }
-    # consolidate results which can be in different formats from teh different methods
+    # consolidate results which can be in different formats from the different methods
     if(!"mx" %in% names(res))
         res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
     res$male$sex <- 1
@@ -1207,7 +1222,10 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 
 runKannisto <- function(inputs, start.year, ...) {
 	# extend mx, get LC ax,bx,k1
-	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, ...)
+	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, 
+	                   compute.AxBx = any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, ""),
+	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) %in% 
+	                                            c("LC", "HIVmortmod")), ...)
 }
 
 runKannisto.noLC <- function(inputs) {
@@ -1228,7 +1246,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	    Mxe.m <- kannisto(male.mx)
 	    Mxe.f <- kannisto(female.mx)
 	}
-	result <- list(male=list(mx=Mxe.m, sex = 1), female=list(mx=Mxe.f, sex = 2))
+	result <- list(male=list(mx=Mxe.m, mx.orig = male.mx, sex = 1), 
+	               female=list(mx=Mxe.f, mx.orig = female.mx, sex = 2))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
 	ne <- ncol(Mxe.m)
@@ -1242,24 +1261,24 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	}
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
-    model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
-    avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
-    smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
-    is.aids.country <- !is.null(mx.pattern) && "WPPAIDS" %in% colnames(mx.pattern) && mx.pattern[,"WPPAIDS"] == 1
+    model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables"
+    avg.ax <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, 1) == 0
+    smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
+    is.aids.country <- .pattern.value("WPPAIDS", mx.pattern, 0) == 1
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
-    if(!avg.ax && !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern)) {
-        ax.latest.periods <- as.numeric(mx.pattern[,"LatestAgeMortalityPattern"])
+    if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
+        ax.latest.periods <- as.numeric(lpat)
     }
     mlt.bx <- NULL
     if(model.bx) {
     	bx.env <- new.env()
     	data(MLTbx, envir = bx.env)
-    	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
+    	bx.pattern <- .pattern.value("AgeMortalityPattern", mx.pattern, "UN_General")
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
     #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
@@ -1292,10 +1311,10 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
     }
     # merge results
-    sex.code <- list(male = 1, female = 2)
+    #sex.code <- list(male = 1, female = 2)
     for(sex in c('male', 'female')) {
         lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
-        lc.est[[sex]]$sex <- sex.code[[sex]]
+        #lc.est[[sex]]$sex <- sex.code[[sex]]
     }
 	return(lc.est)
 }
