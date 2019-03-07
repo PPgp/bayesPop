@@ -199,8 +199,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
-									inpc$e0Fpred[,itraj], pattern=inpc$MXpattern,
-									verbose=verbose, debug=debug)
+									inpc$e0Fpred[,itraj], pattern = inpc$MXpattern, 
+									hiv.params = inpc$HIVparams, verbose = verbose, debug = debug)
 			
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
@@ -385,8 +385,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	return(bayesPop.prediction)
 }
 
-read.pop.file <- function(file) 
-	return(read.delim(file=file, comment.char='#', check.names=FALSE))
+read.pop.file <- function(file, ...) 
+	return(read.delim(file=file, comment.char='#', check.names=FALSE, ...))
 	
 load.wpp.dataset <- function(...)
 	bayesTFR:::load.bdem.dataset(...)
@@ -465,6 +465,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	MXpattern <- patterns$mx.pattern
 	PASFRpattern <- patterns$pasfr.pattern
 	
+	# Get HIV parameters to be used with hiv.mortmod()
+	HIVparams <- .get.hiv.params(inputs)
 
 	# Get age-specific migration
 	wppds <- data(package=paste0('wpp', wpp.year))
@@ -595,7 +597,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
-				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
+				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'lc.for.hiv', 'observed'))
 		assign(par, get(par), envir=inp)
@@ -656,6 +658,28 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
+.get.hiv.params <- function(inputs){
+    if(is.null(inputs$hiv.params)) return(NULL)
+    params <- read.pop.file(inputs$hiv.params, stringsAsFactors = FALSE)
+    # remove country name
+    if(any(colnames(param) %in% c("country", "name")))
+        params <- params[, -which(colnames(params) %in% c("country", "name"))]
+    for(par in c("param"))
+        if(! par %in% colnames(params)) stop("Column ", par, " is obligatory in the hiv.params file.")
+    if(! "sex" %in% colnames(params)) {
+        warning("Column 'sex' is missing in the hiv.params file. The same values will be used for female and male.")
+        params <- rbind(cbind(params, sex = "male"), cbind(params, sex = "female"))
+    }
+    # replace periods by mid-years in column names if needed
+    cnames <- colnames(params)
+    num.columns <- grep('^[0-9]{4}.[0-9]{4}$', cnames) # index of year-columns
+    if(length(num.columns) > 0) {
+        cols.start <- as.integer(substr(cnames[num.columns], 1,4))
+        colnames(params)[num.columns] <- cols.start + 3
+    }
+    return(params)
+}
+
 .get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL, lc.for.hiv = FALSE) {
     if(is.null(pattern.data)) {
         pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
@@ -680,13 +704,18 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
-    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"),
+    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", 
+                                          "SmoothLatestAgeMortalityPattern", "WPPAIDS", "HIVregion"),
                                 char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
                                                  "AgeMortProjPattern", "AgeMortProjMethodWeights"))
     if(lc.for.hiv) { # replace HIVmortmod with LC
         for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
             if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
     }
+    if(! "HIVregion" %in% colnames(MXpattern))
+        MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(UNlocations$country_code,
+                                                      MXpattern$country_code), "reg_code"] == 903)
+        
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -943,9 +972,8 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
-	for(par in c('MXpattern', 'PASFRpattern')) { # keep these datasets in data.frame format
+	for(par in c('MXpattern', 'PASFRpattern', 'HIVparams')) { # keep these datasets in data.frame format
 	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
-	    obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
@@ -1163,17 +1191,30 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     return(val)
 }
 
-.hiv.mortality <- function(e0m, e0f, ...) {
-    male.mx <- female.mx <- matrix(NA, nrow = 22, ncol = length(e0m), colnames = names(e0m))
+.hiv.mortality <- function(e0m, e0f, country, region, params = NULL) {
+    npred <- length(e0m)
+    male.mx <- female.mx <- matrix(NA, nrow = 22, ncol = npred, 
+                                   dimnames = list(NULL, names(e0m)))
+    prevF <- prevM <- rep(3, npred)
+    names(prevF) <- names(prevM) <- names(e0m)
+    if(!is.null(params)) {
+        prev.cols <- names(e0m)[names(e0m) %in% names(params)]
+        prevF[prev.cols] <- params[params$param == "prev" & params$sex == "female", 
+                               prev.cols]
+        prevM[prev.cols] <- params[params$param == "prev" & params$sex == "male", 
+                                   prev.cols]
+        stop("")
+    }
     for(i in 1:ncol(male.mx)) {
-        male.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = 3, sex = 0, ...)
-        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = 3, sex = 1, ...)
+        male.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = prevM[i], sex = 0, region = region)
+        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = prevF[i], sex = 1, region = region)
     }
     return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
 }
 
 
-project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE, debug=FALSE) {
+project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = NULL, 
+                               verbose=FALSE, debug=FALSE) {
     meth1 <- .pattern.value("AgeMortProjMethod1", pattern, "LC")
     meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
     if(is.na(meth2)) meth2 <- ""
@@ -1198,7 +1239,9 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, verbose=FALSE,
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
     if("HIVmortmod" %in% c(meth1, meth2)) {
-        args[["HIVmortmod"]] <- list()
+        args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
+                                     params = hiv.params
+        )
     }
     if(meth2 == "") { # apply a single method 
         res <- switch(meth1, 
