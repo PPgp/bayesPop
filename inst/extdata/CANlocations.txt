@@ -1,0 +1,15 @@
+country	country_code	name	reg_code	location_type
+Canada	124	Alberta	658	4
+Canada	124	British Columbia	659	4
+Canada	124	Manitoba	660	4
+Canada	124	New Brunswick	661	4
+Canada	124	Newfoundland and Labrador	662	4
+Canada	124	Northwest Territories	663	4
+Canada	124	Nova Scotia	664	4
+Canada	124	Nunavut	665	4
+Canada	124	Ontario	666	4
+Canada	124	Prince Edward Island	667	4
+Canada	124	Quebec	668	4
+Canada	124	Saskatchewan	669	4
+Canada	124	Yukon	670	4
+Canada	124	Canada	124	0

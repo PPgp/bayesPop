@@ -9,7 +9,10 @@ pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
 		bayesTFR:::load.bdem.dataset('UNlocations', pop.pred$wpp.year, envir=globalenv(), verbose=verbose)
 	else {
 		env <- globalenv()
-		assign("UNlocations", read.delim(my.location.file, comment.char='#'), envir=env)
+		if(is.character(my.location.file))
+		    locs <- read.delim(my.location.file, comment.char='#')
+		else locs <- my.location.file # data.frame
+		assign("UNlocations", locs, envir=env)
 	}
 	regions <- unique(regions)
 	method <- match.arg(input.type)
@@ -76,7 +79,8 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 		for(item in c('MIGm', 'MIGf')) inp[[item]] <- rbind(inp[[item]], mig[[item]])
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		inp$SRB <- rbind(inp$SRB, .aggregate.srb(pop.pred, countries, countries.index, id))
-		inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
+		if(inp$fixed.pasfr)
+		    inp$PASFR <- rbind(inp$PASFR, .aggregate.pasfr(pop.pred, countries, countries.index, id))
 		inp$MIGtype <- rbind(inp$MIGtype, .aggregate.migtype(pop.pred, countries, countries.index, id))
 		aggregated.countries[[as.character(id)]] <- countries
 		# aggregate pop.matrix
