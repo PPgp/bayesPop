@@ -180,7 +180,7 @@ project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, presen
             pasfr <- round(pasfr*100, digits)
             colnames(pasfr) <- proj.years
             rownames(pasfr) <- ages
-            pasfr.long <- melt(pasfr, value.name=as.character(itraj))
+            pasfr.long <- reshape2::melt(pasfr, value.name=as.character(itraj))
             colnames(pasfr.long)[1:2] <- c("age", "year")
             country.pasfr <- if(is.null(country.pasfr)) pasfr.long else merge(country.pasfr, 
                                                 pasfr.long, by=c('age', 'year'), sort=FALSE)

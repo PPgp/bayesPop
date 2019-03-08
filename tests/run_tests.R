@@ -4,7 +4,7 @@ source('test_functions.R')
 CRAN <- TRUE
 
 test.expressions()
-
+test.adjustment()
 if(!CRAN) {
 # longer tests 
     warn <- options('warn')
