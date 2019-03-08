@@ -18,7 +18,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = FALSE,
+						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE,
 						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE) {
 	prediction.exist <- FALSE
@@ -662,7 +662,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if(is.null(inputs$hiv.params)) return(NULL)
     params <- read.pop.file(inputs$hiv.params, stringsAsFactors = FALSE)
     # remove country name
-    if(any(colnames(param) %in% c("country", "name")))
+    if(any(colnames(params) %in% c("country", "name")))
         params <- params[, -which(colnames(params) %in% c("country", "name"))]
     for(par in c("param"))
         if(! par %in% colnames(params)) stop("Column ", par, " is obligatory in the hiv.params file.")
@@ -713,8 +713,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
             if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
     }
     if(! "HIVregion" %in% colnames(MXpattern))
-        MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(UNlocations$country_code,
-                                                      MXpattern$country_code), "reg_code"] == 903)
+        MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
         
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
@@ -1199,15 +1198,14 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     names(prevF) <- names(prevM) <- names(e0m)
     if(!is.null(params)) {
         prev.cols <- names(e0m)[names(e0m) %in% names(params)]
-        prevF[prev.cols] <- params[params$param == "prev" & params$sex == "female", 
-                               prev.cols]
-        prevM[prev.cols] <- params[params$param == "prev" & params$sex == "male", 
-                                   prev.cols]
-        stop("")
+        prevF[prev.cols] <- as.numeric(params[params$param == "prev" & params$sex == "female", 
+                               prev.cols])
+        prevM[prev.cols] <- as.numeric(params[params$param == "prev" & params$sex == "male", 
+                                   prev.cols])
     }
     for(i in 1:ncol(male.mx)) {
         male.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = prevM[i], sex = 0, region = region)
-        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = prevF[i], sex = 1, region = region)
+        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0f[i], prev = prevF[i], sex = 1, region = region)
     }
     return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
 }
