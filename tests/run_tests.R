@@ -1,10 +1,10 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- TRUE
+CRAN <- FALSE
 
 test.expressions()
-test.adjustment()
+
 if(!CRAN) {
 # longer tests 
     warn <- options('warn')

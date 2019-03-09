@@ -442,6 +442,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     env <- new.env()
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
+    inp$lc.for.hiv <- TRUE
+    inp$lc.for.all <- TRUE
     return(inp)
 }
 

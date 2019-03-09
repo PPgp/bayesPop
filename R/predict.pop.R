@@ -714,9 +714,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
             if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
     }
-    if(! "HIVregion" %in% colnames(MXpattern))
+    if(! "HIVregion" %in% colnames(MXpattern) && "area_code" %in% colnames(UNlocations)) 
         MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
-        
+    
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -1223,7 +1223,7 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
     }
     if(is.na(meth2)) meth2 <- ""
-    if("HIVmortmod" %in% c(meth1, meth2)) require("HIV.LifeTables")
+    if("HIVmortmod" %in% c(meth1, meth2)) requireNamespace("HIV.LifeTables")
     args <- list()
     if("MLT" %in% c(meth1, meth2)) {
         mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
@@ -1361,10 +1361,10 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
     #    ns + sum(apply(result$male$mx[,ns:ne], 2, function(z) all(is.na(z))))
     #else ns
-    this.ns <- ns
-    ax.ns <- max(ne - ax.latest.periods+1, this.ns)
+    length.mx <- length(ns:ne)
+    ax.ns <- max(length.mx - ax.latest.periods+1, 1)
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
-                                   ax.index = ax.ns:ne, ax.smooth = smooth.ax)
+                                   ax.index = ax.ns:length.mx, ax.smooth = smooth.ax)
 
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
