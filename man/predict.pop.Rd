@@ -13,12 +13,13 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
     wpp.year = 2017, countries = NULL, 
     output.dir = file.path(getwd(), "bayesPop.output"),
     inputs = list(popM=NULL, popF=NULL, mxM=NULL, mxF=NULL, srb=NULL,
-        pasfr=NULL, mig.type=NULL, migM=NULL, migF=NULL,
+        pasfr=NULL, patterns=NULL, migM=NULL, migF=NULL,
         e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
         migMtraj = NULL, migFtraj = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
+    lc.for.hiv = TRUE, lc.for.all = FALSE,
     my.locations.file = NULL, replace.output = FALSE, 
     use.migration.model = FALSE, balance.migration = FALSE,
     verbose = TRUE, \dots)
@@ -36,7 +37,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
   			\item{mxM, mxF}{Historical data and (optionally) projections of male/female age-specific death rates [\code{\link[wpp2017]{mxM}}, \code{\link[wpp2017]{mxF}}] (see also argument \code{fixed.mx}).}
   			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2017]{sexRatio}}]}
   			\item{pasfr}{Historical data and (optionally) projections of percentage age-specific fertility rate [\code{\link[wpp2017]{percentASFR}}] (see also argument \code{fixed.pasfr}).}
-  			\item{mig.type, patterns}{Migration type and base year of the migration. In addition, this dataset gives information on country's specifics regarding mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. \code{patterns} and \code{mig.type} have the same meaning and can be used interchangeably.}
+  			\item{patterns, mig.type}{Migration type and base year of the migration. In addition, this dataset gives information on country's specifics regarding mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. \code{patterns} and \code{mig.type} have the same meaning and can be used interchangeably.}
   			\item{migM, migF}{Projection of male/female age-specific migration as net counts on the same scale as initital population [\code{\link[wpp2012]{migrationM}}, \code{\link[wpp2012]{migrationF}}]. If not available, the migration schedules are reconstructed from total migration counts derived from \code{\link[wpp2017]{migration}} using the \code{\link{age.specific.migration}} function.}
   			\item{e0F.file}{Comma-delimited CSV file with results of female life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken, namely the median projections as one trajectory and the low and high variants (if available) as second and third trajectory.}
   			\item{e0M.file}{Comma-delimited CSV file containing results of male life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. As in the female case, if both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken.}
@@ -52,6 +53,10 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
   	\item{keep.vital.events}{Logical. If \code{TRUE} age- and sex-specific vital events of births and deaths as well as other objects are stored in the prediction object, see Details.}
   	\item{fixed.mx}{Logical. If \code{TRUE}, it is assumed the dataset of death rates (mxM and mxF) include data for projection years and they are then used instead of the life expectancy.}
   	\item{fixed.pasfr}{Logical. If \code{TRUE}, it is assumed the dataset on percent age-specific fertility rate (percentASFR) include data for projection years and they are then used instead of computing it on the fly.}
+  	\item{lc.for.hiv}{Logical controlling if the Lee-Carter method should be used 
+  	for projection of mortality rates for countries with HIV epidemics. If \code{FALSE}, the function \code{hiv.mortmod} from the HIV.LifeTables package is used.}
+  	\item{lc.for.all}{Logical controlling if the Lee-Carter method should be used 
+  	for projection of mortality rates for all countries. If \code{FALSE}, the corresponding method is determined by the columns \dQuote{AgeMortProjMethod1} and \dQuote{AgeMortProjMethod2} of the \code{\link{vwBaseYear}} dataset.}
   	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2017]{UNlocations}} dataset. It must have the same structure.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
   	\item{use.migration.model}{Logical indicating if the migration model of Azose et al. (2015, 2016) should be used.}
