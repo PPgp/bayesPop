@@ -212,7 +212,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "nvariants", "keep.vital.events", "verbose",
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-	                    "migration.thresholds", "adjust.mig")
+	                    "migration.thresholds", "adjust.mig", "lc.for.hiv", "lc.for.all")
 	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
 	work.env <- create.work.env()
 	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
@@ -635,8 +635,10 @@ do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, p
     LTres <- if(env$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
                                                         x[[2]][,time,drop=FALSE]),
                                  simplify = FALSE, USE.NAMES = TRUE) else
-                    modifiedLC(1, kann, inpc$e0Mpred[time,itraj], 
-                               inpc$e0Fpred[time,itraj], verbose=env$verbose)
+                    project.mortality(1, kann, inpc$e0Mpred[time,itraj], 
+                                    inpc$e0Fpred[time,itraj], pattern = inpc$MXpattern, 
+                                    hiv.params = inpc$HIVparams, lc.for.all = env$lc.for.all,
+                                    verbose = env$verbose)
     
     popres <- PopProjNoMigr(1, pop.ini, LTres, asfr, inpc$SRB[time], country.name=country.name,
                             keep.vital.events=env$keep.vital.events)
@@ -665,8 +667,9 @@ do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, 
 	LTres <- if(wenv$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
 	                                                    x[[2]][,time,drop=FALSE]),
 	                             simplify = FALSE, USE.NAMES = TRUE) else
-	    modifiedLC(1, kann, inpc$e0Mmedian[time], 
-	               inpc$e0Fmedian[time], verbose=wenv$verbose)
+	   project.mortality(1, kann,  inpc$e0Mmedian[time], 
+	                    inpc$e0Fmedian[time], pattern=inpc$MXpattern,
+	                   lc.for.all = wenv$lc.for.all, verbose=wenv$verbose)
 
 	for (variant in 1:wenv$nvariants) {
 	    pasfr <- wenv$kantor.pasfr[[wenv$country.codes.char[cidx]]][[wenv$nr.traj+variant]][,time,drop=FALSE]

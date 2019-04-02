@@ -545,7 +545,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		assign(var.name, migpred)
 	}
 	# Get historical migration rates
-	migration.rates <- read.bayesPop.file(paste('migration_rates_wpp', wpp.year, '.txt', sep=''))
+	migration.rates <- get(paste0('migration_rates_wpp', wpp.year))
 	names.migr.data <- names(migration.rates)
 	num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.migr.data) # index of year-columns
 	cols.starty <- as.integer(substr(names.migr.data[num.columns], 1,4))
