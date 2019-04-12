@@ -134,13 +134,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
-			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', as.character(UNlocations[country.idx,'name']))
+			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', 
+			    as.character(UNlocations[country.idx,'name']), ': ')
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, UNlocations[country.idx,'name'])
 		if(is.null(inpc)) next
 		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
-			cat(' (', nr.traj, ' trajectories )')
+			cat(nr.traj, ' trajectories')
 		migr.modified <- .set.inp.migration.if.needed(inp, inpc, country)
 		if(migr.modified) {
 			for(what.mig in c('MIGm', 'MIGf')) {
@@ -198,11 +199,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			if(!fixed.mx) LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
+			if(!fixed.mx) {
+			    LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
 									inpc$e0Fpred[,itraj], pattern = inpc$MXpattern, 
 									hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all,
 									verbose = verbose, debug = debug)
-			
+			    if(itraj == 1 && verbose) cat(", mx via ", paste(LTres$methods, collapse = ","))
+			}
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
@@ -1223,7 +1226,6 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
     }
     if(is.na(meth2)) meth2 <- ""
-    if("HIVmortmod" %in% c(meth1, meth2)) requireNamespace("HIV.LifeTables")
     args <- list()
     if("MLT" %in% c(meth1, meth2)) {
         mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
@@ -1244,16 +1246,26 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
     if("HIVmortmod" %in% c(meth1, meth2)) {
+        requireNamespace("HIV.LifeTables")
+        data("HIVModelLifeTables", package = "HIV.LifeTables") # need to do this because requireNamespace does not attach lazy data
         args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
                                      params = hiv.params
-        )
+                                )
+        if(! meth2 %in% c("HIVmortmod", "")) {
+            warning("HIVmortmod cannot be combined with other methods.")
+        }
+        meth1 <- "HIVmortmod"
+        meth2 <- ""
     }
+    if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments fro logquad
+    
     if(meth2 == "") { # apply a single method 
         res <- switch(meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
-            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]]))
+            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]])),
+            LogQuad = do.call("logquadj", c(list(eopm, eopf), args[["LQ"]]))
             )
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
     } else { # combination of two methods
@@ -1274,6 +1286,7 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
     }
     #stop('')
     #print(c(meth1, meth2))
+    res$methods <- c(meth1, meth2)
     return(res)
 }
 
