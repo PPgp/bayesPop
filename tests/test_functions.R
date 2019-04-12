@@ -46,12 +46,25 @@ test.prediction <- function() {
 	tfr.should.be <- c(1.73, 1.75, 1.76, 1.78, 1.79, 1.80) # WPP 2017 data
 	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
 	
+	# check that writing summary is OK
+	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
+	s <- summary(pred, country = 528)
+	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2015"]))
+	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
 				inputs=list(tfr.file='median_', e0M.file='median_'))
 	tfr <- get.pop("F528", pred)
 	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
 	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one is available, because we take TFR median
+
+	# check that writing summary is OK
+	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
+	s <- summary(pred, country = 528)
+	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2015"]))
+	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
 }

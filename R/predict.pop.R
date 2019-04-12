@@ -148,13 +148,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
-			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', as.character(UNlocations[country.idx,'name']))
+			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', 
+			    as.character(UNlocations[country.idx,'name']), ': ')
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, UNlocations[country.idx,'name'])
 		if(is.null(inpc)) next
 		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
-			cat(' (', nr.traj, ' trajectories )')
+			cat(nr.traj, ' trajectories')
 		migr.modified <- .set.inp.migration.if.needed(inp, inpc, country)
 		if(migr.modified) {
 			for(what.mig in c('MIGm', 'MIGf')) {
@@ -214,10 +215,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			if(!fixed.mx) LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
+			if(!fixed.mx) {
+			    LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
 			                                         inpc$e0Fpred[,itraj], pattern = inpc$MXpattern, 
 			                                         hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all,
 			                                         verbose = verbose, debug = debug)
+			    if(itraj == 1 && verbose) cat(", mx via ", paste(LTres$methods, collapse = ","))
+			}
 			migpred <- .get.migration.one.trajectory(FALSE, inpc, itraj)
 			popres <- StoPopProj(npred, pop.ini, LTres, asfr, inpc$SRB, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
 									keep.vital.events=keep.vital.events)
@@ -1280,7 +1284,6 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
     }
     if(is.na(meth2)) meth2 <- ""
-    if("HIVmortmod" %in% c(meth1, meth2)) requireNamespace("HIV.LifeTables")
     args <- list()
     if("MLT" %in% c(meth1, meth2)) {
         mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
@@ -1301,16 +1304,26 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
     if("HIVmortmod" %in% c(meth1, meth2)) {
+        requireNamespace("HIV.LifeTables")
+        data("HIVModelLifeTables", package = "HIV.LifeTables") # need to do this because requireNamespace does not attach lazy data
         args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
                                      params = hiv.params
-        )
+                                )
+        if(! meth2 %in% c("HIVmortmod", "")) {
+            warning("HIVmortmod cannot be combined with other methods.")
+        }
+        meth1 <- "HIVmortmod"
+        meth2 <- ""
     }
+    if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments fro logquad
+    
     if(meth2 == "") { # apply a single method 
         res <- switch(meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
-            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]]))
+            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]])),
+            LogQuad = do.call("logquadj", c(list(eopm, eopf), args[["LQ"]]))
             )
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
     } else { # combination of two methods
@@ -1331,6 +1344,7 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
     }
     #stop('')
     #print(c(meth1, meth2))
+    res$methods <- c(meth1, meth2)
     return(res)
 }
 
@@ -1859,53 +1873,17 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
-	sex <- match.arg(sex)
-	sex <- list(Male=1, Female=2)[[sex]]
-	nage <- length(mx)
-	Lx <- lx <- qx <- Tx <- sx <- dx <- ax <- rep(0, nage)
-	nagem1 <- nage-1
-	resage <- c(if(include01) c(0,1) else 0, seq(5, by=5, length=nage-2))
-	resage <- resage[resage <= open.age]
-	nresage <- length(resage)
-	nas <- rep(NA,nresage)
-	if(any(is.na(mx))) # there are NAs in mx
-		return(data.frame(age=resage, mx=mx[1:nresage], qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas))
-	
-	LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
-					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx, dx=dx)
-	LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$dx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=LTC$ax)
-	LT$ax[nage] <- LT$ex[nage]
-	if(!include01) { # collapse 0-1 and 1-5 into 0-5
-		age05 <- c(FALSE, FALSE, TRUE)
-		LTres <- data.frame(age=seq(0, by=5, length=nage-1))
-		for(colname in colnames(LT)[-1])
-			LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
-		LT <- LTres
-	}
-	if(radix != 1) 
-		LT <- transform(LT, lx = lx * radix, 
-						dx = dx * radix,
-						Lx = Lx * radix,
-						Tx = Tx * radix
-					)
-	if(open.age < 130) {
-		## truncate life table with open age group < 130+ (Patrick Gerland's code)
-		LT <- LT[1:nresage,]
-		## mx for open age /* reciprocal of 1/ex for open age group*/ 
-		LT$mx[nresage] <- 1 / LT$ex[nresage]
-		LT$qx[nresage] <- NA
-		LT$dx[nresage] <- LT$lx[nresage] ## open age group dx = lx
-		LT$Lx[nresage] <- LT$Tx[nresage] ## open age group Lx = Tx
-		# Sx
-        # for open age group, e.g., 85+ 
-        ## penultimate age group -> Last entry of S(x,n) is S( 80+,5) = T( 85) / T( 80)
-        ## for open age group itself: Sx cannot be computed due to trunaction Sx <- NA
-        LT$sx[nresage-1] <- LT$Tx[nresage]/LT$Tx[nresage-1]
-        LT$sx[nresage] <- NA
-        LT$ax[nresage] <- LT$ex[nresage] ## for open age group ax = ex
-	} 
-	rownames(LT) <- c(paste(LT$age[-nresage], pmax(LT$age[-1]-1,1), sep="-"), paste0(LT$age[nresage], "+"))
+    LT <- MortCast::life.table(mx, sex = tolower(sex), radix = radix, open.age = open.age)
+    if(!include01) {
+        if(all(is.na(LT$ax))) return(LT[-2,])
+        age05 <- c(FALSE, FALSE, TRUE)
+        LTres <- data.frame(age=LT$age[-2])
+        for(colname in setdiff(colnames(LT), "age"))
+            LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
+        rownames(LTres) <- rownames(LT[-2,])
+        rownames(LTres)[1] <- "0-4"
+        LT <- LTres
+    }
 	return(LT)
 }
 

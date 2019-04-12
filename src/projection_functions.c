@@ -255,63 +255,6 @@ void get_sx21_21(double *LLm, double *sx) {
 }
 
 /*****************************************************************************
- * Wrapper for abridged life table function, 
- * called from R in predict.pop
- * TB: adding missing life table variables  Tx, sx and dx
- *     and correcting error in sx (larger than 1, shifted index)
- *****************************************************************************/
-
-void LifeTable(int *sex, int *nage, double *mx, 
-				double *Lx, double *lx, double *qx, double *ax, double *Tx, double *sx, double *dx) {
-	int i;
-	
-	/* original implementation lacking Tx, sx, dx */
-	doLifeTable(*sex, *nage, mx, Lx, lx, qx, ax);
-	
-	/* calculating additional life table columns dx, Tx, sx */
-
-	/* TB: dx */
-	for(i = 0; i < *nage; ++i) {
-		dx[i] = lx[i] - lx[i+1];
-	}
-	dx[*nage] = lx[*nage];
-
-	/*TB: Tx */
-	Tx[*nage] = Lx[*nage];
-	for (i = *nage-1; i >= 0; i--) {
-		Tx[i] = Tx[i+1] + Lx[i];
-	}       
-	/* TB: sx */
-	/* first age group is survival from births to age 0-5 */
-	sx[0] = (Lx[0] + Lx[1]) / 5*lx[0];
-
-	/* second age group is survival age 0-5 to age 5 - 10 */
-	sx[1] = Lx[2] / (Lx[0] + Lx[1]);
-
-	/* middle age groups  */
-	for(i = 2; i < *nage-1; ++i) {
-		sx[i] = Lx[i+1] / Lx[i];
-	}
-	/* last but one age group */
-	sx[*nage-1] = Lx[*nage] / (Lx[*nage-1]+Lx[*nage]);
-	sx[*nage]= 0.0;
-	
-	/* obsolete
-	Tx[*nage] = Lx[*nage];
-	dx[*nage] = lx[*nage];
-	for (i = *nage-1; i >= 0; i--) {
-		Tx[i] = Tx[i+1] + Lx[i];
-		dx[i] = lx[i] - lx[i+1];
-	}	
-	get_sx(Lx, sx, *nage, *nage);
-	*/
-	/* the above call assumed the first age category is 0-5 but here it is 0-1 */
-	/*
-	sx[0] = sx[0]*5;
-	*/
-}
-
-/*****************************************************************************
  * Lee Carter model
  * Produces a projection of age -specific mortality rates
  * (more)

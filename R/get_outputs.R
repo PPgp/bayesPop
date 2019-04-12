@@ -396,11 +396,12 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL, country.code=NULL, 
 									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
 	# quantile.array should be 3d-array (country x quantiles x time). 
-	# If country.index is NULL, the country dimension can be omitted 
+	# If country.index is NULL or there is just one country in the prediciton object, 
+    # the country dimension can be omitted 
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
 	if(!is.null(quantile.array)) {
-		if(is.null(country.index) && length(dim(quantile.array))<3) {
+		if((is.null(country.index) || nrow(pop.pred$countries) == 1) && length(dim(quantile.array))<3) {
 			quantile.array <- abind(quantile.array, along=0)
 			country.index <- 1
 		}
