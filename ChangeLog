@@ -1,3 +1,8 @@
+7.0-1 (04/02/2019) [not published yet]
+-----
+Fixed bug in writing summary for cases when projection is generated 
+for one country only (thanks to Anna Janicka)
+
 7.0-0 (10/11/2018)
 -----
 Support for subnational population projections:
