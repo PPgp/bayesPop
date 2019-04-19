@@ -50,7 +50,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 			ages <- pred$ages
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
-		                          all.countries=FALSE, verbose=verbose)
+		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -130,6 +130,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		inp.to.save[[item]] <- get(item, inp)
 		
 	for(cidx in 1:ncountries) {
+	    #country.t1 <- Sys.time()
 		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
@@ -180,9 +181,12 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		debug <- FALSE
 		#stop('')
-		if(!fixed.mx) 
+		if(!fixed.mx) {
 			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all, npred=npred) 
-		else {
+			mortcast.args <- .prepare.for.mortality.projection(pattern = inpc$MXpattern, mxKan = MxKan, 
+			                                                   hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all)
+			if(verbose) cat(", mx via ", paste(c(mortcast.args$meth1, mortcast.args$meth2), collapse = ","))
+		} else {
 			MxKan <- runKannisto.noLC(inpc)
 			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
 		}
@@ -200,11 +204,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
 			if(!fixed.mx) {
-			    LTres <- project.mortality(npred, MxKan, inpc$e0Mpred[,itraj], 
-									inpc$e0Fpred[,itraj], pattern = inpc$MXpattern, 
-									hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all,
-									verbose = verbose, debug = debug)
-			    if(itraj == 1 && verbose) cat(", mx via ", paste(LTres$methods, collapse = ","))
+			    LTres <- project.mortality(inpc$e0Mpred[,itraj], inpc$e0Fpred[,itraj], npred, mortcast.args = mortcast.args,
+									        verbose = verbose, debug = debug)
 			}
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
@@ -249,9 +250,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
-			if(!fixed.mx) LTres <- project.mortality(npred, MxKan,  inpc$e0Mmedian, 
-			                                         inpc$e0Fmedian, pattern=inpc$MXpattern,
-			                                         lc.for.all = inp$lc.for.all, verbose=verbose, debug=debug)
+			if(!fixed.mx) LTres <- project.mortality(inpc$e0Mmedian, inpc$e0Fmedian, npred, mortcast.args = mortcast.args,
+			                                         verbose=verbose, debug=debug)
 			migpred.hch <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'median')
@@ -384,6 +384,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(migr.modified)
 			bayesPop.prediction$inputs <- inp.to.save
 		save(bayesPop.prediction, file=prediction.file)
+		#print(Sys.time() - country.t1)
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
 	return(bayesPop.prediction)
@@ -1215,9 +1216,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
 }
 
-
-project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = NULL, 
-                               lc.for.all = FALSE, verbose=FALSE, debug=FALSE) {
+.prepare.for.mortality.projection <- function(pattern, mxKan, hiv.params = NULL, lc.for.all = FALSE) {
     if(lc.for.all) {
         meth1 <- "LC"
         meth2 <- ""
@@ -1241,7 +1240,7 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
             mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
             interp.rho = TRUE, keep.lt = TRUE,
             sexratio.adjust = .pattern.value("AgeMortProjAdjSR", pattern, 0) == 1
-            )
+        )
     if("LC" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
@@ -1250,7 +1249,7 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         data("HIVModelLifeTables", package = "HIV.LifeTables") # need to do this because requireNamespace does not attach lazy data
         args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
                                      params = hiv.params
-                                )
+        )
         if(! meth2 %in% c("HIVmortmod", "")) {
             warning("HIVmortmod cannot be combined with other methods.")
         }
@@ -1258,9 +1257,16 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
         meth2 <- ""
     }
     if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments fro logquad
-    
-    if(meth2 == "") { # apply a single method 
-        res <- switch(meth1, 
+    if(meth2 != "") args$weights <- eval(parse(text = .pattern.value("AgeMortProjMethodWeights", pattern, c(1, 0.5))))
+    args$meth1 <- meth1
+    args$meth2 <- meth2
+    return(args)
+}
+
+project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, verbose=FALSE, debug=FALSE) {
+    args <- if(is.null(mortcast.args)) .prepare.for.mortality.projection(...) else mortcast.args
+    if(args$meth2 == "") { # apply a single method 
+        res <- switch(args$meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
@@ -1269,24 +1275,22 @@ project.mortality <- function (npred, mxKan, eopm, eopf, pattern, hiv.params = N
             )
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
     } else { # combination of two methods
-        res <- mortcast.blend(eopm, eopf, meth1 = tolower(meth1),
-                              meth2 = tolower(meth2), 
-                              weights = eval(parse(text = .pattern.value("AgeMortProjMethodWeights", pattern, c(1, 0.5)))),
-                              meth1.args = args[[meth1]], meth2.args = args[[meth2]])
+        res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
+                              meth2 = tolower(args$meth2), 
+                              weights = args$weights,
+                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]])
     }
     # consolidate results which can be in different formats from the different methods
     if(!"mx" %in% names(res))
         res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
     res$male$sex <- 1
     res$female$sex <- 2
-    if(is.null(res$sr[[1]])) {# compute survival
+    if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) < 28) {# compute survival
         srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
                         female = list(sex = 2, mx = res$mx[[2]]))
         res <- survival.fromLT(npred, srinput, verbose=verbose, debug=debug)
     }
     #stop('')
-    #print(c(meth1, meth2))
-    res$methods <- c(meth1, meth2)
     return(res)
 }
 
@@ -1369,6 +1373,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	bx.env <- new.env()
     	data(MLTbx, envir = bx.env)
     	bx.pattern <- .pattern.value("AgeMortalityPattern", mx.pattern, "UN_General")
+    	if (!bx.pattern %in% rownames(bx.env$MLTbx)) bx.pattern <- "UN_General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
     #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
@@ -1378,7 +1383,6 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     ax.ns <- max(length.mx - ax.latest.periods+1, 1)
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
                                    ax.index = ax.ns:length.mx, ax.smooth = smooth.ax)
-
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
     	    lMxe <- log(result[[sex]]$mx)
