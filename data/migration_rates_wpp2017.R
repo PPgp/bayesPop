@@ -20,5 +20,7 @@ migration_rates_wpp2017 <- local({
 	rownames(mig.matrix) <- mig$country_code
 
 	rates <- mig.matrix / (popu.matrix - mig.matrix)
-	cbind(data.frame(country_code=rownames(rates), name=popu$name), rates)
+	rates <- cbind(data.frame(country_code=rownames(rates), name=popu$name), rates)
+	rates[["2015-2020"]] <- rates[["2010-2015"]]
+	rates
 })
