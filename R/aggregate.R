@@ -218,7 +218,9 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 }
 
 
-pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, adjust=FALSE) {
+pop.aggregate.countries <- function(pop.pred, regions, name, 
+                                    use.kannisto = TRUE,
+                                    verbose=verbose, adjust=FALSE) {
     
     split.pop05 <- function(dat) {
         # split first pop age group
@@ -386,7 +388,21 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 			mxf <- abrdeaths[["female"]] / popavg[["female"]]
 			mxm.hch <- abrdeaths.hch[["male"]] / popavg.hch[["male"]] 
 			mxf.hch <- abrdeaths.hch[["female"]] / popavg.hch[["female"]]
-			
+			dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- dimnames(mxm.hch)[1:2] <- dimnames(mxf.hch)[1:2] <- list(
+			    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
+			# apply kannisto for old age groups
+			if(use.kannisto) {
+			    for(itraj in 1:dim(mxm)[3]) {
+			        kan <- do.call("cokannisto", c(list(mxm[1:21,,itraj], mxf[1:21,,itraj])))
+			        mxm[,,itraj] <- kan$male
+			        mxf[,,itraj] <- kan$female
+			    }
+			    for(ivar in 1:dim(mxm.hch)[3]) {
+			        kan.hch <- do.call("cokannisto", c(list(mxm.hch[1:21,,ivar], mxf.hch[1:21,,ivar])))
+			        mxm.hch[,,ivar] <- kan.hch$male
+			        mxf.hch[,,ivar] <- kan.hch$female
+			    }
+			}
 			# asfert, pasfert for observed data
 			observed <- within(observed, {
 				tmp <- popobstmp[["female"]][5:11,,,drop = FALSE] # was split to 0-1, 1-4
@@ -399,6 +415,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name, verbose=verbose, ad
 				# mortality
 				mxm <- abrdeathsobs[["male"]] / popobsavg[["male"]] 
 				mxf <- abrdeathsobs[["female"]] / popobsavg[["female"]]
+				dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- list(
+				    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
 			})
 			save(btm, btf, deathsm, deathsf, mxm, mxf, migm, migf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, mxm.hch, mxf.hch,
