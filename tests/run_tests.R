@@ -9,9 +9,13 @@ if(!CRAN) {
 # longer tests 
     warn <- options('warn')
     options(warn=2)
+    test.expressions(parallel = TRUE)
 	test.prediction()
+	test.prediction(parallel = TRUE)
 	test.prediction.with.prob.migration()
+	test.prediction.with.prob.migration(parallel = TRUE)
 	test.expressions.with.VE(map=FALSE)
+	test.expressions.with.VE(map=FALSE, parallel = TRUE)
 	test.regional.aggregation()
 	test.life.table()
 	test.adjustment()

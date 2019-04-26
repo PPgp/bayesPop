@@ -140,7 +140,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	                       "nquant", "quantiles.to.keep", "ncountries")
 
 	
-	# prediciton function
+	# prediction function
     predict.one.country <- function(cidx, nr.traj, nr_project) {
 		#unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
@@ -336,49 +336,57 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
     } # end of predict.one.country
     
     update.results <- function(cidx, res, bayesPop.prediction) {
-        country <- country.codes[cidx]
-        #save updated meta file
+        if(length(cidx) == 1 && length(res) > 1) res <- list(res)
+        migr.modified <- FALSE
         
-        idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
-        if(length(idx.in.pred.overwrite)>0) {
-            bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- res$PIs
-            bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- res$means
-            bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- res$meansM
-            bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- res$meansF
-            bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- res$qM
-            bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- res$qF
-            bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- res$qMage
-            bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- res$qFage
-            bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- res$qPropMage
-            bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- res$qPropFage
-        } else { 
-            country.row <- UNlocations[countries.idx[cidx],c('country_code', 'name')]
-            colnames(country.row) <- c('code', 'name')
-            #stop("")
-            new.names <- as.character(c(bayesPop.prediction$countries$code, country))
-            bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, res$PIs, 
-                                                   along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, res$means, 
-                                                      along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, res$meansM, 
+        for(i in seq_along(cidx)) {
+            idx <- cidx[i]
+            rs <- res[[i]]
+            if(is.null(rs)) next
+            country <- country.codes[idx]
+            idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
+            if(length(idx.in.pred.overwrite)>0) {
+                bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- rs$PIs
+                bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- rs$means
+                bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- rs$meansM
+                bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- rs$meansF
+                bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- rs$qM
+                bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- rs$qF
+                bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- rs$qMage
+                bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- rs$qFage
+                bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- rs$qPropMage
+                bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- rs$qPropFage
+            } else { 
+                country.row <- UNlocations[countries.idx[idx],c('country_code', 'name')]
+                colnames(country.row) <- c('code', 'name')
+                #stop("")
+                new.names <- as.character(c(bayesPop.prediction$countries$code, country))
+                bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, rs$PIs, 
                                                        along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, res$meansF, 
-                                                       along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, res$qM, 
-                                                    along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, res$qF, 
-                                                    along = 1, new.names = list(new.names, NULL, NULL))
-            bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, res$qMage, 
-                                                       along = 1, new.names = list(new.names, NULL, NULL, NULL))
-            bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, res$qFage, 
-                                                       along = 1, new.names = list(new.names, NULL, NULL, NULL))
-            bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, res$qPropMage, 
+                bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, rs$means, 
+                                                          along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, rs$meansM, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, rs$meansF, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, rs$qM, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, rs$qF, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, rs$qMage, 
                                                            along = 1, new.names = list(new.names, NULL, NULL, NULL))
-            bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, res$qPropFage, 
+                bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, rs$qFage, 
                                                            along = 1, new.names = list(new.names, NULL, NULL, NULL))
-            bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
+                bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, rs$qPropMage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, rs$qPropFage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
+            }
+            if(rs$migr.modified) migr.modified <- TRUE
+            if(bayesPop.prediction$nr.traj != rs$nr.traj) bayesPop.prediction$nr.traj <- rs$nr.traj
         }
-        if(res$migr.modified) {
+        if(migr.modified) {
             for(what.mig in c('MIGm', 'MIGf')) {
                 inp.to.save[[what.mig]] <- inp[[what.mig]]
                 inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
@@ -416,8 +424,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
     
     if(parallel) {
         cl <- create.pop.cluster(nr.nodes, ...)
-        clusterExport(cl, c(global.objects, "exporting.objects"), envir=environment())
-        
+        clusterExport(cl, exporting.objects, envir=environment())
+        cntry.res <- clusterApplyLB(cl, 1:ncountries, predict.one.country, nr.traj = nr.traj, nr_project = nr_project)
+        stopCluster(cl)
+        bayesPop.prediction <- update.results(1:ncountries, cntry.res, bayesPop.prediction)
     } else {
         for(cidx in 1:ncountries) {
             cntry.res <- predict.one.country(cidx, nr.traj, nr_project)
