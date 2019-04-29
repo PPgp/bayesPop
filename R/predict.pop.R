@@ -338,13 +338,18 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
     update.results <- function(cidx, res, bayesPop.prediction) {
         if(length(cidx) == 1 && length(res) > 1) res <- list(res)
         migr.modified <- FALSE
-        
+        remove <- c()
         for(i in seq_along(cidx)) {
             idx <- cidx[i]
             rs <- res[[i]]
-            if(is.null(rs)) next
             country <- country.codes[idx]
             idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
+            
+            if(is.null(rs)) {
+                remove <- c(remove, country)
+                next
+            }
+
             if(length(idx.in.pred.overwrite)>0) {
                 bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- rs$PIs
                 bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- rs$means
@@ -393,6 +398,18 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
             }
             bayesPop.prediction$inputs <- inp.to.save
         }
+        if(length(remove) > 0) {
+            # remove countries from bayesPop.prediction if present
+            idx.in.pred <- which(bayesPop.prediction$countries[,'code'] %in% remove)
+            if(length(idx.in.pred) > 0) {
+                for(item in c("quantiles", "traj.mean.sd", "traj.mean.sdM", "traj.mean.sdF", 
+                              "quantilesM", "quantilesF")) 
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,, drop = FALSE]
+                for(item in c("quantilesMage", "quantilesFage", "quantilesPropMage", "quantilesPropFage"))
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,,, drop = FALSE]
+                bayesPop.prediction$countries <- bayesPop.prediction$countries[-idx.in.pred,, drop = FALSE]
+            }
+        }
         save(bayesPop.prediction, file=prediction.file)
         return(bayesPop.prediction)
     } # end of updating result
@@ -431,8 +448,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
     } else {
         for(cidx in 1:ncountries) {
             cntry.res <- predict.one.country(cidx, nr.traj, nr_project)
-            if(!is.null(cntry.res))
-                bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction)
+            bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction)
         }
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
@@ -1867,7 +1883,8 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
-    LT <- MortCast::life.table(mx, sex = tolower(sex), radix = radix, open.age = open.age)
+    sex <- tolower(match.arg(sex))
+    LT <- MortCast::life.table(mx, sex = sex, radix = radix, open.age = open.age)
     if(!include01) {
         if(all(is.na(LT$ax))) return(LT[-2,])
         age05 <- c(FALSE, FALSE, TRUE)

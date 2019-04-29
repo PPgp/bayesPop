@@ -105,7 +105,7 @@ test.expressions <- function(parallel = FALSE) {
 }
 
 test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
-	test.name <- pste('Expressions with vital events', if(parallel) 'in parallel' else '')
+	test.name <- paste('Expressions with vital events', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	sim.dir <- tempfile()
 	pred <- pop.predict(countries=c(528, 218), nr.traj = 3, verbose=FALSE, output.dir=sim.dir, 
@@ -254,8 +254,8 @@ test.prediction.with.prob.migration <- function(parallel = FALSE) {
 	unlink(migFfile)
 }
 
-test.regional.aggregation <-function() {
-	test.name <- 'Regional aggregation'
+test.regional.aggregation <-function(parallel = FALSE) {
+	test.name <- paste('Regional aggregation', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	regions <- c(900, 908, 904)
 	sim.dir.tfr <- tempfile()
@@ -273,7 +273,7 @@ test.regional.aggregation <-function() {
 	warn <- options('warn'); options(warn=-1) # the joined estimation and pop projection has some warnings which can be ignored
 	e0.predict(sim.dir=sim.dir.e0, burnin=5, save.as.ascii=0)
 	# Population prediction
-	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
+	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, parallel = parallel,
     			inputs = list(tfr.sim.dir=sim.dir.tfr, 
     			              e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
     options(warn=warn$warn)
@@ -286,12 +286,12 @@ test.regional.aggregation <-function() {
 	unlink(sim.dir.pop, recursive=TRUE)
 }
 
-test.life.table <- function(){
-	test.name <- 'Life Tables'
+test.life.table <- function(parallel = FALSE){
+	test.name <- paste('Life Tables', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	sim.dir <- tempfile()
 	# this is the Example from LifeTableMx
-	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015,
+	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015, parallel = parallel,
     			present.year=2015, keep.vital.events=TRUE, fixed.mx=TRUE, fixed.pasfr=TRUE)
 	# get male mortality rates from current year for age groups 0-1, 1-4, 5-9, ...
 	mx <- pop.byage.table(pred, expression="MEC_M{c(-1,0,2:27)}")[,1]
