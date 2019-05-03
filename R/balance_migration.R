@@ -125,21 +125,22 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		    mig.rate <- array(NA, c(npred+1, ncountries, nr.traj), dimnames=list(NULL, country.codes, NULL))
         mig.rate[start.time.index,,] <- mig.rate.prev
 	}
-	kannisto <- surv <- kannisto.pred <- list()
+	kannisto <- surv <- mortcast.args <- list()
 	observed <- new.env()
 	kantor.pasfr <- new.env()
 	# compute Kannisto, Lee-Carter parameters and PASFR
 	for(country in country.codes.char) {
 	    if(!fixed.mx) {
-		    kannisto[[country]] <- runKannisto(countries.input[[country]], inp$start.year, npred = npred)
+		    kann <- runKannisto(countries.input[[country]], inp$start.year, lc.for.all = inp$lc.for.all, npred = npred)
+		    mortcast.args[[country]] <- .prepare.for.mortality.projection(pattern = countries.input[[country]]$MXpattern, mxKan = kann, 
+		                                                       hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all)
 	    } else {
-	        kannisto.pred[[country]] <- runKannisto.noLC(countries.input[[country]])
-	        surv[[country]] <- survival.fromLT(npred, kannisto.pred[[country]], verbose = verbose)
-	        kannisto[[country]] <- runKannisto.noLC(countries.input[[country]], observed = TRUE)
+	        kann.pred <- runKannisto.noLC(countries.input[[country]])
+	        surv[[country]] <- survival.fromLT(npred, kann.pred, verbose = verbose)
 	    }
 		if(keep.vital.events) 
 			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
-										countries.input[[country]]$MIGtype, kannisto[[country]], 
+										countries.input[[country]]$MIGtype, kann, 
 										as.integer(country), inp$estim.years)
 		tfr.med <- apply(countries.input[[country]]$TFRpred, 1, median)[nrow(countries.input[[country]]$TFRpred)]
 		kantor.pasfr[[country]] <- list()
@@ -207,12 +208,12 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	# To have a consistent sequential application, we make these global
 	# even if not running in parallel.
 	global.objects <- c("nr.traj", "country.codes",  "UNnames", "countries.input", 
-	                    "kannisto", "surv", "npasfr", "fixed.mx",
+	                    "mortcast.args", "surv", "npasfr", "fixed.mx",
 	                    "ages", "ages21", "mx.ages", "ncountries",
 	                    "nvariants", "keep.vital.events", "verbose",
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-	                    "migration.thresholds", "adjust.mig", "lc.for.hiv", "lc.for.all")
+	                    "migration.thresholds", "adjust.mig")
 	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
 	work.env <- create.work.env()
 	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
@@ -377,7 +378,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
     } # end if(!reformat.only)
 	
 	if(verbose) cat('\nRe-formatting data ')
-	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, kannisto, 
+	quant.env <- restructure.pop.data.and.compute.quantiles(outdir.tmp, outdir, npred, nr.traj, countries.input, observed, 
 					present.and.proj.years, keep.vital.events, 
 					#parallel=parallel,  # this can cause memory swapping
 					parallel=FALSE, 
@@ -627,7 +628,6 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
 do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, pop.ini) {
     country.name <- env$UNnames[cidx]
     inpc <- env$countries.input[[env$country.codes.char[cidx]]] 
-    kann <- env$kannisto[[env$country.codes.char[cidx]]]
     LeeC <- env$surv[[env$country.codes.char[cidx]]]
     pasfr <- env$kantor.pasfr[[env$country.codes.char[cidx]]][[itraj]][,time,drop=FALSE]
     asfr <- pasfr
@@ -635,11 +635,10 @@ do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, p
     LTres <- if(env$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
                                                         x[[2]][,time,drop=FALSE]),
                                  simplify = FALSE, USE.NAMES = TRUE) else
-                    project.mortality(1, kann, inpc$e0Mpred[time,itraj], 
-                                    inpc$e0Fpred[time,itraj], pattern = inpc$MXpattern, 
-                                    hiv.params = inpc$HIVparams, lc.for.all = env$lc.for.all,
-                                    verbose = env$verbose)
-    
+                    project.mortality(inpc$e0Mpred[time,itraj], inpc$e0Fpred[time,itraj], npred = 1, 
+                                      mortcast.args = env$mortcast.args[[env$country.codes.char[cidx]]], 
+                                      verbose = env$verbose)
+
     popres <- PopProjNoMigr(1, pop.ini, LTres, asfr, inpc$SRB[time], country.name=country.name,
                             keep.vital.events=env$keep.vital.events)
 
@@ -661,15 +660,14 @@ do.pop.predict.1country.1traj.no.migration <- function(time, itraj, cidx, env, p
 do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, pop.ini, wenv) {
     country.name <- wenv$UNnames[cidx]
     inpc <- wenv$countries.input[[wenv$country.codes.char[cidx]]] 
-    kann <- wenv$kannisto[[wenv$country.codes.char[cidx]]]
     LeeC <- wenv$surv[[wenv$country.codes.char[cidx]]]											    
 
 	LTres <- if(wenv$fixed.mx) sapply(LeeC, function(x) list(x[[1]][,time,drop=FALSE], 
 	                                                    x[[2]][,time,drop=FALSE]),
 	                             simplify = FALSE, USE.NAMES = TRUE) else
-	   project.mortality(1, kann,  inpc$e0Mmedian[time], 
-	                    inpc$e0Fmedian[time], pattern=inpc$MXpattern,
-	                   lc.for.all = wenv$lc.for.all, verbose=wenv$verbose)
+	   project.mortality(inpc$e0Mmedian[time], inpc$e0Fmedian[time], npred = 1, 
+	                     mortcast.args = wenv$mortcast.args[[wenv$country.codes.char[cidx]]], 
+	                     verbose = wenv$verbose)
 
 	for (variant in 1:wenv$nvariants) {
 	    pasfr <- wenv$kantor.pasfr[[wenv$country.codes.char[cidx]]][[wenv$nr.traj+variant]][,time,drop=FALSE]
@@ -982,7 +980,6 @@ rebalance.migration2groups <- function(e, pop, itraj) {
 	if(!is.null(e$migrm.labor))
 		slabor <- sum(e$migrm.labor)
 	rebalance.migration(e, pop) # rest of the world; does not assure positive counts
-	
 	if(slabor != 0) { # balancing for labor countries
 		pop.labor <- pop * (as.integer(names(pop)) %in% labor.countries())
 		rebalance.migration(e, pop.labor, what='.labor') # does not assure positve counts
@@ -1049,15 +1046,15 @@ prop.labor.migration.for.country <- function(code){
 }
 
 
-restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, nr.traj, inputs, observed, kannisto, 
+restructure.pop.data.and.compute.quantiles <- function(source.dir, dest.dir, npred, nr.traj, inputs, observed, 
 									present.and.proj.years, keep.vital.events=FALSE, parallel=FALSE, nr.nodes=NULL, 
 									verbose=FALSE, ...){
 	
 	restructure.pop.data.and.compute.quantiles.one.country <- function(cidx) {		
 		country <- country.codes[cidx]
-		inpc <- inputs[[country.codes[cidx]]]
-		obs <- observed[[country.codes[cidx]]]
-		MxKan <- kannisto[[country.codes[cidx]]]
+		inpc <- inputs[[country]]
+		obs <- observed[[country]]
+		MxKan <- runKannisto.noLC(inputs[[country]], observed = TRUE)
 		repi <- rep(1,nr.traj) # index for repeating columns
 		res.env <- new.env()
 		with(res.env, {

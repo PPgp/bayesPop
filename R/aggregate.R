@@ -209,7 +209,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 .aggregate.migtype <- function(pop.pred, countries, countries.index, aggr.id) {
 	idx <- is.element(pop.pred$inputs[["MIGtype"]][,'country_code'], countries)
 	obsN <- round(pop.pred$quantiles[countries.index, "0.5", 1],0) # observed in present year
-	res <- matrix(NA, nrow=1, ncol=3, dimnames=list(NULL, colnames(pop.pred$inputs[["MIGtype"]])))
+	res <- matrix(NA, nrow=1, ncol=3, dimnames=list(NULL, colnames(pop.pred$inputs[["MIGtype"]])[1:3]))
 	res[,1] <- aggr.id
 	res[,2] <- max(pop.pred$inputs[["MIGtype"]][idx,"ProjFirstYear"])
 	f <- factor(rep(pop.pred$inputs[["MIGtype"]][idx,"MigCode"], obsN), levels=c(0,9))

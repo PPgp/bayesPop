@@ -226,9 +226,9 @@ adjust.migration.if.needed <- function(time, year, country.codes, inputs, env) {
         current.mig <- list(Male = migM, Female = migF, Total = migM + migF)
         
         # medians of the projections
-        median.mig <- age.props <- NULL
+        mean.mig <- age.props <- NULL
         for(whatadj in names(current.mig)) 
-            median.mig[[whatadj]] <- median(current.mig[[whatadj]])
+            mean.mig[[whatadj]] <- mean(current.mig[[whatadj]])
  
         adjusted <- NULL
         for(whatadj in names(adjust)) {
@@ -236,7 +236,7 @@ adjust.migration.if.needed <- function(time, year, country.codes, inputs, env) {
             # determine adjustment value
             adjds <- inp[[adj.names[[whatadj]]]]
             adjust.value <- adjds[, period]
-            dif <- adjust.value - median.mig[[whatadj]]
+            dif <- adjust.value - mean.mig[[whatadj]]
             # distribute dif among ages
             if(whatadj == "Total") { # if total, distribute dif also among sexes
                 for(sex in c("Male", "Female")) {

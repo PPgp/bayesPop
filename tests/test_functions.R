@@ -2,13 +2,13 @@ library(bayesPop)
 start.test <- function(name) cat('\n<=== Starting test of', name,'====\n')
 test.ok <- function(name) cat('\n==== Test of', name, 'OK.===>\n')
 
-test.prediction <- function() {
-	test.name <- 'Running prediction'
+test.prediction <- function(parallel = FALSE) {
+	test.name <- paste('Running prediction', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	set.seed(1)
 	sim.dir <- tempfile()	
 	pred <- pop.predict(countries=c(528,218,450), 
-				nr.traj = 3, verbose=FALSE, output.dir=sim.dir)
+				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, parallel = parallel)
 	s <- summary(pred)
 	stopifnot(s$nr.traj == 3)
 	stopifnot(s$nr.countries == 3)
@@ -37,10 +37,11 @@ test.prediction <- function() {
 	stopifnot(length(aggr1$aggregated.countries[['9000']]) == 2)
 	stopifnot(all(is.element(c(218, 528), aggr1$aggregated.countries[['9000']]))) 
 	
-	test.name <- 'Running prediction with 1 trajectory'
+	test.name <- paste('Running prediction with 1 trajectory', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
-				nr.traj = 1, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040)
+				nr.traj = 1, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
+				parallel = parallel)
 	# check that it took the median TFR and not high or low
 	tfr <- get.pop("F528", pred)
 	tfr.should.be <- c(1.73, 1.75, 1.76, 1.78, 1.79, 1.80) # WPP 2017 data
@@ -54,7 +55,7 @@ test.prediction <- function() {
 	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
-				inputs=list(tfr.file='median_', e0M.file='median_'))
+				inputs=list(tfr.file='median_', e0M.file='median_'), parallel = parallel)
 	tfr <- get.pop("F528", pred)
 	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
 	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one is available, because we take TFR median
@@ -69,11 +70,12 @@ test.prediction <- function() {
 	unlink(sim.dir, recursive=TRUE)
 }
 
-test.expressions <- function() {
-	test.name <- 'Population expressions'
+test.expressions <- function(parallel = FALSE) {
+	test.name <- paste('Population expressions', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	sim.dir <- tempfile()
-	pred <- pop.predict(countries=c(528,218,450, 242, 458), nr.traj = 3, verbose=FALSE, output.dir=sim.dir)
+	pred <- pop.predict(countries=c(528,218,450, 242, 458), nr.traj = 3, verbose=FALSE, 
+	                    output.dir=sim.dir, parallel = parallel)
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='P528_F[1]')
@@ -102,11 +104,12 @@ test.expressions <- function() {
 	unlink(sim.dir, recursive=TRUE)
 }
 
-test.expressions.with.VE <- function(map=TRUE) {
-	test.name <- 'Expressions with vital events'
+test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
+	test.name <- paste('Expressions with vital events', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	sim.dir <- tempfile()
-	pred <- pop.predict(countries=c(528, 218), nr.traj = 3, verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE)
+	pred <- pop.predict(countries=c(528, 218), nr.traj = 3, verbose=FALSE, output.dir=sim.dir, 
+	                    keep.vital.events=TRUE, parallel = parallel)
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='F528_F[10]')
@@ -183,8 +186,66 @@ test.expressions.with.VE <- function(map=TRUE) {
 	unlink(sim.dir, recursive=TRUE)
 }
 
-test.prediction.with.prob.migration <- function() {
-	test.name <- 'Running prediction with probabilstic migration'
+test.balance.migration <- function(parallel = FALSE) {
+    test.name <- paste('Running prediction with probabilistic balanced migration', if(parallel) 'in parallel' else '')
+    start.test(test.name)
+    set.seed(1)
+    # create migration parameter files with two countries and two trajectories
+    sim.dir <- tempfile()
+    nr.traj <- 2
+    countries <- c(528,218)
+    ncountries <- length(countries)
+    
+    migration.parameters <- data.frame(country_code = rep(countries, each = nr.traj), 
+                                    trajectory = rep(1:nr.traj, times=ncountries), 
+                                    mu = rnorm(nr.traj*ncountries, 0, 0.05),
+                                    phi = runif(nr.traj*ncountries, 0.5, 0.9),
+                                    sigma = runif(nr.traj*ncountries, 0.02, 0.05)
+                                    )
+
+    pred <- pop.predict(countries = countries, end.year = 2033,
+                        parallel = parallel, output.dir = sim.dir, verbose = FALSE, 
+                        keep.vital.events = TRUE, wpp.year = 2017, 
+                        balance.migration = TRUE, use.migration.model = TRUE, 
+                        migration.settings = list(posterior = migration.parameters)
+                        )
+    s <- summary(pred)
+    # should have 3 trajectories because TFR has 3
+    stopifnot(s$nr.traj == 3)
+    stopifnot(s$nr.countries == 2)
+    stopifnot(length(s$projection.years) == 4)
+
+    migM1 <- get.pop.exba("G528_M{}", pred)
+    migM2 <- get.pop.exba("G218_M{}", pred)
+    # total migration for each age group should be zero
+    totmig <- migM1[,5,3] + migM2[,5,3]
+    stopifnot(all(totmig == 0))
+    
+    # adjust to wpp migration
+    sim.dir.adj <- tempfile()
+    data(migration, package = "wpp2017")
+    pred.adj <- pop.predict(countries = c(528,218), end.year = 2033,
+                        nr.traj = 2, parallel = parallel, 
+                        output.dir = sim.dir.adj, verbose = FALSE, 
+                        keep.vital.events = TRUE, wpp.year = 2017, 
+                        balance.migration = FALSE, use.migration.model = TRUE, 
+                        migration.settings = list(posterior = migration.parameters,
+                                                  adjust.to = migration)
+                )
+    # Has 2 trajectories because nr.traj explicitely given 
+    stopifnot(pred.adj$nr.traj == 2)
+    # check adjusted mean 
+    mig <- apply(get.pop.ex("G528", pred.adj), 1, mean)[-1]
+    should.be <- subset(migration, country_code == 528)[,substr(colnames(migration), 6,9) %in% names(mig)]
+    stopifnot(all.equal(mig, as.numeric(should.be), check.attributes = FALSE, tolerance = 0.1))
+    test.ok(test.name)
+    unlink(sim.dir, recursive=TRUE)
+    unlink(sim.dir.adj, recursive=TRUE)
+}
+
+
+test.prediction.with.prob.migration <- function(parallel = FALSE) {
+	test.name <- paste('Running prediction with external probabilistic migration', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	set.seed(1)
 	# create migration files with two countries and two trajectories
@@ -209,7 +270,7 @@ test.prediction.with.prob.migration <- function() {
 	write.migration(nr.traj=2)
 	pred <- pop.predict(countries=c(528,218), end.year=2033,
 				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-				inputs=list(migMtraj=migMfile, migFtraj=migFfile))
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile), parallel = parallel)
 	s <- summary(pred)
 	# should have 3 trajectories because TFR has 3
 	stopifnot(s$nr.traj == 3)
@@ -221,25 +282,25 @@ test.prediction.with.prob.migration <- function() {
 	write.migration(nr.traj=5)
 	pred <- pop.predict(countries=c(528,218), end.year=2033,
 				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-				inputs=list(migMtraj=migMfile, migFtraj=migFfile))
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile), parallel = parallel)
 	stopifnot(pred$nr.traj == 5)
 	stopifnot(dim(get.pop("G218", pred))[4] == 5)
 	
 	pred <- pop.predict(countries=c(528,218), end.year=2033,
 				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-				inputs=list(migMtraj=migMfile, migFtraj=migFfile), nr.traj=1)
+				inputs=list(migMtraj=migMfile, migFtraj=migFfile), nr.traj=1, parallel = parallel)
 	stopifnot(pred$nr.traj == 1)
 	stopifnot(dim(get.pop("G218", pred))[4] == 1)
 	
 	write.migration(nr.traj=1)
 	pred <- pop.predict(countries=c(528,218), end.year=2033,
-				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE, parallel = parallel,
 				inputs=list(migMtraj=migMfile)) # female is taken the default one (only works if male has 1 trajectory)
 	stopifnot(pred$nr.traj == 3)
 	stopifnot(dim(get.pop("G218_M", pred))[4] == 3)
 	
 	pred <- pop.predict(countries=c(528,218), end.year=2033,
-				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+				verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE, parallel = parallel,
 				inputs=list(migFtraj=migFfile)) # male is taken the default one (only works if male has 1 trajectory)
 	stopifnot(pred$nr.traj == 3)
 	stopifnot(dim(get.pop("G218_F", pred))[4] == 3)
@@ -251,8 +312,8 @@ test.prediction.with.prob.migration <- function() {
 	unlink(migFfile)
 }
 
-test.regional.aggregation <-function() {
-	test.name <- 'Regional aggregation'
+test.regional.aggregation <-function(parallel = FALSE) {
+	test.name <- paste('Regional aggregation', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	regions <- c(900, 908, 904)
 	sim.dir.tfr <- tempfile()
@@ -270,7 +331,7 @@ test.regional.aggregation <-function() {
 	warn <- options('warn'); options(warn=-1) # the joined estimation and pop projection has some warnings which can be ignored
 	e0.predict(sim.dir=sim.dir.e0, burnin=5, save.as.ascii=0)
 	# Population prediction
-	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
+	pred <- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, parallel = parallel,
     			inputs = list(tfr.sim.dir=sim.dir.tfr, 
     			              e0F.sim.dir=sim.dir.e0, e0M.sim.dir='joint_'))
     options(warn=warn$warn)
@@ -283,12 +344,12 @@ test.regional.aggregation <-function() {
 	unlink(sim.dir.pop, recursive=TRUE)
 }
 
-test.life.table <- function(){
-	test.name <- 'Life Tables'
+test.life.table <- function(parallel = FALSE){
+	test.name <- paste('Life Tables', if(parallel) 'in parallel' else '')
 	start.test(test.name)
 	sim.dir <- tempfile()
 	# this is the Example from LifeTableMx
-	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015,
+	pred <- pop.predict(countries="Ecuador", output.dir=sim.dir, wpp.year=2015, parallel = parallel,
     			present.year=2015, keep.vital.events=TRUE, fixed.mx=TRUE, fixed.pasfr=TRUE)
 	# get male mortality rates from current year for age groups 0-1, 1-4, 5-9, ...
 	mx <- pop.byage.table(pred, expression="MEC_M{c(-1,0,2:27)}")[,1]

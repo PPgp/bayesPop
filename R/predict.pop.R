@@ -62,6 +62,12 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		}
 		# else keep the directory if not replace.output, so that one can start at higher trajectory
 	} else {
+	    # remove arguments specific to the balance function from "..."
+	    otherargs <- list(...)
+	    balargnames <- formalArgs(do.pop.predict.balance)
+	    argnames <- c(setdiff(names(otherargs), balargnames), "parallel", "nr.nodes")
+	    argidx <- which(argnames %in% names(otherargs))
+	    otherargs <- otherargs[argidx]
 		if(!prediction.exist) {
 			if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 				stop('Prediction in ', outdir,
@@ -94,15 +100,15 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=inp$fixed.pasfr, 
 					function.inputs=inputs, rebalance=balance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
 	else 
-		do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
+		do.call("do.pop.predict", c(list(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
-					function.inputs=inputs, verbose=verbose)
-
+					function.inputs=inputs, verbose=verbose), otherargs))
 	invisible(get.pop.prediction(output.dir))
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE) {
+							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE, 
+							parallel = FALSE, nr.nodes = NULL, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 	for(icountry in 1:length(country.codes)) {
@@ -143,9 +149,19 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
 		
-	for(cidx in 1:ncountries) {
-	    #country.t1 <- Sys.time()
-		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
+	
+	if(parallel) {
+	    if(is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores())
+	}
+	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
+	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
+	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "verbose", 
+	                       "nquant", "quantiles.to.keep", "ncountries")
+
+	
+	# prediction function
+    predict.one.country <- function(cidx, nr.traj, nr_project) {
+		#unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
@@ -153,17 +169,12 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			    as.character(UNlocations[country.idx,'name']), ': ')
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, UNlocations[country.idx,'name'])
-		if(is.null(inpc)) next
+		if(is.null(inpc)) return(NULL)
 		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
 			cat(nr.traj, ' trajectories')
 		migr.modified <- .set.inp.migration.if.needed(inp, inpc, country)
-		if(migr.modified) {
-			for(what.mig in c('MIGm', 'MIGf')) {
-				inp.to.save[[what.mig]] <- inp[[what.mig]]
-				inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
-			}
-		}
+
 		npred <- min(nrow(inpc$TFRpred), nr_project)
 		npredplus1 <- npred+1
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, 
@@ -300,100 +311,159 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxm.hch, mxf.hch, 
 				observed,
 					file=file.path(outdir, paste0('vital_events_country', country, '.rda')))
-		PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
-		mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
-		for (i in 1:nages) {
-			if(nr.traj == 1) {
-				quantMage[cidx,i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantFage[cidx,i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantPropMage[cidx,i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-				quantPropFage[cidx,i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-			} else {
-				quantMage[cidx,i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantFage[cidx,i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropMage[cidx,i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropFage[cidx,i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			}
-		}
-		stotpm <- colSums(totpm, na.rm=TRUE)
-		quantM[cidx,,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdM[cidx,1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
-		mean_sdM[cidx,2,] = apply(stotpm, 1, sd, na.rm = TRUE)
-		stotpf <- colSums(totpf, na.rm=TRUE)
-		quantF[cidx,,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdF[cidx,1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
-		mean_sdF[cidx,2,] = apply(stotpf, 1, sd, na.rm = TRUE)
 		
-		#save updated meta file
-		country.row <- UNlocations[country.idx,c('country_code', 'name')]
-		colnames(country.row) <- c('code', 'name')
-		
+		res <- list()
+		within(res, {
+		    PIs <- apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    dimnames(PIs)[1:2] <- list(quantiles.to.keep, present.and.proj.years.pop)
+		    means <- abind(apply(totp, 1, mean, na.rm = TRUE),
+		                    apply(totp, 1, sd, na.rm = TRUE), along = 0, 
+		                   new.names = c("mean", "sd"))
+		    qMage <- qFage <- qPropMage <- qPropFage <- array(NA, c(nages, nquant, nr_project+1),
+		          dimnames=list(ages, quantiles.to.keep, present.and.proj.years.pop))
+		    for (i in 1:nages) {
+		        if(nr.traj == 1) {
+		            qMage[i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+		            qFage[i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+		            qPropMage[i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
+		            qPropFage[i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
+		        } else {
+		            qMage[i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qFage[i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qPropMage[i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qPropFage[i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		        }
+		    }
+		    stotpm <- colSums(totpm, na.rm=TRUE)
+		    qM <- apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    meansM <- abind(apply(stotpm, 1, mean, na.rm = TRUE), 
+		                    apply(stotpm, 1, sd, na.rm = TRUE), along = 0, new.names = c("mean", "sd"))
+		    stotpf <- colSums(totpf, na.rm=TRUE)
+		    qF <- apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    meansF <- abind(apply(stotpf, 1, mean, na.rm = TRUE),
+		                    apply(stotpf, 1, sd, na.rm = TRUE), along = 0, new.names = c("mean", "sd"))
+		    dimnames(qM)[1:2] <- dimnames(qF)[1:2] <- list(quantiles.to.keep, present.and.proj.years.pop)
+		    migr.modified <- migr.modified
+		    nr.traj <- nr.traj
+		    stotp <- stotpf <- NULL
+		})
+    } # end of predict.one.country
+    
+    update.results <- function(cidx, res, bayesPop.prediction) {
+        if(length(cidx) == 1 && length(res) > 1) res <- list(res)
+        migr.modified <- FALSE
+        remove <- c()
+        for(i in seq_along(cidx)) {
+            idx <- cidx[i]
+            rs <- res[[i]]
+            country <- country.codes[idx]
+            idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
+            
+            if(is.null(rs)) {
+                remove <- c(remove, country)
+                next
+            }
 
-		
-		if(!exists('bayesPop.prediction')) { # first pass
-			bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= country %in% pred$countries[,'code']) 
-					else structure(list(
-							nr.traj = nr.traj,	
-							# assign empty arrays
-							quantiles = PIs_cqp[c(),,,drop=FALSE],
-               				traj.mean.sd = mean_sd[c(),,,drop=FALSE],
-               				quantilesM = quantM[c(),,,drop=FALSE], 
-               				traj.mean.sdM = mean_sdM[c(),,,drop=FALSE],
-               				quantilesF = quantF[c(),,,drop=FALSE], 
-               				traj.mean.sdF = mean_sdF[c(),,,drop=FALSE],
-               				quantilesMage = quantMage[c(),,,,drop=FALSE], 
-               				quantilesFage = quantFage[c(),,,,drop=FALSE], 
-               				quantilesPropMage = quantPropMage[c(),,,,drop=FALSE], 
-               				quantilesPropFage = quantPropFage[c(),,,,drop=FALSE],
-               				estim.years=inp$estim.years, 
-               				proj.years=present.and.proj.years, # includes present period (middle of periods)
-               				proj.years.pop=present.and.proj.years.pop, # end of periods
-               				wpp.year = inp$wpp.year,
-			   				inputs = inp.to.save, # save as list because environment takes much more space
-			   				function.inputs=function.inputs,
-			   				countries=as.data.frame(matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name')))),
-			   				ages=ages), class='bayesPop.prediction')
-		}
-		idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
-		if(length(idx.in.pred.overwrite)>0) {
-			bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- PIs_cqp[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- mean_sd[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- mean_sdM[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- mean_sdF[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- quantM[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- quantF[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- quantMage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- quantFage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- quantPropMage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- quantPropFage[cidx,,,,drop=FALSE]
-		} else { 
-			bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, 
-												PIs_cqp[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, 
-												mean_sd[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, 
-												mean_sdM[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, 
-												mean_sdF[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, 
-												quantM[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, 
-												quantF[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, 
-												quantMage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, 
-												quantFage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, 
-												quantPropMage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, 
-												quantPropFage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
-		}
-		if(migr.modified)
-			bayesPop.prediction$inputs <- inp.to.save
-		save(bayesPop.prediction, file=prediction.file)
-		#print(Sys.time() - country.t1)
+            if(length(idx.in.pred.overwrite)>0) {
+                bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- rs$PIs
+                bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- rs$means
+                bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- rs$meansM
+                bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- rs$meansF
+                bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- rs$qM
+                bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- rs$qF
+                bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- rs$qMage
+                bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- rs$qFage
+                bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- rs$qPropMage
+                bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- rs$qPropFage
+            } else { 
+                country.row <- UNlocations[countries.idx[idx],c('country_code', 'name')]
+                colnames(country.row) <- c('code', 'name')
+                #stop("")
+                new.names <- as.character(c(bayesPop.prediction$countries$code, country))
+                bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, rs$PIs, 
+                                                       along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, rs$means, 
+                                                          along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, rs$meansM, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, rs$meansF, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, rs$qM, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, rs$qF, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, rs$qMage, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, rs$qFage, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, rs$qPropMage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, rs$qPropFage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
+            }
+            if(rs$migr.modified) migr.modified <- TRUE
+            if(bayesPop.prediction$nr.traj != rs$nr.traj) bayesPop.prediction$nr.traj <- rs$nr.traj
+        }
+        if(migr.modified) {
+            for(what.mig in c('MIGm', 'MIGf')) {
+                inp.to.save[[what.mig]] <- inp[[what.mig]]
+                inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
+            }
+            bayesPop.prediction$inputs <- inp.to.save
+        }
+        if(length(remove) > 0) {
+            # remove countries from bayesPop.prediction if present
+            idx.in.pred <- which(bayesPop.prediction$countries[,'code'] %in% remove)
+            if(length(idx.in.pred) > 0) {
+                for(item in c("quantiles", "traj.mean.sd", "traj.mean.sdM", "traj.mean.sdF", 
+                              "quantilesM", "quantilesF")) 
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,, drop = FALSE]
+                for(item in c("quantilesMage", "quantilesFage", "quantilesPropMage", "quantilesPropFage"))
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,,, drop = FALSE]
+                bayesPop.prediction$countries <- bayesPop.prediction$countries[-idx.in.pred,, drop = FALSE]
+            }
+        }
+        save(bayesPop.prediction, file=prediction.file)
+        return(bayesPop.prediction)
+    } # end of updating result
+    
+    cntries.table <- UNlocations[countries.idx,c('country_code', 'name')]
+    colnames(cntries.table)[1] <- "code"
+    bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= any(country.codes %in% pred$countries[,'code'])) 
+        else structure(list(
+            nr.traj = nr.traj,	
+            # assign empty arrays
+            quantiles = PIs_cqp,
+            traj.mean.sd = mean_sd,
+            quantilesM = quantM, 
+            traj.mean.sdM = mean_sdM,
+            quantilesF = quantF, 
+            traj.mean.sdF = mean_sdF,
+            quantilesMage = quantMage, 
+            quantilesFage = quantFage, 
+            quantilesPropMage = quantPropMage, 
+            quantilesPropFage = quantPropFage,
+            estim.years=inp$estim.years, 
+            proj.years=present.and.proj.years, # includes present period (middle of periods)
+            proj.years.pop=present.and.proj.years.pop, # end of periods
+            wpp.year = inp$wpp.year,
+            inputs = inp.to.save, # save as list because environment takes much more space
+            function.inputs=function.inputs,
+            countries=cntries.table,
+            ages=ages), class='bayesPop.prediction')
+    
+    if(parallel) {
+        cl <- create.pop.cluster(nr.nodes, ...)
+        clusterExport(cl, exporting.objects, envir=environment())
+        cntry.res <- clusterApplyLB(cl, 1:ncountries, predict.one.country, nr.traj = nr.traj, nr_project = nr_project)
+        stopCluster(cl)
+        bayesPop.prediction <- update.results(1:ncountries, cntry.res, bayesPop.prediction)
+    } else {
+        for(cidx in 1:ncountries) {
+            cntry.res <- predict.one.country(cidx, nr.traj, nr_project)
+            bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction)
+        }
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
 	return(bayesPop.prediction)
@@ -1292,13 +1362,19 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
         }
         args[["MLT"]] <- list(type = mlttype)
     }
-    if("PMD" %in% c(meth1, meth2))
+    if("PMD" %in% c(meth1, meth2)) {
+        adj.code <- .pattern.value("AgeMortProjAdjSR", pattern, 0)
         args[["PMD"]] <- list(
             mxm0 = mxKan$male$mx.orig[,ncol(mxKan$male$mx)],
             mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
             interp.rho = TRUE, keep.lt = TRUE,
-            sexratio.adjust = .pattern.value("AgeMortProjAdjSR", pattern, 0) == 1
+            sexratio.adjust = adj.code > 0
         )
+        if(adj.code == 3) {
+            sex.ratio <- mxKan$male$mx.orig[,ncol(mxKan$male$mx)]/mxKan$female$mx.orig[,ncol(mxKan$female$mx)]
+            args[["PMD"]]$adjust.to.sexratio <- sex.ratio[sex.ratio > 1]
+        }
+    }
     if("LC" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
@@ -1877,7 +1953,8 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
-    LT <- MortCast::life.table(mx, sex = tolower(sex), radix = radix, open.age = open.age)
+    sex <- tolower(match.arg(sex))
+    LT <- MortCast::life.table(mx, sex = sex, radix = radix, open.age = open.age)
     if(!include01) {
         if(all(is.na(LT$ax))) return(LT[-2,])
         age05 <- c(FALSE, FALSE, TRUE)
