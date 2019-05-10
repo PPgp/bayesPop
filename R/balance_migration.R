@@ -1232,12 +1232,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	scale.to.totals <- NULL
 	mig.settings <- inputs[['MIGtype']][inputs[['MIGtype']]$country_code==country,]
 	# Country can take a schedule from a different country, e.g. China
-	if(mig.settings[,"MigAgeSchedule"] > 0) {
-		   sched.country <- mig.settings[,"MigAgeSchedule"]
+	if((schc <- .pattern.value("MigAgeSchedule", mig.settings, 0)) > 0) {
+		   sched.country <- schc
 		   first.year <- TRUE
 	}
 	# Should the Male/Female ratio be kept or set equal. E.g. China schedule has larger migration for female, so rescale
-	if(mig.settings[,"MigAgeEqualMFratio"] == 1) 
+	if(.pattern.value("MigAgeEqualMFratio", mig.settings, 0) == 1) 
 		scale.to.totals <- list(M=0.5, F=0.5) 
 
 	cidxM <- which(inputs$MIGm$country_code==sched.country)
@@ -1316,7 +1316,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)*matrix(scale[1:npred], ncol=npred, nrow=nAgeGroups, byrow=TRUE) # scale
     }
     # For some counties like Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
-    if(mig.settings[,"MigAgeZeroNeg"] == 1) {
+    if(.pattern.value("MigAgeZeroNeg", mig.settings, 0) == 1) {
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0
     	negF <- femaleArray
