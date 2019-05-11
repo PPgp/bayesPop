@@ -1502,7 +1502,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
     if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
-        ax.latest.periods <- max(lpat, 1) # it should not be zero
+        # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
+        ax.latest.periods <- lpat 
     }
     mlt.bx <- NULL
     if(model.bx) {
@@ -1516,9 +1517,15 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     #    ns + sum(apply(result$male$mx[,ns:ne], 2, function(z) all(is.na(z))))
     #else ns
     length.mx <- length(ns:ne)
-    ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+    if(ax.latest.periods < 0) { # remove ax.latest.periods from the end
+        ax.index <- (1:length.mx)[-(max(length.mx+ax.latest.periods+1, 2):length.mx)] # at least one period should stay in
+    } else { # take the ax.latest.periods latest time periods
+        ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+        ax.index <- ax.ns:length.mx
+    }
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
-                                   ax.index = ax.ns:length.mx, ax.smooth = smooth.ax)
+                                   ax.index = ax.index, ax.smooth = smooth.ax)
+    stop("")
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
     	    lMxe <- log(result[[sex]]$mx)
