@@ -418,7 +418,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 				dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- list(
 				    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
 			})
-			save(btm, btf, deathsm, deathsf, asfert, pasfert,
+			save(btm, btf, deathsm, deathsf, mxm, mxf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, mxm.hch, mxf.hch,
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}		
