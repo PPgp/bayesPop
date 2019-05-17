@@ -1,6 +1,6 @@
 
 get.expression.indicators <- function() {
-		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr'))
+		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr', E='ex'))
 }
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
@@ -486,18 +486,26 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	return (mxm)
 }
 
-get.qx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
-	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	qx1 <- LifeTableMxCol(mxm[,, 1], colname='qx', sex=sex, age05=age05)
-	if(is.null(dim(qx1))) qx1 <- abind(qx1, along=2)
-	qx <- array(0, dim=c(dim(qx1)[1], dim(qx1)[2], dim(mxm)[3]))
-	qx[,,1] <- qx1
-	dimnames(qx)[[2]] <- dimnames(mxm)[[2]]
-	if(dim(mxm)[3] <= 1) return(qx)
-	for (itraj in 2:dim(mxm)[3]) {
-		qx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='qx', sex=sex, age05=age05)
-	}
-	return (qx)
+.get.lt.col <- function(ltcol, mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
+    if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
+    val1 <- LifeTableMxCol(mxm[,, 1], colname=ltcol, sex=sex, age05=age05)
+    if(is.null(dim(val1))) val1 <- abind(val1, along=2)
+    val <- array(0, dim=c(dim(val1)[1], dim(val1)[2], dim(mxm)[3]))
+    val[,,1] <- val1
+    dimnames(val)[[2]] <- dimnames(mxm)[[2]]
+    if(dim(mxm)[3] <= 1) return(val)
+    for (itraj in 2:dim(mxm)[3]) {
+        val[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname=ltcol, sex=sex, age05=age05)
+    }
+    return (val)
+}
+
+get.qx <- function(...) {
+    return(.get.lt.col('qx', ...))
+}
+
+get.ex <- function(...) {
+    return(.get.lt.col('ex', ...))
 }
 
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
@@ -531,13 +539,13 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 }
 
 get.popVE.trajectories.and.quantiles <- function(pop.pred, country, 
-									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr'), 
+									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr', 'ex'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
  									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE) {
  	# get trajectories and quantiles for vital events and other indicators
  	input.indicators <- c('migration')
  	#input.indicators <- c()
- 	life.table.indicators <- c('survival', 'qx', 'mx')
+ 	life.table.indicators <- c('survival', 'qx', 'mx', 'ex')
  	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
  	event <- match.arg(event)
  	sex <- match.arg(sex)
@@ -1068,8 +1076,8 @@ get.pop.observed.from.expression.all.countries <- function(expression, pop.pred,
 		if(!all(is.element(years, dimnames(data)[[2]]))) 
 			stop('Error in second dimension of the expression.')
 	}
-	data <- data[,years]
-	return(data[,time.index])
+	data <- data[,years, drop = FALSE]
+	return(data[,time.index, drop = FALSE])
 }
 
 pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'country')) {
@@ -1216,8 +1224,9 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	}
 	if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
-		data <- pop.pred$cache[[compressed.expr]][,,projection.index]
-		data <- data[,as.character(quantiles), drop=FALSE]
+		data <- pop.pred$cache[[compressed.expr]][,,projection.index, drop = FALSE]
+		data <- data[,as.character(quantiles),, drop=FALSE]
+		if(dim(data)[3] == 1) data <- adrop(data, 3)
 		.all.is.na <- function(x) return(all(is.na(x)))
 		countries.idx <- which(apply(data, 1, .all.is.na))
 		if(length(countries.idx) <= 0) return(.adjust.to.dataset.if.needed(data, 1:nrow(pop.pred$countries)))
