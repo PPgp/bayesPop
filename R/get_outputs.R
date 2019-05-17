@@ -1076,8 +1076,8 @@ get.pop.observed.from.expression.all.countries <- function(expression, pop.pred,
 		if(!all(is.element(years, dimnames(data)[[2]]))) 
 			stop('Error in second dimension of the expression.')
 	}
-	data <- data[,years]
-	return(data[,time.index])
+	data <- data[,years, drop = FALSE]
+	return(data[,time.index, drop = FALSE])
 }
 
 pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'country')) {
