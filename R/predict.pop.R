@@ -1368,12 +1368,9 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             mxm0 = mxKan$male$mx.orig[,ncol(mxKan$male$mx)],
             mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
             interp.rho = TRUE, keep.lt = TRUE,
-            sexratio.adjust = adj.code > 0
+            sexratio.adjust = adj.code == 1,
+            adjust.sr.if.needed = adj.code == 3
         )
-        if(adj.code == 3) {
-            sex.ratio <- mxKan$male$mx.orig[,ncol(mxKan$male$mx)]/mxKan$female$mx.orig[,ncol(mxKan$female$mx)]
-            args[["PMD"]]$adjust.to.sexratio <- sex.ratio[sex.ratio > 1]
-        }
     }
     if("LC" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
