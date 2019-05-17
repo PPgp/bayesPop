@@ -1522,7 +1522,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     }
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
                                    ax.index = ax.index, ax.smooth = smooth.ax)
-    stop("")
+
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
     	    lMxe <- log(result[[sex]]$mx)
