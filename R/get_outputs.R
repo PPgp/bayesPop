@@ -1224,8 +1224,9 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	}
 	if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
-		data <- pop.pred$cache[[compressed.expr]][,,projection.index]
-		data <- data[,as.character(quantiles), drop=FALSE]
+		data <- pop.pred$cache[[compressed.expr]][,,projection.index, drop = FALSE]
+		data <- data[,as.character(quantiles),, drop=FALSE]
+		if(dim(data)[3] == 1) data <- adrop(data, 3)
 		.all.is.na <- function(x) return(all(is.na(x)))
 		countries.idx <- which(apply(data, 1, .all.is.na))
 		if(length(countries.idx) <= 0) return(.adjust.to.dataset.if.needed(data, 1:nrow(pop.pred$countries)))
