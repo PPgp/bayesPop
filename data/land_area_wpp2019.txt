@@ -1,0 +1,284 @@
+name	country_code	land_area
+World	900	130094084.8
+Sub-Saharan Africa	947	21879042.6
+Northern Africa and Western Asia	1833	12574496.4
+Central and Southern Asia	921	10326917
+Eastern and South-Eastern Asia	1832	15901155.9
+Latin America and the Caribbean	1830	20139453
+Australia/New Zealand	927	7945610
+Oceania (excluding Australia and New Zealand)	1835	540850
+Europe and Northern America	1829	40786559.93
+Africa	903	29648481
+Asia	935	31033130.9
+Europe	908	22134899.93
+Latin America and the Caribbean	904	20139453
+Northern America	905	18651660
+Oceania	909	8486460
+More developed regions	901	49096724.93
+Less developed regions	902	80997359.9
+Least developed countries	941	20138293
+Other less developed countries	934	60859066.9
+"Less developed regions, excluding China"	948	71572659
+Land-locked Developing Countries (LLDC)	1636	16537866.6
+Small Island Developing States (SIDS)	1637	1196244
+High-income countries	1503	37885817.39
+Middle-income countries	1517	76996444.4
+Upper-middle-income countries	1502	55538509
+Lower-middle-income countries	1501	21457935.4
+Low-income countries	1500	14844017.6
+No income group available	1518	367805.44
+Eastern Africa	910	6667492.598
+Burundi	108	25680
+Comoros	174	1861
+Djibouti	262	23180
+Eritrea	232	101000
+Ethiopia	231	1000000
+Kenya	404	569140
+Madagascar	450	581795
+Malawi	454	94280
+Mauritius	480	2030
+Mayotte	175	375
+Mozambique	508	786380
+R?union	638	2500
+Rwanda	646	24670
+Seychelles	690	460
+Somalia	706	627340
+South Sudan	728	610951.5977
+Uganda	800	199810
+United Republic of Tanzania	834	885800
+Zambia	894	743390
+Zimbabwe	716	386850
+Middle Africa	911	6496820
+Angola	24	1246700
+Cameroon	120	472710
+Central African Republic	140	622980
+Chad	148	1259200
+Congo	178	341500
+Dem. Republic of the Congo	180	2267050
+Equatorial Guinea	226	28050
+Gabon	266	257670
+Sao Tome and Principe	678	960
+Southern Africa	913	2650670
+Botswana	72	566730
+Eswatini	748	17200
+Lesotho	426	30360
+Namibia	516	823290
+South Africa	710	1213090
+Western Africa	914	6064060
+Benin	204	112760
+Burkina Faso	854	273600
+Cabo Verde	132	4030
+C?te d'Ivoire	384	318000
+Gambia	270	10120
+Ghana	288	227540
+Guinea	324	245720
+Guinea-Bissau	624	28120
+Liberia	430	96320
+Mali	466	1220190
+Mauritania	478	1030700
+Niger	562	1266700
+Nigeria	566	910770
+Saint Helena	654	390
+Senegal	686	192530
+Sierra Leone	694	72180
+Togo	768	54390
+Northern Africa	912	7769438.402
+Algeria	12	2381740
+Egypt	818	995450
+Libya	434	1759540
+Morocco	504	446300
+Sudan	729	1765048.402
+Tunisia	788	155360
+Western Sahara	732	266000
+Western Asia	922	4805058
+Armenia	51	28470
+Azerbaijan	31	82658
+Bahrain	48	760
+Cyprus	196	9240
+Georgia	268	69490
+Iraq	368	434320
+Israel	376	21640
+Jordan	400	88780
+Kuwait	414	17820
+Lebanon	422	10230
+Oman	512	309500
+Qatar	634	11610
+Saudi Arabia	682	2149690
+State of Palestine	275	6020
+Syrian Arab Republic	760	183630
+Turkey	792	769630
+United Arab Emirates	784	83600
+Yemen	887	527970
+Central Asia	5500	3926790
+Kazakhstan	398	2699700
+Kyrgyzstan	417	191800
+Tajikistan	762	139960
+Turkmenistan	795	469930
+Uzbekistan	860	425400
+Southern Asia	5501	6400127
+Afghanistan	4	652860
+Bangladesh	50	130170
+Bhutan	64	38117
+India	356	2973190
+Iran (Islamic Republic of)	364	1628550
+Maldives	462	300
+Nepal	524	143350
+Pakistan	586	770880
+Sri Lanka	144	62710
+Eastern Asia	906	11560455.9
+China	156	9388211
+"China, Hong Kong SAR"	344	1050
+"China, Macao SAR"	446	29.9
+"China, Taiwan Province of China"	158	35410
+Dem. People's Rep. of Korea	408	120410
+Japan	392	364555
+Mongolia	496	1553560
+Republic of Korea	410	97230
+South-Eastern Asia	920	4340700
+Brunei Darussalam	96	5270
+Cambodia	116	176520
+Indonesia	360	1811570
+Lao People's Dem. Republic	418	230800
+Malaysia	458	328550
+Myanmar	104	653290
+Philippines	608	298170
+Singapore	702	700
+Thailand	764	510890
+Timor-Leste	626	14870
+Viet Nam	704	310070
+Caribbean	915	226071
+Anguilla	660	90
+Antigua and Barbuda	28	440
+Aruba	533	180
+Bahamas	44	10010
+Barbados	52	430
+British Virgin Islands	92	150
+"Bonaire, Sint Eustatius and Saba"	535	328
+Cayman Islands	136	240
+Cuba	192	106440
+Cura?ao	531	444
+Dominica	212	750
+Dominican Republic	214	48320
+Grenada	308	340
+Guadeloupe	312	1628
+Haiti	332	27560
+Jamaica	388	10830
+Martinique	474	1060
+Montserrat	500	100
+Puerto Rico	630	8870
+Saint-Barth?lemy	652	22
+Saint Kitts and Nevis	659	260
+Saint Lucia	662	610
+St. Vincent and the Grenadines	670	390
+Sint Maarten (Dutch part)	534	34
+Saint-Martin (French part)	663	53
+Trinidad and Tobago	780	5130
+Turks and Caicos Islands	796	950
+United States Virgin Islands	850	350
+Central America	916	2452270
+Belize	84	22810
+Costa Rica	188	51060
+El Salvador	222	20720
+Guatemala	320	107160
+Honduras	340	111890
+Mexico	484	1943950
+Nicaragua	558	120340
+Panama	591	74340
+South America	931	17461112
+Argentina	32	2736690
+Bolivia (Plurinational State of)	68	1083300
+Brazil	76	8358140
+Chile	152	743532
+Colombia	170	1109500
+Ecuador	218	248360
+Falkland Islands (Malvinas)	238	12170
+French Guiana	254	82200
+Guyana	328	196850
+Paraguay	600	397300
+Peru	604	1280000
+Suriname	740	156000
+Uruguay	858	175020
+Venezuela (Bolivarian Republic of)	862	882050
+Australia	36	7682300
+New Zealand	554	263310
+Melanesia	928	529590
+Fiji	242	18270
+New Caledonia	540	18280
+Papua New Guinea	598	452860
+Solomon Islands	90	27990
+Vanuatu	548	12190
+Micronesia	954	3170
+Guam	316	540
+Kiribati	296	810
+Marshall Islands	584	180
+Micronesia (Fed. States of)	583	700
+Nauru	520	20
+Northern Mariana Islands	580	460
+Palau	585	460
+Polynesia	957	8090
+American Samoa	16	200
+Cook Islands	184	240
+French Polynesia	258	3660
+Niue	570	260
+Samoa	882	2830
+Tokelau	772	10
+Tonga	776	720
+Tuvalu	798	30
+Wallis and Futuna Islands	876	140
+Eastern Europe	923	18052768
+Belarus	112	202910
+Bulgaria	100	108560
+Czechia	203	77240
+Hungary	348	90530
+Poland	616	306230
+Republic of Moldova	498	32850
+Romania	642	230170
+Russian Federation	643	16376870
+Slovakia	703	48088
+Ukraine	804	579320
+Northern Europe	924	1702418
+Channel Islands	830	190
+Denmark	208	42430
+Estonia	233	42390
+Faroe Islands	234	1396
+Finland	246	303890
+Iceland	352	100250
+Ireland	372	68890
+Isle of Man	833	570
+Latvia	428	62200
+Lithuania	440	62674
+Norway	578	365268
+Sweden	752	410340
+United Kingdom	826	241930
+Southern Europe	925	1294920.44
+Albania	8	27400
+Andorra	20	470
+Bosnia and Herzegovina	70	51000
+Croatia	191	55960
+Gibraltar	292	10
+Greece	300	128900
+Holy See	336	0.44
+Italy	380	294140
+Malta	470	320
+Montenegro	499	13450
+North Macedonia	807	25220
+Portugal	620	91590
+San Marino	674	60
+Serbia	688	87460
+Slovenia	705	20140
+Spain	724	498800
+Western Europe	926	1084793.49
+Austria	40	82409
+Belgium	56	30280
+France	250	547557
+Germany	276	348560
+Liechtenstein	438	160
+Luxembourg	442	2590
+Monaco	492	1.49
+Netherlands	528	33720
+Switzerland	756	39516
+Bermuda	60	50
+Canada	124	9093510
+Greenland	304	410450
+Saint Pierre and Miquelon	666	230
+United States of America	840	9147420

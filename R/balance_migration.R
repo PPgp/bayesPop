@@ -1,4 +1,4 @@
-if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2015", "migration.thresholds"))
+if(getRversion() >= "2.15.1") utils::globalVariables(c("land_area_wpp2019", "migration.thresholds"))
 
 do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countries=NULL, keep.vital.events=FALSE, 
                                    fixed.mx=FALSE, fixed.pasfr=FALSE, function.inputs=NULL, 
@@ -226,7 +226,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		clusterExport(cl, c("create.work.env", "create.mig.env",
 		                    ".ini.pop.res.env", "cleanup.env"), envir=environment())
 		clusterEvalQ(cl, {
-		    data(land_area_wpp2015)
+		    data(land_area_wpp2019)
 		    #library(pryr)
 		    work.env <- create.work.env()
 		    work.mig.env <- create.mig.env()
@@ -235,7 +235,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(verbose) cat(' (sequentially).')
 	    work.mig.env <- create.mig.env()
 	}
-	data(land_area_wpp2015)
+	data(land_area_wpp2019)
 	
 	predict.1time.period.1trajectory <- function(itraj, time) {
 	    #gc()
@@ -794,8 +794,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 													fixed.rate=NULL, warn.template=NULL) {													
 	pars <- inpc$migration.parameters[itraj,]
 	land.area <- NA
-	if(country.code %in% land_area_wpp2015$country_code)
-		land.area <- land_area_wpp2015[land_area_wpp2015$country_code==country.code,'land_area']
+	if(country.code %in% land_area_wpp2019$country_code)
+		land.area <- land_area_wpp2019[land_area_wpp2019$country_code==country.code,'land_area']
 	i <- 0
 	k <- 1
 	zero.constant <- get.zero.constant()
@@ -1270,13 +1270,14 @@ migration.age.schedule <- function(country, npred, inputs) {
 	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
 		}
 		total.mig.positive <- (colSums(maleV) + colSums(femaleV)) > 0
-		if(!is.null(scale.to.totals) && !any(colSums(maleV) == 0) && !any(colSums(femaleV) == 0)) {
+		if(!is.null(scale.to.totals) && !any(colSums(maleV) == 0) && !any(colSums(femaleV) == 0) 
+		    ){
 			maleV <- t(scale.to.totals$M * apply(maleV, 1, '/', colSums(maleV)))
 			femaleV <- t(scale.to.totals$F * apply(femaleV, 1, '/', colSums(femaleV)))
 		}
 	    colnames(maleV) <- colnames(femaleV) <- colnames(inputs$MIGm)[col.idx]
 	    tot <- colSums(maleV+femaleV)
-	    if(any(tot == 0)) {
+	    if(any(abs(tot) <= 0.0001)) {
 			#Pull a model schedule to use in scenarios where the projection is 0
 			#Use China's 2010-2015 data as the model
 			modelmaleVec <- inputs$MIGm[inputs$MIGm$country_code==156, first.year.period]
@@ -1288,7 +1289,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 			modelM <- modelmaleVec/modeltot
 			modelF <- modelfemaleVec/modeltot
 		}
-		non.zero <- tot != 0
+		non.zero <- abs(tot) > 0.0001
 		if(any(non.zero)) {
 			maleArr[,which(non.zero)] <- t(apply(maleV[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
 	    	femaleArr[,which(non.zero)] <- t(apply(femaleV[,which(non.zero), drop=FALSE], 1, '/', tot[which(non.zero)]))
@@ -1303,7 +1304,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
     	unscheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
     	scale <- c(colSums(unscheds[[1]]), colSums(unscheds[[2]]))
-    	#scale.to.totals <- list(M=scale[1:npred], F=scale[(npred+1):length(scale)])
+    	scale.to.totals <- list(M=scale[1:npred], F=scale[(npred+1):length(scale)])
     }
 	scheds <- get.schedule(first.year, cidxM, cidxF, scale.to.totals=scale.to.totals)
 	maleArray <- scheds[[1]]
@@ -1311,7 +1312,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	
     # special handling for negative and positive migration rates
     negM <- negF <- NULL
-
+    #if(country == 512) stop("")
     if(is.gcc(country)) {
     	negF <- femaleArray # female gets China schedule; should be correctly scaled
     	# male - use model out-migration schedule (derived from SA)
