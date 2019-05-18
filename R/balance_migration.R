@@ -311,7 +311,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			for(par in c('totpm', 'totpf', 'migm', 'migf'))
 				res.env[[par]][,,itraj] <- thispred[[itraj]][[par]]
 			res.env$mig.rate[,,itraj] <- thispred[[itraj]]$mig.rate
-			if(!is.null(thispred[[itraj]]$warns[[country]])) {
+			for(country in setdiff(names(thispred[[itraj]]$warns), "_template_")) {
 			    if(is.null(res.env$warns[[country]]))
 			        res.env$warns[[country]] <- thispred[[itraj]]$warns[["_template_"]]
 			    res.env$warns[[country]] <- res.env$warns[[country]] + thispred[[itraj]]$warns[[country]]
@@ -1303,7 +1303,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	if(is.gcc(country)) { # for GCC countries keep the original ratio of male to female (for positive net migration)
     	unscheds <- get.schedule(first.year.neg, cidxM.neg, cidxF.neg)
     	scale <- c(colSums(unscheds[[1]]), colSums(unscheds[[2]]))
-    	scale.to.totals <- list(M=scale[1:npred], F=scale[(npred+1):length(scale)])
+    	#scale.to.totals <- list(M=scale[1:npred], F=scale[(npred+1):length(scale)])
     }
 	scheds <- get.schedule(first.year, cidxM, cidxF, scale.to.totals=scale.to.totals)
 	maleArray <- scheds[[1]]
