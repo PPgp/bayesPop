@@ -715,7 +715,7 @@ do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, 
 }
 
 
-project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rlim=c(NULL, NULL), relaxed.bounds=FALSE, is.small=FALSE){
+project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, country.code, rlim=list(NULL, NULL), relaxed.bounds=FALSE, is.small=FALSE){
 # Based on Jon Azose code 
 #######################
 #Project migration for a single country one time point into the future
@@ -742,8 +742,8 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	fun.min <- paste0("min.multiplicative.pop.change", if(relaxed) ".small" else "")
 	xmin <- .get.rate.mult.limit(oldRates, nrates, fun.min, max, nperiods=6)
 	xmax <- .get.rate.mult.limit(oldRates, nrates, fun.max, min, nperiods=6)
-	if(!is.null(rlim[2])) xmax <- min(xmax, rlim[2])
-	if(!is.null(rlim[1])) xmin <- max(xmin, rlim[1])
+	if(!is.null(rlim[[2]])) xmax <- min(xmax, rlim[[2]])
+	if(!is.null(rlim[[1]])) xmin <- max(xmin, rlim[[1]])
 	if(xmin > xmax) {
 		avg <- (xmin + xmax)/2.
 		xmin <- avg - 1e-3
@@ -810,13 +810,17 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
-			else rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
-					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
-					rlim=c(if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL, 
-						if(pop>0) min(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA, na.rm=TRUE) else NULL),
+			else {
+			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL
+			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
+			    rlim <- list(rlim1, 
+			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
+			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
+					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, rlim = rlim,
 					relaxed.bounds=time < 6, is.small=pop < 200
 					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
 					)
+			}
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
 					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
@@ -1266,7 +1270,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	    	femaleV <- as.matrix(inputs$MIGf[idxF,col.idx])
 		}
 		total.mig.positive <- (colSums(maleV) + colSums(femaleV)) > 0
-		if(!is.null(scale.to.totals)) {
+		if(!is.null(scale.to.totals) && !any(colSums(maleV) == 0) && !any(colSums(femaleV) == 0)) {
 			maleV <- t(scale.to.totals$M * apply(maleV, 1, '/', colSums(maleV)))
 			femaleV <- t(scale.to.totals$F * apply(femaleV, 1, '/', colSums(femaleV)))
 		}
