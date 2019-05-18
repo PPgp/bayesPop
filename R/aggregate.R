@@ -379,8 +379,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			    popwprev.hch[[sex]] <- split.pop05(popwprev.hch[[sex]])
 			    popobstmp[[sex]] <- split.pop05(popobstmp[[sex]])
 			    # population averages (pop at mid period)
-			    popavg[[sex]] <- (popwprev[[sex]][,-1,] + popwprev[[sex]][,-dim(popwprev[[sex]])[2],])/2.
-			    popavg.hch[[sex]] <- (popwprev.hch[[sex]][,-1,] + popwprev.hch[[sex]][,-dim(popwprev.hch[[sex]])[2],])/2.
+			    popavg[[sex]] <- (popwprev[[sex]][,-1, ,drop = FALSE] + popwprev[[sex]][,-dim(popwprev[[sex]])[2],, drop = FALSE])/2.
+			    popavg.hch[[sex]] <- (popwprev.hch[[sex]][,-1,, drop = FALSE] + popwprev.hch[[sex]][,-dim(popwprev.hch[[sex]])[2],, drop = FALSE])/2.
 			    popobsavg[[sex]] <- (popobstmp[[sex]][,-1,] + popobstmp[[sex]][,-dim(popobstmp[[sex]])[2],])/2.
 			}
 			# compute mortality rates from abridged deaths and average population
