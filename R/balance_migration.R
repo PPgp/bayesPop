@@ -1312,7 +1312,7 @@ migration.age.schedule <- function(country, npred, inputs) {
 	
     # special handling for negative and positive migration rates
     negM <- negF <- NULL
-    #if(country == 512) stop("")
+    #if(country == 64) stop("")
     if(is.gcc(country)) {
     	negF <- femaleArray # female gets China schedule; should be correctly scaled
     	# male - use model out-migration schedule (derived from SA)
@@ -1320,7 +1320,7 @@ migration.age.schedule <- function(country, npred, inputs) {
     	negMvec <- negMvec/sum(negMvec)
     	negM <- matrix(negMvec, nrow=nAgeGroups, ncol=npred)*matrix(scale[1:npred], ncol=npred, nrow=nAgeGroups, byrow=TRUE) # scale
     }
-    # For some counties like Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
+    # For some countries like Egypt, if positive migration rate, set negative schedules to zero, since they would mean out-migration
     if(.pattern.value("MigAgeZeroNeg", mig.settings, 0) == 1) {
     	negM <- maleArray
     	maleArray[maleArray<0] <- 0

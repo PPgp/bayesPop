@@ -1517,8 +1517,11 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     if(ax.latest.periods < 0) { # remove ax.latest.periods from the end
         ax.index <- (1:length.mx)[-(max(length.mx+ax.latest.periods+1, 2):length.mx)] # at least one period should stay in
     } else { # take the ax.latest.periods latest time periods
-        ax.ns <- max(length.mx - ax.latest.periods+1, 1)
-        ax.index <- ax.ns:length.mx
+        if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx
+        else {
+            ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+            ax.index <- ax.ns:length.mx
+        }
     }
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
                                    ax.index = ax.index, ax.smooth = smooth.ax)
