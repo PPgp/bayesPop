@@ -899,6 +899,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			dim(data) <- c(1, dim(data)) # adding country dimension
 			dimnames(data)[2:length(dim(data))] <- dimnam
 		} else { # multiple countries
+		    stop('')
 			traj <- get.pop.observed.multiple.countries(pop.pred, countries=pop.pred$countries$code, sex=sex, 
 														age=age, sum.over.ages=sum.over.ages)
 			data <- traj$data
@@ -1205,8 +1206,17 @@ mac.expression <- function(country) {
 						trajectories=trajectories$trajectories,	q=get.quantiles.to.keep()))
 }
 
-get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles, projection.index, adjust=FALSE, adj.to.file=NULL) {
+.solve.observed.expression.for.country <- function(icountry, pop.pred, expression) {
+    country <- pop.pred$countries$code[icountry]
+    expr <- gsub('XXX', as.character(country), expression, fixed=TRUE)
+    return(get.pop.observed.from.expression(expr, pop.pred))
+}
+
+get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles = NULL, 
+                                                  time.index, observed = FALSE, 
+                                                  adjust=FALSE, adj.to.file=NULL) {
 	compressed.expr <- gsub("[[:blank:]]*", "", expression) # remove spaces
+	if(observed) compressed.expr <- paste0(compressed.expr, "_observed")
 	if(!is.null(adj.to.file)) {
 		adjust <- FALSE
 		adjdata <- read.table(adj.to.file, header=TRUE, check.names=FALSE)
@@ -1216,7 +1226,8 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		res <- dat
 		for(i in 1:nrow(dat)) {
 			cntry <- pop.pred$countries$code[cidx[i]]
-			tmp <- adjust.to.dataset(country=cntry, q=dat[rownames(dat)==cntry,], adj.dataset=adjdata, years=get.pop.prediction.periods(pop.pred, end.time.only=TRUE)[projection.index], use="write")
+			tmp <- adjust.to.dataset(country=cntry, q=dat[rownames(dat)==cntry,], adj.dataset=adjdata, 
+			                         years=get.pop.prediction.periods(pop.pred, end.time.only=TRUE)[time.index], use="write")
 			if(length(tmp)==0) next # no adjustment
 			res[i,] <- tmp
 		}
@@ -1224,18 +1235,23 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	}
 	if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
-		data <- pop.pred$cache[[compressed.expr]][,,projection.index, drop = FALSE]
-		data <- data[,as.character(quantiles),, drop=FALSE]
+		data <- pop.pred$cache[[compressed.expr]][,,time.index, drop = FALSE]
+		if(!observed) 
+		    data <- data[,as.character(quantiles),, drop=FALSE]
 		if(dim(data)[3] == 1) data <- adrop(data, 3)
 		.all.is.na <- function(x) return(all(is.na(x)))
 		countries.idx <- which(apply(data, 1, .all.is.na))
 		if(length(countries.idx) <= 0) return(.adjust.to.dataset.if.needed(data, 1:nrow(pop.pred$countries)))
 	} else {
 		countries.idx <- 1:nrow(pop.pred$countries)
-		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], ncol=length(quantiles))
+		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], ncol=if(observed) 1 else length(quantiles))
 		rownames(data) <- dimnames(pop.pred$quantiles)[[1]]
-		colnames(data) <- quantiles
-		pop.pred$cache[[compressed.expr]] <- array(NA, dim(pop.pred$quantilesM), dimnames=dimnames(pop.pred$quantilesM))
+		if(!observed) {
+		    colnames(data) <- quantiles
+		    pop.pred$cache[[compressed.expr]] <- array(NA, dim(pop.pred$quantilesM), dimnames=dimnames(pop.pred$quantilesM))
+		} else pop.pred$cache[[compressed.expr]] <- array(NA, 
+		                                                  c(dim(pop.pred$quantilesM)[1], 1, dim(pop.pred$inputs$pop.matrix$male)[2]),
+		                                                  dimnames=list(dimnames(pop.pred$quantilesM)[[1]], NULL, dimnames(pop.pred$inputs$pop.matrix$male)[[2]]))
 	}
 	ncores <- getOption("cl.cores", detectCores())
 	if(ncores > 1 && length(countries.idx)>10) {
@@ -1243,22 +1259,31 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		cat('Evaluating expression for all countries in parallel on', ncores, 'cores.\n')
 		cl <- create.pop.cluster(ncores)
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
-		quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust))
+		if(!observed)
+		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust))
+		else 
+		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.observed.expression.for.country(i, pop.pred, expression))
 		stopCluster(cl)
 		for(icountry in countries.idx) {
 			pop.pred$cache[[compressed.expr]][icountry,,] <- quant.list[[icountry]]
-			data[icountry,] <- quant.list[[icountry]][paste(quantiles*100, '%', sep=''), projection.index]
+			data[icountry,] <- if(observed) quant.list[[icountry]][time.index] else quant.list[[icountry]][paste0(quantiles*100, '%'), time.index]
 		}
 	} else { # run sequentially
 		if(length(countries.idx)>10) cat('Evaluating expression for all countries sequentially. Please be patient.\n')
 		for(icountry in countries.idx) {
-			quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust)
+		    if(!observed) {
+			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust)
+			    data[icountry,] <- quant[paste0(quantiles*100, '%'), time.index]
+		    } else {
+		        quant <- .solve.observed.expression.for.country(icountry, pop.pred, expression)
+		        quant <- abind(quant, along = 2)
+		        data[icountry,] <- quant[time.index]
+		    }
 			pop.pred$cache[[compressed.expr]][icountry,,] <- quant
-			data[icountry,] <- quant[paste(quantiles*100, '%', sep=''), projection.index]
 		}
 	}
 	.save.cache(pop.pred)
-	res <- .adjust.to.dataset.if.needed(data, countries.idx)
+	res <- if(!observed) .adjust.to.dataset.if.needed(data, countries.idx) else data
 	return(res)	
 }
 

@@ -14,7 +14,7 @@ if(!CRAN) {
 	test.prediction(parallel = TRUE)
 	test.prediction.with.prob.migration()
 	test.prediction.with.prob.migration(parallel = TRUE)
-	test.expressions.with.VE(map=FALSE)
+	test.expressions.with.VE(map=TRUE)
 	test.expressions.with.VE(map=FALSE, parallel = TRUE)
 	test.regional.aggregation()
 	test.regional.aggregation(parallel = TRUE)

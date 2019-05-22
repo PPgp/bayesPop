@@ -1675,7 +1675,11 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	if(include.observed) {
-		res <- get.pop.observed.from.expression.all.countries(expression, pop.pred, time.index=1:nr.obs)
+		#res <- get.pop.observed.from.expression.all.countries(expression, pop.pred, time.index=1:nr.obs)
+	    res <- c()
+	    for(iyear in 1:nr.obs)
+		    res <- cbind(res, get.pop.from.expression.all.countries(expression, pop.pred, 
+		                                                            time.index=iyear, observed = TRUE))
 		#copy the same data into the variant rows 
 		result <- matrix(NA, nrow=nrow(res)*5, ncol=ncol(res))
 		for(i in 1:5) result[seq(i,by=5, length=nrow(res)),] <- res
@@ -1683,7 +1687,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 	for(iyear in 1:nr.proj) {	
 		result <- cbind(result, as.vector(t(get.pop.from.expression.all.countries(expression, pop.pred, 
-						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), projection.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
+						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
 	}
 	if(!is.null(digits)) result <- round(result, digits)
 	colnames(result) <- col.names
