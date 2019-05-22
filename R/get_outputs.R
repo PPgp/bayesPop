@@ -908,7 +908,6 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			dim(data) <- c(1, dim(data)) # adding country dimension
 			dimnames(data)[2:length(dim(data))] <- dimnam
 		} else { # multiple countries
-		    stop('')
 			traj <- get.pop.observed.multiple.countries(pop.pred, countries=pop.pred$countries$code, sex=sex, 
 														age=age, sum.over.ages=sum.over.ages)
 			data <- traj$data
