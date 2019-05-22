@@ -1104,7 +1104,8 @@ get.data.for.worldmap.bayesPop.prediction <- function(pred, quantile=0.5, year=N
 		period <- get.pop.prediction.periods(pred)[projection.index]
 	} else { # observed data
 		data <- if(!is.null(expression))
-					get.pop.observed.from.expression.all.countries(expression, pred, projection.index)
+		            get.pop.from.expression.all.countries(expression, pred, time.index = projection.index,
+		                                                  observed = TRUE)
 				else 
 					get.pop.observed.all.countries(pred, projection.index, sex=sex, age=age)
 		period <- get.pop.observed.periods(pred)[projection.index]

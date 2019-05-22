@@ -121,6 +121,10 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	pop.trajectories.table(pred, expression='F528_F[4]/(R528_F[4]/100)') # gives TFR
 	pop.trajectories.table(pred, expression=mac.expression("ECU")) # MAC
 	
+	write.pop.projection.summary(pred, expression="FXXX", output.dir=sim.dir, include.observed=TRUE) # TFR
+	tb <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(all(tb[, 5:ncol(tb)] < 7))
+	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
 	stopifnot(all(dim(t) == c(10,21))) # 2 countries 5 rows each
