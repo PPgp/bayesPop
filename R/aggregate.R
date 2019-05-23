@@ -320,8 +320,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					    # observed abridged pop  and deaths
 					    popavgobs <- (obs.data[[sex]][country.obs.idx, -1 , drop=FALSE] + 
 					                    obs.data[[sex]][country.obs.idx, -dim(obs.data[[sex]])[2] , drop=FALSE])/2.
-					    abrpopobs[[sex]] <- split.pop05(abind(popavgobs, NULL, along = 3))
-					    abrdobs[[sex]] <- abrpopobs[[sex]][,use.obs.cols.pop,]*e$observed[[ind.names[[sex]]$mx]][,use.obs.cols,]
+					    abrpopobs[[sex]] <- split.pop05(abind(popavgobs[,use.obs.cols.pop, drop = FALSE], NULL, along = 3))
+					    abrdobs[[sex]] <- abrpopobs[[sex]]*e$observed[[ind.names[[sex]]$mx]][,use.obs.cols,, drop = FALSE]
 					}
 					# debug.df <- rbind(debug.df, data.frame(
 					#                     country = countries[cidx],
@@ -431,8 +431,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 				pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 				rm(tmp, tfr)
 				# mortality
-				mxm <- abind(aggrabrdeathsobs[["male"]], NULL, along = 3) / aggrabrpopobs[["male"]] 
-				mxf <- abind(aggrabrdeathsobs[["female"]], NULL, along = 3) / aggrabrpopobs[["female"]]
+				mxm <- aggrabrdeathsobs[["male"]] / aggrabrpopobs[["male"]] 
+				mxf <- aggrabrdeathsobs[["female"]] / aggrabrpopobs[["female"]]
 				dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- list(
 				    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
 			})
