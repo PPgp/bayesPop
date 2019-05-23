@@ -386,8 +386,6 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
 		if(has.vital.events) {
-		    popu <- list(male = totpm, female = totpf)
-		    popu.hch <- list(male = totpm.hch, female = totpf.hch)
 		    tmp <- abind(aggrobs[["female"]][4:10, prev.year, drop=FALSE], NULL, along=3)
 		    popfwprev <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf[4:10,,,drop=FALSE], along=2)
 			# asfert
