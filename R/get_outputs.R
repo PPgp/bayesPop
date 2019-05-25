@@ -467,22 +467,26 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 }
 
 get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
-	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
-	if(age05[3]) {
-		res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05)
-		if(is.null(dim(res1))) res1 <- abind(res1, along=2)
-		res <- array(0, dim=c(dim(res1)[1], dim(res1)[2], dim(mxm)[3]))
-		res[,,1] <- res1
-		if(dim(mxm)[3]> 1) { 
-			for (itraj in 2:dim(mxm)[3]) {
-				res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
-			}
-		}
-		dimnames(res)[[2]] <- dimnames(mxm)[[2]]
-		return(res)
-	}
-	if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
-	if(!age05[1]) mxm <- mxm[-1,,,drop=FALSE]
+    if(is.list(mxm)) { # mx for both sexes
+        
+    } else {
+	    if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
+	    if(age05[3]) {
+		    res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05)
+		    if(is.null(dim(res1))) res1 <- abind(res1, along=2)
+		    res <- array(0, dim=c(dim(res1)[1], dim(res1)[2], dim(mxm)[3]))
+		    res[,,1] <- res1
+		    if(dim(mxm)[3]> 1) { 
+			    for (itraj in 2:dim(mxm)[3]) {
+				    res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
+			    }
+		    }
+		    dimnames(res)[[2]] <- dimnames(mxm)[[2]]
+		    return(res)
+	    }
+	    if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
+	    if(!age05[1]) mxm <- mxm[-1,,,drop=FALSE]
+    }
 	return (mxm)
 }
 
@@ -569,21 +573,30 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	if(is.element(event, life.table.indicators)) {
 		min.age.index.allowed <- -1
 		mx <- list(male=myenv$mxm, female=myenv$mxf, male.hch=myenv$mxm.hch, female.hch=myenv$mxf.hch)
-		sex.index <- 1:4
-		if(sex=='male') sex.index <- sex.index[-c(2,4)]
-		if(sex=='female') sex.index <- sex.index[-c(1,3)]
-		alltraj <- list(male=NULL, female=NULL, male.hch=NULL, female.hch=NULL)
+		mx$both <- list(mx$male, mx$female)
+		mx$both.hch <- list(mx$male.hch, mx$female.hch)
+		if(sex=='male') sex.names <- c("male", "male.hch")
+		if(sex=='female') sex.names <- c("female", "female.hch")
+		pop <- NULL
+		if(sex=='both') {
+		    sex.names <- c("both", "both.hch")
+		    pop <- list(male = get.pop.trajectories.multiple.age(pop.pred, country, sex = "male"),
+		                female = get.pop.trajectories.multiple.age(pop.pred, country, sex = "female")
+		            )
+		}
+		sexarg <- list(male = "M", female = "F", male.hch = "M", female.hch = "F", both = "T", both.hch =  "T")
+		alltraj <- list(male=NULL, female=NULL, both = NULL, male.hch=NULL, female.hch=NULL, both.hch = NULL)
 		age05 <- c(FALSE, FALSE, TRUE)
 		if(age[1]!='all' && (any(age < 1))) {
 			age05 <- rep(TRUE, 3)
 			age.normal <- FALSE
 		}
-		for(is in sex.index) {
-			if(!is.null(mx[[is]])) {
-					if(is.observed)
-						dimnames(mx[[is]])[[2]] <- time.labels[(length(time.labels)-dim(mx[[is]])[2]+1):length(time.labels)]
-					alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
-									list(mx[[is]], sex=c("M","F","M","F")[is], age05=age05))
+		for(sn in names(mx)) {
+			if(!is.null(mx[[sn]])) {
+				if(is.observed)
+					dimnames(mx[[sn]])[[2]] <- time.labels[(length(time.labels)-dim(mx[[sn]])[2]+1):length(time.labels)]
+				alltraj[[sn]] <- do.call(paste0('get.', event), 
+									list(mx[[sn]], sex=sexarg[[sn]], age05=age05, pop = pop))
 			}
 		}
 	} else {
