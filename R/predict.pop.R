@@ -151,7 +151,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		
 	
 	if(parallel) {
-	    if(is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores())
+	    if(is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores(logical = FALSE))
 	}
 	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
 	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
