@@ -1252,7 +1252,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		                                                  c(dim(pop.pred$quantilesM)[1], 1, dim(pop.pred$inputs$pop.matrix$male)[2]),
 		                                                  dimnames=list(dimnames(pop.pred$quantilesM)[[1]], NULL, dimnames(pop.pred$inputs$pop.matrix$male)[[2]]))
 	}
-	ncores <- getOption("cl.cores", detectCores())
+	ncores <- getOption("cl.cores", detectCores(logical = FALSE))
 	if(ncores > 1 && length(countries.idx)>10) {
 		# This can take lots of time. Run it in parallel
 		cat('Evaluating expression for all countries in parallel on', ncores, 'cores.\n')
