@@ -6,19 +6,19 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 20	Andorra	PG	1	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 24	Angola	LB	0	1950	0	0	Relational model	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 660	Anguilla	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		1	0	0	Global Norm	0	0	0
-28	Antigua and Barbuda	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+28	Antigua and Barbuda	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 32	Argentina	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 51	Armenia	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 533	Aruba	NL	0	1950	0	0	Model life tables	CDWest	MLT		CDWest		1	0	0	Global Norm	0	0	0
-36	Australia	NL	0	1950	9	0	Age specific mortality pattern	CDNorth	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
-40	Austria	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+36	Australia	NL	0	1950	9	0	Age specific mortality pattern	CDNorth	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+40	Austria	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 31	Azerbaijan	KA	0	1950	9	0	Age specific mortality pattern	CDWest	MLT		CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-44	Bahamas	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+44	Bahamas	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 48	Bahrain	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 50	Bangladesh	SH	0	1950	0	0	Age specific mortality pattern	UNSouthAsian	PMD	MLT	CDWest	"c(1,1)"	0	0	0	Global Norm	0	0	1
-52	Barbados	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
-112	Belarus	KA	0	1950	9	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
-56	Belgium	VG	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+52	Barbados	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+112	Belarus	KA	0	1950	9	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+56	Belgium	VG	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 84	Belize	LB	0	1950	9	0	Age specific mortality pattern	UNGeneral	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 204	Benin	VG	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 60	Bermuda	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
@@ -28,14 +28,14 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 72	Botswana	PG	0	1950	0	1	Model life tables	CDWest	HIVmortmod		CDWest		0	0	0	Global Norm	0	0	0
 76	Brazil	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 92	British Virgin Islands	PG	1	1950	0	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
-96	Brunei Darussalam	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+96	Brunei Darussalam	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 100	Bulgaria	SH	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.53125)"	0	0	0	Global Norm	0	0	0
 854	Burkina Faso	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 108	Burundi	TS	0	1950	0	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 132	Cabo Verde	MW	0	1950	9	0	Relational model	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 116	Cambodia	TS	0	1950	0	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 120	Cameroon	TS	0	1950	9	1	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-124	Canada	SH	0	1950	0	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+124	Canada	SH	0	1950	0	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
 535	Caribbean Netherlands	PG	1	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 136	Cayman Islands	PG	1	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 140	Central African Republic	TS	0	1950	0	1	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
@@ -59,7 +59,7 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 203	Czechia	MW	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	1	0	0
 408	Dem. People's Republic of Korea	TS	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 180	Democratic Republic of the Congo	VG	0	1950	0	0	Model life tables	CDNorth	MLT		CDNorth		0	0	0	Global Norm	0	0	0
-208	Denmark	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
+208	Denmark	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
 262	Djibouti	VG	0	1950	9	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 212	Dominica	PG	1	1950	0	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
 214	Dominican Republic	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
@@ -73,20 +73,20 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 231	Ethiopia	TS	0	1950	9	0	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 234	Faeroe Islands	PG	1	1950	0	0	Model life tables	CDNorth	MLT		CDNorth		0	0	0	Global Norm	0	0	0
 238	Falkland Islands (Malvinas)	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
-242	Fiji	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
-246	Finland	NL	0	1950	0	0	Age specific mortality pattern	CDNorth	LCM		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
-250	France	PG	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+242	Fiji	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
+246	Finland	NL	0	1950	0	0	Age specific mortality pattern	CDNorth	LC		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
+250	France	PG	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 254	French Guiana	LB	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 258	French Polynesia	LB	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 266	Gabon	TS	0	1950	0	1	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 270	Gambia	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 268	Georgia	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-276	Germany	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+276	Germany	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 288	Ghana	TS	0	1950	9	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 292	Gibraltar	PG	1	1950	0	0	Model life tables	CDNorth	MLT		CDNorth		0	0	0	Global Norm	0	0	0
-300	Greece	LB	0	1950	9	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+300	Greece	LB	0	1950	9	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
 304	Greenland	PG	1	1950	9	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
-308	Grenada	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+308	Grenada	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 312	Guadeloupe	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 316	Guam	SH	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 320	Guatemala	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
@@ -97,21 +97,21 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 336	Holy See	PG	1	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 340	Honduras	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 348	Hungary	MW	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-352	Iceland	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+352	Iceland	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 356	India	SH	0	1950	9	0	Age specific mortality pattern	UNSouthAsian	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	1
-360	Indonesia	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+360	Indonesia	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 364	Iran (Islamic Republic of)	SH	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 368	Iraq	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-372	Ireland	SH	0	1950	0	0	Age specific mortality pattern	LifeTables	LCM		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+372	Ireland	SH	0	1950	0	0	Age specific mortality pattern	LifeTables	LC		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
 833	Isle of Man	PG	1	1950	0	0	Model life tables	CDNorth	MLT		CDNorth		0	0	0	Global Norm	0	0	0
-376	Israel	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
-380	Italy	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	LCM		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
-388	Jamaica	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
-392	Japan	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	1	0
+376	Israel	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+380	Italy	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	LC		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+388	Jamaica	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+392	Japan	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	1	0
 400	Jordan	SH	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 398	Kazakhstan	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 404	Kenya	DG	0	1950	9	1	Model life tables	CDNorth	HIVmortmod		CDNorth		0	0	0	Global Norm	0	0	0
-296	Kiribati	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+296	Kiribati	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 414	Kuwait	SH	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 417	Kyrgyzstan	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 418	Lao People's Democratic Republic	MW	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
@@ -122,20 +122,20 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 434	Libya	TS	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 438	Liechtenstein	PG	1	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 440	Lithuania	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-442	Luxembourg	VG	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+442	Luxembourg	VG	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 450	Madagascar	VG	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 454	Malawi	TS	0	1950	0	1	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-458	Malaysia	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+458	Malaysia	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 462	Maldives	SH	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 466	Mali	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 470	Malta	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	1	0	0
 584	Marshall Islands	PG	1	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 474	Martinique	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 478	Mauritania	TS	0	1950	9	0	Relational model	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-480	Mauritius	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+480	Mauritius	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 175	Mayotte	VG	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 484	Mexico	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-583	Micronesia (Fed. States of)	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+583	Micronesia (Fed. States of)	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 492	Monaco	PG	1	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 496	Mongolia	TS	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 499	Montenegro	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0)"	0	0	0	Global Norm	0	0	0
@@ -146,29 +146,29 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 516	Namibia	PG	0	1950	9	1	Model life tables	CDWest	HIVmortmod		CDWest		0	0	0	Global Norm	0	0	0
 520	Nauru	PG	1	1950	0	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
 524	Nepal	SH	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		1	0	0	Global Norm	0	0	0
-528	Netherlands	VG	0	1950	0	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
+528	Netherlands	VG	0	1950	0	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
 540	New Caledonia	LB	0	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
-554	New Zealand	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+554	New Zealand	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 558	Nicaragua	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5005)"	0	0	0	Global Norm	0	0	0
 562	Niger	TS	0	1950	9	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 566	Nigeria	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 570	Niue	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 807	North Macedonia	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 580	Northern Mariana Islands	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
-578	Norway	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
+578	Norway	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
 512	Oman	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 586	Pakistan	SH	0	1950	0	0	Age specific mortality pattern	UNSouthAsian	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 585	Palau	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 591	Panama	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-598	Papua New Guinea	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+598	Papua New Guinea	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 600	Paraguay	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 604	Peru	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-608	Philippines	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+608	Philippines	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 616	Poland	PU	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0)"	1	0	0	Global Norm	0	0	0
-620	Portugal	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+620	Portugal	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
 630	Puerto Rico	SH	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 634	Qatar	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-410	Republic of Korea	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	1	0
+410	Republic of Korea	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	1	0
 498	Republic of Moldova	SH	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 638	Réunion	VG	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 642	Romania	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.558823529411766)"	1	0	0	Global Norm	0	0	0
@@ -176,34 +176,34 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 646	Rwanda	TS	0	1950	9	1	Model life tables	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 654	Saint Helena	PG	1	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 659	Saint Kitts and Nevis	PG	1	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-662	Saint Lucia	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+662	Saint Lucia	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 666	Saint Pierre and Miquelon	PG	1	1950	9	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
-670	Saint Vincent and the Grenadines	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+670	Saint Vincent and the Grenadines	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 652	Saint-Barthélemy	NA	NA	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 663	Saint-Martin (French part)	NA	NA	1950	0	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-882	Samoa	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+882	Samoa	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 674	San Marino	PG	1	1950	0	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 678	Sao Tome and Principe	LB	0	1950	0	0	Relational model	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 682	Saudi Arabia	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 686	Senegal	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 688	Serbia	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0)"	0	0	0	Global Norm	0	0	0
-690	Seychelles	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
+690	Seychelles	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	0	0	0
 694	Sierra Leone	TS	0	1950	9	0	Relational model	CDNorth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-702	Singapore	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	1	0
+702	Singapore	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,1)"	0	1	1	Global Norm	1	1	0
 534	Sint Maarten (Dutch part)	PG	1	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 703	Slovakia	PU	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0)"	1	0	0	Global Norm	0	0	0
-705	Slovenia	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
-90	Solomon Islands	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
+705	Slovenia	KA	0	1950	0	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+90	Solomon Islands	NL	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
 706	Somalia	TS	0	1950	0	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 710	South Africa	PG	0	1950	0	1	Model life tables	CDWest	HIVmortmod		CDWest		0	0	0	Global Norm	0	0	0
 728	South Sudan	TS	0	1950	0	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-724	Spain	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	LCM		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+724	Spain	LB	0	1950	0	0	Age specific mortality pattern	LifeTables	LC		CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 144	Sri Lanka	PU	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 275	State of Palestine	SH	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 729	Sudan	TS	0	1950	0	0	Model life tables	CDNorth	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 740	Suriname	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-752	Sweden	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
-756	Switzerland	TS	0	1950	0	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+752	Sweden	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC		CDWest	"c(1,1)"	0	1	1	Global Norm	1	0	0
+756	Switzerland	TS	0	1950	0	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 760	Syrian Arab Republic	SH	0	1950	9	0	Age specific mortality pattern	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 762	Tajikistan	KA	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 764	Thailand	MW	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
@@ -211,7 +211,7 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 768	Togo	TS	0	1950	0	0	Age specific mortality pattern	CDSouth	PMD	MLT	CDNorth	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 772	Tokelau	PG	1	1950	0	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
 776	Tonga	NL	0	1950	0	0	Age specific mortality pattern	UNFarEastern	PMD	MLT	UNFarEastern	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-780	Trinidad and Tobago	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
+780	Trinidad and Tobago	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
 788	Tunisia	TS	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 792	Turkey	DG	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 795	Turkmenistan	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
@@ -220,13 +220,13 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 800	Uganda	DG	0	1950	0	1	Model life tables	CDNorth	HIVmortmod		CDNorth		0	0	0	Global Norm	0	0	0
 804	Ukraine	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
 784	United Arab Emirates	SH	0	1950	0	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	1	0	0	Global Norm	0	0	0
-826	United Kingdom of Great Britain and Northern Ireland	SH	0	1950	9	0	Age specific mortality pattern	LifeTables	LCM		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
+826	United Kingdom of Great Britain and Northern Ireland	SH	0	1950	9	0	Age specific mortality pattern	LifeTables	LC		CDNorth	"c(1,0.5)"	0	1	1	Global Norm	1	0	0
 834	United Republic of Tanzania	DG	0	1950	9	1	Model life tables	CDNorth	HIVmortmod		CDNorth		0	0	0	Global Norm	0	0	0
-840	United States of America	SH	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
+840	United States of America	SH	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.5)"	0	1	1	Global Norm	0	0	0
 850	United States Virgin Islands	SH	0	1950	9	0	Model life tables	CDWest	MLT		CDWest		0	0	0	Global Norm	0	0	0
 858	Uruguay	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 860	Uzbekistan	KA	0	1950	9	0	Age specific mortality pattern	CDWest	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
-548	Vanuatu	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LCM	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
+548	Vanuatu	NL	0	1950	9	0	Age specific mortality pattern	CDWest	LC	MLT	CDWest	"c(1,0.53125)"	0	1	1	Global Norm	0	0	0
 862	Venezuela (Bolivarian Republic of)	LB	0	1950	9	0	Age specific mortality pattern	LifeTables	PMD	MLT	CDWest	"c(1,0.5)"	0	0	0	Global Norm	0	0	0
 704	Viet Nam	PU	0	1950	0	0	Age specific mortality pattern	CDNorth	PMD	MLT	CDNorth	"c(1,0)"	0	0	0	Global Norm	0	0	0
 876	Wallis and Futuna Islands	PG	1	1950	0	0	Model life tables	UNFarEastern	MLT		UNFarEastern		0	0	0	Global Norm	0	0	0
