@@ -186,6 +186,7 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	}
 	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country'))] else as.character(years)
 	idx1 <- which(adj.dataset$country_code == country)
+	#if(years > 2090) stop("")
 	if(use=='write') {
 		med <- q['0.5']
 		dif <- med - adj.dataset[idx1,colidx]

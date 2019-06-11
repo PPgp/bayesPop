@@ -1232,7 +1232,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		}
 		return(res)
 	}
-	if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
+	#if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
 		data <- pop.pred$cache[[compressed.expr]][,,time.index, drop = FALSE]
 		if(!observed) 
@@ -1309,7 +1309,7 @@ get.pop.all.countries <- function(pop.pred, quantiles, projection.index, sex='bo
 		expr <- 'PXXX'
 		if(sex=='male') expr <- paste(expr, 'M', sep='_')
 		if(sex=='female') expr <- paste(expr, 'F', sep='_')
-		if (age[1]!='all') expr <- paste(expr, '[', expression(age), ']', sep='')
+		if (age[1]!='all') expr <- paste0(expr, '[c(', gsub(" ", "", toString(age)), ')]')
 		data <- get.pop.from.expression.all.countries(expr, pop.pred, quantiles, projection.index)
 	}
 	return(data)
