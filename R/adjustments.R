@@ -184,7 +184,7 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	if(is.null(adj.dataset)) {
 		adj.dataset <- read.table(adj.file, header=TRUE, check.names=FALSE)
 	}
-	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country'))] else as.character(years)
+	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country', 'name'))] else as.character(years)
 	idx1 <- which(adj.dataset$country_code == country)
 	if(use=='write') {
 		med <- q['0.5']
