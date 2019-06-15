@@ -486,8 +486,10 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 	return (mxm)
 }
 
-.get.lt.col <- function(ltcol, mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
+.get.lt.col <- function(ltcol, mxm, sex, age05=c(FALSE, FALSE, TRUE), 
+                        replace.na = TRUE) {
     if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
+    if(replace.na) mxm[is.na(mxm)] <- 1
     val1 <- LifeTableMxCol(mxm[,, 1], colname=ltcol, sex=sex, age05=age05)
     if(is.null(dim(val1))) val1 <- abind(val1, along=2)
     val <- array(0, dim=c(dim(val1)[1], dim(val1)[2], dim(mxm)[3]))
@@ -508,7 +510,8 @@ get.ex <- function(...) {
     return(.get.lt.col('ex', ...))
 }
 
-get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
+get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), 
+                         replace.na = TRUE) {
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
 	# sx21 <- dim(mxm)[1] < 27
 	# for (itraj in 1:dim(mxm)[3]) {
@@ -526,7 +529,7 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE)) {
 														# return(rep(NA, length(x)))
 													# }, sr)
 	# }
-	
+	if(replace.na) mxm[is.na(mxm)] <- 1
 	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
 	if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
 	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]))
