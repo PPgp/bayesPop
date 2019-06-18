@@ -1,4 +1,20 @@
-7.0-1 (04/02/2019) [not published yet]
+8.0-0 (06/18/2019)
+-----
+Support for wpp2019.
+
+New expression "E" for the ex column of the life table (life expectancy at age x).
+
+pop.predict can run in parallel.
+
+Age-specific mortality is now computed using MortCast functions.
+
+Added mortality methods for PMD, HIVmortmod, LogQuad and blends of any two methods. Arguments lc.for.all and lc.for.hiv control if Lee-Carter is used (TRUE) or methods set in the vwBaseYear dataset. Added dependency on HIV.LifeTables.
+
+Added aggregation of mortality rates. Added dependency on the DemoTools package.
+
+Various bug fixes.
+
+7.0-1 (04/02/2019)
 -----
 Fixed bug in writing summary for cases when projection is generated 
 for one country only (thanks to Anna Janicka)
