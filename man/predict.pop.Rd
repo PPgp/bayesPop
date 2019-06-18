@@ -19,7 +19,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
         migMtraj = NULL, migFtraj = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
-    lc.for.hiv = TRUE, lc.for.all = FALSE,
+    lc.for.hiv = TRUE, lc.for.all = TRUE,
     my.locations.file = NULL, replace.output = FALSE, 
     verbose = TRUE, \dots)
 }
@@ -52,9 +52,9 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
   	\item{keep.vital.events}{Logical. If \code{TRUE} age- and sex-specific vital events of births and deaths as well as other objects are stored in the prediction object, see Details.}
   	\item{fixed.mx}{Logical. If \code{TRUE}, it is assumed the dataset of death rates (mxM and mxF) include data for projection years and they are then used instead of the life expectancy.}
   	\item{fixed.pasfr}{Logical. If \code{TRUE}, it is assumed the dataset on percent age-specific fertility rate (percentASFR) include data for projection years and they are then used instead of computing it on the fly.}
-  	\item{lc.for.hiv}{Logical controlling if the Lee-Carter method should be used 
+  	\item{lc.for.hiv}{Logical controlling if the modified Lee-Carter method should be used 
   	for projection of mortality rates for countries with HIV epidemics. If \code{FALSE}, the function \code{hiv.mortmod} from the HIV.LifeTables package is used.}
-  	\item{lc.for.all}{Logical controlling if the Lee-Carter method should be used 
+  	\item{lc.for.all}{Logical controlling if the modified Lee-Carter method should be used 
   	for projection of mortality rates for all countries. If \code{FALSE}, the corresponding method is determined by the columns \dQuote{AgeMortProjMethod1} and \dQuote{AgeMortProjMethod2} of the \code{\link{vwBaseYear}} dataset.}
   	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2017]{UNlocations}} dataset. It must have the same structure.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
