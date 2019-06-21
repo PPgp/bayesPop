@@ -37,7 +37,7 @@ pop.aggregate.subnat(pop.pred, regions, locations, ..., verbose = FALSE)
 \item{sim.dir}{Simulation directory where aggregation is stored. It is the same directory used for creating the \code{pop.pred} object. Alternatively, \code{pop.pred} can be used. Either \code{sim.dir} or \code{pop.pred} must be given.}
 \item{write.to.cache}{Logical controlling if functions operating on this object are allowed to write into its cache (see Details of \code{\link{get.pop.prediction}}).}
 \item{locations}{Name of a tab-delimited file that contains definitions of the sub-regions. It should be the same file as used for the \code{locations} argument in \code{\link{pop.predict.subnat}}.}
-\item{\dots}{Additional arguments.}
+\item{\dots}{Additional arguments. For a country-type aggregation, it can be logical \code{use.kannisto} which determines if the Kannisto method should be used for old ages when aggregating mortality rates. A logical argument \code{keep.vital.events} determines if vital events should be computed for aggregations. Argument \code{adjust} determines if country-level population numbers should be adjusted to the WPP values. }
 }
 \details{
 Function \code{pop.aggregate} triggers an aggregations over countries while function \code{pop.aggregate.subnat} is used for aggregation over sub-regions to a country. The following details refer to the use of \code{pop.aggregate}. For sub-national aggregation see Example in \code{\link{pop.predict.subnat}}. 

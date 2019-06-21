@@ -219,7 +219,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 
 
 pop.aggregate.countries <- function(pop.pred, regions, name, 
-                                    use.kannisto = TRUE,
+                                    use.kannisto = TRUE, keep.vital.events = NULL,
                                     verbose=verbose, adjust=FALSE) {
     
     split.pop05 <- function(dat) {
@@ -250,7 +250,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	valid.regions <- rep(FALSE, length(regions))
 	status.for.gui <- paste('out of', nreg, 'regions.')
 	gui.options <- list()
-	has.vital.events <- FALSE
+	no.vital.events <- !is.null(keep.vital.events) && keep.vital.events == FALSE
 	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch')
 	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
 								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch',
@@ -262,7 +262,6 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	
-	if(has.vital.events) requireNamespace("DemoTools")
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
 			# This is to unblock the GUI, if the run is invoked from bayesDem
@@ -287,12 +286,12 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', countries[cidx], '.rda', sep=''))
 			load(traj.file, envir=e)
 			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env)
-			if(has.vital.events || cidx == 1) {
+			if(!no.vital.events) {
 				ve.file <- file.path(pop.output.directory(pop.pred), 
 									paste('vital_events_country', countries[cidx], '.rda', sep=''))
 				if(file.exists(ve.file)) {
 					if(cidx == 1) {
-						has.vital.events <- TRUE
+					    requireNamespace("DemoTools")
 						aggr.quantities.all <- c(aggr.quantities, aggr.quantities.ve)
 						observed <- list()
 					}
@@ -339,6 +338,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					#                   mxM_2020_25 = e$mxm[,"2023",],
 					#                   deathsM_2020_25 = abrd[["male"]][,"2025",])
 					# )
+				} else {
+				    no.vital.events <- TRUE
 				}
 			}
 			#debug.dt <- data.table(debug.df)
@@ -350,7 +351,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 				    aggrobs[[sex]] <- obs.data[[sex]][country.obs.idx,, drop=FALSE]
 				rownames(aggrobs[["male"]]) <- rownames(aggrobs[["female"]]) <- sub(paste(countries[cidx], '_', sep=''), 
 																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,, drop=FALSE]))
-				if(has.vital.events) {
+				if(!no.vital.events) {
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
 							observed[[par]] <- e$observed[[par]]
@@ -369,7 +370,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					assign(par, get(par) + e[[par]])
 			    for(sex in names(aggrobs)) 
 			        aggrobs[[sex]] <- aggrobs[[sex]] + obs.data[[sex]][country.obs.idx,]
-				if(has.vital.events) {
+				if(!no.vital.events) {
 					for(par in names(observed))
 						observed[[par]] <- observed[[par]] + e$observed[[par]]
 					for(sex in names(aggrabrdeaths)) {
@@ -385,7 +386,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
-		if(has.vital.events) {
+		if(!no.vital.events) {
 		    tmp <- abind(aggrobs[["female"]][4:10, prev.year, drop=FALSE], NULL, along=3)
 		    popfwprev <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf[4:10,,,drop=FALSE], along=2)
 			# asfert
