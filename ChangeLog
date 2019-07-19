@@ -3,6 +3,12 @@
 Restoring graphical pars in various plot functions
 (thanks to Ludger Sandig for the patch)
 
+Added new expression functions:
+    mid.period - for population in the middle of time periods
+    period.diff - difference between the end and beginning of time periods
+    period.ratio - ratio of the end and beginning of time periods (e.g. annual growth rate: 100 * log(period.ratio(PQA))/5)
+    
+
 8.0-0 (06/18/2019)
 -----
 Support for wpp2019.
