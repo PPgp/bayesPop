@@ -976,6 +976,10 @@ get.pop.ex <- function(expression, pop.pred, observed=FALSE, ...) {
 	if(observed) 
 		return(get.pop.observed.from.expression(expression, pop.pred, ...))
 	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
+#	if(all(is.na(result$trajectories[1,]))) { # first time period is NA probably due to using "mid.period"; replace with observed values
+#	    observed <- get.pop.observed.from.expression(expression, pop.pred, ...)
+#	    result$trajectories[1,] <- observed[length(observed)]
+#	}
 	return(result$trajectories[,result$index])
 }
 
@@ -984,6 +988,10 @@ get.pop.exba <- function(expression, pop.pred, observed=FALSE, ...) {
 	if(observed) 
 		return(get.pop.observed.from.expression.multiple.age(expression, pop.pred, ...))
 	result <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred, ...)
+	if(all(is.na(result$trajectories[,1,]))) { # first time period is NA probably due to using "mid.period"; replace with observed values
+	    observed <- get.pop.observed.from.expression.multiple.age(expression, pop.pred, ...)
+	    result$trajectories[,1,] <- observed[,ncol(observed)]
+	}
 	return(result$trajectories[,,result$index])
 }
 
@@ -1011,6 +1019,10 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 		if(is.null(dim(result)) || (l==2 && dim(result)[2]==1)) along <- 2
 		else along <- if(odim > l) l+1 else l 
 		result <- abind(result, NULL, along=along)
+	}
+	if(all(is.na(result[1,]))) { # first time period is NA probably due to using "mid.period"; replace with observed values
+	    observed <- get.pop.observed.from.expression(expression, pop.pred, ...)
+	    result[1,] <- observed[length(observed)]
 	}
 	if(!is.null(adj.to.file))
 		result <- adjust.to.dataset(adj.country, result, adj.file=adj.to.file, use='trajectories')
@@ -1043,6 +1055,10 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 			along <- if(odim > l && !country.dropped) l+1 else l 
 		}
 		result <- abind(result, NULL, along=along)
+	}
+	if(all(is.na(result[,1,]))) { # first time period is NA probably due to using "mid.period"; replace with observed values
+	    observed <- get.pop.observed.from.expression.multiple.age(expression, pop.pred, ...)
+	    result[1:nrow(observed),1,] <- observed[,ncol(observed)]
 	}
 	return(list(trajectories=result, index=traj.idx))
 }
@@ -1115,6 +1131,31 @@ pop.combine <- function(data1, data2, fun, ..., split.along=c('age', 'traj', 'co
 	data <- adrop(data, drop=dropd)
 	return(pop.apply(unchanged, fun, split.along=split.along, data, ...))
 	
+}
+
+mid.period <- function(data) {
+    periods <- as.integer(dimnames(data)[[3]])
+    if(periods[1] %% 5 != 0) return(data) # only apply if the time is not the middle of 5-year periods
+    newdata <- data[,,-dim(data)[3],, drop = FALSE] + (data[,,-1,, drop = FALSE] - data[,,-dim(data)[3],, drop = FALSE])/2.
+    data[] <- NA
+    data[,,-1,] <- newdata
+    # adjust period names
+    dimnames(data)[[3]] <- periods - 2
+    data
+}
+
+period.diff <- function(data) {
+    newdata <- data[,,-1,, drop = FALSE] - data[,,-dim(data)[3],, drop = FALSE]
+    data[] <- NA
+    data[,,-1,] <- newdata
+    data
+}
+
+period.ratio <- function(data) {
+    newdata <- data[,,-1,, drop = FALSE] / data[,,-dim(data)[3],, drop = FALSE]
+    data[] <- NA
+    data[,,-1,] <- newdata
+    data
 }
 
 pop.apply <- function(data, fun, ..., split.along=c('None', 'age', 'traj', 'country')) {
@@ -1286,6 +1327,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		    if(!observed) {
 			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust)
 			    data[icountry,] <- quant[paste0(quantiles*100, '%'), time.index]
+			    #stop('')
 		    } else {
 		        quant <- .solve.observed.expression.for.country(icountry, pop.pred, expression)
 		        quant <- abind(quant, along = 2)
