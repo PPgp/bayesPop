@@ -217,24 +217,18 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	return(res)
 }
 
+split.pop05 <- function(dat) {
+    # split first pop age group into 0-1 & 1-4
+    res <- abind(array(NA, dim(dat)[2:3]), dat, along = 1) # add row for the first age group (0-1)
+    # using the sprague formula for P_0
+    res[1,,] <- apply(dat[1,,, drop = FALSE]*0.3616 + dat[2,,, drop = FALSE]*-0.2768 + dat[3,,, drop = FALSE]*0.1488 + dat[4,,, drop = FALSE]*-0.0336, c(2,3), sum)
+    res[2,,] <- dat[1,,] - res[1,,]
+    return(res)
+}
 
 pop.aggregate.countries <- function(pop.pred, regions, name, 
                                     use.kannisto = TRUE, keep.vital.events = NULL,
                                     verbose=verbose, adjust=FALSE) {
-    
-    split.pop05 <- function(dat) {
-        # split first pop age group
-        #popu.spl <- array(NA, c(5, dim(dat)[2:3]))
-        res <- abind(array(NA, dim(dat)[2:3]), dat, along = 1) # add row for the first age group (0-1)
-        #for(i in 1:dim(dat)[3])
-        #    popu.spl[,,i] <- DemoTools::sprague(dat[1:6,,i], Age = seq(0, by = 5, length = 6))[1:5,]
-        # using the sprague formula for P_0
-        res[1,,] <- apply(dat[1,,, drop = FALSE]*0.3616 + dat[2,,, drop = FALSE]*-0.2768 + dat[3,,, drop = FALSE]*0.1488 + dat[4,,, drop = FALSE]*-0.0336, c(2,3), sum)
-        #res[1,,] <- popu.spl[1,,] # age group 0-1
-        #res[2,,] <- apply(popu.spl[2:5,,, drop = FALSE], c(2,3), sum) # age group 1-4
-        res[2,,] <- dat[1,,] - res[1,,]
-        return(res)
-    }
     
 	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
