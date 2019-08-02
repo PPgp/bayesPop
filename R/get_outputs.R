@@ -479,6 +479,8 @@ aggregate.mx <- function(mx, pop) {
         abr.pop[[s]] <- mx[[s]]
         abr.pop[[s]][] <- NA
         apop <- split.pop05(mid.period3d(pop[[s]]))
+        if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
+            apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
         itime <- (dim(abr.pop[[s]])[2] - dim(apop)[2] + 1):dim(abr.pop[[s]])[2]
         abr.pop[[s]][,itime,] <- apop
         # abridged deaths
