@@ -1,12 +1,18 @@
+useDynLib(bayesPop, .registration = TRUE)
+
 # import
 import(
-    bayesTFR, bayesLife, parallel, abind, wpp2015, plyr, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, MortCast, parallel, abind, wpp2017, wpp2012, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
-importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", "sd")
+importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", 
+           "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
+importFrom("reshape2", "melt")
+importFrom("plyr", "aaply")
+import(data.table, except=c(melt))
 
 #exportPattern("^[[:alpha:]]+")
 useDynLib(bayesPop)
@@ -14,6 +20,7 @@ useDynLib(bayesPop)
 # export functions
 export(
 pop.predict,
+pop.predict.subnat,
 pop.trajectories.plot,
 pop.trajectories.plotAll,
 pop.trajectories.table,
@@ -27,6 +34,7 @@ pop.trajectories.pyramidAll,
 get.pop.prediction,
 has.pop.prediction,
 pop.aggregate,
+pop.aggregate.subnat,
 get.pop.aggregation,
 get.bPop.pyramid,
 pop.map,
@@ -37,12 +45,19 @@ pop.cleanup.cache,
 LifeTableMx,
 LifeTableMxCol,
 get.pop,
+get.pop.ex,
+get.pop.exba,
 pop.trajectories,
 get.trajectory.indices,
+extract.trajectories.eq,
+extract.trajectories.ge,
+extract.trajectories.le,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
-age.specific.migration
+age.specific.migration,
+project.pasfr,
+project.pasfr.traj
 )
 
 # register S3 methods

@@ -17,6 +17,10 @@
 \alias{read.bayesPop.file}
 \alias{read.pop.file}
 \alias{runKannisto}
+\alias{migdepratio}
+\alias{depratioM}
+\alias{depratioF}
+\alias{pasfr.glob.norms}
 
 \title{
 Internal Functions and datasets of bayesPop

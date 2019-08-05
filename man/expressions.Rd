@@ -1,8 +1,8 @@
 \name{pop.expressions}
 \alias{pop.expressions}
-\title{Expressions as used in Population Plot Functions}
+\title{Expressions as used in Population Output Functions}
 \description{
-	Documentation of expressions supported by functions \code{\link{pop.trajectories.plot}}, \code{\link{pop.trajectories.plotAll}}, \code{\link{pop.trajectories.table}}, \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, \code{\link{pop.cohorts.plot}}, \code{\link{pop.map}}, \code{\link{pop.map.gvis}}, \code{\link{write.pop.projection.summary}}.
+	Documentation of expressions supported by functions \code{\link{pop.trajectories.plot}}, \code{\link{pop.trajectories.plotAll}}, \code{\link{pop.trajectories.table}}, \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, \code{\link{pop.cohorts.plot}}, \code{\link{pop.map}}, \code{\link{pop.map.gvis}}, \code{\link{write.pop.projection.summary}}, \code{\link{get.pop.ex}}, \code{\link{get.pop.exba}}.
 }
 \details{
 The functions above accept an argument \code{expression} which should define a population measure, i.e. a quantity that can be computed from population projections, observed population data or vital events. Such an expression is a collection of \emph{basic components} connected via usual arithmetic operators, such as \code{+},  \code{-}, \code{*}, \code{/}, \code{^}, \code{\%\%}, \code{\%/\%}, and combined using parentheses. In addition, standard R functions or predefined functions (see below) can be used within expressions.
@@ -19,6 +19,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
 		\item \sQuote{R} - percent age-specific fertility,
 		\item \sQuote{M} - mortality rate, 
 		\item \sQuote{Q} - probability of dying,
+		\item \sQuote{E} - life expectancy,
 		\item \sQuote{G} - net migration.
 		}
 	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
@@ -29,9 +30,9 @@ A \bold{basic component} is a character string constituted of four parts, two of
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4. Use the pre-defined function \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} allow an index -1 which corresponds to age 0-1 and an index 0 which corresponds to age 1-4. Use the pre-defined functions \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
 }
-Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the life table based indicators (M, Q, E, S) over sexes, i.e. using it without the sex part, or over multiple age groups, i.e. using brackets.
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 
@@ -44,9 +45,12 @@ When the expression is evaluated on a prediction object, each basic component is
 }
 
 Depending on the context from which the expression is called, the trajectory dimension of the result of the expression can be reduced by computing given quantiles, and if only one country is evaluated, the first dimension is removed. In addition, with an exception of functions \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}},  \code{\link{cohorts}}, and \code{\link{pop.cohorts.plot}}, the expression should be constructed in a way that the age dimension is eliminated. This can be done for example by using brackets to define age, by using the \code{apply} function or one of the pre-defined functions described below. When using within \code{\link{pop.byage.plot}}, \code{\link{pop.byage.table}}, \code{\link{cohorts}}, or \code{\link{pop.cohorts.plot}}, the expression MUST include curly braces.
+
+While \code{\link{get.pop}} can be used to obtain results of a basic component, functions \code{\link{get.pop.ex}} and \code{\link{get.pop.exba}} evaluate whole expressions. 
 } 
 
 \section{Pre-defined functions}{
+The following functions can be used within an expression:
 \itemize{
 	\item \code{gmedian(f, cat)} \cr
 	It gives a median for grouped data with frequencies \code{f} and categories \code{cat}. This function is to be used in combination with \code{apply} or \code{pop.apply} (see below) along the age dimension. For example, \cr
@@ -57,7 +61,7 @@ Depending on the context from which the expression is called, the trajectory dim
 	Works like \code{gmedian} but gives the grouped mean.
 	
 \item \code{age.func(data, fun="*")} \cr
-	This function applies \code{fun} to \code{data} and the corresponding age. The default case would multiply data by the corresponding age. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
+	This function applies \code{fun} to \code{data} and the corresponding age (the middle point of each age category). The default case would multiply data by the corresponding age. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
 
 \item \code{drop.age(data)} \cr
 	Drops the age dimension of the data. For example, if two basic components are combined where one is used within the \code{apply} function, the other will need to change its dimension in order to have conformable arrays. For example, \cr
@@ -74,14 +78,21 @@ Depending on the context from which the expression is called, the trajectory dim
 	\dQuote{pop.combine(PIND\{\}, PIND, '/')} give population by age per total population in India, or \cr
 	\dQuote{pop.combine(BFR - DFR, GFR, '+', split.along='traj')} gives births minus deaths plus net migration in France. Here, \code{pop.combine} is necessary, because \sQuote{GFR} is a deterministic component and thus, has only one trajectory, whereas births and deaths are probabilistic.
 \item \code{age.index01(end)} \cr
-	Can be used with indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
+	Can be used with indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
 \item \code{age.index05(end)} \cr
 	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
 }
 There is also a help function available that generates an expression for the mean age of childbearing, see \code{\link{mac.expression}}.
+
 }
 
 \note{The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.}
+
+\references{
+H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+  Population Projections. Journal of Statistical Software, 75(5), 1-29.
+  doi:10.18637/jss.v075.i05
+}
 
 \author{Hana Sevcikova, Adrian Raftery}
 \seealso{\code{\link{mac.expression}}, \code{\link{get.pop}}, \code{\link{pop.trajectories.plot}}, \code{\link{pop.map}}, \code{\link{write.pop.projection.summary}}.}
@@ -90,21 +101,23 @@ sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
 # median age of women in child-bearing ages in Netherlands and all countries - trajectories
-pop.trajectories.plot(pred, nr.traj=50,
+pop.trajectories.plot(pred, nr.traj=0,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
-pop.trajectories.plotAll(pred, nr.traj=50, 
+pop.trajectories.plotAll(pred, nr.traj=0, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
 
 # mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
-# for the mean age of childbearing, see ?mac.expression
+# - gives the same results as with "pop.apply(P528_F{4:10}, gmean, cats=seq(15, by=5, length=8))"
+# - for the mean age of childbearing, see ?mac.expression
 
 # migration per capita by age
 pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
 
 \dontrun{
-# potential support ratio - map
+# potential support ratio - map (with the two countries
+#       contained in pred object)
 pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")}
 
 # proportion of 0-4 years old to whole population - export to an ASCII file
@@ -113,12 +126,16 @@ write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=dir)
 unlink(dir)
 
 \dontrun{
-# These are vital events only available if keep.vital.events=TRUE in pop.predict 
+# These are vital events only available if keep.vital.events=TRUE in pop.predict, e.g.
+# sim.dir.tmp <- tempfile()
+# pred <- pop.predict(countries="Netherlands", nr.traj=3, 
+#           				keep.vital.events=TRUE, output.dir=sim.dir.tmp)
 # log female mortality rate by age for Netherlands in 2050, including 0-1 and 1-4 age groups
 pop.byage.plot(pred, expression="log(MNL_F{age.index01(27)})", year=2050)
 
 # trajectories of male 1q0 and table of 5q0 for Netherlands
 pop.trajectories.plot(pred, expression="QNLD_M[-1]")
-pop.trajectories.table(pred, expression="QNLD_M[1]")}
+pop.trajectories.table(pred, expression="QNLD_M[1]")
+# unlink(sim.dir.tmp)}
 }
 \keyword{documentation}
