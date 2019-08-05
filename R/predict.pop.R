@@ -1562,9 +1562,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		p <- pop[[sex]]
 		p[is.na(p)] <- 0 # set pop for ages with NA to 0
 		res <- .C("get_deaths_from_sr", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
-					as.numeric(mig.data[[sex]]), mig.type,
-					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
-		#stop('')
+					as.numeric(colSums(as.matrix(births[[sex]]))), Mx=as.numeric(mx[[sex]]), Deaths=as.numeric(deaths[[sex]]))
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
