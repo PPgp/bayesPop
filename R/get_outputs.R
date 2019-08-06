@@ -611,7 +611,6 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if(!allow.higher.ages) max.age.index.allowed <- 21
 	}
 	age.normal <- TRUE
-	subtract.max.age <- 0
 	if(is.element(event, life.table.indicators)) {
 		min.age.index.allowed <- -1
 		mx <- list(male=myenv$mxm, female=myenv$mxf, male.hch=myenv$mxm.hch, female.hch=myenv$mxf.hch)
@@ -641,6 +640,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		sexarg <- list(male = "M", female = "F", male.hch = "M", female.hch = "F", both = "T", both.hch =  "T")
 		alltraj <- list(male=NULL, female=NULL, both = NULL, male.hch=NULL, female.hch=NULL, both.hch = NULL)
 		age05 <- c(FALSE, FALSE, TRUE)
+		subtract.max.age <- 0
 		if(age[1]!='all' && (any(age < 1))) {
 			age05 <- rep(TRUE, 3)
 			age.normal <- FALSE

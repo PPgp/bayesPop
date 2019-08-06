@@ -498,7 +498,6 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			migf[i][j] = 0;
 		}
 		mmult = 1; /* warning if not initalized */
-	    t = j*adim;
 		switch (*MIGtype) {
 			case 0: /* migration evenly distributed over each interval (MigCode=0) */
 				for(i=1; i<nrow+6; ++i) {
