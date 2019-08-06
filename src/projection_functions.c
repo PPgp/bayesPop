@@ -386,25 +386,26 @@ void get_period_deaths(int sex, double *mxt, double *cdeaths,
 
 void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *Births, double *Mx, 
                         double *Deaths) {
-    double cdeaths[21];
-    double mxt[22];
-    int i, j, t, t_offset, nrow, n, sex, nage1, nmx;
-    nrow = 21; /* age */
+
+	double cdeaths[21];
+	double mxt[22];
+	int i, j, t, t_offset, nrow, n, sex, nage1, nmx;
+	nrow = 21; /* age */
     nmx = 22;
     nage1 = nrow - 1;
-    n = *N; /* periods */
-    sex=*Sex;
+	n = *N; /* periods */
+	sex=*Sex;
 	
 	/* loop by time period */	
 	for(j=0; j<n; ++j) {
-	    /* cohort deaths */
-	    t = (j+1)*nrow;
+		/* cohort deaths */
+        t = (j+1)*nrow;
 	    t_offset = j*nrow;
-	    get_cohort_deaths(Births[j], Sr, Pop, t, t_offset, nage1, cdeaths);
-	    
+		get_cohort_deaths(Births[j], Sr, Pop, t, t_offset, nage1, cdeaths);
+		 
 	    /* period deaths */
 	    for(i=0; i<nmx; ++i) {
-	        mxt[i]=Mx[i+j*nmx];
+	      mxt[i]=Mx[i+j*nmx];
 	    }
 	    get_period_deaths(sex, mxt, cdeaths, t, t_offset, nrow, Deaths);
 	}
@@ -575,13 +576,14 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	    /* cohort deaths */
 	    get_cohort_deaths(bm, srm, popm, t, t_offset, adim1, cdeathsm);
 		get_cohort_deaths(bf, srf, popf, t, t_offset, adim1, cdeathsf);
-		
-		/* period deaths */
-		for(i=0; i<adimmx; ++i) {
-		    mxtm[i]=mxm[i + jve*adimmx];
-		    mxtf[i]=mxf[i + jve*adimmx];
-		}
-		get_period_deaths(male, mxtm, cdeathsm, t, t_offset, adim1, deathsm);
-		get_period_deaths(female, mxtf, cdeathsf, t, t_offset, adim1, deathsf);
+	
+	    /* period deaths */
+
+	    for(i=0; i<adimmx; ++i) {
+	      mxtm[i]=mxm[i + jve*adimmx];
+	      mxtf[i]=mxf[i + jve*adimmx];
+	    }
+	    get_period_deaths(male, mxtm, cdeathsm, t, t_offset, adim1, deathsm);
+        get_period_deaths(female, mxtf, cdeathsf, t, t_offset, adim1, deathsf);
 	}	
 }	
