@@ -307,110 +307,108 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 	}
 }
 
-/**************************************************************************/
-/* cohort deaths                                                          */
-/* Calculated by a combination of forward-backward estimation (UN ABACUS) */
-/* dfw deaths by forward projection    ABACUS: PART1                      */
-/* dbw deaths by backward projection   ABACUS: C                          */
-/* 1.  Deaths accuring to births                                          */
-/* 2.  Deaths occuring to closed age groups (middle age groups)           */
-/* 3.  Deaths accuring to last-opended age group                          */
-/**************************************************************************/
-void get_cohort_deaths(double births, double *Sr, double *Pop, 
-                       int t, int t_offset, int nage, double *cdeaths) {
-    int i;
-    /* forward and backward estimated deaths */
-    double dfw, dbw;
+void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Deaths, double *Mx) {
 
-    /* age < 5 */
-    /* cohort deaths forward no migration */
-    dfw = births * (1-Sr[t_offset]);
-    /* cohort deaths backward with migration */		
-    dbw = Pop[t] * ((1-Sr[t_offset]) / Sr[t_offset]);
-    /* average of both types of deaths */
-    cdeaths[0] = 0.5* (dfw + dbw);
-    
-    /* age >= 5 */
-    for(i=1; i<nage; ++i) {
-        dfw = Pop[i-1 + t_offset] * (1-Sr[i + t_offset]);
-        dbw = Pop[i + t] * ((1-Sr[i + t_offset]) / Sr[i + t_offset]);
-        cdeaths[i] = 0.5 * (dfw + dbw);
-    }
-    
-    /* Last open-ended age category */
-    dfw = (Pop[nage + t_offset] + Pop[nage-1 + t_offset]) * (1-Sr[nage + t_offset]);		
-    dbw = Pop[nage + t] * ((1-Sr[nage + t_offset]) / Sr[nage + t_offset]);
-    cdeaths[nage] = 0.5 * (dfw + dbw);
-}
+	double Lx[27], lx[27];
+	double cdeaths[27];
+	double mxt[28];
 
-/**************************************************************************/
-/* period deaths                                                          */
-/* 1. calculated cohort separation factors                                */
-/* 2. split cohort deaths into Lexis triangles                            */
-/* 3. rearrange lexis triangles into period deaths (period-age format)    */
-/**************************************************************************/
-void get_period_deaths(int sex, double *mxt, double *cdeaths, 
-                       int t, int t_offset, int nage, double *Deaths){
-    double Lx[27], lx[27];
-    int i, ii, nLT;
-    /* cohort separation factor males, females*/
-    double csf[27];
-    
-    /* Create an abridged life table from age-specific mortality rates
-     for columns Lx and lx alone; note the age format for abridged life table*/
-    nLT = nage + 1;
-    LifeTableC(sex, nLT, mxt, Lx, lx);
-    
-    /* cohort-period separation factors */
-    ii = 0;
-    for(i=0; i<(nage-1); ++i) {
-        ii = i + 1;
-        csf[i] = (Lx[i]-5.0*lx[ii])/(Lx[i] - Lx[ii]);	      			
-    }
-    
-    /* last age groups  */ 
-    csf[nage-1] = 1.0;
-    csf[nage] = 0.0;
-    
-    /***************************************************************************/
-    /* period deaths first age group*/
-    i=0;
-    Deaths[t_offset] = cdeaths[0] + cdeaths[1]*csf[0];
-    
-    /* period deaths middle age groups and last, open ended age group */
-    for(i=1; i<nage; ++i) {
-        Deaths[i + t_offset] = cdeaths[i] * (1-csf[i-1]) + cdeaths[i+1] * csf[i];
-    }
-    Deaths[nage + t_offset] = cdeaths[nage] * (1-csf[nage-1]);
-}
+	/* forward and backward estimated deaths */
+	double dfw, dbw;        
+	/* cohort separation factor males, females*/
+	double csf[27]; 
 
-void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *Births, double *Mx, 
-                        double *Deaths) {
-
-	double cdeaths[21];
-	double mxt[22];
-	int i, j, t, t_offset, nrow, n, sex, nage1, nmx;
+	int i, j, nrow, n, sex;
 	nrow = 21; /* age */
-    nmx = 22;
-    nage1 = nrow - 1;
 	n = *N; /* periods */
 	sex=*Sex;
 	
 	/* loop by time period */	
 	for(j=0; j<n; ++j) {
-		/* cohort deaths */
-        t = (j+1)*nrow;
-	    t_offset = j*nrow;
-		get_cohort_deaths(Births[j], Sr, Pop, t, t_offset, nage1, cdeaths);
-		 
-	    /* period deaths */
-	    for(i=0; i<nmx; ++i) {
-	      mxt[i]=Mx[i+j*nmx];
+		/**************************************************************************/
+		/* cohort deaths                                                          */
+		/* Calculated by a combination of forward-backward estimation (UN ABACUS) */
+		/* dfw deaths by forward projection    ABACUS: PART1                      */
+		/* dbw deaths by backward projection   ABACUS: C                          */
+		/* 1.  Deaths accuring to births                                          */
+		/* 2.  Deaths occuring to closed age groups (middle age groups)           */
+		/* 3.  Deaths accuring to last-opended age group                          */
+		/**************************************************************************/
+		/* age < 5 */
+		/* cohort deaths forward no migration */
+		dfw = Births[j] * (1-Sr[j*nrow]);
+		/* cohort deaths backward with migration */		
+		dbw = Pop[(j+1)*nrow] * ((1-Sr[j*nrow]) / Sr[j*nrow]);
+		/* average of both types of deaths */
+		/* cdeaths[j*nrow] = 0.5* (dfw + dbw); */
+		cdeaths[0] = 0.5* (dfw + dbw);
+
+		for(i=1; i<(nrow); ++i) {
+			switch (*MIGtype) {
+				case 0: /* migration evenly distributed over each interval (MigCode=0) */
+					/* age >= 5 */
+					/* Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]) + 0.5*MIG[i-1+j*nrow]*(1-Sr[i+j*nrow]); */					
+					dfw = Pop[i-1 + j*nrow] * (1-Sr[i + j*nrow]);
+					dbw = Pop[i + (j+1)*nrow] * ((1-Sr[i + j*nrow]) / Sr[i + j*nrow]);
+					/* cdeaths[i+j*nrow] = 0.5 * (dfw + dbw); */
+					cdeaths[i] = 0.5 * (dfw + dbw);
+					break;
+
+				default: /* migration at the end of each interval (MigCode=9)*/
+					/* age >= 5 */
+					/* Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]); */
+					dfw = Pop[i-1 + j*nrow] * (1-Sr[i + j*nrow]);
+					dbw = Pop[i + (j+1)*nrow] * ((1-Sr[i + j*nrow]) / Sr[i + j*nrow]);
+					/* cdeaths[i+j*nrow] = 0.5 * (dfw + dbw); */
+					cdeaths[i] = 0.5 * (dfw + dbw);
+					break;
+			}
+		}
+		/* Last open-ended age category */
+		/* Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]); */
+		dfw = (Pop[nrow + j*nrow] + Pop[nrow-1 + j*nrow]) * (1-Sr[nrow-1 + j*nrow]);		
+		dbw = Pop[nrow + (j+1)*nrow] * ((1-Sr[nrow + j*nrow]) / Sr[nrow + j*nrow]);
+		/* cdeaths[nrow-1+j*nrow] = 0.5 * (dfw + dbw); */
+		cdeaths[nrow] = 0.5 * (dfw + dbw);
+
+
+		/**************************************************************************/
+	    /* period deaths                                                          */
+	    /* 1. calculated cohort separation factors                                */
+	    /* 2. split cohort deaths into Lexis triangles                            */
+	    /* 3. rearrange lexis triangles into period deaths (period-age format)    */
+	    /**************************************************************************/
+	    
+	    for(i=0; i<(nrow+1); ++i) {
+	      mxt[i]=Mx[i+j*(nrow+1)];
 	    }
-	    get_period_deaths(sex, mxt, cdeaths, t, t_offset, nrow, Deaths);
+	    /* Create an abridged life table from age-specific mortality rates
+	     for columns Lx and lx alone; note the age format for abridged life table*/		 
+	    LifeTableC(sex, nrow, mxt, Lx, lx);
+	
+	    /* cohort-period separation factors */
+	    int ii;
+		for(i=0; i<(nrow-1); ++i) {
+			ii = i + 1;
+			csf[i] = (Lx[i]-5.0*lx[ii])/(Lx[i] - Lx[ii]);	      			
+		}
+
+	    /* last age groups  */ 
+	    csf[nrow-1] = 1.0; 
+	    csf[nrow] = 0.0; 
+	
+		/***************************************************************************/
+    	/* period deaths first age group*/
+		i=0;
+    	Deaths[j*nrow] = cdeaths[0] + cdeaths[1]*csf[0];
+
+    	/* period deaths middle age groups and last, open ended age group */
+		for(i=1; i<(nrow-1); ++i) {
+			Deaths[i + j*nrow] = cdeaths[i] * (1-csf[i-1]) + cdeaths[i+1] * csf[i];
+    	}
+		Deaths[nrow-1 + j*nrow] = cdeaths[nrow-1] * (1-csf[nrow-2]);
 	}
 }
-
 void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
 	/* function not used */
 	double mmult;
@@ -470,12 +468,20 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 					) {
 	double migm[*migr+6][*migc], migf[*migr+6][*migc], totmigm[*migr+6][*migc], totmigf[*migr+6][*migc];
 	double b, bt[7], bm, bf, mmult, srb_ratio;
+	double Lxm[27], Lxf[27], lxm[27], lxf[27];
 	double cdeathsm[27], cdeathsf[27];
 	double mxtm[28], mxtf[28];
+	/* forward and backward estimated deaths */
+	double dfw, dbw;        
+	/* cohort separation factor males, females*/
+	double csfm[27],csff[27]; 
 	int i, j, jve, adim, adim1, adimmx, nrow, ncol, n, t, t1, t_offset;
 	int const male = 1;
 	int const female = 2;
 
+
+	int debug = 0;/* testing*/
+	
 	nrow = *migr;
 	ncol = *migc;
 	n = *npred;
@@ -573,17 +579,103 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 			totp[j] += popm[i + t]+popf[i + t];
 		}
 		
-	    /* cohort deaths */
-	    get_cohort_deaths(bm, srm, popm, t, t_offset, adim1, cdeathsm);
-		get_cohort_deaths(bf, srf, popf, t, t_offset, adim1, cdeathsf);
+	    /**************************************************************************/
+	    /* cohort deaths                                                          */
+	    /* Calculated by a combination of forward-backward estimation (UN ABACUS) */
+	    /* dfw deaths by forward projection    ABACUS: PART1                      */
+	    /* dbw deaths by backward projection   ABACUS: C                          */
+	    /* 1.  Deaths accuring to births                                           */
+	    /* 2.  Deaths occuring to closed age groups (middle age groups)            */
+	    /* 3.  Deaths accuring to last-opended age group                           */
+	    /**************************************************************************/
 	
-	    /* period deaths */
-
+	    /* deaths occuring to births */
+	    i = 0;
+	    /* males*/
+	    dfw = bm * (1-srm[t_offset]);
+	    dbw = popm[i + t] *((1-srm[i + t_offset])/srm[i + t_offset]);
+	    cdeathsm[i] = 0.5* (dfw + dbw);
+	
+	    /* females*/
+	    dfw = bf * (1-srf[t_offset]);
+	    dbw = popf[i + t] *((1-srf[i + t_offset])/srf[i + t_offset]);
+	    cdeathsf[i] = 0.5* (dfw + dbw);
+	
+	    /* more compact, but less readable */
+	    /* cdeathsm[0] = 0.5* (bm * (1-srm[t_offset]) + (popm[1 + t] *(1-srm[t_offset])/srm[t_offset]));*/
+	    /* cdeathsm[0] = 0.5* (bf * (1-srf[t_offset]) + (popf[1 + t] *(1-srf[t_offset])/srf[t_offset]));*/
+	
+	    /* closed age groups, index 1 to 25     */
+	    for(i=1; i<adim1; ++i) {
+	      /* males */
+	      dfw = popm[i-1 + t_offset] * (1-srm[i + t_offset]);
+	      dbw = popm[i + t] * (1-srm[i + t_offset])/srm[i + t_offset];
+	      cdeathsm[i] = 0.5 * (dfw + dbw);
+	
+	      /* females */
+	      dfw = popf[i-1 + t_offset] * (1-srf[i + t_offset]);
+	      dbw = popf[i + t] * (1-srf[i + t_offset])/srf[i + t_offset];
+	      cdeathsf[i] = 0.5 * (dfw + dbw);
+	      
+	    }
+	    
+	    /* last age group, index 26,  i = adim1;*/
+	    /* males*/
+	    dfw = (popm[i + t_offset]+popm[i-1 + t_offset])*(1-srm[i + t_offset]);
+	    dbw = popm[i + t_offset] * (1-srm[i + t_offset])/srm[i + t_offset];
+	    cdeathsm[i] = 0.5 * (dfw + dbw);
+	    
+	    /* females*/
+	    dfw = (popf[i + t_offset]+popf[i-1 + t_offset])*(1-srf[i + t_offset]);
+	    dbw = popf[i + t_offset] * (1-srf[i + t_offset])/srf[i + t_offset];
+	    cdeathsf[i] = 0.5 * (dfw + dbw);
+	
+	    /**************************************************************************/
+	    /* period deaths                                                          */
+	    /* 1. calculated cohort separation factors                                */
+	    /* 2. split cohort deaths into Lexis triangles                            */
+	    /* 3. rearrange lexis triangles into period deaths (period-age format)    */
+	    /**************************************************************************/
+	    
+	    /* Create an abridged life table from age-specific mortality rates
+	     for columns Lx and lx alone; note the age format for abridged life table*/
 	    for(i=0; i<adimmx; ++i) {
 	      mxtm[i]=mxm[i + jve*adimmx];
 	      mxtf[i]=mxf[i + jve*adimmx];
 	    }
-	    get_period_deaths(male, mxtm, cdeathsm, t, t_offset, adim1, deathsm);
-        get_period_deaths(female, mxtf, cdeathsf, t, t_offset, adim1, deathsf);
+	    /* worked when calling with adim = 27 => last index of abridged life table */
+	    /* Note that results have last index at adim1 = 26! */
+	    LifeTableC(male, adim, mxtm, Lxm, lxm);
+	    LifeTableC(female, adim, mxtf, Lxf, lxf);
+	
+	    /* cohort-period separation factors */
+	    int ii;
+	    for(i=0; i<(adim1-1); ++i) {
+	      ii = i + 1;
+	      csfm[i] = (Lxm[i]-5.0*lxm[ii])/(Lxm[i] - Lxm[ii]);
+	      csff[i] = (Lxf[i]-5.0*lxf[ii])/(Lxf[i] - Lxf[ii]);
+	    }
+	    /* last age groups  */ 
+	    csfm[adim1-1] = 1.0; 
+	    csff[adim1-1] = 1.0;
+	    csfm[adim1] = 0.0; 
+	    csff[adim1] = 0.0;
+	    
+	    if((debug==1) && (j==1)){
+	      Rprintf("\n csfm,adim1= %i", adim);
+	      printArray(csfm,adim);
+	    }
+
+		/***************************************************************************/
+    	/* period deaths first age group*/
+    	deathsm[t_offset] = cdeathsm[0] + cdeathsm[1]*csfm[0];
+    	deathsf[t_offset] = cdeathsf[0] + cdeathsf[1]*csff[0];
+    	i=0;  
+
+    	/* period deaths middle age groups and last, open ended age group */
+    	for(i=1; i<adim1; ++i) {
+      		deathsm[i + t_offset] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
+      		deathsf[i + t_offset] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
+    	}
 	}	
 }	
