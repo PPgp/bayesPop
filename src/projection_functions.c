@@ -366,7 +366,7 @@ void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, 
 		}
 		/* Last open-ended age category */
 		/* Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]); */
-		dfw = (Pop[nrow + j*nrow] + Pop[nrow-1 + j*nrow]) * (1-Sr[nrow-1 + j*nrow]);		
+		dfw = (Pop[nrow + j*nrow] + Pop[nrow-1 + j*nrow]) * (1-Sr[nrow + j*nrow]);		
 		dbw = Pop[nrow + (j+1)*nrow] * ((1-Sr[nrow + j*nrow]) / Sr[nrow + j*nrow]);
 		/* cdeaths[nrow-1+j*nrow] = 0.5 * (dfw + dbw); */
 		cdeaths[nrow] = 0.5 * (dfw + dbw);
@@ -622,12 +622,12 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	    /* last age group, index 26,  i = adim1;*/
 	    /* males*/
 	    dfw = (popm[i + t_offset]+popm[i-1 + t_offset])*(1-srm[i + t_offset]);
-	    dbw = popm[i + t_offset] * (1-srm[i + t_offset])/srm[i + t_offset];
+	    dbw = popm[i + t] * (1-srm[i + t_offset])/srm[i + t_offset];
 	    cdeathsm[i] = 0.5 * (dfw + dbw);
 	    
 	    /* females*/
 	    dfw = (popf[i + t_offset]+popf[i-1 + t_offset])*(1-srf[i + t_offset]);
-	    dbw = popf[i + t_offset] * (1-srf[i + t_offset])/srf[i + t_offset];
+	    dbw = popf[i + t] * (1-srf[i + t_offset])/srf[i + t_offset];
 	    cdeathsf[i] = 0.5 * (dfw + dbw);
 	
 	    /**************************************************************************/
