@@ -403,19 +403,10 @@ void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, 
     	Deaths[j*nrow] = cdeaths[0] + cdeaths[1]*csf[0];
 
     	/* period deaths middle age groups and last, open ended age group */
-    	
-    	/*Rprintf("\nDeaths j=%i\n", j);*/
 		for(i=1; i<(nrow-1); ++i) {
 			Deaths[i + j*nrow] = cdeaths[i] * (1-csf[i-1]) + cdeaths[i+1] * csf[i];
-		    /*Rprintf("\ni=%i, Deaths=%lf, cdeaths[i]=%lf, cdeaths[i+1]=%lf, csf[i-1]=%lf, csf[i]=%lf, sx=%lf, pop=%lf", 
-              i, Deaths[i + j*nrow], cdeaths[i], cdeaths[i+1], csf[i-1], csf[i], Sr[i + j*nrow], Pop[i + j*nrow]);*/
     	}
 		Deaths[nrow-1 + j*nrow] = cdeaths[nrow-1] * (1-csf[nrow-2]);
-		/*Rprintf("\nDeaths j=%i\n", j);
-		for(i=0; i<nrow; ++i) {
-		    Rprintf("\ni=%i, Deaths=%lf, cdeaths=%lf, csf=%lf, sx=%lf, pop=%lf", 
-              i, Deaths[i], cdeaths[i], csf[i], Sr[i + j*nrow], Pop[i + j*nrow]);
-		}*/
 	}
 }
 void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
