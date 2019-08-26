@@ -1210,6 +1210,10 @@ period.ratio <- function(data) {
     newdata <- data[,,-1,, drop = FALSE] / data[,,-dim(data)[3],, drop = FALSE]
     data[] <- NA
     data[,,-1,] <- newdata
+    # adjust period names
+    periods <- as.integer(dimnames(data)[[3]])
+    if(periods[1] %% 5 == 0)
+        dimnames(data)[[3]] <- periods - 2
     data
 }
 
