@@ -482,14 +482,14 @@ aggregate.mx <- function(mx, pop) {
         if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
             apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
         itime <- (dim(abr.pop[[s]])[2] - dim(apop)[2] + 1):dim(abr.pop[[s]])[2]
-        abr.pop[[s]][,itime,] <- apop
+        abr.pop[[s]][,itime,] <- pmax(apop, 1e-4)
         # abridged deaths
         abr.deaths[[s]] <- abr.pop[[s]] * mx[[s]]
     }
     # combine to mx
     denom <- abr.pop$male + abr.pop$female
     aggr.mx <- (abr.deaths$male + abr.deaths$female)/denom
-    aggr.mx[is.na(aggr.mx) & denom == 0] <- 1 # it is NA where pop is zero; set the mx to 1
+    #aggr.mx[is.na(aggr.mx) & denom == 0] <- 1 # it is NA where pop is zero; set the mx to 1
     return(aggr.mx)
 }
 
