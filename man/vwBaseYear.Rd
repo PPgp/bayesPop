@@ -10,7 +10,7 @@
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015 and 2017 datasets also give information on country's specifics regarding mortality and fertility age patterns.
+Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017 and 2019 datasets also give information on country's specifics regarding mortality and fertility age patterns.
 }
 \usage{
     data(vwBaseYear2019)
@@ -30,7 +30,7 @@ Datasets giving information on the baseyear and type of migration for each count
     \item{\code{WPPAIDS}}{Dummy indicating if the country has generilized HIV/AIDS epidemics.}
     \item{\code{AgeMortalityType}}{Type of mortality age pattern. Only relevant for countries with the entry \dQuote{Model life tables}. In such a case, the \eqn{b_x} Lee-Carter parameter is not estimated from historical data. Instead is taken from the dataset \code{\link{MLTbx}} using a pattern given in the \code{AgeMortalityPattern} column.}
     \item{\code{AgeMortalityPattern}}{If \code{AgeMortalityType} is equal to \dQuote{Model life tables}, this value determines which \eqn{b_x} is selected from the \code{\link{MLTbx}} dataset. It must sorrespond to one of the rownames of \code{\link{MLTbx}}, e.g. \dQuote{CD East}, \dQuote{CD West}, \dQuote{UN Latin American}.}
-    \item{\code{AgeMortProjMethod1}}{Method for projecting age-specific mortality rates. It is one of \dQuote{LC} (modified Lee-Carter, uses function \code{\link[MortCast]{mortcast}}), \dQuote{PMD} (pattern mortality decline, uses function \code{\link[MortCast]{copmd}}), \dQuote{MLT} (model life tables, uses function \code{\link[MortCast]{mlt}}), \dQuote{LogQuad} (log quadratic method, uses function \code{\link[MortCast]{logquad}}), or \dQuote{HIVmortmod} (HIV model life tables as implemented in the \pkg{HIV.LifeTables} package).}
+    \item{\code{AgeMortProjMethod1}}{Method for projecting age-specific mortality rates. It is one of \dQuote{LC} (modified Lee-Carter, uses function \code{\link[MortCast]{mortcast}}), \dQuote{PMD} (pattern mortality decline, uses function \code{\link[MortCast]{copmd}}), \dQuote{MLT} (model life tables, uses function \code{\link[MortCast]{mlt}}), \dQuote{LogQuad} (log quadratic method, uses function \code{\link[MortCast]{logquad}}), or \dQuote{HIVmortmod} (HIV model life tables as implemented in the \pkg{HIV.LifeTables} package which can be installed from the \href{https://github.com/PPgP/HIV.LifeTables}{PPgP/HIV.LifeTables} GitHub repo).}
     \item{\code{AgeMortProjMethod2}}{If the mortality rates are to be projected via a blend of two methods (see \code{\link[MortCast]{mortcast.blend}}), this column determines the second method. The options are the same as in the column \code{AgeMortProjMethod1}.}
     \item{\code{AgeMortProjPattern}}{If one of the \code{AgeMortProjMethodX} colums contains the \dQuote{MLT} method, this column determines the type of the life table (see the argument \code{type} in the \code{\link[MortCast]{mlt}} function).}
     \item{\code{AgeMortProjMethodWeights}}{If the mortality rates are to be projected via a blend of two methods, this column determines the weights in the first and the last year of the projection, respectively. It should be given as an R vector, e.g. \dQuote{c(1, 0.5)} (see the argument \code{weights} in \code{\link[MortCast]{mortcast.blend}}).}
@@ -51,7 +51,7 @@ Data provided by the United Nations Population Division.
 H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{http://arxiv.org/abs/1503.05215}
 }
 \examples{
-data(vwBaseYear2017)
-str(vwBaseYear2017)
+data(vwBaseYear2019)
+str(vwBaseYear2019)
 }
 \keyword{datasets}

@@ -51,10 +51,10 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 178	Congo	TS	0	1950	0	1	Age specific mortality pattern	HIVmortmod	PMD	MLT	CD_North	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	0	0	0
 184	Cook Islands	PG	1	1950	0	0	Age specific mortality pattern	UN_Far_Eastern	MLT		UN_Far_Eastern		0	0	0	Global Norm	0	0	0	0	0	0
 188	Costa Rica	LB	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	0	0	0
-384	Côte d'Ivoire	TS	0	1950	9	1	Age specific mortality pattern	HIVmortmod	PMD	MLT	CD_North	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	0	0	0
+384	Cote d'Ivoire	TS	0	1950	9	1	Age specific mortality pattern	HIVmortmod	PMD	MLT	CD_North	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	0	0	0
 191	Croatia	KA	0	1950	0	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.9)"	3	0	0	Global Norm	0	0	0	0	0	0
 192	Cuba	LB	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
-531	Curaçao	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	388	0	1
+531	Curacao	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	388	0	1
 196	Cyprus	DG	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
 203	Czechia	MW	0	1950	0	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.9)"	0	0	0	Global Norm	1	0	0	0	0	0
 408	Dem. People's Republic of Korea	TS	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_North	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	0	0	0
@@ -170,7 +170,7 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 634	Qatar	SH	0	1950	0	0	Age specific mortality pattern	CD_West	PMD	MLT	CD_West	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	0	0	0
 410	Republic of Korea	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	0	0	0	Global Norm	0	1	0	0	0	0
 498	Republic of Moldova	SH	0	1950	9	0	Age specific mortality pattern	CD_West	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
-638	Réunion	VG	0	1950	0	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
+638	Reunion	VG	0	1950	0	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
 642	Romania	SH	0	1950	0	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
 643	Russian Federation	KA	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.9)"	3	0	0	Global Norm	0	0	0	0	0	0
 646	Rwanda	TS	0	1950	9	1	Age specific mortality pattern	HIVmortmod	PMD	MLT	CD_North	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	0	0	0
@@ -179,7 +179,7 @@ country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortality
 662	Saint Lucia	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	3	0	0	Global Norm	0	0	0	0	0	0
 666	Saint Pierre and Miquelon	PG	1	1950	9	0	Age specific mortality pattern	UN_Far_Eastern	MLT		UN_Far_Eastern		0	0	0	Global Norm	0	0	0	0	0	0
 670	Saint Vincent and the Grenadines	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.9)"	3	0	0	Global Norm	0	0	0	0	0	0
-652	Saint-Barthélemy	LB	1	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	312	0	1
+652	Saint-Barthelemy	LB	1	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	312	0	1
 663	Saint-Martin (French part)	LB	1	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	CD_West	"c(1,0.5)"	0	0	0	Global Norm	0	0	0	312	0	1
 882	Samoa	NL	0	1950	9	0	Age specific mortality pattern	Life_Tables	PMD	MLT	UN_Far_Eastern	"c(1,0.75)"	3	0	0	Global Norm	0	0	0	0	0	0
 674	San Marino	PG	1	1950	0	0	Age specific mortality pattern	CD_West	MLT		CD_West		0	0	0	Global Norm	0	0	0	0	0	0

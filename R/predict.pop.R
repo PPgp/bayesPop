@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.year=2019,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -1275,8 +1275,9 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
                                    prev.cols])
     }
     for(i in 1:ncol(male.mx)) {
-        male.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0m[i], prev = prevM[i], sex = 0, region = region)
-        female.mx[,i] <- HIV.LifeTables::hiv.mortmod(e0f[i], prev = prevF[i], sex = 1, region = region)
+        fct <- "hiv.mortmod"
+        male.mx[,i] <- do.call(fct, list(e0m[i], prev = prevM[i], sex = 0, region = region))
+        female.mx[,i] <- do.call(fct, list(e0f[i], prev = prevF[i], sex = 1, region = region))
     }
     return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
 }
@@ -1313,8 +1314,12 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
     if("HIVmortmod" %in% c(meth1, meth2)) {
-        requireNamespace("HIV.LifeTables")
-        data("HIVModelLifeTables", package = "HIV.LifeTables") # need to do this because requireNamespace does not attach lazy data
+        callstr <- 'requireNamespace("HIV.LifeTables")'
+        pkg.available <-  eval(parse(text = callstr))
+        if(!pkg.available)
+            stop("Method HIVmortmod requires the HIV.LifeTables package to be installed. It is available on GitHub in the PPgP/HIV.LifeTables repository.")
+        callstr <- "data('HIVModelLifeTables', package = 'HIV.LifeTables')"  # need to do this because requireNamespace does not attach lazy data
+        eval(parse(text = callstr))
         args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
                                      params = hiv.params
         )
@@ -1935,7 +1940,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
 									depratio=wpp.year == 2015, verbose=TRUE) {

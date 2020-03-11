@@ -2,7 +2,7 @@ useDynLib(bayesPop, .registration = TRUE)
 
 # import
 import(
-    bayesTFR, bayesLife, MortCast, parallel, abind, wpp2017, wpp2012, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, MortCast, parallel, abind, wpp2019, wpp2012, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")

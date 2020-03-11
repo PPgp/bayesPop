@@ -12,7 +12,7 @@ test.prediction <- function(parallel = FALSE) {
 	s <- summary(pred)
 	stopifnot(s$nr.traj == 3)
 	stopifnot(s$nr.countries == 3)
-	stopifnot(length(s$projection.years) == 17)
+	stopifnot(length(s$projection.years) == 16)
 	test.ok(test.name)
 
 	# aggregate
@@ -44,27 +44,29 @@ test.prediction <- function(parallel = FALSE) {
 				parallel = parallel)
 	# check that it took the median TFR and not high or low
 	tfr <- get.pop("F528", pred)
-	tfr.should.be <- c(1.73, 1.75, 1.76, 1.78, 1.79, 1.80) # WPP 2017 data
-	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
+	# extract data from wpp2019
+	data(tfrprojMed, package = "wpp2019")
+	tfr.should.be <- round(subset(tfrprojMed, country_code == 528)[3:6], 2)
+	stopifnot(all(round(tfr[1,1,2:dim(tfr)[3],1],2) == tfr.should.be))
 	
 	# check that writing summary is OK
 	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
 	s <- summary(pred, country = 528)
-	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2015"]))
+	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2020"]))
 	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
 				inputs=list(tfr.file='median_', e0M.file='median_'), parallel = parallel)
 	tfr <- get.pop("F528", pred)
-	stopifnot(all(round(tfr[1,1,,1],2) == tfr.should.be))
+	stopifnot(all(round(tfr[1,1,2:dim(tfr)[3],1],2) == tfr.should.be))
 	stopifnot(pred$nr.traj==1) # even though we want 3 trajectories, only one is available, because we take TFR median
 
 	# check that writing summary is OK
 	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
 	s <- summary(pred, country = 528)
-	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2015"]))
+	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2020"]))
 	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
@@ -98,7 +100,7 @@ test.expressions <- function(parallel = FALSE) {
 	pop.trajectories.table(pred, expression='P528_M / P900')
 	write.pop.projection.summary(pred, expression="PXXX_M / P900_M", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(25,21)))
+	stopifnot(all(dim(t) == c(25,20)))
 	
 	test.ok(test.name)
 	unlink(sim.dir, recursive=TRUE)
@@ -127,22 +129,22 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,21))) # 2 countries 5 rows each
+	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
 	
 	write.pop.projection.summary(pred, expression="pop.combine(BXXX[5], BXXX, '/')", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,21))) # 2 countries 5 rows each
+	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
 	
 	t <- pop.byage.table(pred, expression='M528_M{}')
 	stopifnot(all(dim(t) == c(27,5)))
 	write.pop.projection.summary(pred, expression="SXXX_M{0}", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,21)))
+	stopifnot(all(dim(t) == c(10,20)))
 		
 	filename <- tempfile()
 	png(filename=filename)
 	pop.byage.plot(pred, expression='log(QEC_M{age.index01(27)})', year=2050)
-	pop.byage.plot(pred, expression='log(QECU_M{age.index01(21)})', year=2008)
+	pop.byage.plot(pred, expression='log(QECU_M{age.index01(21)})', year=2018)
 	pop.byage.plot(pred, expression='M218_F{age.index05(27)}', year=2050)
 	pop.trajectories.plot(pred, expression="pop.apply(P528_F{4:10}, gmedian, cats=seq(15, by=5, length=8))")
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=2050)
@@ -156,7 +158,7 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	stopifnot(size > 0)
 	write.pop.projection.summary(pred, expression="QXXX_F[0]", output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,21)))
+	stopifnot(all(dim(t) == c(10,20)))
 	
 	filename <- tempfile()
 	png(filename=filename)
@@ -178,9 +180,9 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	
 	write.pop.projection.summary(pred, output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_tpop.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,21)))
+	stopifnot(all(dim(t) == c(10,20)))
 	t <- read.table(file.path(sim.dir, 'projection_summary_asfrage.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(70,22)))
+	stopifnot(all(dim(t) == c(70,21)))
 	
 	write.pop.projection.summary(pred, output.dir=sim.dir, include.observed=TRUE)
 	t <- read.table(file.path(sim.dir, 'projection_summary_tpop.csv'), sep=',', header=TRUE)
@@ -221,7 +223,7 @@ test.prediction.with.prob.migration <- function(parallel = FALSE) {
 	# should have 3 trajectories because TFR has 3
 	stopifnot(s$nr.traj == 3)
 	stopifnot(s$nr.countries == 2)
-	stopifnot(length(s$projection.years) == 4)
+	stopifnot(length(s$projection.years) == 3)
 	mgr <- get.pop("G528", pred)
 	stopifnot(dim(mgr)[4] == 3) # migration is re-sampled to 3 trajs
 	
@@ -336,7 +338,7 @@ test.adjustment <- function() {
 }
 
 test.subnat <- function() {
-  test.name <- "Subnational projections"
+  test.name <- "Subnational projections with national TFR"
   start.test(test.name)
   data.dir <- file.path(find.package("bayesPop"), "extdata")
   # Use national data for tfr and e0
@@ -349,15 +351,46 @@ test.subnat <- function() {
                                            ))
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
-  stopifnot(dim(get.pop("P658", pred))[3] == 10) # projection until 2060
+  stopifnot(dim(get.pop("P658", pred))[3] == 9) # projection until 2060
   
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                 locations = file.path(data.dir, "CANlocations.txt"))
   ct <- get.countries.table(aggr)
   stopifnot(nrow(ct) == 1)
-  stopifnot(dim(get.pop("P124", aggr))[3] == 10) # projection until 2050
+  stopifnot(dim(get.pop("P124", aggr))[3] == 9) # projection until 2060
+  unlink(sim.dir, recursive=TRUE)
   test.ok(test.name)
-  unlink(sim.dir, recursive=TRUE)  
+}
+
+test.subnat.with.subnat.tfr <- function() {
+  test.name <- "Subnational projections with subnational TFR"
+  start.test(test.name)
+  data.dir <- file.path(find.package("bayesPop"), "extdata")
+  my.subtfr.file <- file.path(find.package("bayesTFR"), 'extdata', 'subnational_tfr_template.txt')
+  tfr.nat.dir <- file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output")
+  tfr.reg.dir <- tempfile()
+  tfr.preds <- tfr.predict.subnat(124, my.tfr.file = my.subtfr.file,
+                                  sim.dir = tfr.nat.dir, output.dir = tfr.reg.dir)
+  
+  # Pop projections
+  sim.dir <- tempfile()
+  pred <- pop.predict.subnat(output.dir = sim.dir,
+                             locations = file.path(data.dir, "CANlocations.txt"),
+                             inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
+                                           popF = file.path(data.dir, "CANpopF.txt"),
+                                           patterns = file.path(data.dir, "CANpatterns.txt"),
+                                           tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124")
+                             ),
+                             verbose = FALSE)
+  stopifnot(all(dim(get.pop("P658", pred)) == c(1,1,9,30))) # 30 trajectories because TFR example has 30 national trajs. 
+  aggr <- pop.aggregate.subnat(pred, regions = 124, 
+                               locations = file.path(data.dir, "CANlocations.txt"))
+  tbl <- pop.trajectories.table(aggr, "Canada")
+  stopifnot(nrow(tbl) == 28)
+  stopifnot(summary(aggr)$nr.traj == 30)
+
+  unlink(sim.dir, recursive = TRUE)
+  unlink(tfr.reg.dir, recursive = TRUE)
 }
 
 

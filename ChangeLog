@@ -1,5 +1,7 @@
-8.0-? (7/19/2019)
+8.1-1 (10/25/2019)
 -----
+Defaults set to use data from wpp2019.
+
 Restoring graphical pars in various plot functions
 (thanks to Ludger Sandig for the patch)
 
@@ -8,6 +10,7 @@ Added new expression functions:
     period.diff - difference between the end and beginning of time periods
     period.ratio - ratio of the end and beginning of time periods (e.g. annual growth rate: 100 * log(period.ratio(PQA))/5)
     
+Removed dependency on the DemoTools package.
 
 8.0-0 (06/18/2019)
 -----

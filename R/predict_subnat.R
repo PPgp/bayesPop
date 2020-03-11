@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations"))
 
-pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year = 2015, wpp.year = 2017,
+pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year = 2020, wpp.year = 2019,
                                 output.dir = file.path(getwd(), "bayesPop.output"),
                                locations = NULL, default.country = NULL,
                         inputs = list(

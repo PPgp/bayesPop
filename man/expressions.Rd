@@ -103,9 +103,10 @@ pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 # median age of women in child-bearing ages in Netherlands and all countries - trajectories
 pop.trajectories.plot(pred, nr.traj=0,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
+\dontrun{
 pop.trajectories.plotAll(pred, nr.traj=0, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
-
+}
 # mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
