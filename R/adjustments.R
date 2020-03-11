@@ -95,8 +95,10 @@ adjust.quantiles <- function(q, what, wpp.year, env=NULL) {
 }
 
 if.not.exists.load <- function(name, env, wpp.year=2012) {
-	if(!exists(name, where=env, inherits=FALSE))
+	if(!exists(name, where=env, inherits=FALSE)) {
 		do.call('data', list(name, package=paste0('wpp', wpp.year), envir=env))
+	    env[[name]] <- as.data.table(env[[name]])
+	}
 }
 
 tpop <- function(countries, prediction.only=FALSE, e=NULL, ...) {
@@ -136,14 +138,14 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 }
 
 .reduce.to.countries <- function(dataset, countries){
-	tpop <- dataset[,-which(colnames(dataset)=='country_code')]
+    tpop <- as.data.frame(dataset)
+	tpop <- tpop[,-which(colnames(dataset)=='country_code')]
 	rownames(tpop) <- dataset$country_code
-	tpop <- tpop[countries,]
-	tpop
+	tpop[countries,]
 }
 
 .reduce.to.countries.and.ages <- function(dataset, countries, ages){
-	dataset <- dataset[dataset$country_code %in% as.integer(countries),]
+	dataset <- as.data.frame(dataset[dataset$country_code %in% as.integer(countries),])
 	if(is.null(ages)) ages <- as.character(seq(0,100, by=5))
 	age.vector <- as.character(dataset$age[1:21])
 	age.vector <- unlist(strsplit(gsub('\\+', '-130', age.vector), '-'))
@@ -161,28 +163,28 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	res
 }
 
-
 sum.by.country <- function(dataset) {
-	year.cols.idx <- grep('^[0-9]{4}', colnames(dataset))
-	ddply(dataset[,c(which(colnames(dataset)=='country_code'), year.cols.idx)], "country_code", .fun=colwise(sum))
+	year.cols <- grep('^[0-9]{4}', colnames(dataset), value = TRUE)
+	dataset[, c("country_code", year.cols), with = FALSE][, lapply(.SD, sum, na.rm = TRUE), by = "country_code"]
 }
 
 sum.by.country.and.age <- function(dataset) {
-	year.cols.idx <- grep('^[0-9]{4}', colnames(dataset))
-	ddply(dataset[,c(which(colnames(dataset) %in% c('country_code', 'age')), year.cols.idx)], c("country_code", "age"), .fun=colwise(sum))
+	year.cols <- grep('^[0-9]{4}', colnames(dataset), value = TRUE)
+	dataset[, c("country_code", "age", year.cols), with = FALSE][, lapply(.SD, sum, na.rm = TRUE), by = c("country_code", "age")]
 }
 
 sumMFbycountry <- function(datasetM, datasetF, e) {
 	tpopM <- sum.by.country(e[[datasetM]])
 	tpopF <- sum.by.country(e[[datasetF]])
-	cbind(country_code=tpopM[,'country_code'], tpopM[,2:ncol(tpopM)] + tpopF[,2:ncol(tpopF)])
+	tpopM[, 2:ncol(tpopM)] <- tpopM[,2:ncol(tpopM)] + tpopF[,2:ncol(tpopF)]
+    tpopM
 }
 
 adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years=NULL, use=c('write', 'trajectories')) {
 	if(is.null(adj.dataset)) {
 		adj.dataset <- read.table(adj.file, header=TRUE, check.names=FALSE)
 	}
-	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country'))] else as.character(years)
+	colidx <- if(is.null(years)) (1:ncol(adj.dataset))[-which(colnames(adj.dataset)%in%c('country_code', 'country', 'name'))] else as.character(years)
 	idx1 <- which(adj.dataset$country_code == country)
 	if(use=='write') {
 		med <- q['0.5']

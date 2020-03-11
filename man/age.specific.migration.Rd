@@ -8,16 +8,16 @@ Reconstruction of Sex- and Age-specific Migration
 Reconstructs the sex- and age-specific net migration datasets out of the total net migration using a residual method.
 }
 \usage{
-age.specific.migration(wpp.year = 2017, years = seq(1955, 2100, by = 5), 
+age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5), 
     countries = NULL, smooth = TRUE, rescale = TRUE, ages.to.zero = 18:21,
     write.to.disk = FALSE, directory = getwd(), file.prefix = "migration", 
     depratio = wpp.year == 2015, verbose = TRUE)
 }
 
 \arguments{
-  \item{wpp.year}{Integer determining which \pkg{wpp} package should be used to get the necessary data from. That package is required to have a dataset on total net migration (called \code{\link[wpp2017]{migration}}). Currently, only the \code{\link{wpp2017}} package contains it (see Details).}
+  \item{wpp.year}{Integer determining which \pkg{wpp} package should be used to get the necessary data from. That package is required to have a dataset on total net migration (called \code{\link[wpp2019]{migration}}). Currently, only packages \code{wpp2015}, \code{wpp2017} and \code{\link{wpp2019}} contain it (see Details).}
   \item{years}{Array of years that the reconstruction should be made for. This should be a subset of years for which the total net migration is available.}
-  \item{countries}{Numerical country codes to do the reconstruction for. By default it is performed on all countries included in the \code{\link[wpp2017]{migration}} dataset where aggregations are excluded.}
+  \item{countries}{Numerical country codes to do the reconstruction for. By default it is performed on all countries included in the \code{\link[wpp2019]{migration}} dataset where aggregations are excluded.}
   \item{smooth}{Logical controlling if smoothing of the reconstructed curves is required. Due to rounding issues the residual method often yields unrealistic zig-zags on migration curves by age. Smoothing usually improves their look.}
   \item{rescale}{Logical controlling if the resulting migration should be rescaled to match the total migration.}
   \item{ages.to.zero}{Indices of age groups where migration should be set to zero. Default is 85 and older.}
@@ -28,7 +28,7 @@ age.specific.migration(wpp.year = 2017, years = seq(1955, 2100, by = 5),
   \item{verbose}{Logical controlling the amount of output messages.}
 }
 \details{
-Unlike in \code{\link[wpp2012]{wpp2012}}, for the two latest releases of the WPP, the \pkg{wpp2015} and \pkg{\link{wpp2017}}, the UN Population Division did not publish the sex- and age-specific net migration counts, only the totals. However, since the sex- and age-schedules are needed for population projections, this function attempts to reconstruct those missing datasets. It uses the published population projections by age and sex, fertility and mortality projections from the \pkg{wpp} package. It computes the population projection without migration and sets the residual to the published population projection as the net migration. By default such numbers are then scaled so that the sum over sexes and ages corresponds to the total migration count. 
+Unlike in \code{\link[wpp2012]{wpp2012}}, for the three latest releases of the WPP, the \pkg{wpp2015}, \pkg{wpp2017}, and \pkg{\link{wpp2019}}, the UN Population Division did not publish the sex- and age-specific net migration counts, only the totals. However, since the sex- and age-schedules are needed for population projections, this function attempts to reconstruct those missing datasets. It uses the published population projections by age and sex, fertility and mortality projections from the \pkg{wpp} package. It computes the population projection without migration and sets the residual to the published population projection as the net migration. By default such numbers are then scaled so that the sum over sexes and ages corresponds to the total migration count. 
 
 If \code{smooth} is \code{TRUE} a smoothing procedure is performed over ages where necessary. Also, for simplicity, we set migration of old ages to zero (default is 85+). Both is done before the scaling. If it is desired to obtain raw residuals without any additional processing, set \code{smooth=FALSE}, \code{rescale=FALSE}, \code{ages.to.zero=c()}. 
 }
@@ -49,7 +49,7 @@ Due to rounding issues and slight differences in the methodology, this function 
 
 
 \seealso{
-\code{\link{pop.predict}}, \code{\link[wpp2017]{migration}} \code{\link[wpp2012]{migrationM}}
+\code{\link{pop.predict}}, \code{\link[wpp2019]{migration}} \code{\link[wpp2012]{migrationM}}
 }
 \examples{
 \dontrun{

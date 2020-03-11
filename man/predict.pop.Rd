@@ -9,33 +9,35 @@ Probabilistic Population Projection
 The function generates trajectories of probabilistic population projection for all countries for which input data is available, or any subset of them.
 }
 \usage{
-pop.predict(end.year = 2100, start.year = 1950, present.year = 2015, 
-    wpp.year = 2017, countries = NULL, 
+pop.predict(end.year = 2100, start.year = 1950, present.year = 2020, 
+    wpp.year = 2019, countries = NULL, 
     output.dir = file.path(getwd(), "bayesPop.output"),
     inputs = list(popM=NULL, popF=NULL, mxM=NULL, mxF=NULL, srb=NULL,
-        pasfr=NULL, mig.type=NULL, migM=NULL, migF=NULL,
+        pasfr=NULL, patterns=NULL, migM=NULL, migF=NULL,
         e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
         migMtraj = NULL, migFtraj = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
-    my.locations.file = NULL, replace.output = FALSE, verbose = TRUE)
+    lc.for.hiv = TRUE, lc.for.all = TRUE,
+    my.locations.file = NULL, replace.output = FALSE, 
+    verbose = TRUE, \dots)
 }
 \arguments{
 	\item{end.year}{End year of the projection.}
   	\item{start.year}{First year of the historical data.}
   	\item{present.year}{Year for which initial population data is to be used.}
   	\item{wpp.year}{Year for which WPP data is used. The functions loads a package called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} and uses the various datasets as default if the corresponding \code{inputs} element is missing (see below).}
-  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2017]{UNlocations}} dataset (or in the dataset loaded from \code{my.locations.file} if used).}
+  	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2019]{UNlocations}} dataset (or in the dataset loaded from \code{my.locations.file} if used).}
   	\item{output.dir}{Output directory of the projection. If there is an existing projection in \code{output.dir} and \code{replace.output=TRUE}, everything in the directory will be deleted.}
   	\item{inputs}{A list of file names where input data is stored. It contains the following elements (Unless otherwise noted, these are tab delimited ASCII files; Names of default datasets from the corresponding \pkg{wpp} package which are used if the corresponding element is \code{NULL} are shown in brackets):
   		\describe{
-  			\item{popM, popF}{Initial male/female age-specific population (at time \code{present.year}) [\code{\link[wpp2017]{popM}}, \code{\link[wpp2017]{popF}}].}
-  			\item{mxM, mxF}{Historical data and (optionally) projections of male/female age-specific death rates [\code{\link[wpp2017]{mxM}}, \code{\link[wpp2017]{mxF}}] (see also argument \code{fixed.mx}).}
-  			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2017]{sexRatio}}]}
-  			\item{pasfr}{Historical data and (optionally) projections of percentage age-specific fertility rate [\code{\link[wpp2017]{percentASFR}}] (see also argument \code{fixed.pasfr}).}
-  			\item{mig.type, patterns}{Migration type and base year of the migration. In addition, this dataset gives information on country's specifics regarding mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. \code{patterns} and \code{mig.type} have the same meaning and can be used interchangeably.}
-  			\item{migM, migF}{Projection of male/female age-specific migration as net counts on the same scale as initital population [\code{\link[wpp2012]{migrationM}}, \code{\link[wpp2012]{migrationF}}]. If not available, the migration schedules are reconstructed from total migration counts derived from \code{\link[wpp2017]{migration}} using the \code{\link{age.specific.migration}} function.}
+  			\item{popM, popF}{Initial male/female age-specific population (at time \code{present.year}) [\code{\link[wpp2019]{popM}}, \code{\link[wpp2019]{popF}}].}
+  			\item{mxM, mxF}{Historical data and (optionally) projections of male/female age-specific death rates [\code{\link[wpp2019]{mxM}}, \code{\link[wpp2019]{mxF}}] (see also argument \code{fixed.mx}).}
+  			\item{srb}{Projection of sex ratio at birth. [\code{\link[wpp2019]{sexRatio}}]}
+  			\item{pasfr}{Historical data and (optionally) projections of percentage age-specific fertility rate [\code{\link[wpp2019]{percentASFR}}] (see also argument \code{fixed.pasfr}).}
+  			\item{patterns, mig.type}{Migration type and base year of the migration. In addition, this dataset gives information on country's specifics regarding mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. \code{patterns} and \code{mig.type} have the same meaning and can be used interchangeably.}
+  			\item{migM, migF}{Projection of male/female age-specific migration as net counts on the same scale as initital population [\code{\link[wpp2012]{migrationM}}, \code{\link[wpp2012]{migrationF}}]. If not available, the migration schedules are reconstructed from total migration counts derived from \code{\link[wpp2019]{migration}} using the \code{\link{age.specific.migration}} function.}
   			\item{e0F.file}{Comma-delimited CSV file with results of female life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken, namely the median projections as one trajectory and the low and high variants (if available) as second and third trajectory.}
   			\item{e0M.file}{Comma-delimited CSV file containing results of male life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. As in the female case, if both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken.}
   			\item{tfr.file}{Comma-delimited CSV file with results of total fertility rate (generated using \pkg{\link{bayesTFR}}, function \code{\link{convert.tfr.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{TF}. If this element is not \code{NULL}, the argument \code{tfr.sim.dir} is ignored. If both \code{tfr.file} and \code{tfr.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken (median and the low and high variants as three trajectories). Alternatively, this argument can be the keyword \dQuote{median_} in which case only the wpp median is taken.}
@@ -50,9 +52,14 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2015,
   	\item{keep.vital.events}{Logical. If \code{TRUE} age- and sex-specific vital events of births and deaths as well as other objects are stored in the prediction object, see Details.}
   	\item{fixed.mx}{Logical. If \code{TRUE}, it is assumed the dataset of death rates (mxM and mxF) include data for projection years and they are then used instead of the life expectancy.}
   	\item{fixed.pasfr}{Logical. If \code{TRUE}, it is assumed the dataset on percent age-specific fertility rate (percentASFR) include data for projection years and they are then used instead of computing it on the fly.}
-  	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2017]{UNlocations}} dataset. It must have the same structure.}
+  	\item{lc.for.hiv}{Logical controlling if the modified Lee-Carter method should be used 
+  	for projection of mortality rates for countries with HIV epidemics. If \code{FALSE}, the function \code{hiv.mortmod} from the HIV.LifeTables package is used.}
+  	\item{lc.for.all}{Logical controlling if the modified Lee-Carter method should be used 
+  	for projection of mortality rates for all countries. If \code{FALSE}, the corresponding method is determined by the columns \dQuote{AgeMortProjMethod1} and \dQuote{AgeMortProjMethod2} of the \code{\link{vwBaseYear}} dataset.}
+  	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2019]{UNlocations}} dataset. It must have the same structure.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
   	\item{verbose}{Logical controlling the amount of output messages.} 
+  	\item{\dots}{Additional arguments passed to the underlying function. These can be \code{parallel} and \code{nr.nodes} for parallel processing and the number of nodes, respectively, as well as further arguments passed for creating a parallel cluster.}
 }
 \details{
 The population projection is computed using the Cohort Component method and is based on an algorithm used by the United Nation Population Division (see also  Sevcikova et al (2015) in the References below). For each country, one projection is calculated for each trajectory of male and female life expectancy, TFR and possibly migration. This results in a set of trajectories of population projection which forms its posterior distribution. The trajectories of life expectancy and TFR can be given either in its binary form generated by the packages \pkg{\link{bayesLife}} and \pkg{\link{bayesTFR}}, respectively (as directories \code{e0M.sim.dir}, \code{e0F.sim.dir}, \code{tfr.sim.dir} of the \code{inputs} argument), or they can be given as ASCII tables in csv format, see above. The number of trajectories for male and female life expectancy must match, as does for male and female migration.

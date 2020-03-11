@@ -19,6 +19,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
 		\item \sQuote{R} - percent age-specific fertility,
 		\item \sQuote{M} - mortality rate, 
 		\item \sQuote{Q} - probability of dying,
+		\item \sQuote{E} - life expectancy,
 		\item \sQuote{G} - net migration.
 		}
 	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
@@ -29,9 +30,9 @@ A \bold{basic component} is a character string constituted of four parts, two of
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} allow an index -1 which corresponds to age 0-1 and index 0 which corresponds to age 1-4. Use the pre-defined function \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} allow an index -1 which corresponds to age 0-1 and an index 0 which corresponds to age 1-4. Use the pre-defined functions \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
 }
-Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the rate indicators over sexes, i.e. using without the sex part, or over multiple age groups, i.e. using brackets.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the life table based indicators (M, Q, E, S) over sexes, i.e. using it without the sex part, or over multiple age groups, i.e. using brackets.
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 
@@ -77,7 +78,7 @@ The following functions can be used within an expression:
 	\dQuote{pop.combine(PIND\{\}, PIND, '/')} give population by age per total population in India, or \cr
 	\dQuote{pop.combine(BFR - DFR, GFR, '+', split.along='traj')} gives births minus deaths plus net migration in France. Here, \code{pop.combine} is necessary, because \sQuote{GFR} is a deterministic component and thus, has only one trajectory, whereas births and deaths are probabilistic.
 \item \code{age.index01(end)} \cr
-	Can be used with indicators \sQuote{S}, \sQuote{M} and \sQuote{Q} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
+	Can be used with indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
 \item \code{age.index05(end)} \cr
 	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
 }
@@ -102,9 +103,10 @@ pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 # median age of women in child-bearing ages in Netherlands and all countries - trajectories
 pop.trajectories.plot(pred, nr.traj=0,
     expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
+\dontrun{
 pop.trajectories.plotAll(pred, nr.traj=0, 
     expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
-
+}
 # mean age of women in child-bearing ages in Netherlands - table
 pop.trajectories.table(pred, 
     expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")

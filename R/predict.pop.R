@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
-pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
+pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.year=2019,
 						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
 						inputs=list(
 							popM=NULL,
@@ -9,7 +9,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							mxF=NULL,
 							srb=NULL,
 							pasfr=NULL,
-							mig.type=NULL,
+							patterns=NULL,
 							migM=NULL,
 							migF=NULL,	
 							e0F.file=NULL, e0M.file=NULL, 
@@ -18,8 +18,9 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL	
 						), nr.traj = 1000, keep.vital.events=FALSE,
-						fixed.mx=FALSE, fixed.pasfr=FALSE, my.locations.file = NULL, 
-						replace.output=FALSE, verbose=TRUE) {
+						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
+						my.locations.file = NULL, 
+						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
 	unblock.gtk.if.needed('reading inputs')
@@ -32,7 +33,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		if(!replace.output && has.pop.prediction(sim.dir=output.dir))
 			stop('Prediction in ', output.dir,
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
-		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, verbose=verbose)
+		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, 
+		                   lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
@@ -40,6 +42,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 								pred$wpp.year, fixed.mx=pred$inputs$fixed.mx, fixed.pasfr=pred$inputs$fixed.pasfr, all.countries=FALSE, 
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
+								lc.for.hiv = pred$inputs$lc.for.hiv, lc.for.all = pred$inputs$lc.for.all,
 								verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
@@ -47,7 +50,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 			ages <- pred$ages
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
-		                          all.countries=FALSE, verbose=verbose)
+		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -79,12 +82,13 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 	}
 	do.pop.predict(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
 					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
-					function.inputs=inputs, verbose=verbose)
+					function.inputs=inputs, verbose=verbose, ...)
 	invisible(get.pop.prediction(output.dir))
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE) {
+							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE, 
+							parallel = FALSE, nr.nodes = NULL, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 
@@ -126,25 +130,32 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	for(item in ls(inp)[!grepl('^migMpred$|^migFpred$|^TFRpred$|^e0Fpred$|^e0Mpred$|^estim.years$|^proj.years$|^wpp.years$', ls(inp))]) 
 		inp.to.save[[item]] <- get(item, inp)
 		
-	for(cidx in 1:ncountries) {
-		unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
+	
+	if(parallel) {
+	    if(is.null(nr.nodes)) nr.nodes <- getOption("cl.cores", detectCores(logical = FALSE))
+	}
+	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
+	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
+	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "verbose", 
+	                       "nquant", "quantiles.to.keep", "ncountries")
+
+	
+	# prediction function
+    predict.one.country <- function(cidx, nr.traj, nr_project) {
+		#unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
-			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', as.character(UNlocations[country.idx,'name']))
+			cat('\nProgress: ', round((cidx-1)/ncountries * 100), '%; now processing ', country, ' ', 
+			    as.character(UNlocations[country.idx,'name']), ': ')
 		# Extract the country-specific stuff from the inputs
 		inpc <- get.country.inputs(country, inp, nr.traj, UNlocations[country.idx,'name'])
-		if(is.null(inpc)) next
+		if(is.null(inpc)) return(NULL)
 		nr.traj <- min(ncol(inpc$TFRpred), nr.traj)		
 		if(verbose)
-			cat(' (', nr.traj, ' trajectories )')
+			cat(nr.traj, ' trajectories')
 		migr.modified <- .set.inp.migration.if.needed(inp, inpc, country)
-		if(migr.modified) {
-			for(what.mig in c('MIGm', 'MIGf')) {
-				inp.to.save[[what.mig]] <- inp[[what.mig]]
-				inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
-			}
-		}
+
 		npred <- min(nrow(inpc$TFRpred), nr_project)
 		npredplus1 <- npred+1
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, 
@@ -176,9 +187,12 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		debug <- FALSE
 		#stop('')
-		if(!fixed.mx) 
-			MxKan <- runKannisto(inpc, inp$start.year, npred=npred) 
-		else {
+		if(!fixed.mx) {
+			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all, npred=npred) 
+			mortcast.args <- .prepare.for.mortality.projection(pattern = inpc$MXpattern, mxKan = MxKan, 
+			                                                   hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all)
+			if(verbose) cat(", mx via ", paste(c(mortcast.args$meth1, mortcast.args$meth2), collapse = ","))
+		} else {
 			MxKan <- runKannisto.noLC(inpc)
 			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
 		}
@@ -195,8 +209,10 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
-			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mpred[,itraj], 
-									inpc$e0Fpred[,itraj], verbose=verbose, debug=debug)
+			if(!fixed.mx) {
+			    LTres <- project.mortality(inpc$e0Mpred[,itraj], inpc$e0Fpred[,itraj], npred, mortcast.args = mortcast.args,
+									        verbose = verbose, debug = debug)
+			}
 			migpred <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
@@ -240,8 +256,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
-			if(!fixed.mx) LTres <- modifiedLC(npred, MxKan, inpc$e0Mmedian, 
-									inpc$e0Fmedian, verbose=verbose, debug=debug)
+			if(!fixed.mx) LTres <- project.mortality(inpc$e0Mmedian, inpc$e0Fmedian, npred, mortcast.args = mortcast.args,
+			                                         verbose=verbose, debug=debug)
 			migpred.hch <- list(M=NULL, F=NULL)
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'median')
@@ -281,115 +297,173 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxm.hch, mxf.hch, 
 				observed,
 					file=file.path(outdir, paste0('vital_events_country', country, '.rda')))
-		PIs_cqp[cidx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sd[cidx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
-		mean_sd[cidx,2,] = apply(totp, 1, sd, na.rm = TRUE)
-		for (i in 1:nages) {
-			if(nr.traj == 1) {
-				quantMage[cidx,i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantFage[cidx,i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
-				quantPropMage[cidx,i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-				quantPropFage[cidx,i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
-			} else {
-				quantMage[cidx,i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantFage[cidx,i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropMage[cidx,i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-				quantPropFage[cidx,i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-			}
-		}
-		stotpm <- colSums(totpm, na.rm=TRUE)
-		quantM[cidx,,] = apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdM[cidx,1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
-		mean_sdM[cidx,2,] = apply(stotpm, 1, sd, na.rm = TRUE)
-		stotpf <- colSums(totpf, na.rm=TRUE)
-		quantF[cidx,,] = apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-		mean_sdF[cidx,1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
-		mean_sdF[cidx,2,] = apply(stotpf, 1, sd, na.rm = TRUE)
 		
-		#save updated meta file
-		country.row <- UNlocations[country.idx,c('country_code', 'name')]
-		colnames(country.row) <- c('code', 'name')
-		
+		res <- list()
+		within(res, {
+		    PIs <- apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    dimnames(PIs)[1:2] <- list(quantiles.to.keep, present.and.proj.years.pop)
+		    means <- abind(apply(totp, 1, mean, na.rm = TRUE),
+		                    apply(totp, 1, sd, na.rm = TRUE), along = 0, 
+		                   new.names = c("mean", "sd"))
+		    qMage <- qFage <- qPropMage <- qPropFage <- array(NA, c(nages, nquant, nr_project+1),
+		          dimnames=list(ages, quantiles.to.keep, present.and.proj.years.pop))
+		    for (i in 1:nages) {
+		        if(nr.traj == 1) {
+		            qMage[i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+		            qFage[i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
+		            qPropMage[i,,] <- matrix(rep(totpm[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
+		            qPropFage[i,,] <- matrix(rep(totpf[i,,1]/totp,nquant) , nrow=nquant, byrow=TRUE)
+		        } else {
+		            qMage[i,,] <- apply(totpm[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qFage[i,,] <- apply(totpf[i,,], 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qPropMage[i,,] <- apply(totpm[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		            qPropFage[i,,] <- apply(totpf[i,,]/totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		        }
+		    }
+		    stotpm <- colSums(totpm, na.rm=TRUE)
+		    qM <- apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    meansM <- abind(apply(stotpm, 1, mean, na.rm = TRUE), 
+		                    apply(stotpm, 1, sd, na.rm = TRUE), along = 0, new.names = c("mean", "sd"))
+		    stotpf <- colSums(totpf, na.rm=TRUE)
+		    qF <- apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+		    meansF <- abind(apply(stotpf, 1, mean, na.rm = TRUE),
+		                    apply(stotpf, 1, sd, na.rm = TRUE), along = 0, new.names = c("mean", "sd"))
+		    dimnames(qM)[1:2] <- dimnames(qF)[1:2] <- list(quantiles.to.keep, present.and.proj.years.pop)
+		    migr.modified <- migr.modified
+		    nr.traj <- nr.traj
+		    stotp <- stotpf <- NULL
+		})
+    } # end of predict.one.country
+    
+    update.results <- function(cidx, res, bayesPop.prediction) {
+        if(length(cidx) == 1 && length(res) > 1) res <- list(res)
+        migr.modified <- FALSE
+        remove <- c()
+        for(i in seq_along(cidx)) {
+            idx <- cidx[i]
+            rs <- res[[i]]
+            country <- country.codes[idx]
+            idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
+            
+            if(is.null(rs)) {
+                remove <- c(remove, country)
+                next
+            }
 
-		
-		if(!exists('bayesPop.prediction')) { # first pass
-			bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= country %in% pred$countries[,'code']) 
-					else structure(list(
-							nr.traj = nr.traj,	
-							# assign empty arrays
-							quantiles = PIs_cqp[c(),,,drop=FALSE],
-               				traj.mean.sd = mean_sd[c(),,,drop=FALSE],
-               				quantilesM = quantM[c(),,,drop=FALSE], 
-               				traj.mean.sdM = mean_sdM[c(),,,drop=FALSE],
-               				quantilesF = quantF[c(),,,drop=FALSE], 
-               				traj.mean.sdF = mean_sdF[c(),,,drop=FALSE],
-               				quantilesMage = quantMage[c(),,,,drop=FALSE], 
-               				quantilesFage = quantFage[c(),,,,drop=FALSE], 
-               				quantilesPropMage = quantPropMage[c(),,,,drop=FALSE], 
-               				quantilesPropFage = quantPropFage[c(),,,,drop=FALSE],
-               				estim.years=inp$estim.years, 
-               				proj.years=present.and.proj.years, # includes present period (middle of periods)
-               				proj.years.pop=present.and.proj.years.pop, # end of periods
-               				wpp.year = inp$wpp.year,
-			   				inputs = inp.to.save, # save as list because environment takes much more space
-			   				function.inputs=function.inputs,
-			   				countries=as.data.frame(matrix(NA, nrow=0, ncol=2, dimnames=list(NULL, c('code', 'name')))),
-			   				ages=ages), class='bayesPop.prediction')
-		}
-		idx.in.pred.overwrite <- which(bayesPop.prediction$countries[,'code'] == country)
-		if(length(idx.in.pred.overwrite)>0) {
-			bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- PIs_cqp[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- mean_sd[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- mean_sdM[cidx,,,drop=FALSE]
-			bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- mean_sdF[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- quantM[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- quantF[cidx,,,drop=FALSE]
-			bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- quantMage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- quantFage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- quantPropMage[cidx,,,,drop=FALSE]
-			bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- quantPropFage[cidx,,,,drop=FALSE]
-		} else { 
-			bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, 
-												PIs_cqp[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, 
-												mean_sd[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, 
-												mean_sdM[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, 
-												mean_sdF[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, 
-												quantM[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, 
-												quantF[cidx,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, 
-												quantMage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, 
-												quantFage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, 
-												quantPropMage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, 
-												quantPropFage[cidx,,,,drop=FALSE], along=1)
-			bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
-		}
-		if(migr.modified)
-			bayesPop.prediction$inputs <- inp.to.save
-		save(bayesPop.prediction, file=prediction.file)
+            if(length(idx.in.pred.overwrite)>0) {
+                bayesPop.prediction$quantiles[idx.in.pred.overwrite,,] <- rs$PIs
+                bayesPop.prediction$traj.mean.sd[idx.in.pred.overwrite,,] <- rs$means
+                bayesPop.prediction$traj.mean.sdM[idx.in.pred.overwrite,,] <- rs$meansM
+                bayesPop.prediction$traj.mean.sdF[idx.in.pred.overwrite,,] <- rs$meansF
+                bayesPop.prediction$quantilesM[idx.in.pred.overwrite,,] <- rs$qM
+                bayesPop.prediction$quantilesF[idx.in.pred.overwrite,,] <- rs$qF
+                bayesPop.prediction$quantilesMage[idx.in.pred.overwrite,,,] <- rs$qMage
+                bayesPop.prediction$quantilesFage[idx.in.pred.overwrite,,,] <- rs$qFage
+                bayesPop.prediction$quantilesPropMage[idx.in.pred.overwrite,,,] <- rs$qPropMage
+                bayesPop.prediction$quantilesPropFage[idx.in.pred.overwrite,,,] <- rs$qPropFage
+            } else { 
+                country.row <- UNlocations[countries.idx[idx],c('country_code', 'name')]
+                colnames(country.row) <- c('code', 'name')
+                #stop("")
+                new.names <- as.character(c(bayesPop.prediction$countries$code, country))
+                bayesPop.prediction$quantiles <- abind(bayesPop.prediction$quantiles, rs$PIs, 
+                                                       along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sd <- abind(bayesPop.prediction$traj.mean.sd, rs$means, 
+                                                          along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdM <- abind(bayesPop.prediction$traj.mean.sdM, rs$meansM, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$traj.mean.sdF <- abind(bayesPop.prediction$traj.mean.sdF, rs$meansF, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesM <- abind(bayesPop.prediction$quantilesM, rs$qM, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesF <- abind(bayesPop.prediction$quantilesF, rs$qF, 
+                                                        along = 1, new.names = list(new.names, NULL, NULL))
+                bayesPop.prediction$quantilesMage <- abind(bayesPop.prediction$quantilesMage, rs$qMage, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesFage <- abind(bayesPop.prediction$quantilesFage, rs$qFage, 
+                                                           along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesPropMage <- abind(bayesPop.prediction$quantilesPropMage, rs$qPropMage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$quantilesPropFage <- abind(bayesPop.prediction$quantilesPropFage, rs$qPropFage, 
+                                                               along = 1, new.names = list(new.names, NULL, NULL, NULL))
+                bayesPop.prediction$countries <- rbind(bayesPop.prediction$countries, country.row)
+            }
+            if(rs$migr.modified) migr.modified <- TRUE
+            if(bayesPop.prediction$nr.traj != rs$nr.traj) bayesPop.prediction$nr.traj <- rs$nr.traj
+        }
+        if(migr.modified) {
+            for(what.mig in c('MIGm', 'MIGf')) {
+                inp.to.save[[what.mig]] <- inp[[what.mig]]
+                inp.to.save$observed[[what.mig]] <- inp$observed[[what.mig]]
+            }
+            bayesPop.prediction$inputs <- inp.to.save
+        }
+        if(length(remove) > 0) {
+            # remove countries from bayesPop.prediction if present
+            idx.in.pred <- which(bayesPop.prediction$countries[,'code'] %in% remove)
+            if(length(idx.in.pred) > 0) {
+                for(item in c("quantiles", "traj.mean.sd", "traj.mean.sdM", "traj.mean.sdF", 
+                              "quantilesM", "quantilesF")) 
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,, drop = FALSE]
+                for(item in c("quantilesMage", "quantilesFage", "quantilesPropMage", "quantilesPropFage"))
+                    bayesPop.prediction[[item]] <- bayesPop.prediction[[item]][-idx.in.pred,,,, drop = FALSE]
+                bayesPop.prediction$countries <- bayesPop.prediction$countries[-idx.in.pred,, drop = FALSE]
+            }
+        }
+        save(bayesPop.prediction, file=prediction.file)
+        return(bayesPop.prediction)
+    } # end of updating result
+    
+    cntries.table <- UNlocations[countries.idx,c('country_code', 'name')]
+    colnames(cntries.table)[1] <- "code"
+    bayesPop.prediction <- if(!is.null(pred)) .cleanup.pop.before.save(pred, remove.cache= any(country.codes %in% pred$countries[,'code'])) 
+        else structure(list(
+            nr.traj = nr.traj,	
+            # assign empty arrays
+            quantiles = PIs_cqp,
+            traj.mean.sd = mean_sd,
+            quantilesM = quantM, 
+            traj.mean.sdM = mean_sdM,
+            quantilesF = quantF, 
+            traj.mean.sdF = mean_sdF,
+            quantilesMage = quantMage, 
+            quantilesFage = quantFage, 
+            quantilesPropMage = quantPropMage, 
+            quantilesPropFage = quantPropFage,
+            estim.years=inp$estim.years, 
+            proj.years=present.and.proj.years, # includes present period (middle of periods)
+            proj.years.pop=present.and.proj.years.pop, # end of periods
+            wpp.year = inp$wpp.year,
+            inputs = inp.to.save, # save as list because environment takes much more space
+            function.inputs=function.inputs,
+            countries=cntries.table,
+            ages=ages), class='bayesPop.prediction')
+    
+    if(parallel) {
+        cl <- create.pop.cluster(nr.nodes, ...)
+        clusterExport(cl, exporting.objects, envir=environment())
+        cntry.res <- clusterApplyLB(cl, 1:ncountries, predict.one.country, nr.traj = nr.traj, nr_project = nr_project)
+        stopCluster(cl)
+        bayesPop.prediction <- update.results(1:ncountries, cntry.res, bayesPop.prediction)
+    } else {
+        for(cidx in 1:ncountries) {
+            cntry.res <- predict.one.country(cidx, nr.traj, nr_project)
+            bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction)
+        }
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
 	return(bayesPop.prediction)
 }
 
-read.pop.file <- function(file) 
-	return(read.delim(file=file, comment.char='#', check.names=FALSE))
+read.pop.file <- function(file, ...) 
+	return(read.delim(file=file, comment.char='#', check.names=FALSE, ...))
 	
 load.wpp.dataset <- function(...)
 	bayesTFR:::load.bdem.dataset(...)
-	
-read.bayesPop.file <- function(file)
-	return(get(do.call('data', list(strsplit(file, '.', fixed=TRUE)[[1]][-2]))))
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
-                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, verbose=FALSE) {
+                        fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, 
+                        lc.for.hiv = TRUE, lc.for.all = FALSE, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -457,11 +531,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	observed$PASFR <- pasfrlist$obs.pasfr
 	
 	# Get migration type, migration base year, mx & pasfr patterns
-	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year)
+	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, lc.for.hiv = lc.for.hiv)
 	MIGtype <- patterns$mig.type
 	MXpattern <- patterns$mx.pattern
 	PASFRpattern <- patterns$pasfr.pattern
 	
+	# Get HIV parameters to be used with hiv.mortmod()
+	HIVparams <- .get.hiv.params(inputs)
 
 	# Get age-specific migration
 	wppds <- data(package=paste0('wpp', wpp.year))
@@ -592,9 +668,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
-				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
+				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'observed'))
+				'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'lc.for.hiv', 'lc.for.all', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -653,28 +729,63 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
-.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL) {
+.get.hiv.params <- function(inputs){
+    if(is.null(inputs$hiv.params)) return(NULL)
+    params <- read.pop.file(inputs$hiv.params, stringsAsFactors = FALSE)
+    # remove country name
+    if(any(colnames(params) %in% c("country", "name")))
+        params <- params[, -which(colnames(params) %in% c("country", "name"))]
+    for(par in c("param"))
+        if(! par %in% colnames(params)) stop("Column ", par, " is obligatory in the hiv.params file.")
+    if(! "sex" %in% colnames(params)) {
+        warning("Column 'sex' is missing in the hiv.params file. The same values will be used for female and male.")
+        params <- rbind(cbind(params, sex = "male"), cbind(params, sex = "female"))
+    }
+    # replace periods by mid-years in column names if needed
+    cnames <- colnames(params)
+    num.columns <- grep('^[0-9]{4}.[0-9]{4}$', cnames) # index of year-columns
+    if(length(num.columns) > 0) {
+        cols.start <- as.integer(substr(cnames[num.columns], 1,4))
+        colnames(params)[num.columns] <- cols.start + 3
+    }
+    return(params)
+}
+
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL, lc.for.hiv = TRUE) {
     if(is.null(pattern.data)) {
         pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
         if(is.null(pattern.file)) 
-            vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))
+            vwBase <- get(paste0('vwBaseYear', wpp.year))
         else vwBase <- read.pop.file(pattern.file)
     } else vwBase <- pattern.data
     
     if("PasfrNorm" %in% colnames(vwBase) && !is.factor(vwBase$PasfrNorm))
         vwBase$PasfrNorm <- as.factor(vwBase$PasfrNorm)
     
-    create.pattern <- function(dataset, columns) {
+    create.pattern <- function(dataset, columns, char.columns = c()) {
         pattern <- data.frame(dataset[,'country_code'])
         for(col in columns)
             if(col %in% colnames(dataset))
                 pattern <- cbind(pattern, dataset[,col])
+        for(col in char.columns)
+            if(col %in% colnames(dataset))
+                pattern <- cbind(pattern, as.character(dataset[,col]), stringsAsFactors = FALSE)
         if(ncol(pattern)==1) pattern <- NULL
-        else colnames(pattern) <- c('country_code', columns)[1:ncol(pattern)]
+        else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
-    MXpattern <- create.pattern(vwBase, c("AgeMortalityType", "AgeMortalityPattern", "LatestAgeMortalityPattern", "SmoothLatestAgeMortalityPattern", "WPPAIDS"))
+    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", 
+                                          "SmoothLatestAgeMortalityPattern", "WPPAIDS", "HIVregion"),
+                                char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
+                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights"))
+    if(lc.for.hiv) { # replace HIVmortmod with LC
+        for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
+            if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
+    }
+    if(! "HIVregion" %in% colnames(MXpattern) && "area_code" %in% colnames(UNlocations)) 
+        MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
+    
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -913,12 +1024,13 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	return(res.asfr)
 }
 
-.get.par.from.inputs <- function(par, inputs, country) {
+.get.par.from.inputs <- function(par, inputs, country, convert.to.matrix = TRUE) {
 	if(is.null(inputs[[par]])) return (NULL)
 	idx <- inputs[[par]][,'country_code'] == country
 	if(sum(idx)==0) return (NULL)
 	res <- inputs[[par]][idx,,drop=FALSE]
-	return (as.matrix(res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]))
+	res <- res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]
+	return (if(convert.to.matrix) as.matrix(res) else res)
 }
 
 
@@ -929,6 +1041,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'MXm.pred', 'MXf.pred')) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
+	}
+	for(par in c('MXpattern', 'PASFRpattern', 'HIVparams')) { # keep these datasets in data.frame format
+	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
@@ -1139,31 +1254,119 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 	return(list(bx=Bxt, kranges=kranges))
 }
 
-modifiedLC <- function (npred, mxKan, eopm, eopf, verbose=FALSE, debug=FALSE) {
-	eop  <- list(eopm, eopf)
-    sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
-    Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
-    #Get the projected kt from eo, and make projection of Mx
-    nproj <- npred
-    rotKan <- rotateLC(0.5*(eop[[1]]+eop[[2]]), mxKan$bx, mxKan$bux, mxKan$male$axt, mxKan$female$axt)
-    for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
-    	#print(c('sex: ', mxYKan$sex))
-    	#stop('')	 
-    	res <- .C("LC", as.integer(nproj), as.integer(mxYKan$sex), as.numeric(mxYKan$axt), 
-    		as.numeric(rotKan$bx), as.numeric(eop[[mxYKan$sex]]), 
-    		Kl=as.numeric(rotKan$kranges[[mxYKan$sex]]$kl), Ku=as.numeric(rotKan$kranges[[mxYKan$sex]]$ku), 
-			constrain=as.integer(mxYKan$sex == 1), 
-			#constrain=as.integer(0),
-			FMx=as.numeric(Mx[[2]]), FEop=as.numeric(eop[[2]]),
-			LLm = as.numeric(LLm[[mxYKan$sex]]), Sr=as.numeric(sr[[mxYKan$sex]]), 
-			lx=as.numeric(lx[[mxYKan$sex]]), Mx=as.numeric(Mx[[mxYKan$sex]]))
-		sr[[mxYKan$sex]] <- matrix(res$Sr, nrow=27)
-		LLm[[mxYKan$sex]] <- matrix(res$LLm, nrow=27)
-		Mx[[mxYKan$sex]] <- matrix(res$Mx, nrow=28)
-		lx[[mxYKan$sex]] <- matrix(res$lx, nrow=28)
-    }
-	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
+.pattern.value <- function(name, pattern, default = NULL, na.means.missing = FALSE) {
+    if(is.null(pattern)) return(default)
+    val <- if(name %in% colnames(pattern)) pattern[, name] else default
+    if(na.means.missing && is.na(val)) val <- default
+    return(val)
 }
+
+.hiv.mortality <- function(e0m, e0f, country, region, params = NULL) {
+    npred <- length(e0m)
+    male.mx <- female.mx <- matrix(NA, nrow = 22, ncol = npred, 
+                                   dimnames = list(NULL, names(e0m)))
+    prevF <- prevM <- rep(3, npred)
+    names(prevF) <- names(prevM) <- names(e0m)
+    if(!is.null(params)) {
+        prev.cols <- names(e0m)[names(e0m) %in% names(params)]
+        prevF[prev.cols] <- as.numeric(params[params$param == "prev" & params$sex == "female", 
+                               prev.cols])
+        prevM[prev.cols] <- as.numeric(params[params$param == "prev" & params$sex == "male", 
+                                   prev.cols])
+    }
+    for(i in 1:ncol(male.mx)) {
+        fct <- "hiv.mortmod"
+        male.mx[,i] <- do.call(fct, list(e0m[i], prev = prevM[i], sex = 0, region = region))
+        female.mx[,i] <- do.call(fct, list(e0f[i], prev = prevF[i], sex = 1, region = region))
+    }
+    return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
+}
+
+.prepare.for.mortality.projection <- function(pattern, mxKan, hiv.params = NULL, lc.for.all = FALSE) {
+    if(lc.for.all) {
+        meth1 <- "LC"
+        meth2 <- ""
+    } else {
+        meth1 <- .pattern.value("AgeMortProjMethod1", pattern, "LC")
+        meth2 <- .pattern.value("AgeMortProjMethod2", pattern, "")
+    }
+    if(is.na(meth2)) meth2 <- ""
+    args <- list()
+    if("MLT" %in% c(meth1, meth2)) {
+        mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
+        if(is.null(mlttype)) {
+            warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used.")
+            mlttype <- "CD_West"
+        }
+        args[["MLT"]] <- list(type = mlttype)
+    }
+    if("PMD" %in% c(meth1, meth2)) {
+        adj.code <- .pattern.value("AgeMortProjAdjSR", pattern, 0)
+        args[["PMD"]] <- list(
+            mxm0 = mxKan$male$mx.orig[,ncol(mxKan$male$mx)],
+            mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
+            interp.rho = TRUE, keep.lt = TRUE,
+            sexratio.adjust = adj.code == 1,
+            adjust.sr.if.needed = adj.code == 3
+        )
+    }
+    if("LC" %in% c(meth1, meth2)) {
+        args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
+    }
+    if("HIVmortmod" %in% c(meth1, meth2)) {
+        callstr <- 'requireNamespace("HIV.LifeTables")'
+        pkg.available <-  eval(parse(text = callstr))
+        if(!pkg.available)
+            stop("Method HIVmortmod requires the HIV.LifeTables package to be installed. It is available on GitHub in the PPgP/HIV.LifeTables repository.")
+        callstr <- "data('HIVModelLifeTables', package = 'HIV.LifeTables')"  # need to do this because requireNamespace does not attach lazy data
+        eval(parse(text = callstr))
+        args[["HIVmortmod"]] <- list(region = .pattern.value("HIVregion", pattern, 1),
+                                     params = hiv.params
+        )
+        if(! meth2 %in% c("HIVmortmod", "")) {
+            warning("HIVmortmod cannot be combined with other methods.")
+        }
+        meth1 <- "HIVmortmod"
+        meth2 <- ""
+    }
+    if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments fro logquad
+    if(meth2 != "") args$weights <- eval(parse(text = .pattern.value("AgeMortProjMethodWeights", pattern, c(1, 0.5))))
+    args$meth1 <- meth1
+    args$meth2 <- meth2
+    return(args)
+}
+
+project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, verbose=FALSE, debug=FALSE) {
+    args <- if(is.null(mortcast.args)) .prepare.for.mortality.projection(...) else mortcast.args
+    if(args$meth2 == "") { # apply a single method 
+        res <- switch(args$meth1, 
+            LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
+            PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
+            MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
+            HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]])),
+            LogQuad = do.call("logquadj", c(list(eopm, eopf), args[["LQ"]]))
+            )
+        res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
+    } else { # combination of two methods
+        res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
+                              meth2 = tolower(args$meth2), 
+                              weights = args$weights,
+                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]])
+    }
+    # consolidate results which can be in different formats from the different methods
+    if(!"mx" %in% names(res))
+        res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
+    res$male$sex <- 1
+    res$female$sex <- 2
+    if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) < 28) {# compute survival
+        srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
+                        female = list(sex = 2, mx = res$mx[[2]]))
+        res <- survival.fromLT(npred, srinput, verbose=verbose, debug=debug)
+    }
+    #stop('')
+    return(res)
+}
+
 
 survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
     sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
@@ -1184,106 +1387,37 @@ survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
-runKannisto <- function(inputs, start.year, ...) {
+runKannisto <- function(inputs, start.year, lc.for.all = FALSE, ...) {
 	# extend mx, get LC ax,bx,k1
-	Kan <- KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, ...)
-	mxMKan <- c(Kan$male, sex=1)
-	mxFKan <- c(Kan$female, sex=2)
-	bux <- NULL
-	#if(is.null(mxMKan$bxt)) {
-		bx <- 0.5 * (mxMKan$bx + mxFKan$bx)
-		# ultimate bx (Li, Lee, Gerland 2013)
-    	bux <- bx
-    	avg15.65 <- mean(bux[5:14])
-    	bux[1:14] <- avg15.65
-    	bux[15:28] <- bux[15:28] * (bux[14]/bux[15]) # adjust so that b(70)=b(65)
-    	bux <- bux/sum(bux) # must sum to 1
-    #} else # aids country, bxt is a matrix
-    #	bx <- 0.5 * (mxMKan$bxt + mxFKan$bxt)
-	return(list(male=mxMKan, female=mxFKan, bx=bx, bux=bux))
+	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, 
+	                   compute.AxBx = lc.for.all || any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, "LC"),
+	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) == "LC"), 
+	                   ...)
 }
 
 runKannisto.noLC <- function(inputs) {
 	# extend mx
-	Kan <- KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
-	mxMKan <- c(Kan$male, sex=1)
-	mxFKan <- c(Kan$female, sex=2)
-	return(list(male=mxMKan, female=mxFKan))
+	KannistoAxBx.joint(inputs$MXm.pred, inputs$MXf.pred, compute.AxBx=FALSE)
 }
 
 
-KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.from.latest.periods=99, npred=19, 
+KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.latest.periods=99, npred=19, 
 								joint=TRUE, compute.AxBx=TRUE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
-	finish.bx <- function(bx) {
-			negbx <- which(bx <= 0)
-			lnegbx <- length(negbx)
-			if(lnegbx > 0 && negbx[1] == 1) {
-				bx[1] <- 0
-				negbx <- if(lnegbx > 1) negbx[2:lnegbx] else c()
-				lnegbx <- length(negbx)
-			}
-			while(lnegbx > 0) {
-				bx[negbx] <- 0.5 * bx[negbx-1]
-				negbx <- which(bx < 0)
-				lnegbx <- length(negbx)
-			}      
-			for (i in 1:27) { 
-				if (bx[29 - i] == 0) bx[29 - i] <- bx[29 - i - 1]
-			}
-			bx <- bx/sum(bx) # must sum to 1
-			return(bx)
-		}
-	Mxe.m <- as.matrix(male.mx)
-	Mxe.m <- rbind(Mxe.m, 
-			matrix(NA, nrow=28-nrow(male.mx), ncol=ncol(male.mx)))			
-	Mxe.f <- as.matrix(female.mx)
-	Mxe.f <- rbind(Mxe.f, 
-			matrix(NA, nrow=28-nrow(female.mx), ncol=ncol(female.mx)))
-	ne <- ncol(Mxe.m)
-	k <- 22:28
-	npoints <- 4
-	age.group <- (21-npoints+1):21
-	data <- data.frame(sex=c(rep(1,npoints), rep(0,npoints)), age=c(age.group, age.group))
-	mxc <- rbind(male.mx[age.group, 1:ne, drop=FALSE], female.mx[age.group, 1:ne, drop=FALSE])
-	logit.mxc <- log(mxc) - log(1-mxc)
+	rownames(male.mx) <- rownames(female.mx) <- c(0,1, seq(5, by=5, length=nrow(male.mx)-2))
 	if(joint) {
-		for(j in 1:ne) {		
-			data$lmx <- logit.mxc[,j]
-			if(all(is.na(data$lmx))) next
-			fit <- lm(lmx ~ sex + age, data=data)
-			coefs <- coefficients(fit)
-			aam.female <- exp(coefs[1]) # intercept
-			aam.male <- exp(coefs[1] + coefs['sex'])
-			bbm <- coefs['age']
-			# Ages 100-105, ..., 130+
-			expterm.m <- aam.male * exp(bbm * k)	
-			Mxe.m[k, j] =  expterm.m / (1 + expterm.m)
-			expterm.f <- aam.female * exp(bbm * k)	
-			Mxe.f[k, j] =  expterm.f / (1 + expterm.f)
-		}
+	    kann <- cokannisto(male.mx, female.mx)
+	    Mxe.m <- kann$male
+	    Mxe.f <- kann$female
 	} else {
-		h <- 100 + 5 * (0:6)
-		hminus80 <- h - 80
-		lmxr <- list(M=log(male.mx[18:21, 1:ne] / (1 - male.mx[18:21, 1:ne])),
-					F=log(female.mx[18:21, 1:ne] / (1 - female.mx[18:21, 1:ne])))
-		res <- list(M=Mxe.m, F=Mxe.f)
-		for(sex in c('M', 'F')) {
-			Xm1 <- apply(lmxr[[sex]], 2, sum)
-			Xm2 <- apply((5 * (1:4) - 5) * lmxr[[sex]], 2, sum)
-			for(j in 1:ne) {		
-				aam <- exp((350 * Xm1[j] - 30 * Xm2[j]) / 500)
-				bbm <- (Xm1[j] - 4 * log(aam)) / 30
-				expterm <- aam * exp(bbm * (hminus80))
-				res[[sex]][k, j] =  expterm / (1 + expterm)
-			}
-		}
-		Mxe.m <- res$M
-		Mxe.f <- res$F
+	    Mxe.m <- kannisto(male.mx)
+	    Mxe.f <- kannisto(female.mx)
 	}
-	result <- list(male=list(mx=Mxe.m), female=list(mx=Mxe.f))
+	result <- list(male=list(mx=Mxe.m, mx.orig = male.mx, sex = 1), 
+	               female=list(mx=Mxe.f, mx.orig = female.mx, sex = 2))
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
+	ne <- ncol(Mxe.m)
 	years <- as.integer(substr(colnames(male.mx),1,4))
 	first.year <- years[1]
 	has.nas.in.old.ages <- FALSE
@@ -1294,82 +1428,72 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	}
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
-    model.bx <- !is.null(mx.pattern) && "AgeMortalityType" %in% colnames(mx.pattern) && mx.pattern[,"AgeMortalityType"] == "Model life tables"
-    avg.ax <- !is.null(mx.pattern) && "LatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,"LatestAgeMortalityPattern"] == 0
-    smooth.ax <-  !is.null(mx.pattern) && !avg.ax && "SmoothLatestAgeMortalityPattern" %in% colnames(mx.pattern) && mx.pattern[,'SmoothLatestAgeMortalityPattern'] == 1
-    is.aids.country <- !is.null(mx.pattern) && "WPPAIDS" %in% colnames(mx.pattern) && mx.pattern[,"WPPAIDS"] == 1
+    model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables"
+    avg.ax <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, 1) == 0
+    smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
+    is.aids.country <- .pattern.value("WPPAIDS", mx.pattern, 0) == 1
     if(is.aids.country) {
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
     }
-    #avg.ax <- TRUE
-    if(!avg.ax) ax.from.latest.periods <- 1
+    if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
+        # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
+        ax.latest.periods <- lpat 
+    }
     mlt.bx <- NULL
     if(model.bx) {
     	bx.env <- new.env()
     	data(MLTbx, envir = bx.env)
-    	bx.pattern <- if ("AgeMortalityPattern" %in% colnames(mx.pattern)) mx.pattern[,"AgeMortalityPattern"] else "UN General"
+    	bx.pattern <- .pattern.value("AgeMortalityPattern", mx.pattern, "UN_General")
+    	if (!bx.pattern %in% rownames(bx.env$MLTbx)) bx.pattern <- "UN_General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
-    
-    for(sex in c('male', 'female')) {
-    	lMxe <- log(result[[sex]]$mx)
-    	this.ns <- if(any(is.na(lMxe[,ns:ne]))) ns + sum(apply(lMxe[,ns:ne], 2, function(z) all(is.na(z))))
-    				else ns
-    	ax.ns <- max(ne-ax.from.latest.periods+1, this.ns)
-    	x1 <- apply(lMxe[,ax.ns:ne, drop=FALSE], 1, sum, na.rm=TRUE)
-    	ax <- x1 / (ne - ax.ns + 1)
-    	if(smooth.ax) {
-    		ax.sm <- smooth.spline(ax[1:21], df=11)$y
-    		ax[2:21] <- ax.sm[2:21] # keep value the first age group
-    	}
-		kt <- rep(NA, ne)
-		kt[this.ns:ne] = apply(lMxe[,this.ns:ne, drop=FALSE], 2, sum) - sum(ax)
-		axt <- matrix(ax, nrow=28, ncol=npred)
-		if(is.aids.country) {
+    #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
+    #    ns + sum(apply(result$male$mx[,ns:ne], 2, function(z) all(is.na(z))))
+    #else ns
+    length.mx <- length(ns:ne)
+    if(ax.latest.periods < 0) { # remove ax.latest.periods from the end
+        ax.index <- (1:length.mx)[-(max(length.mx+ax.latest.periods+1, 2):length.mx)] # at least one period should stay in
+    } else { # take the ax.latest.periods latest time periods
+        if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx
+        else {
+            ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+            ax.index <- ax.ns:length.mx
+        }
+    }
+    lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
+                                   ax.index = ax.index, ax.smooth = smooth.ax)
+
+    if(is.aids.country) { # modify ax and bx
+        for(sex in c('male', 'female')) {
+    	    lMxe <- log(result[[sex]]$mx)
+		    axt <- matrix(lc.est[[sex]]$ax, nrow=28, ncol=npred)
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
 			ax.end.sm <- smooth.spline(ax.end[1:21], df=11)$y
     		ax.end[2:21] <- ax.end.sm[2:21] # keep value the first age group
 			for (i in 1:28) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
-				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(ax[i], ax.end[i]), xout=1:aids.npred)$y
+				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(lc.est[[sex]]$ax[i], ax.end[i]), xout=1:aids.npred)$y
 				if(aids.npred < npred)
 					axt[i,(aids.npred+1):npred] <- ax.end[i]	
 			}
-		}
-		bx <- mlt.bx
-		#bxt <- NULL
-    	if(!model.bx) {
-			x2 <- sum(kt[this.ns:ne]*kt[this.ns:ne])
-			x1 <- rep(NA, nrow(lMxe))
-			for (i in 1:nrow(lMxe)) 
-				x1[i] <- sum((lMxe[i,this.ns:ne]-ax[i])*kt[this.ns:ne])
-			bx <- x1/x2
-			bx <- finish.bx(bx)
-			# if(is.aids.country) {
-				# bxt <- matrix(bx, nrow=28, ncol=npred)
-				# slMxe.aids <- apply(lMxe[,aids.idx, drop=FALSE], 2, sum)
-				# x1.t <- rep(NA, nrow(lMxe))
-				# for(t in 2:aids.npred) {
-					# kt.t = slMxe.aids - sum(axt[,t])
-					# x2.t <- sum(kt.t*kt.t)					
-					# for (i in 1:nrow(lMxe)) 
-						# x1.t[i] <- sum((lMxe[i,aids.idx]-axt[i,t])*kt.t)
-					# bxt.t <- x1.t/x2.t
-					# bxt[,t] <- finish.bx(bxt.t)
-				# }
-				# for(t in (aids.npred+1):npred) bxt[,t] <- bxt[,aids.npred]
-			# }
-		}
-		result[[sex]]$ax <- ax
-		result[[sex]]$axt <- axt
-		result[[sex]]$bx <- bx
-		#result[[sex]]$bxt <- bxt
-		#result[[sex]]$k0 <- kt[ne]
-		#result[[sex]]$d1 <- (kt[ne] - kt[this.ns]) / (ne - this.ns + 1)		
-	}
-	return(result)
+    		lc.est[[sex]]$axt <- axt
+        }
+    }
+    if(model.bx) {
+        names(mlt.bx) <- names(lc.est$male$bx)
+        lc.est$male$bx <- lc.est$female$bx <- mlt.bx
+        lc.est$bx <- (lc.est$male$bx + lc.est$female$bx)/2
+        lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
+    }
+    # merge results
+    #sex.code <- list(male = 1, female = 2)
+    for(sex in c('male', 'female')) {
+        lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
+        #lc.est[[sex]]$sex <- sex.code[[sex]]
+    }
+	return(lc.est)
 }
 
 
@@ -1442,10 +1566,10 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		deaths[[sex]] <- matrix(0, nrow=21, ncol=nest)
 		p <- pop[[sex]]
 		p[is.na(p)] <- 0 # set pop for ages with NA to 0
-		res <- .C("get_deaths_from_sr", as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
+		res <- .C("get_deaths_from_sr", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(mig.data[[sex]]), mig.type,
-					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]))
-		#stop('')
+					as.numeric(colSums(as.matrix(births[[sex]]))), Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
+		#if(sex == 2)stop('')
 		deaths[[sex]] <- matrix(res$Deaths, nrow=21)
 		colnames(deaths[[sex]]) <- estim.years
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
@@ -1556,7 +1680,11 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	if(include.observed) {
-		res <- get.pop.observed.from.expression.all.countries(expression, pop.pred, time.index=1:nr.obs)
+		#res <- get.pop.observed.from.expression.all.countries(expression, pop.pred, time.index=1:nr.obs)
+	    res <- c()
+	    for(iyear in 1:nr.obs)
+		    res <- cbind(res, get.pop.from.expression.all.countries(expression, pop.pred, 
+		                                                            time.index=iyear, observed = TRUE))
 		#copy the same data into the variant rows 
 		result <- matrix(NA, nrow=nrow(res)*5, ncol=ncol(res))
 		for(i in 1:5) result[seq(i,by=5, length=nrow(res)),] <- res
@@ -1564,7 +1692,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 	for(iyear in 1:nr.proj) {	
 		result <- cbind(result, as.vector(t(get.pop.from.expression.all.countries(expression, pop.pred, 
-						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), projection.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
+						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
 	}
 	if(!is.null(digits)) result <- round(result, digits)
 	colnames(result) <- col.names
@@ -1774,56 +1902,21 @@ LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx
 }
 
 
-LifeTableMx <- function(mx, sex=c('Male', 'Female'), include01=TRUE, radix = 1, open.age = 130){
+LifeTableMx <- function(mx, sex=c('Male', 'Female', 'Total'), include01=TRUE, radix = 1, open.age = 130){
 	# The first two elements of mx must correspond to 0-1 and 1-4. 
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
-	sex <- match.arg(sex)
-	sex <- list(Male=1, Female=2)[[sex]]
-	nage <- length(mx)
-	Lx <- lx <- qx <- Tx <- sx <- dx <- ax <- rep(0, nage)
-	nagem1 <- nage-1
-	resage <- c(if(include01) c(0,1) else 0, seq(5, by=5, length=nage-2))
-	resage <- resage[resage <= open.age]
-	nresage <- length(resage)
-	nas <- rep(NA,nresage)
-	if(any(is.na(mx))) # there are NAs in mx
-		return(data.frame(age=resage, mx=mx[1:nresage], qx=nas, lx=nas, dx=nas, Lx=nas, sx=nas, Tx=nas, ex=nas, ax=nas))
-	
-	LTC <- .C("LifeTable", as.integer(sex), as.integer(nagem1), as.numeric(mx), 
-					Lx=Lx, lx=lx, qx=qx, ax=ax, Tx=Tx, sx=sx, dx=dx)
-	LT <- data.frame(age=c(0,1, seq(5, by=5, length=nage-2)), 
-					mx=mx, qx=LTC$qx, lx=LTC$lx, dx=LTC$dx, Lx=LTC$Lx,  sx=LTC$sx, Tx=LTC$Tx, ex=LTC$Tx/LTC$lx, ax=LTC$ax)
-	LT$ax[nage] <- LT$ex[nage]
-	if(!include01) { # collapse 0-1 and 1-5 into 0-5
-		age05 <- c(FALSE, FALSE, TRUE)
-		LTres <- data.frame(age=seq(0, by=5, length=nage-1))
-		for(colname in colnames(LT)[-1])
-			LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
-		LT <- LTres
-	}
-	if(radix != 1) 
-		LT <- transform(LT, lx = lx * radix, 
-						dx = dx * radix,
-						Lx = Lx * radix,
-						Tx = Tx * radix
-					)
-	if(open.age < 130) {
-		## truncate life table with open age group < 130+ (Patrick Gerland's code)
-		LT <- LT[1:nresage,]
-		## mx for open age /* reciprocal of 1/ex for open age group*/ 
-		LT$mx[nresage] <- 1 / LT$ex[nresage]
-		LT$qx[nresage] <- NA
-		LT$dx[nresage] <- LT$lx[nresage] ## open age group dx = lx
-		LT$Lx[nresage] <- LT$Tx[nresage] ## open age group Lx = Tx
-		# Sx
-        # for open age group, e.g., 85+ 
-        ## penultimate age group -> Last entry of S(x,n) is S( 80+,5) = T( 85) / T( 80)
-        ## for open age group itself: Sx cannot be computed due to trunaction Sx <- NA
-        LT$sx[nresage-1] <- LT$Tx[nresage]/LT$Tx[nresage-1]
-        LT$sx[nresage] <- NA
-        LT$ax[nresage] <- LT$ex[nresage] ## for open age group ax = ex
-	} 
-	rownames(LT) <- c(paste(LT$age[-nresage], pmax(LT$age[-1]-1,1), sep="-"), paste0(LT$age[nresage], "+"))
+    sex <- tolower(match.arg(sex))
+    LT <- MortCast::life.table(mx, sex = sex, radix = radix, open.age = open.age)
+    if(!include01) {
+        if(all(is.na(LT$ax))) return(LT[-2,])
+        age05 <- c(FALSE, FALSE, TRUE)
+        LTres <- data.frame(age=LT$age[-2])
+        for(colname in setdiff(colnames(LT), "age"))
+            LTres[[colname]] <- do.call(paste('.collapse', colname, sep='.'), list(LT, age05=age05))
+        rownames(LTres) <- rownames(LT[-2,])
+        rownames(LTres)[1] <- "0-4"
+        LT <- LTres
+    }
 	return(LT)
 }
 
@@ -1847,7 +1940,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 	return(cl)
 }
 
-age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
+age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
 									rescale=TRUE, ages.to.zero=18:21,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
 									depratio=wpp.year == 2015, verbose=TRUE) {
@@ -1879,7 +1972,7 @@ age.specific.migration <- function(wpp.year=2017, years=seq(1955, 2100, by=5), c
 	tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
 	pasfr <- load.wpp.dataset("percentASFR", wpp.year)
 	pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
-	vwBase <- read.bayesPop.file(paste('vwBaseYear', wpp.year, '.txt', sep=''))[,c('country_code', 'MigCode')]
+	vwBase <- get(paste0('vwBaseYear', wpp.year))[,c('country_code', 'MigCode')]
 	pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
 	max.ages <- nrow(pop.first.country)
 	ages <- 1:max.ages

@@ -8,7 +8,7 @@ Life Table Functions
 Functions for obtaining life table quantities. 
 }
 \usage{
-LifeTableMx(mx, sex = c("Male", "Female"), include01 = TRUE,
+LifeTableMx(mx, sex = c("Male", "Female", "Total"), include01 = TRUE,
 	radix = 1, open.age = 130)
 
 LifeTableMxCol(mx, colname = c("Lx", "lx", "qx", "mx", "dx", "Tx", "sx", "ex", "ax"), \dots)

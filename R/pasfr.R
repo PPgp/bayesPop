@@ -1,4 +1,4 @@
-project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.year=2017, digits=2, 
+project.pasfr <- function(inputs=NULL, present.year=2020, end.year=2100, wpp.year=2019, digits=2, 
                           out.file.name="percentASFR.txt") {
   # Generate PASFR for given TFR using the kantorova.pasfr method.
   # This function allows to generate PASFR outside of a bayesPop simulation.
@@ -87,7 +87,7 @@ project.pasfr <- function(inputs=NULL, present.year=2015, end.year=2100, wpp.yea
 }
 
 
-project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2015, end.year=2100, wpp.year=2017, 
+project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, present.year=2020, end.year=2100, wpp.year=2019, 
                                digits=2, out.file.name="percentASFRtraj.txt") {
     # Generate trajectories of PASFR for given TFR using the kantorova.pasfr method.
     # ########
@@ -180,7 +180,7 @@ project.pasfr.traj <- function(inputs=NULL, countries=NULL, nr.traj=NULL, presen
             pasfr <- round(pasfr*100, digits)
             colnames(pasfr) <- proj.years
             rownames(pasfr) <- ages
-            pasfr.long <- melt(pasfr, value.name=as.character(itraj))
+            pasfr.long <- reshape2::melt(pasfr, value.name=as.character(itraj))
             colnames(pasfr.long)[1:2] <- c("age", "year")
             country.pasfr <- if(is.null(country.pasfr)) pasfr.long else merge(country.pasfr, 
                                                 pasfr.long, by=c('age', 'year'), sort=FALSE)

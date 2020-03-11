@@ -1,6 +1,6 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations"))
 
-pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year = 2015, wpp.year = 2017,
+pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year = 2020, wpp.year = 2019,
                                 output.dir = file.path(getwd(), "bayesPop.output"),
                                locations = NULL, default.country = NULL,
                         inputs = list(
@@ -262,7 +262,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     observed$PASFR <- pasfrlist$obs.pasfr
     
     # Get migration type, migration base year, mx & pasfr patterns
-    pattern.data.def <- read.bayesPop.file(paste0('vwBaseYear', wpp.year, '.txt'))
+    pattern.data.def <- get(paste0('vwBaseYear', wpp.year))
     pattern.data.def <- repeat.dataset.for.regions(
                             pattern.data.def[pattern.data.def$country_code == default.country,], 
                             region.codes)
@@ -442,6 +442,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     env <- new.env()
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
+    inp$lc.for.hiv <- TRUE
+    inp$lc.for.all <- TRUE
     return(inp)
 }
 

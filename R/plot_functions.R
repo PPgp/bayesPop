@@ -63,9 +63,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 			if(sex != 'both') main <- paste(main, ': ', sex, sep='')
 		}
 		age.labels <- get.age.labels(pop.pred$ages)
-		cur.mgp <- par('mgp')
-		cur.oma <- par('oma')
-		cur.mar <- par('mar')
+		cur.par <- par(c('mgp', 'oma', 'mar', 'mfrow'))
 		nplots <- length(age)
 		if (nplots < dev.ncol) {
         	ncols <- nplots
@@ -84,7 +82,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 									lwd=lwd, col=col, show.legend=show.legend, ann=ann, ...)
 		}
 		if(ann) mtext(main, line = 0.5, outer = TRUE)
-		par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
+		par(cur.par)
 	}
 }
 
@@ -770,10 +768,7 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 										pyr2.par =list(density=-1, height=0.3), 
 										col.pi = NULL, ann=par('ann'), axes=TRUE, grid=TRUE, 
 										cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
-	mgp <- par('mgp')
-	mar <- par('mar')
-	par(mgp=c(3,0.5,0)) 
-	par(mar=c(5, 4, 2, 4) + 0.1)
+	cur.par <- par(mgp = c(3,0.5,0), mar = c(5, 4, 2, 4) + 0.1)
 	if((is.null(pop.object$pyramid) || length(pop.object$pyramid) == 0) && is.null(pop.object$CI)) 
 		stop('Nothing to be plotted. Either pyramid or CI must be given in pop.object.')
 	age.labels <- rownames(if(!is.null(pop.object$pyramid[[1]])) pop.object$pyramid[[1]] 
@@ -875,7 +870,7 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 		if(is.null(main)) main <- if(exists('label')) label else ""
 		if(ann) title(main, line=1, cex.main=cex.main)
 	})	
-	par(mgp=mgp, mar=mar)
+	par(cur.par)
 }
 
 pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'),
@@ -951,12 +946,8 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, sh
 													cex.main=0.9, cex.sub=1, cex=1, cex.axis=1, ...) {
 	# col/lwd is color and line width for:
 	# 1. median, 2. quantiles, 3. past data, 4. trajectories
-	mgp <- par('mgp')
-	oma <- par('oma')
-	mar <- par('mar')
+	cur.par <- par(oma = c(0, 0, 2, 0), mgp=c(3,0.5,0), mar=c(5, 4, 2, 4) + 0.1)
 	#par(mfrow=c(1,2),  mar=c(5,6,2,-0.1)+0.1)
-	par(oma = c(0, 0, 2, 0), mgp=c(3,0.5,0))
-	par(mar=c(5, 4, 2, 4) + 0.1)
 	if((is.null(pop.object$pyramid) || length(pop.object$pyramid) == 0) && is.null(pop.object$CI) && is.null(pop.object$trajectories))
 		stop('Nothing to be plotted. Either pyramid, CI or trajectories must be given in pop.object.')
 	pyr.indicator <- !sapply(pop.object$pyramid, is.null)
@@ -1046,7 +1037,7 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, sh
 		if(ann) title(main, cex.main=cex.main, line=1)	
 		if(show.legend && ann) legend('topright', legend=legend, lty=ltys, bty='n', col=cols, lwd=lwds, cex=cex)
 	})
-	par(mgp=mgp, oma=oma, mar=mar)
+	par(cur.par)
 }
 
 pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
@@ -1104,7 +1095,8 @@ get.data.for.worldmap.bayesPop.prediction <- function(pred, quantile=0.5, year=N
 		period <- get.pop.prediction.periods(pred)[projection.index]
 	} else { # observed data
 		data <- if(!is.null(expression))
-					get.pop.observed.from.expression.all.countries(expression, pred, projection.index)
+		            get.pop.from.expression.all.countries(expression, pred, time.index = projection.index,
+		                                                  observed = TRUE)
 				else 
 					get.pop.observed.all.countries(pred, projection.index, sex=sex, age=age)
 		period <- get.pop.observed.periods(pred)[projection.index]
@@ -1214,11 +1206,7 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 	lty <- c(1, 2:(length(pi)+1))
 	cols <- rep(col, 1+length(pi))
 	if(nplots > 1) {
-		cur.mgp <- par('mgp')
-		cur.oma <- par('oma')
-		cur.mar <- par('mar')
-		par(mfrow=c(nrows,ncols),  oma = c(0, 0, 2, 0))
-		par(mar=c(2,2,1,0.4)+0.1, mgp=c(1,0.3,0))
+		cur.par <- par(mfrow=c(nrows,ncols),  oma = c(0, 0, 2, 0), mar=c(2,2,1,0.4)+0.1, mgp=c(1,0.3,0))
 	}
 	for(iplot in 1:nplots) {
 		this.data <- cohort.data[[cohorts[iplot]]]
@@ -1240,5 +1228,5 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		if(show.legend && ann)
 			legend(legend.pos, legend=legend, lty=lty, bty='n', col=cols)
 	}
-	if(nplots > 1) par(mgp=cur.mgp, mar=cur.mar, oma=cur.oma)
+	if(nplots > 1) par(cur.par)
 }
