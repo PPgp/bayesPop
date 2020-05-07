@@ -573,9 +573,9 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE),
 	    mxm <- .mx.replace.na.for.old.ages(mxm)
 	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
 	if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
-	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]))
+	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]),
+	            dimnames = c(dimnames(sx1)[1], dimnames(mxm)[2:3]))
 	sx[,,1] <- sx1
-	dimnames(sx)[[2]] <- dimnames(mxm)[[2]]
 	if(dim(mxm)[3] <= 1) return(sx) # one trajectory
 	for (itraj in 2:dim(mxm)[3]) 
 		sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05)

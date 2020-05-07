@@ -1,3 +1,11 @@
+8.1-3 (5/5/2020)
+-----
+Minor updates related to changes in MortCast.
+
+8.1-2 (3/10/2020)
+-----
+Make get.survival function work also for one time period (reported by Budi Setiawan)
+
 8.1-1 (10/25/2019)
 -----
 Defaults set to use data from wpp2019.

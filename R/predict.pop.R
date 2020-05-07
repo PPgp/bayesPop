@@ -1358,32 +1358,30 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ver
         res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
     res$male$sex <- 1
     res$female$sex <- 2
-    if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) < 28) {# compute survival
+    if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) != 27) {# compute survival
         srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
                         female = list(sex = 2, mx = res$mx[[2]]))
         res <- survival.fromLT(npred, srinput, verbose=verbose, debug=debug)
     }
-    #stop('')
     return(res)
 }
 
 
 survival.fromLT <- function (npred, mxKan, verbose=FALSE, debug=FALSE) {
-    sr <- LLm <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
-    Mx <- lx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
+    sr <- LLm <- lx <- list(matrix(0, nrow=27, ncol=npred), matrix(0, nrow=27, ncol=npred))
+    Mx <- list(matrix(0, nrow=28, ncol=npred), matrix(0, nrow=28, ncol=npred))
     sx <- rep(0, 27)
     for (mxYKan in list(mxKan$female, mxKan$male)) { # iterate over male and female
     	Mx[[mxYKan$sex]] <- mxYKan$mx
     	sex <- c('Male', 'Female')[mxYKan$sex]
     	for(time in 1:npred) {
 			res <- LifeTableMx(mxYKan$mx[,time], sex=sex)
-			LLm[[mxYKan$sex]][,time] <- c(sum(res$Lx[1:2]), +res$Lx[3:nrow(res)]) # collapse first two age groups
-			res.sr <- .C("get_sx27", as.numeric(LLm[[mxYKan$sex]][,time]), sx=sx)
-			sr[[mxYKan$sex]][,time] <- res.sr$sx			
-			lx[[mxYKan$sex]][,time] <- res$lx
+			# collapse first two age groups
+			LLm[[mxYKan$sex]][,time] <- .collapse.Lx(res)  
+			sr[[mxYKan$sex]][,time] <- .collapse.sx(res)			
+			lx[[mxYKan$sex]][,time] <- .collapse.lx(res)
 		}
     }
-    #stop('')
 	return(list(sr=sr, LLm=LLm, mx=Mx, lx=lx))    
 }
 
