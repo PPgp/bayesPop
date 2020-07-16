@@ -46,7 +46,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 								lc.for.hiv = pred$inputs$lc.for.hiv, lc.for.all = pred$inputs$lc.for.all,
 								verbose=verbose)
 			if(!missing(inputs)) 
-				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
+				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs. \n')
 			nr.traj <- pred$nr.traj
 			ages <- pred$ages
 			prediction.exist <- TRUE
@@ -121,7 +121,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	}
 	if(length(not.valid.countries.idx) > 0) {
 		warning('Countries ', paste(country.codes[not.valid.countries.idx], collapse=', '), 
-					' not found in the UNlocations dataset.')
+					' not found in the UNlocations dataset.\n')
 		country.codes <- country.codes[-not.valid.countries.idx]
 		countries.idx <- countries.idx[-not.valid.countries.idx]
 	}
@@ -718,7 +718,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     if(length(end.index) == 0) {
         end.index <- length(num.columns)
         warning('Data for SexRatioAtBirth not available for all projection periods.\nLast projection period set to ', 
-                names.SRB.data[num.columns[end.index]])
+                names.SRB.data[num.columns[end.index]], "\n")
     }
     proj.periods <- names.SRB.data[num.columns[start.index:end.index]]
     obs.periods <- NULL
@@ -762,7 +762,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     for(par in c("param"))
         if(! par %in% colnames(params)) stop("Column ", par, " is obligatory in the hiv.params file.")
     if(! "sex" %in% colnames(params)) {
-        warning("Column 'sex' is missing in the hiv.params file. The same values will be used for female and male.")
+        warning("Column 'sex' is missing in the hiv.params file. The same values will be used for female and male. \n")
         params <- rbind(cbind(params, sex = "male"), cbind(params, sex = "female"))
     }
     # replace periods by mid-years in column names if needed
@@ -1108,7 +1108,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		idx <- cidx & is.element(inputs[[par]][,'year'], inputs$proj.years)
 		if(sum(idx) == 0) {
 			warning('No ', what.traj[[par]], ' trajectories for ', country.name, 
-				'. No population projection generated.')
+				'. No population projection generated. \n')
 			return(NULL)
 		}
 		df <- inputs[[par]][idx,-1]
@@ -1146,7 +1146,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc$TFRpred <- get.tfr.trajectories(inputs$TFRpred, country)
 		if(is.null(inpc$TFRpred)) {
 			warning('No TFR trajectories for ', country.name, 
-					'. No population projection generated.')
+					'. No population projection generated. \n')
 			return(NULL)	
 		}
 		country.obj <- get.country.object(country, inputs$TFRpred$mcmc.set$meta)
@@ -1164,7 +1164,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc$e0Mpred <- get.e0.trajectories(inputs$e0Mpred, country)
 		if(is.null(inpc$e0Mpred)) {
 			warning('No male e0 trajectories for ', country.name, 
-					'. No population projection generated.')
+					'. No population projection generated. \n')
 			return(NULL)	
 		}
 		country.obj <- get.country.object(country, inputs$e0Mpred$mcmc.set$meta)
@@ -1180,7 +1180,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc$e0Fpred <- get.e0.trajectories(inputs$e0Fpred, country)
 		if(is.null(inpc$e0Fpred)) {
 			warning('No female e0 trajectories for ', country.name, 
-					'. No population projection generated.')
+					'. No population projection generated. \n')
 			return(NULL)
 		}
 		country.obj <- get.country.object(country, inputs$e0Fpred$mcmc.set$meta)
@@ -1357,7 +1357,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     if("MLT" %in% c(meth1, meth2)) {
         mlttype <- .pattern.value("AgeMortProjPattern", pattern, NULL)
         if(is.null(mlttype)) {
-            warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used.")
+            warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used. \n")
             mlttype <- "CD_West"
         }
         args[["MLT"]] <- list(type = mlttype)
@@ -1382,7 +1382,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
                                      params = hiv.params
         )
         if(! meth2 %in% c("HIVmortmod", "")) {
-            warning("HIVmortmod cannot be combined with other methods.")
+            warning("HIVmortmod cannot be combined with other methods. \n")
         }
         meth1 <- "HIVmortmod"
         meth2 <- ""
@@ -1576,8 +1576,8 @@ StoPopProj <- function(npred, pop0, LT, asfr, srb, mig.pred, mig.type=NULL, coun
 		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
 		)
 	
- 	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
-	if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
+ 	if(any(res$popm < 0)) warnings('Negative male population for ', country.name, '\n')
+	if(any(res$popf < 0)) warnings('Negative female population for ', country.name, '\n')
 
 	vital.events <- list()
 	if(keep.vital.events) {
@@ -1814,7 +1814,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
 										sex=sex, age='all', sum.over.ages=sum.over.ages)
 				if(is.null(traj.and.quantiles$trajectories)) {
-					warning('Problem with loading ', vital.event, '. Possibly no vital events stored during prediction.')
+					warning('Problem with loading ', vital.event, '. Possibly no vital events stored during prediction. \n')
 					return()
 				}
 				if(!sum.over.ages) { # This is because births have only subset of ages
