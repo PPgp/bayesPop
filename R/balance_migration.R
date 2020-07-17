@@ -812,7 +812,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			if(all(pars == 0)) rate <- 0
 			else {
 			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL
-			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
+			    #rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
+			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA)
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
@@ -833,7 +834,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(is.gcc(country.code)) { 
+		 if(FALSE && is.gcc(country.code)) { # This is switched off for 2300 projections
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
