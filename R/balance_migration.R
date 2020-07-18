@@ -584,7 +584,6 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     lages <- length(res.env$ages21)
     for(cidx in 1:res.env$ncountries) {
         inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
-        if(time == 2) browser()
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
                           list(M = res.env$popM.prev[,cidx,drop=FALSE],
                                F = res.env$popF.prev[,cidx,drop=FALSE])
