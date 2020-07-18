@@ -250,6 +250,10 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(time > 1) {
 	        work.env$popM.prev <- popM.prev[,,itraj]
 	        work.env$popF.prev <- popF.prev[,,itraj]
+	        if(is.null(dim(work.env$popM.prev))) # one country only; dimension dropped
+	            work.env$popM.prev <- abind(work.env$popM.prev, along=2)
+	        if(is.null(dim(work.env$popF.prev))) 
+	            work.env$popF.prev <- abind(work.env$popF.prev, along=2)
 	    }
 	    #})
         #memch2 <- mem_change({
@@ -580,6 +584,7 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     lages <- length(res.env$ages21)
     for(cidx in 1:res.env$ncountries) {
         inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
+        if(time == 2) browser()
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
                           list(M = res.env$popM.prev[,cidx,drop=FALSE],
                                F = res.env$popF.prev[,cidx,drop=FALSE])
@@ -804,7 +809,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popF21 <- popF[1:21]
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
-	emigrant.rate.bound <- -0.8
+	emigrant.rate.bound <- -0.3
 	country.code.char <- as.character(country.code)
 	while(i <= 1000) {
 		i <- i + 1
@@ -873,11 +878,15 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
-				denom2 <- c(msched, fsched)/denom
-				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
-				#stop('')
-				msched <- msched * popMdistr / denom
-				fsched <- fsched * popFdistr / denom
+				if(denom == 0) { # not enough people to migrate out
+				    msched[] <- 0
+				    fsched[] <- 0
+				} else {
+				    denom2 <- c(msched, fsched)/denom
+				    if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				    msched <- msched * popMdistr / denom
+				    fsched <- fsched * popFdistr / denom
+				}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
