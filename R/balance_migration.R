@@ -62,6 +62,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		              'migration.adjust.to', 'migration.adjustM.to', 'migration.adjustF.to')) 
 		    if(par %in% names(inp) && any(remove.cols %in% colnames(inp[[par]])))
 		        inp[[par]] <- inp[[par]][, -which(colnames(inp[[par]]) %in% remove.cols)]
+		# save inital world pop distribution
 		pop0all <- data.table(inp$POPm0)[country_code %in% country.codes][, 1:3, with = FALSE]
 		colnames(pop0all)[3] <- "pop0"
 		pop0all$pop0 <- pop0all$pop0 + data.table(inp$POPf0)[country_code %in% country.codes][, 3, with = FALSE]
@@ -840,7 +841,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else {
-			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL
+			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - min(0.0019, inpc$minimum.pop/land.area)*land.area)/pop else NULL
 			    #rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
 			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA)
 			    rlim <- list(rlim1, 

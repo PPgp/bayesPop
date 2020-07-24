@@ -1271,6 +1271,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		if(!is.null(inputs$migration.parameters) && (country %in% inputs$migration.rates$country_code))
 			inpc$migration.rates <- inputs$migration.rates[inputs$migration.rates$country_code == country, 
 										-which(colnames(inputs$migration.rates)=='country_code')]
+		# get minimum population for deriving minimum density
+		tpop <- get.pop.observed.with.age(NULL, country, sex='both', data=inputs$pop.matrix)
+		inpc$minimum.pop <- min(colSums(tpop$data))
 	} 
 	inpc$trajectory.indices <- indices
 	return(inpc)
