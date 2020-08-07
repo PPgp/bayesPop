@@ -1273,6 +1273,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 										-which(colnames(inputs$migration.rates)=='country_code')]
 	} 
 	inpc$trajectory.indices <- indices
+  inpc$minimum.pop <- min(colSums(tpop$data))
 	return(inpc)
 }
 

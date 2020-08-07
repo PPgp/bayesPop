@@ -811,8 +811,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else {
-			    rlim1 <- NULL #if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
-			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp( 5.118 + 0.771*log(land.area) )/pop - 1 else NA) # maximum net change in country population
+			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - min(0.0019, inpc$minimum.pop/land.area)*land.area)/pop else NULL
+          rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp( 5.118 + 0.771*log(land.area) )/pop - 1 else NA) # maximum net change in country population
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
