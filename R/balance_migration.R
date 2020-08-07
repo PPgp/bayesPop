@@ -804,14 +804,14 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popF21 <- popF[1:21]
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
-	emigrant.rate.bound <- -0.8
+	emigrant.rate.bound <- -0.2 #-0.8, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
 	country.code.char <- as.character(country.code)
 	while(i <= 1000) {
 		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else {
-			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL
+			    rlim1 <- NULL #if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
 			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp( 5.118 + 0.771*log(land.area) )/pop - 1 else NA) # maximum net change in country population
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
@@ -874,7 +874,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				denom2 <- c(msched, fsched)/denom
 				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
-				#stop('')
+        if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
+        #stop('')
 				msched <- msched * popMdistr / denom
 				fsched <- fsched * popFdistr / denom
 		}
