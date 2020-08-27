@@ -354,9 +354,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
 			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
 			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-								which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+				#neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+				#				which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+				add.pop.warn(country.codes.char[country], time, 5, res.env)  #'Final population negative for some age groups'
 			}
 		}#})
 		#memch4 <- mem_change({
