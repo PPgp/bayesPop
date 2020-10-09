@@ -902,6 +902,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new <- c(msched, fsched) + shifts/mig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
+        sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
 				migM <- mig.count * msched
