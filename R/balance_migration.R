@@ -842,7 +842,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
 	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
 	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
@@ -872,12 +872,17 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
-				denom2 <- c(msched, fsched)/denom
-				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
-        if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
-        #stop('')
-				msched <- msched * popMdistr / denom
-				fsched <- fsched * popFdistr / denom
+        if(denom == 0) { # not enough people to migrate out
+            msched[] <- 0
+            fsched[] <- 0
+        } else {
+				  denom2 <- c(msched, fsched)/denom
+				  if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+          if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
+          #stop('')
+				  msched <- msched * popMdistr / denom
+				  fsched <- fsched * popFdistr / denom
+        }
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
@@ -1250,9 +1255,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
 	if(is.gcc(country)) {
+	  cidxM <- which(inputs$MIGm$country_code==156)
+  	cidxF <- which(inputs$MIGf$country_code==156)
 		cidxM.neg <- which(inputs$MIGm$country_code==country)
 		cidxF.neg <- which(inputs$MIGf$country_code==country)
 		first.year.neg <- FALSE
+		first.year <- TRUE
 	}
 	if(!is.null(inputs$migration.year.of.schedule)) { 
 		first.year.period <- inputs$migration.year.of.schedule
