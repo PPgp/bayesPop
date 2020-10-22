@@ -877,7 +877,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(FALSE && is.gcc(country.code)) { # This is switched off for 2300 projections
+		 if(is.gcc(country.code)) { # This is switched off for 2300 projections
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
@@ -886,7 +886,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
 	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		#outsched <- outmodsched * c(popMdistr, popFdistr)
 	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
@@ -894,6 +894,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sched <- netrate/sum(netrate)
 			 msched <- sched[1:21]
 			 fsched <- sched[22:42]
+			 stop("")
 			 # check depopulation for negative rates
 			 isneg <- netrate < 0
 			 netmiggcc <- mig.count*sched
@@ -1297,9 +1298,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
 	if(is.gcc(country)) {
+	    cidxM <- which(inputs$MIGm$country_code==156)
+	    cidxF <- which(inputs$MIGf$country_code==156)
 		cidxM.neg <- which(inputs$MIGm$country_code==country)
 		cidxF.neg <- which(inputs$MIGf$country_code==country)
 		first.year.neg <- FALSE
+		first.year <- TRUE
 	}
 	if(!is.null(inputs$migration.year.of.schedule)) { 
 		first.year.period <- inputs$migration.year.of.schedule
