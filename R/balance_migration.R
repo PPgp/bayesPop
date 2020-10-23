@@ -373,9 +373,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
 			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
 			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-								which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+				#neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+				#				which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+				add.pop.warn(country.codes.char[country], time, 5, res.env)  #'Final population negative for some age groups'
 			}
 		}#})
 		#memch4 <- mem_change({
@@ -843,7 +843,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			else {
 			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - min(0.0019, inpc$minimum.pop/land.area)*land.area)/pop else NULL
 			    #rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
-			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA)
+			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA) # maximum net change in country population
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
@@ -877,7 +877,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(is.gcc(country.code)) { # This is switched off for 2300 projections
+		if(is.gcc(country.code)) { # This is switched off for 2300 projections
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
@@ -886,7 +886,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
 	  		outmodsched <- c(modeloutsched, fsched)
-	  		#outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
 	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
@@ -894,7 +894,6 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sched <- netrate/sum(netrate)
 			 msched <- sched[1:21]
 			 fsched <- sched[22:42]
-			 stop("")
 			 # check depopulation for negative rates
 			 isneg <- netrate < 0
 			 netmiggcc <- mig.count*sched
@@ -915,8 +914,8 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			 #msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
 			 #fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
 		 }
-		#if(rate < 0 && !is.gcc(country.code)) {
-		if(rate < 0) { # this is on for GCC countries for the 2300 projections 
+		if(rate < 0 && !is.gcc(country.code)) {
+		#if(rate < 0) { # this is on for GCC countries for the 2300 projections 
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
 				if(denom == 0) { # not enough people to migrate out
 				    msched[] <- 0
@@ -951,6 +950,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new <- c(msched, fsched) + shifts/mig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
+				sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
 				migM <- mig.count * msched
