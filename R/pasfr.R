@@ -8,23 +8,21 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
   # ########
     bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose = verbose)
     observed <- list()
-    #ages <- if(annual) 10:54 else seq(15, 45, by=5)
-    #age.labels <- if(annual) as.character(ages) else paste(ages, ages+4, sep="-")
     
     # determine projection years and periods
     if(annual) {
         proj.periods <- proj.years <- (present.year + 1):end.year
-        obs.periods <- obs.years <- (present.year - 100):present.year  # for now take all observed data; it will be filtered later
+        obs.periods <- obs.years <- (present.year - 300):present.year  # for now take all observed data; it will be filtered later
         period.step <- 1
     } else {
-        # get SRB data
-        srblist <- .get.srb.data.and.time.periods(inputs$srb, present.year, end.year, wpp.year)
-        SRB <- srblist$srb
-        observed$SRB <- srblist$obs.srb
-        proj.periods <- srblist$proj.periods
-        proj.years <- srblist$proj.years
-        obs.periods <- srblist$obs.periods
-        obs.years <- as.integer(substr(srblist$obs.periods, 1, 4))+3
+        # find a 5-year bracket for present year
+        possible.years <- seq(1000, 3000, by = 5)
+        period <- cut(present.year, possible.years, labels = FALSE, right = FALSE)
+        # generate vectors of observed and projection years
+        proj.years <- seq(possible.years[period]+3, end.year-2, by = 5)
+        proj.periods <- paste(proj.years-3, proj.years+2, sep = "-")
+        obs.years <- seq(possible.years[period-50]+3, proj.years[1]-5, by = 5)
+        obs.periods <- paste(obs.years-3, obs.years+2, sep = "-")
         period.step <- 5
     }
     # get PASFR data
@@ -37,8 +35,12 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
     if(!is.data.frame(TFRpred)) { # object of class bayesTFR.prediction
         country.table <- get.countries.table(TFRpred)
     } else {
-        TFRpred <- TFRpred[TFRpred$year %in% c(obs.years, proj.years),]
-        TFRpred <- aggregate(value ~ year + country_code, TFRpred, median) # in case there are more trajectories
+        TFRpred.sub <- TFRpred[TFRpred$year %in% c(obs.years, proj.years),]
+        if(nrow(TFRpred.sub) == 0 && nchar(TFRpred$year[1]==9)) {# year column might be in the form of period instead of year
+            TFRpred$year <- as.integer(substr(TFRpred$year, 1,4))+3
+            TFRpred.sub <- TFRpred[TFRpred$year %in% c(obs.years, proj.years),]
+        }
+        TFRpred <- aggregate(value ~ year + country_code, TFRpred.sub, median) # in case there are more trajectories
         #TFRpred <- aggregate(formula("value ~ year + country_code"), TFRpred, median) # using formula to trick the CRAN check
         TFRpred <- TFRpred[order(TFRpred$year),]
         country.table <- unique(merge(TFRpred[,'country_code', drop=FALSE], 
@@ -51,8 +53,7 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
     
     # prepare inputs
     inp <- new.env()
-    for(par in c(#'SRB', 
-        'PASFR', 'PASFRpattern', 'TFRpred', 'present.year', 'end.year', 'observed'))
+    for(par in c('PASFR', 'PASFRpattern', 'TFRpred', 'present.year', 'end.year', 'observed'))
         assign(par, get(par), envir=inp)
     
     # compute global norm
@@ -68,7 +69,9 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
     # iterate over countries
     #for(icountry in which(country.table$name == "Fiji")) {
     for(icountry in 1:nrow(country.table)) {
-        if(verbose && interactive()) cat('\r', "Projecting PASFR ... ", round(icountry/nrow(country.table)*100), '%')
+        if(verbose && interactive()) cat('\r', "Computing PASFR: ", round(icountry/nrow(country.table)*100), '%')
+        this.proj.years <- proj.years
+        this.proj.periods <- proj.periods
         # extract country-specific inputs
         country <- country.table[icountry,]
         if (!is.data.frame(TFRpred)) {
@@ -77,17 +80,20 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
             country.obs.tfr <- bayesTFR:::get.tfr.reconstructed(TFRpred$tfr_matrix_reconstructed, TFRpred$mcmc.set$meta)
             country.obs.TFRpred <- country.obs.tfr[1:if(!is.null(TFRpred$present.year.index)) TFRpred$present.year.index else nrow(country.obs.tfr),country.obj$index]
             country.tfr <- c(country.obs.TFRpred, country.medians.TFRpred)
+            match.years <- which(proj.years %in% names(country.tfr))
         } else {
             country.tfr.df <- TFRpred[TFRpred$country_code==country$code,]
             country.tfr <- country.tfr.df$value
             names(country.tfr) <- country.tfr.df$year
+            match.years <- which(proj.years %in% country.tfr.df$year)
         }
+        this.proj.years <- this.proj.years[match.years]
+        this.proj.periods <- this.proj.periods[match.years]
         country.inputs$PASFRpattern <- .get.par.from.inputs('PASFRpattern', inp, country$code)
         country.inputs$observed <- list(PASFR=.get.par.from.inputs('PASFR', inp$observed, country$code))
         this.age <- inp$observed$PASFR[inp$observed$PASFR$country_code == country$code, "age"]
         if(is.null(country.inputs$observed$PASFR) || is.null(country.inputs$PASFRpattern)) next
-        this.proj.years <- proj.years
-        this.proj.periods <- proj.periods
+
         if(!is.null(lastobs)) { # add projection years if there is a gap between last.observed and first projection
             lastobs.cntry <- lastobs[lastobs$country_code == country$code, "last.observed"]
             if(lastobs.cntry + period.step < this.proj.years[1]) {
@@ -103,9 +109,7 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
         }
         # compute pasfr for the median TFR
         pasfr <- kantorova.pasfr(country.tfr, country.inputs, norms=inp$PASFRnorms, proj.years = this.proj.years, 
-                                    tfr.med=country.tfr[length(country.tfr)], annual = annual, 
-                                 nr.est.points = nr.est.points
-                                 )
+                                tfr.med=country.tfr[length(country.tfr)], annual = annual, nr.est.points = nr.est.points)
         # as percentage
         pasfr <- round(pasfr*100, digits)
         
@@ -115,20 +119,21 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
         reslist[[icountry]] <- cbind(data.table(country_code=country$code, name=country$name, age=this.age),
                                      pasfr)
     }
+    if(verbose && interactive()) cat('\n')
     
     # create one data frame
     resdf <- NULL
     for(i in 1:length(reslist)) 
         resdf <- rbind(resdf, reslist[[i]], fill = TRUE)
     non.int.cols <- c("country_code", "name", "age")
-    resdf <- resdf[, c(non.int.cols, sort(as.integer(setdiff(colnames(resdf), non.int.cols)))), 
+    resdf <- resdf[, c(non.int.cols, sort(setdiff(colnames(resdf), non.int.cols))), 
                    with = FALSE]
     # export
     if(!is.null(out.file.name)) {
       write.table(resdf, out.file.name, sep="\t", row.names=FALSE)
       cat("\nResults written into ", out.file.name, "\n")
     }
-    invisible(data.frame(resdf))
+    invisible(data.frame(resdf, check.names = FALSE))
 }
 
 

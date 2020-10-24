@@ -1005,7 +1005,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
 	
-	t.r <- years[startTi-1]
+	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
 	p.r <- pmax(p.r, min.value)
