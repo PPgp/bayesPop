@@ -958,7 +958,8 @@ rebalance.migration <- function(e, pop, what='', check.negatives=FALSE) {
 			this.pop <- pop
 			while(i < 100) {		
 				dif <- sum(e[[par]][age,])
-				dif.countries <- dif/this.sumpop * this.pop
+        dif.countries <- dif/sum(abs(e[[par]][age,])) * abs(e[[par]][age,]) # rebalance based on migrants vs population
+				#dif.countries <- dif/this.sumpop * this.pop
 				e[[par]][age,] <- e[[par]][age,] - dif.countries
 				if(!check.negatives) break
 				wneg <- which(e[[par]][age,] + e[[poppar]][age,] < zero.constant)
