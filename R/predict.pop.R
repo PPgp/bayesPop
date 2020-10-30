@@ -807,7 +807,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
           TFRpred <- melt(TFRpred, id.vars = "country_code", 
                           measure.vars = setdiff(colnames(TFRpred), c("country_code", "country_name", "name", "last.observed")),
                           variable.name = "year")
-          TFRpred[, Trajectory := 1]
+          TFRpred[, trajectory := 1]
           TFRpred <- as.data.frame(TFRpred)
       } else { # file in comma-separated long format 
         TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)

@@ -15,11 +15,12 @@ project.pasfr(inputs = NULL, present.year = 2020, end.year = 2100,
     
 project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
     present.year = 2020, end.year = 2100, wpp.year = 2019, 
+    annual = FALSE, nr.est.points = if(annual) 15 else 3,
     digits = 2, out.file.name = "percentASFRtraj.txt")
 }
 
 \arguments{
-  \item{inputs}{List of input data (file names) with the same meaning as in \code{\link{pop.predict}}. The relevant items here are: either \code{tfr.file} or \code{tfr.sim.dir} (TFR estimates and projections), \code{pasfr} (PASFR for observed time periods), \code{patterns} (PASFR patterns) and \code{srb} (observed and predicted sex ratio at birth; required only for \code{project.pasfr.traj} to derive relevant time periods). All entries are optional. By default the data is taken from the corresponding wpp package. See Details below.}
+  \item{inputs}{List of input data (file names) with the same meaning as in \code{\link{pop.predict}}. The relevant items here are: either \code{tfr.file} or \code{tfr.sim.dir} (TFR estimates and projections), \code{pasfr} (PASFR for observed time periods), and \code{patterns} (PASFR patterns). All entries are optional. By default the data is taken from the corresponding wpp package. See Details below.}
   \item{present.year}{Year of the last observed data point.}
   \item{end.year}{End year of the projection.}
   \item{wpp.year}{Year for which WPP data is used if one of the \code{inputs} components is left out.}
@@ -32,7 +33,7 @@ project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL,
   \item{nr.traj}{Number of trajectories on which the function should be applied. By default all trajectories are taken. Otherwise they are thinned appropriately.}
 }
 \details{
-For \code{project.pasfr}, if the input TFR is given as an ASCII file (in \code{inputs$tfr.file}), it can be either a csv (comma-separated) file in long format, with columns \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory} and \dQuote{TF}. Or, it can be a tab-separated (wide format) file with column \dQuote{country_code} and each year or time period as a separate column (see \code{\link[wpp2019]{tfr}}). In the latter case, an additional \code{inputs} entry \code{tfr.file.type = "w"} must be provided to specify the file is in the wide format. Note that the TFR input should cover all projection time period as well as observed TFR as the function assesses the start of Phase III, which could be in the past.
+If the input TFR is given as an ASCII file (in \code{inputs$tfr.file}), it can be either a csv (comma-separated) file in long format, with columns \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory} and \dQuote{TF}. Or, it can be a tab-separated (wide format) file with column \dQuote{country_code} and each year or time period as a separate column (see \code{\link[wpp2019]{tfr}}). In the latter case, an additional \code{inputs} entry \code{tfr.file.type = "w"} must be provided to specify the file is in the wide format, which is a case whe there is only one trajectory. Note that the TFR input should cover all projection time period as well as observed TFR as the function assesses the start of Phase III, which could be in the past.
 
 If observed PASFR is given (in \code{inputs$pasfr}), it is a tab-separated file in wide format as in \code{\link[wpp2019]{percentASFR}}. Fertility age patterns can be controlled by country via the \code{inputs$patterns} entry, which is a dataset in the same format and meaning as \code{\link{vwBaseYear}}. 
 
