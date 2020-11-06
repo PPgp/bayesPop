@@ -993,7 +993,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 			endT <- years.long[max(lyears, start.phase3 + 25/by)]
 		} else { # t_u exists
 			first.larger <- which(!smaller.than.median)[1] + start.phase3 - 1
-			endT <- years.long[max(first.larger, tobs + 10/by)]
+			endT <- years.long[max(first.larger, tobs + 20/by)]
 		}
 	}
 	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound

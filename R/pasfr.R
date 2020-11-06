@@ -78,7 +78,7 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
     resdf <- with(inp, {
         reslist <- NULL
         country.inputs <- new.env()
-    #for(icountry in which(country.table$name == "Fiji")) {
+    #for(icountry in which(country.table$code == 840)) {
     for(icountry in 1:nrow(country.table)) {
         if(verbose && interactive()) cat('\r', "Computing PASFR: ", round(icountry/nrow(country.table)*100), '%')
         this.proj.years <- proj.years
