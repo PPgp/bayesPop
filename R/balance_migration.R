@@ -240,6 +240,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	predict.1time.period.1trajectory <- function(itraj, time) {
 	    #gc()
 	    #memch1a <- mem_change({
+      cat("trajectory:", itraj, "time:", time, "\n")
 	    with(work.mig.env, {
 	        migrm[] <- migrf[] <- migrm.labor[] <- migrf.labor[] <- 0
 	    })
@@ -751,6 +752,8 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	}
   	determ.part <- mu + phi*(oldRate-mu)
   	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
+    cat("xmin:", xmin, "xmax:", xmax, "old rate:", oldRate, "new rate:", newRate , "\n")
+    #stop("Line 754 (or 363)")
 	return(newRate)
 }
 
@@ -877,7 +880,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
             fsched[] <- 0
         } else {
 				  denom2 <- c(msched, fsched)/denom
-				  if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				  #if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
           if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
           #stop('')
 				  msched <- msched * popMdistr / denom
@@ -889,7 +892,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migF <- mig.count*fsched
 		if(!is.null(fixed.rate) || rate == 0) break
 		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
-		lower.bounds <- c(popM21 + emigrant.rate.bound * popM21, popF21 + emigrant.rate.bound * popF21)
+		lower.bounds <- c(popM21 + 1.2*emigrant.rate.bound * popM21, popF21 + 1.2*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
 		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
 		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
 				) { # adjust age schedules
@@ -958,7 +961,7 @@ rebalance.migration <- function(e, pop, what='', check.negatives=FALSE) {
 			this.pop <- pop
 			while(i < 100) {		
 				dif <- sum(e[[par]][age,])
-        dif.countries <- dif/sum(abs(e[[par]][age,])) * abs(e[[par]][age,]) # rebalance based on migrants vs population
+        dif.countries <- dif/sum(abs(e[[par]])) * colSums(abs(e[[par]])) # rebalance based on migrants vs population 28 Oct 2020
 				#dif.countries <- dif/this.sumpop * this.pop
 				e[[par]][age,] <- e[[par]][age,] - dif.countries
 				if(!check.negatives) break
