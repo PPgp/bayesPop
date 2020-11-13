@@ -240,7 +240,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	predict.1time.period.1trajectory <- function(itraj, time) {
 	    #gc()
 	    #memch1a <- mem_change({
-      cat("trajectory:", itraj, "time:", time, "\n")
+      #cat("trajectory:", itraj, "time:", time, "\n")
 	    with(work.mig.env, {
 	        migrm[] <- migrf[] <- migrm.labor[] <- migrf.labor[] <- 0
 	    })
@@ -752,7 +752,7 @@ project.migration.one.country.one.step <- function(mu, phi, sigma, oldRates, cou
 	}
   	determ.part <- mu + phi*(oldRate-mu)
   	newRate <- rtruncnorm(n=1,a=xmin-determ.part, b=xmax-determ.part, mean=0, sd=sigma) + determ.part
-    cat("xmin:", xmin, "xmax:", xmax, "old rate:", oldRate, "new rate:", newRate , "\n")
+    #cat("xmin:", xmin, "xmax:", xmax, "old rate:", oldRate, "new rate:", newRate , "\n")
     #stop("Line 754 (or 363)")
 	return(newRate)
 }
@@ -807,7 +807,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popF21 <- popF[1:21]
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
-	emigrant.rate.bound <- -0.2 #-0.8, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
+	emigrant.rate.bound <- -0.4 #-0.2 & multiple 1.2 had reasonable GCC results, but postive rate resapling was still an issue; -0.8, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
 	country.code.char <- as.character(country.code)
 	while(i <= 1000) {
 		i <- i + 1
@@ -892,7 +892,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migF <- mig.count*fsched
 		if(!is.null(fixed.rate) || rate == 0) break
 		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
-		lower.bounds <- c(popM21 + 1.2*emigrant.rate.bound * popM21, popF21 + 1.2*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
+		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
 		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
 		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
 				) { # adjust age schedules
