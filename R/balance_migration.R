@@ -807,9 +807,10 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popF21 <- popF[1:21]
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
-	emigrant.rate.bound <- -0.4 #-0.2 & multiple 1.2 had reasonable GCC results, but postive rate resapling was still an issue; -0.8, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
+	emigrant.rate.bound <- -0.4 #-0.2 & multiple 1.2 had reasonable GCC results, but postive rate resapling was still an issue; -0.8, updated based on 17 July email (RE: small countries issue)
 	country.code.char <- as.character(country.code)
-	while(i <= 1000) {
+	while(i <= 5) { #REPLACE with 1000
+  browser()
 		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
@@ -819,10 +820,9 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
-					c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, rlim = rlim,
-					relaxed.bounds=time < 6, is.small=pop < 200
-					# max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
-					)
+                                                         c(as.numeric(inpc$migration.rates), mig.rates[1:time]), country.code, 
+                                                         rlim=rlim, relaxed.bounds=time < 6, is.small=pop < 200 #, max(colSums(inpc$observed$MIGm + inpc$observed$MIGf)
+                                                         )
 			}
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
@@ -836,42 +836,42 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(is.gcc(country.code)) { 
-			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
+		if(is.gcc(country.code)) { 
+      modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
 			Ict <- coefs[1] + coefs[2] * max(rate, 0)
-	  		Oct <- Ict - rate
-	  		sum.msched <- sum(insched) # proportion of male
-	  		insched <- c(insched, fsched)
-	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
-	  		outsched <- outsched/sum(outsched)
-	  		inrate <- insched * Ict
-	  		outrate <- Oct*outsched
-	  		netrate <- inrate - outrate
-	  		sched <- netrate/sum(netrate)
-			 msched <- sched[1:21]
-			 fsched <- sched[22:42]
-			 # check depopulation for negative rates
-			 isneg <- netrate < 0
-			 netmiggcc <- mig.count*sched
-			 idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
-			 if(length(idepop) > 0) {
-			   delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
-			   delta.abs.sum <- sum(delta.abs[idepop])
-			   netmiggcc.mod <- netmiggcc
-			   # add delta to depopulated age groups
-			   netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
-			   # remove the total amount of shifter migration from the remaining age groups
-			   netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
-			   sched <- netmiggcc.mod/mig.count # should sum to 1 
-			    msched <- sched[1:21]
-			    fsched <- sched[22:42]
-			    #denom <- sum(msched * popMdistr + fsched * popFdistr)
-			 }
-			 #msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
-			 #fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
+	  	Oct <- Ict - rate
+	  	sum.msched <- sum(insched) # proportion of male
+	  	insched <- c(insched, fsched)
+	  	outmodsched <- c(modeloutsched, fsched)
+	  	outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
+	  	outsched <- outsched/sum(outsched)
+	  	inrate <- insched * Ict
+	  	outrate <- Oct*outsched
+	  	netrate <- inrate - outrate
+	  	sched <- netrate/sum(netrate)
+			msched <- sched[1:21]
+			fsched <- sched[22:42]
+			# check depopulation for negative rates
+			isneg <- netrate < 0
+			netmiggcc <- mig.count*sched
+			idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
+			if(length(idepop) > 0) {
+        delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
+			  delta.abs.sum <- sum(delta.abs[idepop])
+			  netmiggcc.mod <- netmiggcc
+			  # add delta to depopulated age groups
+			  netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
+			  # remove the total amount of shifter migration from the remaining age groups
+			  netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
+			  sched <- netmiggcc.mod/mig.count # should sum to 1 
+        msched <- sched[1:21]
+			  fsched <- sched[22:42]
+			  #denom <- sum(msched * popMdistr + fsched * popFdistr)
+			}
+			#msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
+			#fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
@@ -892,10 +892,9 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		migF <- mig.count*fsched
 		if(!is.null(fixed.rate) || rate == 0) break
 		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
-		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
+		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
 		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
-		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
-				) { # adjust age schedules
+		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)])) ) { # adjust age schedules
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
