@@ -809,13 +809,23 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	popFdistr <- popF21/pop
 	emigrant.rate.bound <- -0.4 #-0.2 & multiple 1.2 had reasonable GCC results, but postive rate resapling was still an issue; -0.8, updated on 23 July 2020 based on 17 July email from Hana (RE: small countries issue)
 	country.code.char <- as.character(country.code)
+
+	# adjustment constant for adjusting the rate by the population distribution
+	popdistr <- (popM21 + popF21)/sum(popM21 + popF21)
+	adj.constant.neg.numer <- sum(inpc$mig.rogers.castro * popdistr)
+	pop0distr <- c(inpc$POPm0 + inpc$POPf0)/sum(c(inpc$POPm0 + inpc$POPf0))
+	adj.constant.neg.denom <- sum(inpc$mig.rogers.castro * pop0distr)
+	adj.constant.neg <- adj.constant.neg.numer/adj.constant.neg.denom
+	adj.constant.pos.numer <- sum(inpc$mig.rogers.castro * inpc$world.pop.distr)
+	adj.constant.pos.denom <- sum(inpc$mig.rogers.castro * inpc$world.pop.distr.ini)
+
 	while(i <= 1000) {
 		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else {
 			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - min(0.0019, inpc$minimum.pop/land.area)*land.area)/pop else NULL
-          rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp( 5.118 + 0.771*log(land.area) )/pop - 1 else NA) # maximum net change in country population
+          		rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp( 5.118 + 0.771*log(land.area) )/pop - 1 else NA) # maximum net change in country population
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
@@ -827,7 +837,22 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
 					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
+	
+		# adjustment of the rate by the population distribution
+		if(is.null(fixed.rate)) {
+		    if(rate < 0) { # adjust using the country pop distr
+		        adj.constant <- adj.constant.neg.numer/adj.constant.neg.denom
+		    } else { # adjust using the world pop distr
+		        adj.constant <- adj.constant.pos.numer/adj.constant.pos.denom
+		    }
+		    #browser()
+		    #print(c(country.code, time, itraj, ":", round(adj.constant,3), round(rate, 3), round(rate * adj.constant,3), 
+		    #        round(rate * pop), round(rate * adj.constant * pop)))
+		    rate <- rate * adj.constant
+		}	
+
 		mig.count <- rate * pop
+		if(rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate)) next # resample if the outmigration would be larger than what is allowed
 		schedMname <- 'M'
 		schedFname <- 'F'
 		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
@@ -836,7 +861,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(is.gcc(country.code)) { 
+		if(is.gcc(country.code)) { 
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
@@ -910,7 +935,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new <- c(msched, fsched) + shifts/mig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
-        sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
+        		sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
 				migM <- mig.count * msched
