@@ -61,6 +61,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		              'migration.adjust.to', 'migration.adjustM.to', 'migration.adjustF.to')) 
 		    if(par %in% names(inp) && any(remove.cols %in% colnames(inp[[par]])))
 		        inp[[par]] <- inp[[par]][, -which(colnames(inp[[par]]) %in% remove.cols)]
+		# save inital world pop distribution
+		pop0all <- data.table(inp$POPm0)[country_code %in% country.codes][, 1:3, with = FALSE]
+		colnames(pop0all)[3] <- "pop0"
+		pop0all$pop0 <- pop0all$pop0 + data.table(inp$POPf0)[country_code %in% country.codes][, 3, with = FALSE]
+		pop0all <- pop0all[, .(totpop = sum(pop0)), by = "age"]
+		world.pop.distr.ini <- pop0all$totpop/sum(pop0all$totpop)
+		# save a Roger's Castro curve (taken from China)
+		migRC <- age.specific.migration(wpp.year=inp$wpp.year, countries=156, verbose=FALSE)
+		mig.rogers.castro <- migRC$male[,"2020-2025"]/sum(migRC$male[,"2020-2025"])
 	} 
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.time.index==1 && !reformat.only) unlink(outdir.tmp, recursive=TRUE)
@@ -213,7 +222,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "nvariants", "keep.vital.events", "verbose",
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-	                    "migration.thresholds", "adjust.mig")
+	                    "migration.thresholds", "adjust.mig",
+	                    "world.pop.distr.ini", "mig.rogers.castro")
 	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
 	work.env <- create.work.env()
 	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
@@ -581,6 +591,9 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     lages <- length(res.env$ages21)
     for(cidx in 1:res.env$ncountries) {
         inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
+        inpc$world.pop.distr <- res.env$world.pop.distr
+        inpc$world.pop.distr.ini <- res.env$world.pop.distr.ini
+        inpc$mig.rogers.castro <- res.env$mig.rogers.castro
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
                           list(M = res.env$popM.prev[,cidx,drop=FALSE],
                                F = res.env$popF.prev[,cidx,drop=FALSE])
@@ -843,13 +856,14 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		    if(rate < 0) { # adjust using the country pop distr
 		        adj.constant <- adj.constant.neg.numer/adj.constant.neg.denom
 		    } else { # adjust using the world pop distr
-		        adj.constant <- adj.constant.pos.numer/adj.constant.pos.denom
+		        adj.constant <- adj.constant.pos.numer/adj.constant.neg.denom
 		    }
 		    #browser()
 		    #print(c(country.code, time, itraj, ":", round(adj.constant,3), round(rate, 3), round(rate * adj.constant,3), 
 		    #        round(rate * pop), round(rate * adj.constant * pop)))
 		    rate <- rate * adj.constant
 		}	
+
 
 		mig.count <- rate * pop
 		if(rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate)) next # resample if the outmigration would be larger than what is allowed
@@ -876,27 +890,27 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		outrate <- Oct*outsched
 	  		netrate <- inrate - outrate
 	  		sched <- netrate/sum(netrate)
-			 msched <- sched[1:21]
-			 fsched <- sched[22:42]
-			 # check depopulation for negative rates
-			 isneg <- netrate < 0
-			 netmiggcc <- mig.count*sched
-			 idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
-			 if(length(idepop) > 0) {
-			   delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
-			   delta.abs.sum <- sum(delta.abs[idepop])
-			   netmiggcc.mod <- netmiggcc
-			   # add delta to depopulated age groups
-			   netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
-			   # remove the total amount of shifter migration from the remaining age groups
-			   netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
-			   sched <- netmiggcc.mod/mig.count # should sum to 1 
+			msched <- sched[1:21]
+			fsched <- sched[22:42]
+			# check depopulation for negative rates
+			isneg <- netrate < 0
+			netmiggcc <- mig.count*sched
+			idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
+			if(length(idepop) > 0) {
+				delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
+			   	delta.abs.sum <- sum(delta.abs[idepop])
+			   	netmiggcc.mod <- netmiggcc
+			   	# add delta to depopulated age groups
+			   	netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
+			   	# remove the total amount of shifter migration from the remaining age groups
+			   	netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
+			   	sched <- netmiggcc.mod/mig.count # should sum to 1 
 			    msched <- sched[1:21]
 			    fsched <- sched[22:42]
 			    #denom <- sum(msched * popMdistr + fsched * popFdistr)
-			 }
-			 #msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
-			 #fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
+			}
+			#msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
+			#fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
