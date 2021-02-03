@@ -261,7 +261,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(time > 1) {
 	        work.env$popM.prev <- popM.prev[,,itraj]
 	        work.env$popF.prev <- popF.prev[,,itraj]
-	    }
+	        if(is.null(dim(work.env$popM.prev))) # one country only; dimension dropped
+	            work.env$popM.prev <- abind(work.env$popM.prev, along=2)
+	        if(is.null(dim(work.env$popF.prev))) 
+	            work.env$popF.prev <- abind(work.env$popF.prev, along=2)
+	        # recompute world pop age distribution
+	        popall <- rowSums(work.env$popM.prev + work.env$popF.prev)
+	        popall <- c(popall[1:20], sum(popall[21:length(popall)]))
+	        work.env$world.pop.distr <- popall/sum(popall)
+	    } else work.env$world.pop.distr <- work.env$world.pop.distr.ini
 	    #})
         #memch2 <- mem_change({
 	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
