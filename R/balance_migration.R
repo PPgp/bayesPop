@@ -866,102 +866,70 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		    } else { # adjust using the world pop distr
 		        adj.constant <- adj.constant.pos.numer/adj.constant.neg.denom
 		    }
-		    #browser()
-		    #print(c(country.code, time, itraj, ":", round(adj.constant,3), round(rate, 3), round(rate * adj.constant,3), 
-		    #        round(rate * pop), round(rate * adj.constant * pop)))
 		    rate <- rate * adj.constant
 		}	
 
+		#browser()
 
-		mig.count <- rate * pop
-		if(rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate)) next # resample if the outmigration would be larger than what is allowed
-		schedMname <- 'M'
-		schedFname <- 'F'
-		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
-			schedMname <- 'Mnegative'
-			schedFname <- 'Fnegative'
-		}
-		msched <- inpc$migration.age.schedule[[schedMname]][,time]
-		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		if(is.gcc(country.code)) { 
-			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
-			insched <- inpc$migration.age.schedule[['M']][,time] # China
-			coefs <- gcc.inrate.coefs()
-			Ict <- coefs[1] + coefs[2] * max(rate, 0)
-	  		Oct <- Ict - rate
-	  		sum.msched <- sum(insched) # proportion of male
-	  		insched <- c(insched, fsched)
-	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
-	  		outsched <- outsched/sum(outsched)
-	  		inrate <- insched * Ict
-	  		outrate <- Oct*outsched
-	  		netrate <- inrate - outrate
-	  		sched <- netrate/sum(netrate)
-			msched <- sched[1:21]
-			fsched <- sched[22:42]
-			# check depopulation for negative rates
-			isneg <- netrate < 0
-			netmiggcc <- mig.count*sched
-			idepop <- which(isneg & abs(netmiggcc) > abs(emigrant.rate.bound)*c(popM21, popF21))
-			if(length(idepop) > 0) {
-				delta.abs <- abs(netmiggcc) - abs(emigrant.rate.bound)*c(popM21, popF21)
-			   	delta.abs.sum <- sum(delta.abs[idepop])
-			   	netmiggcc.mod <- netmiggcc
-			   	# add delta to depopulated age groups
-			   	netmiggcc.mod[idepop] <- netmiggcc[idepop] + delta.abs[idepop]
-			   	# remove the total amount of shifter migration from the remaining age groups
-			   	netmiggcc.mod[-idepop] <- netmiggcc[-idepop] - delta.abs.sum*abs(sched[-idepop])/sum(abs(sched[-idepop]))
-			   	sched <- netmiggcc.mod/mig.count # should sum to 1 
-			    msched <- sched[1:21]
-			    fsched <- sched[22:42]
-			    #denom <- sum(msched * popMdistr + fsched * popFdistr)
-			}
-			#msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
-			#fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
-		}
-		if(rate < 0 && !is.gcc(country.code)) {
-				denom <- sum(msched * popMdistr + fsched * popFdistr)
-        if(denom == 0) { # not enough people to migrate out
-            msched[] <- 0
-            fsched[] <- 0
-        } else {
-				  denom2 <- c(msched, fsched)/denom
-				  #if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
-          if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
-          #stop('')
-				  msched <- msched * popMdistr / denom
-				  fsched <- fsched * popFdistr / denom
-        }
-		}
-		# age-specific migration counts		
-		migM <- mig.count*msched
-		migF <- mig.count*fsched
+		coefs <- gcc.inrate.coefs()
+		Ict <- coefs[1] + coefs[2] * max(rate, 0)
+	  	Oct <- Ict - rate
+
+	  	Wt = adj.constant.pos.numer 
+	  	W2020 = adj.constant.pos.denom
+
+	  	Kt = adj.constant.neg.numer
+	  	K2020 = adj.constant.neg.denom
+
+	  	IctStar <- Ict * Wt / W2020 
+	  	OctStar <- Oct * Kt/ K2020 
+
+	  	inmig.count <- IctStar * pop 
+	  	outmig.count <- OctStar * pop
+
+		if(outmig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate)) next # resample if the outmigration would be larger than what is allowed
+			
+		msched <- inpc$mig.rogers.castro/2 
+		fsched <- inpc$mig.rogers.castro/2 
+
+		inMigM <- inmig.count*msched
+		outMigM <- outmig.count*msched
+
+		inMigF <- inmig.count*fsched
+		outMigF <- outmig.count*fsched
+
+
+		#*************** CHECK FOR MIN NUM OF PPL IN EACH CATEGORY FROM HERE ********************
+		#*************** Should only be adjusting out schedule rather than net *******************
+		#*************** Set too much out mig to zero.constant() *************************
 		if(!is.null(fixed.rate) || rate == 0) break
-		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
-		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
-		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
-		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
-				) { # adjust age schedules
+		if(all(popM21 - outMigM >= zero.constant) && all(popF21 - outMigF >= zero.constant))  break # assure positive count
+		
+		#*** No good; just review/update the shift logic below: outMigM[ (popM21 - outMigM) < 0] = 0 # but this blows the count and the rate, so you need to do the shifting as below
+
+		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, 
+						  popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
+		if(all(c(popM21 - outMigM, popF21 - outMigF) >= lower.bounds)){
+			break
+		} else{
 			prev.isneg <- rep(FALSE, 42)
 			j <- 1
 			sample.new.rate <- FALSE
-			#while(any(c(popM21 + migM, popF21 + migF) < zero.constant)) {
-			while(any(c(popM21 + migM, popF21 + migF) < lower.bounds)) { 
-				isneg <- prev.isneg | (c(popM21 + migM, popF21 + migF) < lower.bounds)
-				shifts <- -c(migM + popM21, migF + popF21) + lower.bounds
+			while(any(c(popM21 - outMigM, popF21 - outMigF) < lower.bounds)) { 
+				isneg <- prev.isneg | (c(popM21 - outMigM, popF21 - outMigF) < lower.bounds)
+				shifts <- -c(popM21 - outMigM, popF21 - outMigF) + lower.bounds
 				#stop('')
 				shifts[!isneg] <- 0
 				shifts[prev.isneg] <- 0
 				if(sum(shifts)==0) {sample.new.rate <- TRUE; break}
-				sched.new <- c(msched, fsched) + shifts/mig.count
+				sched.new <- c(msched, fsched) + shifts/outmig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
         		sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
-				fsched <- sched.new[22:length(sched.new)]	
-				migM <- mig.count * msched
-				migF <- mig.count * fsched
+				fsched <- sched.new[22:42]	
+				outMigM <- outmig.count * msched
+				outMigF <- outmig.count * fsched
 				prev.isneg <- isneg
 				j <- j+1
 				#if(j > 21) stop('Age schedule cannot be adjusted.')
@@ -982,15 +950,20 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		warns[3,time] <- warns[3,time] + 1 # 'Migration rate resampled more than 500 times'
 	}
 	migM.labor <- migF.labor <- NULL
-	if(country.code %in% labor.countries()) {
-		prop <- prop.labor.migration.for.country(country.code)
-		mig.count.labor <- mig.count * prop
-		migM.labor <- mig.count.labor*msched
-		migF.labor <- mig.count.labor*fsched
-		mig.count.rest <- mig.count * (1-prop)
-		migM <- mig.count.rest*msched
-		migF <- mig.count.rest*fsched
-	}
+	# if(country.code %in% labor.countries()) {
+	# 	prop <- prop.labor.migration.for.country(country.code)
+	# 	mig.count.labor <- mig.count * prop
+	# 	migM.labor <- mig.count.labor*msched
+	# 	migF.labor <- mig.count.labor*fsched
+	# 	mig.count.rest <- mig.count * (1-prop)
+	# 	migM <- mig.count.rest*msched
+	# 	migF <- mig.count.rest*fsched
+	# }
+
+	# generate net migration count and then determine how/where to track inflows/outflows
+	migM <- inMigM - outMigM
+	migF <- inMigF - outMigF
+
 	return(list(M=migM, F=migF, rate=rate, laborM=migM.labor, laborF=migF.labor, warns=warns))
 }
 
