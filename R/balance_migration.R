@@ -886,17 +886,10 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		inMigF <- inmig.count*fsched
 		outMigF <- outmig.count*fsched
 
-
-		#*************** CHECK FOR MIN NUM OF PPL IN EACH CATEGORY FROM HERE ********************
-		#*************** Should only be adjusting out schedule rather than net *******************
-		#*************** Set too much out mig to zero.constant() *************************
 		lower.bounds <- zero.constant
-		
+
 		if(!is.null(fixed.rate) || rate == 0) break
 		if(all(popM21 - outMigM >= lower.bounds) && all(popF21 - outMigF >= lower.bounds))  break # assure positive count
-		
-		#*** No good; just review/update the shift logic below: outMigM[ (popM21 - outMigM) < 0] = 0 # but this blows the count and the rate, so you need to do the shifting as below
-
 		if(all(c(popM21 - outMigM, popF21 - outMigF) >= lower.bounds)){
 			break
 		} else{
