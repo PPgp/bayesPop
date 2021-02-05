@@ -858,18 +858,6 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
 					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
-	
-		# adjustment of the rate by the population distribution
-		if(is.null(fixed.rate)) {
-		    if(rate < 0) { # adjust using the country pop distr
-		        adj.constant <- adj.constant.neg.numer/adj.constant.neg.denom
-		    } else { # adjust using the world pop distr
-		        adj.constant <- adj.constant.pos.numer/adj.constant.neg.denom
-		    }
-		    rate <- rate * adj.constant
-		}	
-
-		#browser()
 
 		coefs <- gcc.inrate.coefs()
 		Ict <- coefs[1] + coefs[2] * max(rate, 0)
@@ -902,13 +890,13 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		#*************** CHECK FOR MIN NUM OF PPL IN EACH CATEGORY FROM HERE ********************
 		#*************** Should only be adjusting out schedule rather than net *******************
 		#*************** Set too much out mig to zero.constant() *************************
+		lower.bounds <- zero.constant
+		
 		if(!is.null(fixed.rate) || rate == 0) break
-		if(all(popM21 - outMigM >= zero.constant) && all(popF21 - outMigF >= zero.constant))  break # assure positive count
+		if(all(popM21 - outMigM >= lower.bounds) && all(popF21 - outMigF >= lower.bounds))  break # assure positive count
 		
 		#*** No good; just review/update the shift logic below: outMigM[ (popM21 - outMigM) < 0] = 0 # but this blows the count and the rate, so you need to do the shifting as below
 
-		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, 
-						  popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
 		if(all(c(popM21 - outMigM, popF21 - outMigF) >= lower.bounds)){
 			break
 		} else{
