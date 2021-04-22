@@ -16,7 +16,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
-							migMtraj=NULL, migFtraj=NULL	
+							migMtraj=NULL, migFtraj=NULL,
+							average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
 						my.locations.file = NULL, 
@@ -674,6 +675,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
+	inp$average.annual <- inputs$average.annual
 	return(inp)
 }
 
@@ -1198,9 +1200,20 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 			stop('Trajectories for female ', list(e0Fpred='life expectancy', migFpred='migration')[[par]], ' do not match the male ones: ',
 				traj.available, ' <> ', ncol(inpc[[dependencies[[par]]]]), ' for ', country.name, '. No population projection generated.')
 	}
+	#stop("")
 	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) { # these are matrices
 		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
+		if(tolower(substr(par, 1,3)) %in% tolower(inputs$average.annual)) { # average annual data to 5-years data
+		    years <- as.integer(rownames(inpc[[par]]))
+		    year.ranges <- range(years[years %% 5 == 0])
+		    mid.points <- c(0, seq(year.ranges[1]-2, year.ranges[2]+3, by = 5))
+		    brks <- seq(year.ranges[1]-5, year.ranges[2] + 5, by = 5)
+		    year.bin <- findInterval(years, brks, left.open = TRUE)
+		    vals <- apply(inpc[[par]], 2, function(v) aggregate(v, by = list(year.bin), FUN = mean, na.rm = TRUE)[,"x"])
+		    rownames(vals) <- mid.points[-c(1, length(mid.points))]
+		    inpc[[par]] <- vals
+		}
 		inpc[[par]] <- inpc[[par]][as.character(inputs$proj.years),, drop=FALSE]
 	}
 	inpc$mig.nr.traj <- 1
