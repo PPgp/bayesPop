@@ -169,6 +169,58 @@ void LifeTableC(int sex, int nage, double *mx,
   }
 }
 
+
+/*****************************************************************************
+ * Function calculates a life table for one-year age groups 
+ * from age-specific mortality 
+ *****************************************************************************/
+void doLifeTable1y(int sex, int nage, double *mx, 
+                   double *Lx, double *lx, double *qx, double *ax) {
+    
+    int i;
+    //    double k;     /* correcting factor in Greville approximation */
+    double *tmpa; /* pointer to estimated ax[0] and ax[1] values */
+    int nage1;
+    nage1 = nage -1;
+    tmpa = get_a05(mx[0], sex); 
+    ax[0] = tmpa[0]; /* use only ax[0] */
+    for(i = 1; i < nage; ++i) {
+        /* k = 0.5 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN));*/
+        /*ax[i] = 0.5 - (1 / 12.0) * (mx[i] - k);*/
+        ax[i] = 0.5;
+    }
+    /* penultimate ax calculated with k from previous age group */
+    /*ax[nage1] = 0.5 - (1 / 12.0) * (mx[nage1] - k);*/
+
+    /* correcting out-of (reasonable) bounds ax for older ages             */ 
+    /* 0.42=1-exp(-1)/(1-exp(-1)), for constant mu=1, Kannisto assumption*/
+    /*for(i = 10; i < nage; i++) {
+        if(ax[i] < 0.97) {
+        ax[i] = 0.97;
+        }
+    }*/
+    lx[0] = 1;       /* l0 */
+    /* calculate life table variables from mx and ax */
+    for(i = 0; i < nage; ++i) {
+        qx[i] = mx[i] / (1 + (1 - ax[i]) * mx[i]);
+        lx[i+1] = fmax(lx[i] * (1-qx[i]), DBL_MIN);
+        Lx[i] = lx[i+1] + ax[i] * (lx[i] - lx[i+1]);
+    }
+    /* Open ended age interval */
+    Lx[nage] = lx[nage] / fmax(mx[nage], DBL_MIN); 
+    qx[nage] = 1.0;
+    ax[nage] = Lx[nage];
+}
+
+/* Wrapper around doLifeTable1y 
+ * Used when qx and ax is not needed.
+ */
+void LifeTable1yC(int sex, int nage, double *mx, double *Lx, double *lx) {
+    double qx[nage], ax[nage];
+    doLifeTable1y(sex, nage-1, mx, Lx, lx, qx, ax);
+}
+
+
 double get_constrained_mortality(double a, double b, double k, double constraint) {
 	double mx;
 	
@@ -678,4 +730,213 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
       		deathsf[i + t_offset] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
     	}
 	}	
+}
+
+void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
+                  int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
+                  double *mxm, double *mxf,
+                  double *popm, double *popf, double *totp, 
+                  double *btagem, double *btagef, double *deathsm, double *deathsf
+) {
+    
+    double b, bm, bf, srb_ratio;
+    
+    /* forward and backward estimated deaths */
+    double dfw, dbw;        
+
+    int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
+    int const male = 1;
+    int const female = 2;
+    
+    
+    int debug = 0;/* testing*/
+    
+    /* adim is an offset (representing time), which necessary to access and store two-dimensional data
+     organised by age and time/period into a one-dimensional vector requiered by accessing c from R
+     the expression
+     */
+    adim = 131;         /* number of age groups up to age 130+ */
+    adim1 = adim - 1;  /* Last index, number of age groups minus one           */
+    int adimdif = adim - *migr; /* Difference between number of ages in migration data and age 130 */
+    int adimfert = 31;     /* Number of reproductive age groups */
+    int adimfert_start = 15; /* Start index of reproductive age*/
+    
+    double Lxm[adim], Lxf[adim], lxm[adim], lxf[adim], bt[adimfert];
+    double cdeathsm[adim], cdeathsf[adim], mxtm[adim], mxtf[adim];
+    double totmigm[adim][*migc], totmigf[adim][*migc];
+    
+    /* cohort separation factor males, females*/
+    double csfm[adim],csff[adim]; 
+    
+    nrow = *migr;
+    ncol = *migc;
+    n = *npred;
+    
+    for(j=0; j<ncol; ++j) {
+        for(i=0; i<nrow; ++i) {		
+            totmigm[i][j] = MIGm[i + j*nrow];
+            totmigf[i][j] = MIGf[i + j*nrow];
+        }
+        for(i=nrow; i<nrow+adimdif; ++i) {
+            totmigm[i][j] = 0;
+            totmigf[i][j] = 0;
+        }
+    }
+    
+    /* Population projection for one trajectory */
+    for(j=1; j<(n+1); ++j) {
+        jve = j-1;
+        /* simplify notation for j and j-1 */
+        t = j*adim;
+        t1 = (j-1)*adim;
+        t_offset = jve*adim;
+        
+        /* Hana S.*/
+        /* Time index (j) of survival ratio, migration and vital events is shifted by one in comparison to population,
+         i.e. pop[0] is the current period, whereas sr[0], mig[0] etc. is the first projection period.*/
+        
+        /* Compute ages >=5 */
+        for(i=1; i<adim1; ++i) {
+            
+            popm[i + t] = popm[i-1 + t_offset] * srm[i + t_offset];
+            popf[i + t] = popf[i-1 + t_offset] * srf[i + t_offset];
+            totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + t]); /* assures population is not negative */
+            popm[i + t] = popm[i + t] + totmigm[i][jve];
+            totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + t]);
+            popf[i + t] = popf[i + t] + totmigf[i][jve];
+        }
+        /* i = adim1; */
+        popm[i + t] = (popm[i + t_offset] + popm[i-1 + t_offset]) * srm[i + t_offset];
+        popf[i + t] = (popf[i + t_offset] + popf[i-1 + t_offset]) * srf[i + t_offset];
+        totmigm[i][jve] = fmax(totmigm[i][jve], -1*popm[i + t]);
+        popm[i + t] = popm[i + t] + totmigm[i][jve];
+        totmigf[i][jve] = fmax(totmigf[i][jve], -1*popf[i + t]);
+        popf[i + t] = popf[i + t] + totmigf[i][jve];
+        
+        /* calculating births, total, male, female */
+        /* birth */
+        srb_ratio = srb[jve] / (1 + srb[jve]);
+        for(i=adimfert_start; i<adimfert+adimfert_start; ++i) {
+            bt[i-adimfert_start] = (popf[i + t_offset] + popf[i + t]) * asfr[i-adimfert_start + jve*adimfert] * 0.5;
+            btagem[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] * srb_ratio;
+            btagef[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] - btagem[i-adimfert_start+jve*adimfert];
+        }
+        b = sum(bt, adimfert);
+        bm = b * srb_ratio;
+        bf = b - bm; /* avoids rounding errors, replaces bf = b / (1 + srb[jve]); */
+        
+        /* births surviving to age 1 */
+        popm[t] = bm * srm[t_offset];
+        popf[t] = bf * srf[t_offset];
+        totmigm[0][jve] = fmax(totmigm[0][jve], -1*popm[t]);
+        popm[t] = popm[t] + totmigm[0][jve];
+        totmigf[0][jve] = fmax(totmigf[0][jve], -1*popf[t]);
+        popf[t] = popf[t] + totmigf[0][jve];
+        
+        /* get total for all ages */
+        for(i=0; i<adim; ++i) {
+            totp[j] += popm[i + t]+popf[i + t];
+        }
+        
+        /**************************************************************************/
+        /* cohort deaths                                                          */
+        /* Calculated by a combination of forward-backward estimation (UN ABACUS) */
+        /* dfw deaths by forward projection    ABACUS: PART1                      */
+        /* dbw deaths by backward projection   ABACUS: C                          */
+        /* 1.  Deaths accuring to births                                           */
+        /* 2.  Deaths occuring to closed age groups (middle age groups)            */
+        /* 3.  Deaths accuring to last-opended age group                           */
+        /**************************************************************************/
+        
+        /* deaths occuring to births */
+        i = 0;
+        /* males*/
+        dfw = bm * (1-srm[t_offset]);
+        dbw = popm[i + t] *((1-srm[i + t_offset])/srm[i + t_offset]);
+        cdeathsm[i] = 0.5* (dfw + dbw);
+        
+        /* females*/
+        dfw = bf * (1-srf[t_offset]);
+        dbw = popf[i + t] *((1-srf[i + t_offset])/srf[i + t_offset]);
+        cdeathsf[i] = 0.5* (dfw + dbw);
+        
+        /* more compact, but less readable */
+        /* cdeathsm[0] = 0.5* (bm * (1-srm[t_offset]) + (popm[1 + t] *(1-srm[t_offset])/srm[t_offset]));*/
+        /* cdeathsm[0] = 0.5* (bf * (1-srf[t_offset]) + (popf[1 + t] *(1-srf[t_offset])/srf[t_offset]));*/
+        
+        /* closed age groups, index 1 to 25     */
+        for(i=1; i<adim1; ++i) {
+            /* males */
+            dfw = popm[i-1 + t_offset] * (1-srm[i + t_offset]);
+            dbw = popm[i + t] * (1-srm[i + t_offset])/srm[i + t_offset];
+            cdeathsm[i] = 0.5 * (dfw + dbw);
+            
+            /* females */
+            dfw = popf[i-1 + t_offset] * (1-srf[i + t_offset]);
+            dbw = popf[i + t] * (1-srf[i + t_offset])/srf[i + t_offset];
+            cdeathsf[i] = 0.5 * (dfw + dbw);
+            
+        }
+        
+        /* last age group, i = adim1;*/
+        /* males*/
+        dfw = (popm[i + t_offset]+popm[i-1 + t_offset])*(1-srm[i + t_offset]);
+        dbw = popm[i + t] * (1-srm[i + t_offset])/srm[i + t_offset];
+        cdeathsm[i] = 0.5 * (dfw + dbw);
+        
+        /* females*/
+        dfw = (popf[i + t_offset]+popf[i-1 + t_offset])*(1-srf[i + t_offset]);
+        dbw = popf[i + t] * (1-srf[i + t_offset])/srf[i + t_offset];
+        cdeathsf[i] = 0.5 * (dfw + dbw);
+        
+        /**************************************************************************/
+        /* period deaths                                                          */
+        /* 1. calculated cohort separation factors                                */
+        /* 2. split cohort deaths into Lexis triangles                            */
+        /* 3. rearrange lexis triangles into period deaths (period-age format)    */
+        /**************************************************************************/
+        
+        /* Create an abridged life table from age-specific mortality rates
+         for columns Lx and lx alone; note the age format for abridged life table*/
+        for(i=0; i<adim; ++i) {
+            mxtm[i]=mxm[i + jve*adim];
+            mxtf[i]=mxf[i + jve*adim];
+        }
+        /* worked when calling with adim = 27 => last index of abridged life table */
+        /* Note that results have last index at adim1 = 26! */
+        LifeTable1yC(male, adim, mxtm, Lxm, lxm);
+        LifeTable1yC(female, adim, mxtf, Lxf, lxf);
+        
+        /* cohort-period separation factors */
+        int ii;
+        int fct = 1; /* for abridged LT it should be 5 */
+        for(i=0; i<(adim1-1); ++i) {
+            ii = i + 1;
+            csfm[i] = (Lxm[i]-fct*lxm[ii])/(Lxm[i] - Lxm[ii]);
+            csff[i] = (Lxf[i]-fct*lxf[ii])/(Lxf[i] - Lxf[ii]);
+        }
+        /* last age groups  */ 
+        csfm[adim1-1] = 1.0; 
+        csff[adim1-1] = 1.0;
+        csfm[adim1] = 0.0; 
+        csff[adim1] = 0.0;
+        
+        if((debug==1) && (j==1)){
+            Rprintf("\n csfm,adim1= %i", adim);
+            printArray(csfm,adim);
+        }
+        
+        /***************************************************************************/
+        /* period deaths first age group*/
+        deathsm[t_offset] = cdeathsm[0] + cdeathsm[1]*csfm[0];
+        deathsf[t_offset] = cdeathsf[0] + cdeathsf[1]*csff[0];
+        i=0;  
+        
+        /* period deaths middle age groups and last, open ended age group */
+        for(i=1; i<adim1; ++i) {
+            deathsm[i + t_offset] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
+            deathsf[i + t_offset] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
+        }
+    }	
 }	
+

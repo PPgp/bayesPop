@@ -159,7 +159,7 @@ print.summary.bayesPop.prediction <- function(x, digits = 5, ...) {
 	}
 }
 
-get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', data=NULL) {
+get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all', data=NULL, annual = FALSE) {
 	# Results are not sorted in the same order as values in "country". The caller should take care of it. 
 	sex <- match.arg(sex)
 	if(is.null(data)) data <- pop.pred$inputs$pop.matrix
@@ -170,7 +170,7 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 	data <- data[country.idx,, drop=FALSE]
 	if(is.null(pop.pred$proj.years.pop)) {
 		coln <- as.integer(colnames(data))
-		if(coln[1] %% 5 != 0) # column names should be the end of 5-year interval (not the middle)
+		if(coln[1] %% 5 != 0 && !annual) # column names should be the end of 5-year interval (not the middle)
 			colnames(data) <- as.integer(colnames(data)) + 2
 	}
 	max.age <- as.integer(round(nrow(data)/length(country),0))
@@ -251,9 +251,13 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env)
 	}
 	sex <- match.arg(sex)
-	max.age <- dim(e$totpf)[1] # should be 27
+	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
-	if(max(age.idx) > 27 || min(age.idx) < 1) stop('Age index must be between 1 (age 0-4) and 27 (age 130+).')
+	annual <- pop.pred$annual
+	if(is.null(annual)) annual <- FALSE
+	max.age.allowed <- if(annual) 131 else 27
+	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) 
+	    stop(paste('Age index must be between 1', if(annual) '(age 0) and 131' else '(age 0-4) and 27', '(age 130+).'))
 	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
@@ -549,7 +553,7 @@ get.ex <- function(...) {
     return(.get.lt.col('ex', ...))
 }
 
-get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), 
+get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE,
                          replace.na = TRUE, pop = NULL) {
     if(sex == "T") mxm <- aggregate.mx(mxm, pop) # aggregate over sexes
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
@@ -571,14 +575,14 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE),
 	# }
 	if(replace.na && any(is.na(mxm)) && any(!is.na(mxm)))
 	    mxm <- .mx.replace.na.for.old.ages(mxm)
-	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05)
+	sx1 <- LifeTableMxCol(mxm[,, 1], colname='sx', sex=sex, age05=age05, abridged = abridged)
 	if(is.null(dim(sx1))) sx1 <- abind(sx1, along=2)
 	sx <- array(0, dim=c(dim(sx1)[1], dim(sx1)[2], dim(mxm)[3]),
 	            dimnames = c(dimnames(sx1)[1], dimnames(mxm)[2:3]))
 	sx[,,1] <- sx1
 	if(dim(mxm)[3] <= 1) return(sx) # one trajectory
 	for (itraj in 2:dim(mxm)[3]) 
-		sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05)
+		sx[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='sx', sex=sex, age05=age05, abridged = abridged)
 	return (sx)
 }
 
