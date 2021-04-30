@@ -608,16 +608,16 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if (file.exists(traj.file)) load(traj.file, envir=myenv)
 		if(is.observed) myenv <- myenv$observed
 	#}
-	max.age.index.allowed <- 27
+	max.age.index.allowed <- if(pop.pred$annual) 131 else 27
 	min.age.index.allowed <- 1
 	if(is.observed) {
 		nperiods <- length(get.pop.observed.periods(pop.pred))
-		if(!allow.higher.ages) max.age.index.allowed <- 21
+		if(!allow.higher.ages) max.age.index.allowed <- if(pop.pred$annual) 101 else 21
 	}
 	age.normal <- TRUE
 	subtract.max.age <- 0
 	if(is.element(event, life.table.indicators)) {
-		min.age.index.allowed <- -1
+	    if(!pop.pred$annual) min.age.index.allowed <- -1
 		mx <- list(male=myenv$mxm, female=myenv$mxf, male.hch=myenv$mxm.hch, female.hch=myenv$mxf.hch)
 		mx$both <- list(male = mx$male, female = mx$female)
 		mx$both.hch <- list(male = mx$male.hch, female = mx$female.hch)
@@ -645,11 +645,14 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		sexarg <- list(male = "M", female = "F", male.hch = "M", female.hch = "F", both = "T", both.hch =  "T")
 		alltraj <- list(male=NULL, female=NULL, both = NULL, male.hch=NULL, female.hch=NULL, both.hch = NULL)
 		age05 <- c(FALSE, FALSE, TRUE)
-		if(age[1]!='all' && (any(age < 1))) {
-			age05 <- rep(TRUE, 3)
-			age.normal <- FALSE
-			subtract.max.age <- 2
-		}
+		if(! pop.pred$annual) {
+		    if(age[1]!='all' && (any(age < 1))) {
+			    age05 <- rep(TRUE, 3)
+			    age.normal <- FALSE
+			    subtract.max.age <- 2
+		    }
+		    abridged <- TRUE
+	    } else abridged <- FALSE
 		for(sn in sex.names) {
 			if(!is.null(mx[[sn]])) {
 				if(is.observed) {
@@ -658,17 +661,17 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 				    } else dimnames(mx[[sn]])[[2]] <- time.labels[(length(time.labels)-dim(mx[[sn]])[2]+1):length(time.labels)]
 				}
 				alltraj[[sn]] <- do.call(paste0('get.', event), 
-									list(mx[[sn]], sex=sexarg[[sn]], age05=age05, pop = poplist[[sn]]))
+									list(mx[[sn]], sex=sexarg[[sn]], age05=age05, pop = poplist[[sn]], abridged = abridged))
 			}
 		}
-	} else {
+	} else { # no life table events
 		if (is.element(event, input.indicators)) { #migration
  			alltraj <- list(male=NULL, female=NULL, male.hch=NULL, female.hch=NULL)
  			sex.index <- 1:2
 			if(sex=='male') sex.index <- sex.index[1]
 			if(sex=='female') sex.index <- sex.index[2]
 			for(is in sex.index) {
-				alltraj[[names(alltraj)[is]]] <- do.call(paste('get.', event, sep=''), 
+				alltraj[[names(alltraj)[is]]] <- do.call(paste0('get.', event), 
 									list(pop.pred, country, sex=c("M","F","M","F")[is], is.observed=is.observed, VEenv=myenv))
 			}
  		} else {
@@ -688,15 +691,21 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	        break
 	    }
 	}
-	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= (max.age + if(max.age < 21) 3 else 0)] # in case max.age==7
+	max.age.shift <- 0 # shift for fertility indicators
+	if(pop.pred$annual && max.age < 101) max.age.shift <- 15
+	if(pop.pred$annual && max.age < 21) max.age.shift <- 3
+	
+	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= (max.age + max.age.shift)] 
 	quantiles <- if(is.null(q)) get.quantiles.to.keep() else q
 
 	if(event %in% c('births', 'fertility', 'pasfr')) {
 		if(age[1] != 'all') {
-			age.idx <- age.idx - 3 # translate age index into mother's child-bearing age index
+			age.idx <- age.idx - max.age.shift # translate age index into mother's child-bearing age index
 			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1) 
-				stop('Age index for ', event, ' must be between 4 (age 15-19) and 10 (age 45-49).')
-		} else age.idx.raw <- age.idx + 3
+				stop('Age index for ', event, ' must be between ', max.age.shift + 1, ' (age 15',
+				    if(!pop.pred$annual) '-19', else '', ') and ',  max.age + max.age.shift, ' (age 45',
+				    if(!pop.pred$annual) '-49', else '', ').')
+		} else age.idx.raw <- age.idx + max.age.shift
 	} 
 	if(length(age.idx)==0 || max(age.idx) > max.age.index.allowed || (min(age.idx) < min.age.index.allowed)) 
 		stop('Age index must be between ', min.age.index.allowed, ' (first age category) and ', min(max.age, max.age.index.allowed),  
@@ -990,8 +999,9 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			data <- traj$data
 			if(!sum.over.ages) {
 				if(age[1]=='all') { # extend to 27 age categories
-					traj$age.idx <- c(traj$age.idx, (dim(data)[[2]]+1):27)
-					data <- abind(data, array(0, c(dim(data)[[1]], 27-dim(data)[[2]], dim(data)[[3]])), along=2)
+				    lages <- if(pop.pred$annual) 131 else 27
+					traj$age.idx <- c(traj$age.idx, (dim(data)[[2]]+1):lages)
+					data <- abind(data, array(0, c(dim(data)[[1]], lages-dim(data)[[2]], dim(data)[[3]])), along=2)
 				}
 				dim(data) <- c(dim(data), 1) # adding trajectory dimension
 				dimnames(data)[[3]] <- dimnames(traj$data)[[3]]
@@ -1130,11 +1140,13 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 
 .get.compatible.pop.matrix.middle.years <- function(pop.pred) {
 	years <- colnames(pop.pred$inputs$pop.matrix[['male']])
+	if(pop.pred$annual) return(years)
 	return(if(is.null(pop.pred$proj.years.pop)) years else as.character(as.integer(years)-2))
 }
 
 .get.compatible.pop.matrix.end.years <- function(pop.pred) {
 	years <- colnames(pop.pred$inputs$pop.matrix[['male']])
+	if(pop.pred$annual) return(years)
 	return(if(is.null(pop.pred$proj.years.pop)) as.character(as.integer(years)+2) else years)
 }
 
