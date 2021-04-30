@@ -114,7 +114,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	if(!file.exists(outdir)) 
 		dir.create(outdir, recursive=TRUE)
 	present.and.proj.years <- c(inp$estim.years[length(inp$estim.years)], inp$proj.years)
-	present.and.proj.years.pop <- present.and.proj.years + 2
+	present.and.proj.years.pop <- present.and.proj.years
+	if(!inp$annual) present.and.proj.years.pop <- present.and.proj.years.pop + 2
 	prediction.file <- file.path(outdir, 'prediction.rda')	
 	quantiles.to.keep <- get.quantiles.to.keep()
 	nquant <- length(quantiles.to.keep)

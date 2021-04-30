@@ -20,6 +20,7 @@ get.pop.prediction <- function(sim.dir, aggregation=NULL, write.to.cache=TRUE) {
 	pop.pred$cache <- .load.cache(output.dir)
 	pop.pred$write.to.cache <- write.to.cache
 	pop.pred$is.aggregation <- FALSE
+	if(is.null(pop.pred$annual)) pop.pred$annual <- FALSE
 	return(pop.pred)
 }
 .cleanup.pop.before.save <- function(pop.pred, remove.cache=FALSE) {
@@ -254,7 +255,6 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	annual <- pop.pred$annual
-	if(is.null(annual)) annual <- FALSE
 	max.age.allowed <- if(annual) 131 else 27
 	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) 
 	    stop(paste('Age index must be between 1', if(annual) '(age 0) and 131' else '(age 0-4) and 27', '(age 130+).'))
@@ -771,17 +771,17 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 }
 
 
-get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE) {
-	all.ages <- c(seq(0, by=5, length=27), NA)
+get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE, single.year = FALSE) {
+	all.ages <- if(!single.year) c(seq(0, by=5, length=27), NA) else 0:130
 	ages.idx <- if(age.is.index) ages else which(is.element(all.ages, ages))
-	if(is.element(0, ages.idx)) { # age 1-4 is included
+	if(is.element(0, ages.idx) && !single.year) { # age 1-4 is included
 		all.ages <- c(-1, all.ages)
 		idx14 <- which(is.element(ages.idx,0))
 		ages.idx[idx14] <- 1
 		idx01 <- which(is.element(ages.idx,-1))
 		ages.idx[-c(idx14,idx01)] <- ages.idx[-c(idx14,idx01)] + 1	
 	}
-	if(is.element(-1, ages.idx)) { # age 0-1 is included
+	if(is.element(-1, ages.idx) && !single.year) { # age 0-1 is included
 		all.ages <- c(-2, all.ages)
 		idx01 <- which(is.element(ages.idx,-1))
 		ages.idx[idx01] <- 1
@@ -798,24 +798,28 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	l <- length(lages)
 	from <- all.ages[ages.idx[1:(l-1)]]
 	to <- all.ages[ages.idx.shift[1:(l-1)]]-1
-	which.01 <- which(from < -1)
-	which.14 <- which(from < 0 & from > -2)
-	if(length(which.01)>0) { # includes age 0-1
-		from[which.01] <- 0
-		to[which.01][!is.na(to[which.01])] <- 1
+	if(!single.year) {
+	    which.01 <- which(from < -1)
+	    which.14 <- which(from < 0 & from > -2)
+	    if(length(which.01)>0) { # includes age 0-1
+		    from[which.01] <- 0
+		    to[which.01][!is.na(to[which.01])] <- 1
+	    }
+	    if(length(which.14)>0) { # includes age 1-4
+		    from[which.14] <- 1
+		    to[which.14][!is.na(to[which.14])] <- 4
+	    }
 	}
-	if(length(which.14)>0) { # includes age 1-4
-		from[which.14] <- 1
-		to[which.14][!is.na(to[which.14])] <- 4
-	}
-	result <- if(l==1 && is.na(to)) paste(from, '+', sep='') # open-ended
-			  else paste(from, '-', to, sep='')
-	if (l > 1) result <- c(result, if(is.na(all.ages[ages.idx.shift[l]]) || last.open) paste(all.ages[ages.idx[l]], '+', sep='')
-			else paste(all.ages[ages.idx[l]], '-', all.ages[ages.idx.shift[l]]-1, sep=''))
+	result <- if(l==1 && is.na(to)) paste0(from, '+') # open-ended
+			  else ifelse(from == to, from, paste0(from, '-', to))
+	if (l > 1) result <- c(result, if(is.na(all.ages[ages.idx.shift[l]]) || last.open) paste0(all.ages[ages.idx[l]], '+')
+			else ifelse(all.ages[ages.idx[l]] == all.ages[ages.idx.shift[l]]-1, all.ages[ages.idx[l]], 
+			            paste0(all.ages[ages.idx[l]], '-', all.ages[ages.idx.shift[l]]-1)))
 	return(result)
 }	
 
-.get.year.index <- function(year, years) {
+.get.year.index <- function(year, years, annual = FALSE) {
+    if(annual) return(if(year %in% years) which(years == year) else NA)
 	lyears <- length(years)
 	res <- as.integer(cut(year, labels=1:lyears, breaks=c(years-3, years[lyears]+2)))
 	return(res)
@@ -825,19 +829,21 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	#return(if(inherits(h, "try-error")) NULL else which(h > 0)[1])
 }
 get.pop.prediction.periods <- function(pop.pred, end.time.only=FALSE) {
+    if(pop.pred$annual) return(pop.pred$proj.years)
 	if(end.time.only) return(litem('proj.years.pop', pop.pred, pop.pred$proj.years+2))
 	return(sapply(lapply(pop.pred$proj.years, '+', c(-3, 2)), paste, collapse='-'))
 }
 get.prediction.year.index <- function(pop.pred, year) {
 	years <- pop.pred$proj.years
-	return(.get.year.index(year, years))
+	return(.get.year.index(year, years, annual = pop.pred$annual))
 }
 
 get.observed.year.index <- function(pop.pred, year) 
-	return(.get.year.index(year, as.integer(colnames(pop.pred$inputs$pop.matrix$male))))
+	return(.get.year.index(year, as.integer(colnames(pop.pred$inputs$pop.matrix$male)), annual = pop.pred$annual))
 
 get.pop.observed.periods <- function(pop.pred, end.time.only=FALSE) {
 	years <- as.integer(colnames(pop.pred$inputs$pop.matrix$male))
+	if(pop.pred$annual) return(years)
 	if(is.null(pop.pred$proj.years.pop)) { # assuring compatibility before version 5.0-1 where years are the middle time points
 		if(end.time.only) return(years + 2)
 	} else {

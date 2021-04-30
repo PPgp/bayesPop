@@ -54,15 +54,15 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 									main=main, lwd=lwd, col=col,
 									show.legend=show.legend, ann=ann, ...)
 	else {
+	    # plot individual ages
 		all.ages <- pop.pred$ages
-		if(age[1]=='all') age <- 1:20
-		age.labels <- get.age.labels(pop.pred$ages)
+		if(age[1]=='all') age <- 1:20 # plot first 20 ages
+		age.labels <- get.age.labels(pop.pred$ages, single.year = pop.pred$annual)
 		if(is.null(main)) {
 			main <- country$name
 			sex <- match.arg(sex) 
 			if(sex != 'both') main <- paste(main, ': ', sex, sep='')
 		}
-		age.labels <- get.age.labels(pop.pred$ages)
 		cur.par <- par(c('mgp', 'oma', 'mar', 'mfrow'))
 		nplots <- length(age)
 		if (nplots < dev.ncol) {
@@ -103,14 +103,15 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 			stop('Argument "country" must be given for the adjustment.')
 	}
 	reload.traj.if.needed <- !adjust
+	year.step <- if(pop.pred$annual) 1 else 5
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
 										typical.trajectory=typical.trajectory, adjust=adjust, adj.to.file=adj.to.file, adj.country=country$code)
-		if(missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years-4)))
+		if(missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years - year.step + 1)))
 			pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
 		else {
 			pop.observed.all <- NA
-			names(pop.observed.all) <- min(pop.pred$proj.years)-5
+			names(pop.observed.all) <- min(pop.pred$proj.years) - year.step
 		}
 		reload.traj.if.needed <- FALSE
 	} else {
@@ -148,7 +149,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 			if(age[1] == 'psr') main <- paste(main, ' (Potential Support Ratio)', sep='')
 			else {
 				if(age[1] != 'all') {
-					age.labels <- get.age.labels(pop.pred$ages[age], collapsed=TRUE)
+					age.labels <- get.age.labels(pop.pred$ages[age], collapsed=TRUE, single.year = pop.pred$annual)
 					main <- paste(main, ' (Age ', paste(age.labels, collapse=','), ')', sep='')
 				}
 			}
@@ -322,7 +323,7 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 					else # load trajectories to get quantiles 
 						trajectories <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex)
 				}
-				age.idx<-1:27
+				age.idx <- seq_along(pop.pred$ages)
 			}
 			end.time.label <- TRUE
 		}
@@ -339,7 +340,7 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 			ylim.loc <- c(min(ylim.loc[1], sapply(cqp, min, na.rm=TRUE), na.rm=TRUE),
 							max(ylim.loc[2], sapply(cqp, max, na.rm=TRUE), na.rm=TRUE))
 		year.label <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.label)[projection.index]
-		if(length(age.idx)<27) last.open <- FALSE
+		if(length(age.idx) < length(pop.pred$ages)) last.open <- FALSE
 	} else { # historical year 
 		if(!is.null(expression)) {
 			pop.observed <- get.pop.observed.from.expression.multiple.age(expression, pop.pred)
@@ -355,7 +356,7 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 		year.label <- get.pop.observed.periods(pop.pred, end.time.only=end.time.label)[projection.index]
 		if(length(age.idx)<21) last.open <- FALSE
 	}
-	age.labels <- get.age.labels(age.idx, age.is.index=TRUE, last.open=last.open)
+	age.labels <- get.age.labels(age.idx, age.is.index=TRUE, last.open=last.open, single.year = pop.pred$annual)
 	return(list(trajectories=trajectories, age.idx=age.idx, age.labels=age.labels, year.label=year.label, ylim.loc=ylim.loc,
 					cqp=cqp, pop.median=pop.median, projection=projection, projection.index=projection.index))
 }
@@ -630,7 +631,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
     is.valid.pi <- if(proportion && nquant>0) is.saved.pi(pop.pred, pi)
                    else rep(TRUE, nquant)
 	maxx<-0
-	age.labels <- get.age.labels(pop.pred$ages[ages.idx])
+	age.labels <- get.age.labels(pop.pred$ages[ages.idx], single.year = pop.pred$annual)
 	true.nquant <- sum(is.valid.pi)
 	pyr <- list()
 	pyr.ci <- list()
@@ -875,10 +876,11 @@ pop.pyramid.bayesPop.pyramid <- function(pop.object, main=NULL, show.legend=TRUE
 
 pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'),
 											pi=c(80, 95), proportion=FALSE,
-											age=1:21, plot=TRUE, pop.max=NULL, ...) {
+											age=NULL, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
+    if(is.null(age)) age <- if(pop.object$annual) 1:131 else 1:21
 	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, proportion=proportion, age=age, pop.max=pop.max)
 	if (plot) pop.pyramid(data, ...)
 	invisible(data)
@@ -930,10 +932,11 @@ pop.pyramidAll <- function(pop.pred, year=NULL,
 
 pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indicator=c('P', 'B', 'D'), 
 														pi=c(80, 95), nr.traj=NULL, proportion=FALSE, 
-														age=1:21, plot=TRUE, pop.max=NULL, ...) {
+														age=NULL, plot=TRUE, pop.max=NULL, ...) {
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
+    if(is.null(age)) age <- if(pop.object$annual) 1:131 else 1:21
 	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, nr.traj=nr.traj, proportion=proportion, 
 							age=age, sort.pi=FALSE, pop.max=pop.max)
 	if(plot) pop.trajectories.pyramid(data, ...)
@@ -1130,9 +1133,9 @@ pop.map <- function(pred, sex=c('both', 'male', 'female'), age='all', expression
 	else {
 		main <- 'Pop'
 		if(dp$sex != 'both') main <- paste(main, dp$sex)
-		if(dp$age[1] != 'all') main <- paste(main, get.age.labels(dp$age, collapsed=TRUE, age.is.index=TRUE))
+		if(dp$age[1] != 'all') main <- paste(main, get.age.labels(dp$age, collapsed=TRUE, age.is.index=TRUE, single.year = pred$annual))
 	}
-	return(paste(main,': quantile', sep=''))
+	return(paste0(main,': quantile'))
 }
 
 get.pop.map.parameters <- function(pred, expression=NULL, sex=c('both', 'male', 'female'), age='all', 
