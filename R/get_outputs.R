@@ -473,7 +473,7 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 mid.period3d <- function(dat)
     (dat[,-1, ,drop = FALSE] + dat[,-dim(dat)[2],, drop = FALSE])/2.
 
-aggregate.mx <- function(mx, pop) {
+aggregate.mx <- function(mx, pop, abridged = TRUE) {
     # Aggregate mx over sexes
     # mx and pop are lists with elements for male and female
     abr.deaths <- abr.pop <- list()
@@ -497,25 +497,27 @@ aggregate.mx <- function(mx, pop) {
     return(aggr.mx)
 }
 
-get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), pop = NULL) {
+get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE, pop = NULL) {
     if(sex == "T")  # mx for both sexes
-        mxm <- aggregate.mx(mxm, pop)
+        mxm <- aggregate.mx(mxm, pop, abridged = abridged)
     if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
     if(age05[3]) {
-        res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05)
+        res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05, abridged = abridged)
         if(is.null(dim(res1))) res1 <- abind(res1, along=2)
         res <- array(0, dim=c(dim(res1)[1], dim(res1)[2], dim(mxm)[3]))
         res[,,1] <- res1
         if(dim(mxm)[3]> 1) { 
             for (itraj in 2:dim(mxm)[3]) {
-                res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05)
+                res[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname='mx', sex=sex, age05=age05, abridged = abridged)
             }
         }
         dimnames(res)[[2]] <- dimnames(mxm)[[2]]
         return(res)
     }
-    if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
-    if(!age05[1]) mxm <- mxm[-1,,,drop=FALSE]
+    if(abridged) {
+        if(!age05[2]) mxm <- mxm[-2,,,drop=FALSE]
+        if(!age05[1]) mxm <- mxm[-1,,,drop=FALSE]
+    }
 	return (mxm)
 }
 
@@ -528,19 +530,19 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), pop = NULL) {
 }
 
 .get.lt.col <- function(ltcol, mxm, sex, age05=c(FALSE, FALSE, TRUE), 
-                        replace.na = TRUE, pop = NULL) {
-    if(sex == "T") mxm <- aggregate.mx(mxm, pop) # aggregate over sexes
+                        abridged = TRUE, replace.na = TRUE, pop = NULL) {
+    if(sex == "T") mxm <- aggregate.mx(mxm, pop, abridged = abridged) # aggregate over sexes
     if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
     if(replace.na && any(is.na(mxm)) && any(!is.na(mxm)))
         mxm <- .mx.replace.na.for.old.ages(mxm)
-    val1 <- LifeTableMxCol(mxm[,, 1], colname=ltcol, sex=sex, age05=age05)
+    val1 <- LifeTableMxCol(mxm[,, 1], colname=ltcol, sex=sex, age05=age05, abridged = abridged)
     if(is.null(dim(val1))) val1 <- abind(val1, along=2)
     val <- array(0, dim=c(dim(val1)[1], dim(val1)[2], dim(mxm)[3]))
     val[,,1] <- val1
     dimnames(val)[[2]] <- dimnames(mxm)[[2]]
     if(dim(mxm)[3] <= 1) return(val)
     for (itraj in 2:dim(mxm)[3]) {
-        val[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname=ltcol, sex=sex, age05=age05)
+        val[,, itraj] <- LifeTableMxCol(mxm[,, itraj], colname=ltcol, sex=sex, age05=age05, abridged = abridged)
     }
     return (val)
 }
@@ -703,8 +705,8 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			age.idx <- age.idx - max.age.shift # translate age index into mother's child-bearing age index
 			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1) 
 				stop('Age index for ', event, ' must be between ', max.age.shift + 1, ' (age 15',
-				    if(!pop.pred$annual) '-19', else '', ') and ',  max.age + max.age.shift, ' (age 45',
-				    if(!pop.pred$annual) '-49', else '', ').')
+				    if(!pop.pred$annual) '-19' else '', ') and ',  max.age + max.age.shift, ' (age 45',
+				    if(!pop.pred$annual) '-49' else '', ').')
 		} else age.idx.raw <- age.idx + max.age.shift
 	} 
 	if(length(age.idx)==0 || max(age.idx) > max.age.index.allowed || (min(age.idx) < min.age.index.allowed)) 

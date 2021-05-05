@@ -360,21 +360,31 @@ void LC(int *Npred, int *Sex, double *ax, double *bx,
 }
 
 void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, int *MIGtype, 
-                        double *Births, double *Deaths, double *Mx) {
+                        double *Births, int *Abridged, double *Deaths, double *Mx) {
+    int i, j, nrow, nrowmx, n, sex, nageLT, nageLTmx, multfact;
 
-	double Lx[27], lx[27];
-	double cdeaths[27];
-	double mxt[28];
+    n = *N; /* periods */
+	sex=*Sex;
+			
+    if(*Abridged){
+        nrow = 21; /* age */
+		nrowmx = 22;
+        nageLT = 27;
+        nageLTmx = 28;
+        multfact = 5;
+    } else {
+        nrow = 101;
+        nrowmx = 101;
+        nageLT = 131;
+        nageLTmx = 131;
+        multfact = 1;
+    }
+	double Lx[nageLT], lx[nageLT], cdeaths[nageLT], mxt[nageLTmx];
 
 	/* forward and backward estimated deaths */
 	double dfw, dbw;        
 	/* cohort separation factor males, females*/
-	double csf[27]; 
-
-	int i, j, nrow, n, sex;
-	nrow = 21; /* age */
-	n = *N; /* periods */
-	sex=*Sex;
+	double csf[nageLT]; 
 	
 	/* loop by time period */	
 	for(j=0; j<n; ++j) {
@@ -431,18 +441,22 @@ void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, 
 	    /* 3. rearrange lexis triangles into period deaths (period-age format)    */
 	    /**************************************************************************/
 	    
-	    for(i=0; i<(nrow+1); ++i) {
-	      mxt[i]=Mx[i+j*(nrow+1)];
+	    for(i=0; i<nrowmx; ++i) {
+	      mxt[i]=Mx[i+j*(nrowmx)];
 	    }
 	    /* Create an abridged life table from age-specific mortality rates
-	     for columns Lx and lx alone; note the age format for abridged life table*/		 
-	    LifeTableC(sex, nrow, mxt, Lx, lx);
+	     for columns Lx and lx alone; note the age format for abridged life table*/
+	    if(*Abridged){
+	        LifeTableC(sex, nrow, mxt, Lx, lx);
+	    } else {
+	        LifeTable1yC(sex, nrow, mxt, Lx, lx);
+	    }
 	
 	    /* cohort-period separation factors */
 	    int ii;
 		for(i=0; i<(nrow-1); ++i) {
 			ii = i + 1;
-			csf[i] = (Lx[i]-5.0*lx[ii])/(Lx[i] - Lx[ii]);	      			
+			csf[i] = (Lx[i]-multfact*lx[ii])/(Lx[i] - Lx[ii]);	      			
 		}
 
 	    /* last age groups  */ 
@@ -457,8 +471,10 @@ void get_deaths_from_sr(int *Sex, double *Sr, int *N, double *Pop, double *MIG, 
     	/* period deaths middle age groups and last, open ended age group */
 		for(i=1; i<(nrow-1); ++i) {
 			Deaths[i + j*nrow] = cdeaths[i] * (1-csf[i-1]) + cdeaths[i+1] * csf[i];
+		    Rprintf("\n i= %i, Deaths=%f, csf=%f", i,Deaths[i + j*nrow], csf[i]);
     	}
 		Deaths[nrow-1 + j*nrow] = cdeaths[nrow-1] * (1-csf[nrow-2]);
+		Rprintf("\n i= %i, Deaths=%f, csf=%f", i,Deaths[i + j*nrow], csf[i]);
 	}
 }
 void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
