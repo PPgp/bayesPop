@@ -936,7 +936,7 @@ pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, ye
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-    if(is.null(age)) age <- if(pop.object$annual) 1:131 else 1:21
+    if(is.null(age)) age <- all.age.index(pop.object$annual, observed = TRUE)
 	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, nr.traj=nr.traj, proportion=proportion, 
 							age=age, sort.pi=FALSE, pop.max=pop.max)
 	if(plot) pop.trajectories.pyramid(data, ...)

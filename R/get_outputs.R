@@ -2,6 +2,37 @@
 get.expression.indicators <- function() {
 		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr', E='ex'))
 }
+
+all.age.index <- function(annual = FALSE, observed = FALSE) {
+    if(annual) {
+        if(observed) return(1:101) 
+        return(1:131)
+    }
+    if(observed) return(1:21) 
+    return(1:27)
+}
+
+all.age.length <- function(...)
+    return(length(all.age.index(...)))
+
+all.ages <- function(annual = FALSE, observed = FALSE) {
+    l <- all.age.length(annual, observed)
+    if(annual) 
+        return(seq(0, length = l))
+    return(seq(0, by = 5, length = l))
+}
+
+fert.age.index <- function(annual = FALSE) {
+    if(annual) return(13:54)
+    return(4:10)
+}
+
+fert.age.length <- function(...)
+    return(length(fert.age.index(...)))
+
+fert.ages <- function(...)
+    return(all.ages(...)[fert.age.index(...)])
+
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)
 	return(FALSE)
@@ -482,9 +513,12 @@ aggregate.mx <- function(mx, pop, abridged = TRUE) {
         # abridged average population splitted to 0-1 and 1-4
         abr.pop[[s]] <- mx[[s]]
         abr.pop[[s]][] <- NA
-        apop <- split.pop05(mid.period3d(pop[[s]]))
-        if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
-            apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
+        apop <- mid.period3d(pop[[s]])
+        if(abridged) {
+            apop <- split.pop05(apop)
+            if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
+                apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
+        } 
         itime <- (dim(abr.pop[[s]])[2] - dim(apop)[2] + 1):dim(abr.pop[[s]])[2]
         abr.pop[[s]][,itime,] <- pmax(apop, 1e-4)
         # abridged deaths
@@ -783,17 +817,17 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 
 
 get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE, single.year = FALSE) {
-	all.ages <- if(!single.year) c(seq(0, by=5, length=27), NA) else 0:130
-	ages.idx <- if(age.is.index) ages else which(is.element(all.ages, ages))
+	all.age <- all.ages(annual = single.year, observed = FALSE)
+	ages.idx <- if(age.is.index) ages else which(is.element(all.age, ages))
 	if(is.element(0, ages.idx) && !single.year) { # age 1-4 is included
-		all.ages <- c(-1, all.ages)
+		all.age <- c(-1, all.age)
 		idx14 <- which(is.element(ages.idx,0))
 		ages.idx[idx14] <- 1
 		idx01 <- which(is.element(ages.idx,-1))
 		ages.idx[-c(idx14,idx01)] <- ages.idx[-c(idx14,idx01)] + 1	
 	}
 	if(is.element(-1, ages.idx) && !single.year) { # age 0-1 is included
-		all.ages <- c(-2, all.ages)
+		all.age <- c(-2, all.age)
 		idx01 <- which(is.element(ages.idx,-1))
 		ages.idx[idx01] <- 1
 		ages.idx[-idx01] <- ages.idx[-idx01] + 1
@@ -804,11 +838,11 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 		ages.idx.shift <- ages.idx.shift[!is.element(ages.idx.shift, ages.idx)]
 		ages.idx <- ages.idx[ages.idx.dif]
 	}
-	lages <- all.ages[ages.idx]
-	uages <- all.ages[ages.idx.shift]
+	lages <- all.age[ages.idx]
+	uages <- all.age[ages.idx.shift]
 	l <- length(lages)
-	from <- all.ages[ages.idx[1:(l-1)]]
-	to <- all.ages[ages.idx.shift[1:(l-1)]]-1
+	from <- all.age[ages.idx[1:(l-1)]]
+	to <- all.age[ages.idx.shift[1:(l-1)]]-1
 	if(!single.year) {
 	    which.01 <- which(from < -1)
 	    which.14 <- which(from < 0 & from > -2)
@@ -823,9 +857,9 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	}
 	result <- if(l==1 && is.na(to)) paste0(from, '+') # open-ended
 			  else ifelse(from == to, from, paste0(from, '-', to))
-	if (l > 1) result <- c(result, if(is.na(all.ages[ages.idx.shift[l]]) || last.open) paste0(all.ages[ages.idx[l]], '+')
-			else ifelse(all.ages[ages.idx[l]] == all.ages[ages.idx.shift[l]]-1, all.ages[ages.idx[l]], 
-			            paste0(all.ages[ages.idx[l]], '-', all.ages[ages.idx.shift[l]]-1)))
+	if (l > 1) result <- c(result, if(is.na(all.age[ages.idx.shift[l]]) || last.open) paste0(all.age[ages.idx[l]], '+')
+			else ifelse(all.age[ages.idx[l]] == all.age[ages.idx.shift[l]]-1, all.age[ages.idx[l]], 
+			            paste0(all.age[ages.idx[l]], '-', all.age[ages.idx.shift[l]]-1)))
 	return(result)
 }	
 

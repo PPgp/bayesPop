@@ -266,8 +266,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	aggr.quantities.all <- aggr.quantities
 	max.lage <- dim(pop.pred$quantilesMage)[2]
 	if(pop.pred$annual) {
-	    max.lage.fert <- 31
-	    fert.age.start <- 16
+	    max.lage.fert <- 42
+	    fert.age.start <- 13
 	    time.step <- 1
 	    mort.ages <- seq(0, length = max.lage)
 	    kannisto.proj.ages <- 100:130

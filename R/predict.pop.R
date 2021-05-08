@@ -24,7 +24,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
-	ages <- if(annual) 0:130 else seq(0, by=5, length=27)
+	ages <- all.ages(annual, observed = FALSE)
 	unblock.gtk.if.needed('reading inputs')
 	if(!is.null(my.locations.file)) {
 		UNlocations <- NULL # needed for R check not to complain
@@ -162,13 +162,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		npred <- min(nrow(inpc$TFRpred), nr_project)
 		npredplus1 <- npred+1
 		nmortcat <- length(mx.ages)
-		if(inp$annual) {
-		    nfertcat <- 31
-		    nmigcat <- 101
-		} else {
-		    nfertcat <- 7
-		    nmigcat <- 21
-		}
+		nfertcat <- fert.age.length(inp$annual)
+		nmigcat <- all.age.length(inp$annual, observed = TRUE)
+		fages <- fert.ages(inp$annual)
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, 
 					dimnames=list(present.and.proj.years.pop, NULL))
 		totpm <- totpf <- array(NA, dim=c(nages, npredplus1, nr.traj), 
@@ -179,14 +175,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		totpm.hch <- totpf.hch <- array(NA, dim=c(nages, npredplus1, nvariants), 
 					dimnames=list(ages, present.and.proj.years.pop, NULL))
 		if(keep.vital.events) {
-			btm <- btf <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
+			btm <- btf <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(fages, present.and.proj.years, NULL))
 			deathsm <- deathsf <- array(0, dim=c(nages, npredplus1, nr.traj), dimnames=list(ages, present.and.proj.years, NULL))
-			asfert <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
-			pasfert <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(NULL, present.and.proj.years, NULL))
-			btm.hch <- btf.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
+			asfert <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(fages, present.and.proj.years, NULL))
+			pasfert <- array(0, dim=c(nfertcat, npredplus1, nr.traj), dimnames=list(fages, present.and.proj.years, NULL))
+			btm.hch <- btf.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(fages, present.and.proj.years, NULL))
 			deathsm.hch <- deathsf.hch <- array(0, dim=c(nages, npredplus1, nvariants), dimnames=list(ages, present.and.proj.years, NULL))
-			asfert.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
-			pasfert.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(NULL, present.and.proj.years, NULL))
+			asfert.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(fages, present.and.proj.years, NULL))
+			pasfert.hch <- array(0, dim=c(nfertcat, npredplus1, nvariants), dimnames=list(fages, present.and.proj.years, NULL))
 			mxm <- mxf <- array(0, dim=c(nmortcat, npredplus1, nr.traj), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			mxm.hch <- mxf.hch <- array(0, dim=c(nmortcat, npredplus1, nvariants), dimnames=list(mx.ages, present.and.proj.years, NULL))
 			migMntraj <- if(is.null(inpc[['migMpred']])) 1 else dim(inpc[['migMpred']])[2]
@@ -921,12 +917,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		ntrajs <- length(utrajs)
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
 		lyears <- length(pred$inputs$proj.years)
-		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*21), trajectory=rep(rep(utrajs, each=21), times=lyears),
-									age=c(paste(seq(0,95,by=5), seq(4,99,by=5), sep='-'), '100+'))
+		lage <- all.age.length(pred$annual, observed = TRUE)
+		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
+									age = get.age.labels(all.ages(pred$annual, observed = TRUE), last.open=TRUE, single.year = pred$annual))
 		# this is to get rows of the data frame in a particular order
 		migdf <- merge(sorted.df, migdf, sort=FALSE)
-		res <- array(migdf$value, dim=c(21, ntrajs, lyears))
-		dimnames(res) <- list(1:21,  NULL, pred$inputs$proj.years)
+		res <- array(migdf$value, dim=c(lage, ntrajs, lyears))
+		dimnames(res) <- list(1:lage,  NULL, pred$inputs$proj.years)
 		return(res)	
 }
 
@@ -1233,7 +1230,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	for (par in c('TFRpred', 'e0Mpred', 'e0Fpred')) { # these are matrices
 		if(is.null(inpc[[par]])) next
 		inpc[[par]] <- inpc[[par]][,indices[[par]], drop=FALSE]
-		if(tolower(substr(par, 1,3)) %in% tolower(inputs$average.annual)) { # average annual data to 5-years data
+		if(tolower(substr(par, 1,3)) %in% tolower(inputs$average.annual) && !inputs$annual) { # average annual data to 5-years data
 		    years <- as.integer(rownames(inpc[[par]]))
 		    year.ranges <- range(years[years %% 5 == 0])
 		    mid.points <- c(0, seq(year.ranges[1]-2, year.ranges[2]+3, by = 5))
@@ -1400,7 +1397,7 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
         res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
     res$male$sex <- 1
     res$female$sex <- 2
-    nage <- if(annual) 131 else 27
+    nage <- all.age.length(annual, observed = FALSE)
     if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) != nage) {# compute survival
         srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
                         female = list(sex = 2, mx = res$mx[[2]]))
@@ -1411,7 +1408,7 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
 
 
 survival.fromLT <- function (npred, mxKan, annual = FALSE, verbose=FALSE, debug=FALSE) {
-    nage <- nagemx <- if(annual) 131 else 27
+    nage <- nagemx <- all.age.length(annual, observed = FALSE)
     if(!annual) nagemx <- nagemx + 1
     sr <- LLm <- lx <- list(matrix(0, nrow=nage, ncol=npred), matrix(0, nrow=nage, ncol=npred))
     Mx <- list(matrix(0, nrow=nagemx, ncol=npred), matrix(0, nrow=nagemx, ncol=npred))
@@ -1465,11 +1462,14 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
 	ne <- ncol(Mxe.m)
+	old.age <- all.age.length(annual, observed = TRUE)
+	nmx <- if(annual) 131 else 28
 	years <- as.integer(substr(colnames(male.mx),1,4))
+	year.step <- if(annual) 1 else 5
 	first.year <- years[1]
 	has.nas.in.old.ages <- FALSE
-	if(any(is.na(male.mx[21, ]))) {# remove columns that have NAs for old ages
-	    first.year <- years[which(!is.na(male.mx[21,]))[1]]
+	if(any(is.na(male.mx[old.age, ]))) {# remove columns that have NAs for old ages
+	    first.year <- years[which(!is.na(male.mx[old.age,]))[1]]
 	    start.year <- max(start.year, first.year)
 	    has.nas.in.old.ages <- TRUE
 	}
@@ -1483,7 +1483,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	avg.ax <- FALSE
     	smooth.ax <- TRUE
     	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
-    	aids.npred <- min((2100-(as.integer(years[ne])+5))/5, npred)
+    	aids.npred <- min((2100-(as.integer(years[ne])+year.step))/year.step, npred)
     }
     if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
         # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
@@ -1516,11 +1516,11 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
     	    lMxe <- log(result[[sex]]$mx)
-		    axt <- matrix(lc.est[[sex]]$ax, nrow=28, ncol=npred)
+		    axt <- matrix(lc.est[[sex]]$ax, nrow=nmx, ncol=npred)
 			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
-			ax.end.sm <- smooth.spline(ax.end[1:21], df=11)$y
-    		ax.end[2:21] <- ax.end.sm[2:21] # keep value the first age group
-			for (i in 1:28) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
+			ax.end.sm <- smooth.spline(ax.end[1:old.age], df=11)$y
+    		ax.end[2:old.age] <- ax.end.sm[2:old.age] # keep value of the first age group
+			for (i in 1:nmx) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
 				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(lc.est[[sex]]$ax[i], ax.end[i]), xout=1:aids.npred)$y
 				if(aids.npred < npred)
 					axt[i,(aids.npred+1):npred] <- ax.end[i]	
@@ -1546,8 +1546,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 
 StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, country.name=NULL, 
                        keep.vital.events=FALSE, annual = FALSE) {
-    nagecat <- if(annual) 131 else 27
-    nbagecat <- if(annual) 31 else 7
+    nagecat <- all.age.length(annual, observed = FALSE)
+    nbagecat <- fert.age.length(annual)
 	popm <- popf <- matrix(0, nrow=nagecat, ncol=npred+1)
 	popm[,1] <- c(inputs$POPm0, rep(0, nagecat - nrow(inputs$POPm0)))
 	popf[,1] <- c(inputs$POPf0, rep(0, nagecat - nrow(inputs$POPf0)))
@@ -1596,8 +1596,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	asfr <- pasfr/100.
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
-	maxage <- if(annual) 101 else 21
-	reprod.age <- if(annual) 16:46  else 4:10
+	maxage <- all.age.length(annual = annual, observed = TRUE)
+	reprod.age <- fert.age.length(annual)
 	pop <- D10 <- list()
 	nmx <- ncol(inputs$MXm)
 	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
@@ -1618,12 +1618,19 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], abridged = !annual)[1:maxage,,1]
 		deaths[[sex]] <- matrix(0, nrow=maxage, ncol=nest)
 		p <- pop[[sex]]
+		#stop("")
 		p[is.na(p)] <- 0 # set pop for ages with NA to 0
-		res <- .C("get_deaths_from_sr", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
+		if(annual)
+		    res <- .C("get_deaths_from_sr_1x1", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
+		              as.numeric(mig.data[[sex]]), mig.type,
+		              as.numeric(colSums(as.matrix(births[[sex]]))), 
+		              Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
+		else 
+		    res <- .C("get_deaths_from_sr_abridged", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(mig.data[[sex]]), mig.type,
-					as.numeric(colSums(as.matrix(births[[sex]]))), as.integer(!annual),
+					as.numeric(colSums(as.matrix(births[[sex]]))), 
 					Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
-		stop("")
+		#stop("")
 		#if(sex == 2)stop('')
 		deaths[[sex]] <- matrix(res$Deaths, nrow=maxage)
 		colnames(deaths[[sex]]) <- estim.years
