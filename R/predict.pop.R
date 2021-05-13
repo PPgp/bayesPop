@@ -828,9 +828,20 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
         stop('File ', file.name, 
              ' does not exist.\nSet tfr.sim.dir, tfr.file or change WPP year.')
       if(verbose) cat('\nLoading ', file.name, '\n')
-      TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-      TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
-      colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+      if(!is.null(inputs$tfr.file.type) && inputs$tfr.file.type == "w") { # file in tab-separated wide format
+          TFRpred <- data.table(read.csv(file=file.name, comment.char='#', check.names=FALSE, sep = "\t"))
+          if('LocID' %in% colnames(TFRpred))
+              setnames(TFRpred, 'LocID', 'country_code')
+          TFRpred <- melt(TFRpred, id.vars = "country_code", 
+                          measure.vars = setdiff(colnames(TFRpred), c("country_code", "country_name", "name", "last.observed")),
+                          variable.name = "year")
+          TFRpred[, trajectory := 1]
+          TFRpred <- as.data.frame(TFRpred)
+      } else { # file in comma-separated long format 
+        TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+        TFRpred <- TFRpred[,c('LocID', 'Year', 'Trajectory', 'TF')]
+        colnames(TFRpred) <- c('country_code', 'year', 'trajectory', 'value')
+      } 
     } 
   } else {
     if(!is.null(inputs$tfr.sim.dir)) 
@@ -939,17 +950,23 @@ compute.pasfr.global.norms <- function(inputs) {
 		tpasfr <- NULL
 		countries <- pattern$country_code[which(pattern[[norm]]==1)]
 		if(length(countries) == 0) next
+		ccounter <- rep(0, )
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
+			if(is.null(ccounter)) ccounter <- rep(0, ncol(pasfr)) # deals with missing years for some countries
+            is.not.observed <- apply(pasfr, 2, function(x) any(is.na(x)))
+            if(any(is.not.observed))  # fill NA with 0 
+                pasfr[,is.not.observed] <- 0
+            ccounter <- ccounter + !is.not.observed
 			tpasfr <- if(is.null(tpasfr)) pasfr else tpasfr + pasfr
 		}
-		tpasfr <- tpasfr/(length(countries)*100)
+		tpasfr <- tpasfr/matrix(ccounter, nrow = nrow(tpasfr), ncol = ncol(tpasfr), byrow = TRUE)
 		result[[norm]] <- scale(tpasfr, center=FALSE, scale=colSums(tpasfr))*100
 	}
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	compute.mac <- function(x) {
@@ -960,7 +977,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
         return(mac)
 	}
 	update.by.mac <- function(x, sp3i) {
-		if(sp3i >= dim(x)[2]) return(x)
+		if(sp3i >= dim(x)[2] || all(is.na(x))) return(x)
 		phase3i <- seq(sp3i, dim(x)[2])
 		mac <- compute.mac(x[,phase3i]*100)		
 		mac.norm <- compute.mac(matrix(gnorm, ncol=1))
@@ -968,7 +985,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 		if(mac[maxi] <= mac.norm)
 			return(x)
 		x[,phase3i[maxi:length(phase3i)]] <- x[,phase3i[maxi]]
-		#stop('')
 		return(x)
 	}
 	pattern <- inputs$PASFRpattern
@@ -976,44 +992,49 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	pasfr.obs <- inputs$observed$PASFR
 	
 	years <- as.integer(names(tfr))
+	by <- if(annual) 1 else 5
 	if(length(years)==0)
-		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-5))
+		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-by))
 	lyears <- length(years)
-	years.long <- c(years, seq(years[lyears]+5, by=5, length=15))
+	years.long <- c(years, seq(years[lyears]+by, by=by, length=75/by)) # up to 2175
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears)
+	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
 	start.phase3 <- end.phase2 + 1
-	#stop('')
-	if(start.phase3 > lyears) { # Phase 3 hasn't start (Case 2)
-		if(tfr[lyears] > 1.8) { # regress the last four points to approximate start of Phase 3
-			df <- data.frame(tfr=tfr[(lyears-3):lyears], time=(lyears-3):lyears)
+	if(start.phase3 > lyears) { # Phase 3 not observed until the end of projection (Case 2)
+		if(tfr[lyears] > 1.8) { # regress the last 20 years to approximate start of Phase 3
+		    nrpoints <- 20/by - 1 # one point because of the way it is used
+            tbeyond <- 50/by
+			df <- data.frame(tfr=tfr[(lyears-nrpoints):lyears], time=(lyears-nrpoints):lyears)
 			reg <- lm(tfr~time, df)
 			if(reg$coefficients[2] < -1e-3) {# use only if it has negative slope 
-				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, lyears+10)
+				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, lyears + tbeyond)
 			} else {
-				start.phase3 <- lyears+10
+				start.phase3 <- lyears + tbeyond
 			}			
 		}
 		#endT <- years.long[min(start.phase3+5, length(years.long))]
-		endT <- years.long[start.phase3+5]
+		endT <- years.long[start.phase3 + 25/by]
 	} else { # Case 1
 		smaller.than.median <- tfr[start.phase3:lyears] < tfr.med
 		if(all(smaller.than.median)) { # t_u does not exist
 			#endT <- years.long[max(start.phase3+10, tobs+10)]
-			endT <- years.long[max(lyears, start.phase3+5)]
+			endT <- years.long[max(lyears, start.phase3 + 25/by)]
 		} else { # t_u exists
 			first.larger <- which(!smaller.than.median)[1] + start.phase3 - 1
-			endT <- years.long[max(first.larger, tobs+2)]
+			endT <- years.long[max(first.larger, tobs + 20/by)]
 		}
 	}
 	#endT <- years.long[max(start.phase3+5, tobs+5)] # no upper bound
+	
+	# Trend towards global model pattern
 	startTi <- which(years == proj.years[1])
 	gnorm <- norms[[.pasfr.norm.name(
 	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
-	t.r <- years[startTi-1]
+	
+	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
 	p.r <- pmax(p.r, min.value)
@@ -1026,21 +1047,23 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	asfr1 <- inv.logit(asfr1)
 	asfr1 <-  scale(asfr1, center=FALSE, scale=colSums(asfr1))
 	
-	p.e <- pasfr.obs[,ncol(pasfr.obs)-2]/100.
+	# Continuing of observed trend
+	if(startTi < nr.est.points+1) { # the years vector does not include all the observed data
+	    yd <- years[1] - by * (nr.est.points - startTi)
+	} else yd <- years[startTi - nr.est.points]
+	p.e <- pasfr.obs[,ncol(pasfr.obs)-nr.est.points+1]/100.
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
-	if(startTi < 4) { # not enough observed data
-		yd <- years[1] - 5 * (3-startTi)
-	} else yd <- years[startTi-3]
+
 	tau.denominator2 <- t.r - yd
 	logit.dif <- logit.pr - logit(p.e)
 	for(t in 1:ncol(asfr2)){
 		asfr2[,t] <- logit.pr + ((years[t+tobs] - t.r)/tau.denominator2) *logit.dif
 	}
-	#stop('')
 	asfr2 <- inv.logit(asfr2)
 	asfr2 <-  scale(asfr2, center=FALSE, scale=colSums(asfr2))
 	
+	# combining the two trends
 	logit.asfr1 <- logit(asfr1)
 	logit.asfr2 <- logit(asfr2)
 	for(t in 1:ncol(res.asfr)){
@@ -1049,6 +1072,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med) {
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
+	#stop("")
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
 	return(res.asfr)
 }
