@@ -291,8 +291,10 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
 	annual <- pop.pred$annual
 	max.age.allowed <- all.age.length(annual)
-	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) 
-	    stop(paste('Age index must be between 1', if(annual) '(age 0) and 131' else '(age 0-4) and 27', '(age 130+).'))
+	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) {
+	    if(annual) stop(paste('Age index must be between 0 and ', max.age.allowed - 1, '.')) 
+	    stop(paste('Age index must be between 1 and ', max.age.allowed, '(age 130+).'))
+	}
 	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
@@ -743,16 +745,19 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if(age[1] != 'all') {
 			age.idx <- age.idx - max.age.shift # translate age index into mother's child-bearing age index
 			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1){
+			    if(pop.pred$annual) stop('Age index for ', event, ' must be between ', max.age.shift, ' and ', max.age + max.age.shift - 1, '.')
 			    allowed.ages <- fert.ages(pop.pred$annual)
-				stop('Age index for ', event, ' must be between ', max.age.shift + 1, ' (age ', allowed.ages[1],
-				    if(!pop.pred$annual) paste0('-', allowed.ages[1]+4) else '', ') and ',  max.age + max.age.shift, ' (age ', 
-				    allowed.ages[length(allowed.ages)], if(!pop.pred$annual) paste0('-', allowed.ages[length(allowed.ages)]+4) else '', ').')
+			    stop('Age index for ', event, ' must be between ', max.age.shift + 1, ' (age ', allowed.ages[1], '-', allowed.ages[1]+4, ') and ', 
+				     max.age + max.age.shift, ' (age ', allowed.ages[length(allowed.ages)], '-', allowed.ages[length(allowed.ages)]+4, ').')
 			}
 		} else age.idx.raw <- age.idx + max.age.shift
 	} 
-	if(length(age.idx)==0 || max(age.idx) > max.age.index.allowed || (min(age.idx) < min.age.index.allowed)) 
-		stop('Age index must be between ', min.age.index.allowed, ' (first age category) and ', min(max.age, max.age.index.allowed),  
+	if(length(age.idx)==0 || max(age.idx) > max.age.index.allowed || (min(age.idx) < min.age.index.allowed)) {
+	    age.ranges <- c(min.age.index.allowed, max.age.index.allowed, max.age)
+	    if(pop.pred$annual) age.ranges <- age.ranges - 1 # age argument is assumed to be already shifted for 1-year age groups, i.e. starting with 1 instead of allowed 0
+		stop('Age index must be between ', age.ranges[1], ' (first age category) and ', min(age.ranges[3], age.ranges[2]),  
 						' (open-ended age category).')
+	}
 	if(!age.normal) {
 		age.idx.raw <- age.idx
 		age.idx <- age.idx+2
@@ -974,7 +979,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 	if(length(age.part.idx) > 0) {
 		if(length(age.part.idx) > 1) stop('Only one age vector is allowed.')
 		age <- eval(parse(text=gsub('\\[|\\]|\\{|\\}', '', split.object[age.part.idx])))
-		if(is.null(age)) age <- 'all'
+		if(is.null(age)) age <- 'all' else if(pop.pred$annual) age <- age + 1
 		if(grepl("{", split.object, fixed=TRUE)) sum.over.ages <- FALSE
 	}
 	# find country (search aggregations if not found, or if it is an aggregation search base prediction object)
@@ -1411,7 +1416,7 @@ age.index05 <- function(end) return (1:end)
 
 mac.expression1 <- function(country) {
     factors <- fert.ages(annual = TRUE) + 0.5
-    return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = TRUE), "]", collapse=" + "), ")/100"))
+    return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = TRUE)-1, "]", collapse=" + "), ")/100"))
 }
 
 mac.expression <- function(country) {
