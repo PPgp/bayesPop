@@ -213,7 +213,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med)
+										tfr.med=tfr.med, annual = inp$annual)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
@@ -260,7 +260,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med)
+										tfr.med=tfr.med, annual = inp$annual)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
@@ -969,8 +969,16 @@ compute.pasfr.global.norms <- function(inputs) {
 kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
+	fac.mac.start <- fert.ages(annual)[1]
+	if(annual) {
+	    fac.mac.start <- fac.mac.start + 0.5
+	    by <- 1
+	} else {
+	    fac.mac.start <- fac.mac.start + 2.5
+	    by <- 5
+	}
 	compute.mac <- function(x) {
-		factors <- seq(17.5, by=5, length=dim(x)[1])
+		factors <- seq(fac.mac.start, by=by, length=dim(x)[1])
 		mac <- rep(0, dim(x)[2])
         for(iage in 1:dim(x)[1]) 
         	mac <- mac + x[iage,]*factors[iage]/100.
@@ -988,11 +996,10 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 		return(x)
 	}
 	pattern <- inputs$PASFRpattern
-	min.value <- 1e-3	
+	min.value <- 1e-6
 	pasfr.obs <- inputs$observed$PASFR
 	
 	years <- as.integer(names(tfr))
-	by <- if(annual) 1 else 5
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-by))
 	lyears <- length(years)
@@ -1041,6 +1048,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(gnorm/100.) - logit.pr
+	#stop("")
 	for(t in 1:ncol(asfr1)){
 		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
@@ -1621,7 +1629,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
 	maxage <- all.age.length(annual = annual, observed = TRUE)
-	reprod.age <- fert.age.length(annual)
+	reprod.age <- fert.age.index(annual)
 	pop <- D10 <- list()
 	nmx <- ncol(inputs$MXm)
 	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
@@ -1860,7 +1868,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					this.result <- cbind(this.result, sex=rep(sex, nr.var))
 				if(age != 'all') {
 					age <- as.integer(age)
-					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages)[age], nr.var))
+					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages, single.year = pop.pred$annual)[age], nr.var))
 				}
 				if(is.null(vital.event)) {
 					if(include.observed) 

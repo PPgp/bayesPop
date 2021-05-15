@@ -128,12 +128,12 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	stopifnot(all(tb[, 5:ncol(tb)] < 7))
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
+	t1 <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t1) == c(10,20))) # 2 countries 5 rows each
 	
 	write.pop.projection.summary(pred, expression="pop.combine(BXXX[5], BXXX, '/')", output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
+	t2 <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(identical(t1, t2))
 	
 	t <- pop.byage.table(pred, expression='M528_M{}')
 	stopifnot(all(dim(t) == c(27,5)))

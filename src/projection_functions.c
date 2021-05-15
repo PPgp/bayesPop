@@ -849,7 +849,7 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
                   double *btagem, double *btagef, double *deathsm, double *deathsf
 ) {
     
-    double b, bm, bf, srb_ratio;
+    double b, bm, bf, srb_ratio, mmult;
     
     /* forward and backward estimated deaths */
     double dfw, dbw;        
@@ -873,6 +873,7 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
     
     double Lxm[adim], Lxf[adim], lxm[adim], lxf[adim], bt[adimfert];
     double cdeathsm[adim], cdeathsf[adim], mxtm[adim], mxtf[adim];
+    double migm[adim][*migc], migf[adim][*migc];
     double totmigm[adim][*migc], totmigf[adim][*migc];
     
     /* cohort separation factor males, females*/
@@ -895,14 +896,14 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         t = j*adim;
         switch (*MIGtype) {
             case 0: /* migration evenly distributed over each interval (MigCode=0) */
-                for(i=1; i<nrow+6; ++i) {
+                for(i=1; i<nrow+adimdif; ++i) {
                     totmigm[i][j] = 0.5*(migm[i][j] + migm[i-1][j]*srm[i + t]);
                     totmigf[i][j] = 0.5*(migf[i][j] + migf[i-1][j]*srf[i + t]);
                 }
                 mmult = 0.5;
                 break;
             default: /* migration at the end of each interval (MigCode=9)*/
-                for(i=0; i<nrow+6; ++i) {
+                for(i=0; i<nrow+adimdif; ++i) {
                     totmigm[i][j] = migm[i][j];
                     totmigf[i][j] = migf[i][j];
                 }
@@ -1008,13 +1009,19 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         
         /* last age group, i = adim1;*/
         /* males*/
-        dfw = (popm[i + t_offset]+popm[i-1 + t_offset])*(1-srm[i + t_offset]);
+        dfw = (popm[adim1 + t_offset]+popm[adim1-1 + t_offset])*(1-srm[adim1 + t_offset]);
         dbw = popm[i + t] * (1-srm[i + t_offset])/srm[i + t_offset];
-        cdeathsm[i] = 0.5 * (dfw + dbw);
+        /*dbw = popm[adim1 + t];*/ /* check that this is correct (last srm is 0) */
+        cdeathsm[adim1] = 0.5 * (dfw + dbw);
+        
+        /*Rprintf("\nj = %i: popm[adim1, j-1]=%f pop[adim1, j]=%f srm[adim1]=%f dfw=%f dbw=%f ", j, 
+         popm[adim1 + t_offset], popm[adim1 + t], srm[adim1 + t_offset], dfw, dbw);*/
+        
         
         /* females*/
         dfw = (popf[i + t_offset]+popf[i-1 + t_offset])*(1-srf[i + t_offset]);
         dbw = popf[i + t] * (1-srf[i + t_offset])/srf[i + t_offset];
+        /*dbw = popf[i + t];*/ /* check that this is correct (last srf is 0) */
         cdeathsf[i] = 0.5 * (dfw + dbw);
         
         /**************************************************************************/
@@ -1065,6 +1072,8 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
             deathsm[i + t_offset] = cdeathsm[i]*(1-csfm[i-1]) + cdeathsm[i+1] * csfm[i];
             deathsf[i + t_offset] = cdeathsf[i]*(1-csff[i-1]) + cdeathsf[i+1] * csff[i];
         }
-    }	
+        deathsm[adim1 + t_offset] = cdeathsm[adim1] * (1-csfm[adim1]); /* check that these two lines are correct (they were missing originally) */
+        deathsf[adim1 + t_offset] = cdeathsf[adim1] * (1-csff[adim1]);
+    }
 }	
 
