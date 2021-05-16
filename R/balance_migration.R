@@ -692,10 +692,12 @@ do.pop.predict.one.country.no.migration.half.child <- function(time, cidx, env, 
 	return(NULL)
 }
 
-.get.migration.one.trajectory <- function(use.migration.model, inpc, itraj=NULL, time=NULL,  pop=NULL, ...) {
-	if(use.migration.model) #TODO: what should it be for half child variants?
+.get.migration.one.trajectory <- function(use.migration.model, use.migration.flow.model, inpc, itraj=NULL, time=NULL,  pop=NULL, ...) {
+	if(use.migration.model & !use.migration.flow.model) #TODO: what should it be for half child variants?
 		return(sample.migration.trajectory.from.model(inpc, itraj, time, pop, ...))
 	# use migration predictions from inputs
+	if(!use.migration.model & use.migration.flow.model)
+		return(sample.migration.trajectory.from.flow.model(inpc, itraj, time, pop, ...))
 	migpred <- list(M=NULL, F=NULL)
 	for(sex in c('M', 'F')) {
 		par <- paste0('mig', sex, 'pred')

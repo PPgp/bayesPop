@@ -1,7 +1,7 @@
 if(getRversion() >= "2.15.1") utils::globalVariables(c("UNlocations", "MLTbx"))
 
 pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.year=2017,
-						countries=NULL, output.dir = file.path(getwd(), "bayesPop.output"),
+						countries=NULL, output.dir = file.path(getwd(), "predictions"),
 						inputs=list(
 							popM=NULL,
 							popF=NULL,
@@ -16,11 +16,11 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
-							migMtraj=NULL, migFtraj=NULL	
+							migMtraj=NULL, migFtraj=NULL, 	
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = FALSE,
 						my.locations.file = NULL, replace.output=FALSE, 
-						use.migration.model=FALSE, balance.migration=FALSE,
+						use.migration.model=FALSE, balance.migration=FALSE, use.migration.flow.model=FALSE,
 						verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages=seq(0, by=5, length=27)
@@ -53,15 +53,17 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
 		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, verbose=verbose)
 	}
-	outdir <- file.path(output.dir, 'predictions')
-	if(use.migration.model || balance.migration) {
+	
+	outdir <- file.path(output.dir, 'bayesPop.output')
+	
+	if(use.migration.model || balance.migration || use.migration.flow.model) {
 		balargs <- list(...)
-		if(replace.output || ('start.traj.index' %in% names(balargs) && balargs['start.traj.index']==1)) { 
-			unlink(outdir, recursive=TRUE)
-			.remove.cache.file(outdir)
-		}
+		#if(replace.output || ('start.traj.index' %in% names(balargs) && balargs['start.traj.index']==1)) { 
+			#unlink(outdir, recursive=TRUE)
+			#.remove.cache.file(outdir)
+		#}
 		# else keep the directory if not replace.output, so that one can start at higher trajectory
-	} else {
+		} else {
 	    # remove arguments specific to the balance function from "..."
 	    otherargs <- list(...)
 	    balargnames <- formalArgs(do.pop.predict.balance)
@@ -95,15 +97,22 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2015, wpp.y
 		} else
 			country.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
 	} 
-	if(use.migration.model || balance.migration)
-		do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
-					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=inp$fixed.pasfr, 
-					function.inputs=inputs, rebalance=balance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
-	else 
+	if(use.migration.flow.model){
+		do.pop.predict.flow(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
+				keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=inp$fixed.pasfr, 
+				function.inputs=inputs, verbose=verbose, ...)
+	} else {
+		if(use.migration.model || balance.migration)
+			do.pop.predict.balance(inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL, countries=country.codes,
+				keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=inp$fixed.pasfr, 
+				function.inputs=inputs, rebalance=balance.migration, use.migration.model=use.migration.model, verbose=verbose, ...)
+		else 
 		do.call("do.pop.predict", c(list(country.codes, inp, outdir, nr.traj, ages, pred=if(prediction.exist) pred else NULL,
-					keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
-					function.inputs=inputs, verbose=verbose), otherargs))
-	invisible(get.pop.prediction(output.dir))
+				keep.vital.events=keep.vital.events, fixed.mx=inp$fixed.mx, fixed.pasfr=fixed.pasfr, 
+				function.inputs=inputs, verbose=verbose), otherargs))
+
+	}
+	if(!use.migration.flow.model) invisible(get.pop.prediction(output.dir))
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
