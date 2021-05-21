@@ -1370,7 +1370,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used.")
             mlttype <- "CD_West"
         }
-        args[["MLT"]] <- list(type = mlttype, nx = if(annual) 1 else = 5)
+        args[["MLT"]] <- list(type = mlttype, nx = if(annual) 1 else 5)
     }
     if("PMD" %in% c(meth1, meth2)) {
         adj.code <- .pattern.value("AgeMortProjAdjSR", pattern, 0)
@@ -1380,7 +1380,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             interp.rho = TRUE, keep.lt = TRUE,
             sexratio.adjust = adj.code == 1,
             adjust.sr.if.needed = adj.code == 3,
-            nx = if(annual) 1 else = 5
+            nx = if(annual) 1 else 5
         )
     }
     if("LC" %in% c(meth1, meth2)) {
@@ -1430,7 +1430,7 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
                               meth2 = tolower(args$meth2), 
                               weights = args$weights,
                               min.age.groups = min.age.groups,
-                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]]
+                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]],
                               kannisto.args = list(proj.ages = kann.proj.ages, est.ages = kann.est.ages))
     }
     # consolidate results which can be in different formats from the different methods
