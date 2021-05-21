@@ -3,17 +3,18 @@ get.expression.indicators <- function() {
 		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr', E='ex'))
 }
 
-all.age.index <- function(annual = FALSE, observed = FALSE) {
+all.age.index <- function(...) 
+    return(1:all.age.length(...))
+
+all.age.length <- function(annual = FALSE, observed = FALSE){
     if(annual) {
-        if(observed) return(1:101) 
-        return(1:131)
+        if(observed) return(101) 
+        return(131)
     }
-    if(observed) return(1:21) 
-    return(1:27)
+    if(observed) return(21) 
+    return(27)
 }
 
-all.age.length <- function(...)
-    return(length(all.age.index(...)))
 
 all.ages <- function(annual = FALSE, observed = FALSE) {
     l <- all.age.length(annual, observed)
@@ -23,7 +24,7 @@ all.ages <- function(annual = FALSE, observed = FALSE) {
 }
 
 fert.age.index <- function(annual = FALSE) {
-    if(annual) return(13:54)
+    if(annual) return(11:55)
     return(4:10)
 }
 
@@ -32,6 +33,16 @@ fert.age.length <- function(...)
 
 fert.ages <- function(...)
     return(all.ages(...)[fert.age.index(...)])
+
+lt.age.length <- function(annual = FALSE, ...) {
+    l <- all.age.length(annual = annual, ...)
+    if(!annual) l <- l + 1
+    return(l)
+}
+
+lt.age.index <- function(...) 
+    return(1:lt.age.length(...))
+
 
 has.pop.prediction <- function(sim.dir) {
 	if(file.exists(file.path(sim.dir, 'predictions', 'prediction.rda'))) return(TRUE)

@@ -198,7 +198,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(!fixed.mx) {
 			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all, npred=npred, annual = inp$annual) 
 			mortcast.args <- .prepare.for.mortality.projection(pattern = inpc$MXpattern, mxKan = MxKan, 
-			                                                   hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all)
+			                                                   hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all, 
+			                                                   annual = inp$annual)
 			if(verbose) cat(", mx via ", paste(c(mortcast.args$meth1, mortcast.args$meth2), collapse = ","))
 		} else {
 			MxKan <- runKannisto.noLC(inpc, annual = inp$annual)
@@ -1353,7 +1354,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
     return(list(male = list(mx = male.mx), female = list(mx = female.mx)))
 }
 
-.prepare.for.mortality.projection <- function(pattern, mxKan, hiv.params = NULL, lc.for.all = FALSE) {
+.prepare.for.mortality.projection <- function(pattern, mxKan, hiv.params = NULL, lc.for.all = FALSE, annual = FALSE) {
     if(lc.for.all) {
         meth1 <- "LC"
         meth2 <- ""
@@ -1369,7 +1370,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             warning("Column for MLT type (AgeMortProjPattern) is missing. CD_West used.")
             mlttype <- "CD_West"
         }
-        args[["MLT"]] <- list(type = mlttype)
+        args[["MLT"]] <- list(type = mlttype, nx = if(annual) 1 else = 5)
     }
     if("PMD" %in% c(meth1, meth2)) {
         adj.code <- .pattern.value("AgeMortProjAdjSR", pattern, 0)
@@ -1378,7 +1379,8 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             mxf0 = mxKan$female$mx.orig[,ncol(mxKan$female$mx)],
             interp.rho = TRUE, keep.lt = TRUE,
             sexratio.adjust = adj.code == 1,
-            adjust.sr.if.needed = adj.code == 3
+            adjust.sr.if.needed = adj.code == 3,
+            nx = if(annual) 1 else = 5
         )
     }
     if("LC" %in% c(meth1, meth2)) {
@@ -1400,7 +1402,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
         meth1 <- "HIVmortmod"
         meth2 <- ""
     }
-    if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments fro logquad
+    if("LogQuad" %in% c(meth1, meth2)) args[["LQ"]] <- list() # no arguments for logquad
     if(meth2 != "") args$weights <- eval(parse(text = .pattern.value("AgeMortProjMethodWeights", pattern, c(1, 0.5))))
     args$meth1 <- meth1
     args$meth2 <- meth2
@@ -1408,7 +1410,11 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 }
 
 project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, annual = FALSE, verbose=FALSE, debug=FALSE) {
-    args <- if(is.null(mortcast.args)) .prepare.for.mortality.projection(...) else mortcast.args
+    args <- if(is.null(mortcast.args)) .prepare.for.mortality.projection(..., annual = annual) else mortcast.args
+    nage <- all.age.length(annual, observed = FALSE)
+    min.age.groups <- lt.age.length(annual, observed = FALSE)
+    kann.proj.ages <- if(annual) 100:130 else seq(100, 130, by = 5)
+    kann.est.ages <- if(annual) 90:99 else seq(80, 95, by = 5)
     if(args$meth2 == "") { # apply a single method 
         res <- switch(args$meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
@@ -1417,19 +1423,21 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
             HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]])),
             LogQuad = do.call("logquadj", c(list(eopm, eopf), args[["LQ"]]))
             )
-        res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = 28)
+        res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = min.age.groups,
+                                                    proj.ages = kann.proj.ages, est.ages = kann.est.ages)
     } else { # combination of two methods
         res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
                               meth2 = tolower(args$meth2), 
                               weights = args$weights,
-                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]])
+                              min.age.groups = min.age.groups,
+                              meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]]
+                              kannisto.args = list(proj.ages = kann.proj.ages, est.ages = kann.est.ages))
     }
     # consolidate results which can be in different formats from the different methods
     if(!"mx" %in% names(res))
         res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
     res$male$sex <- 1
     res$female$sex <- 2
-    nage <- all.age.length(annual, observed = FALSE)
     if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) != nage) {# compute survival
         srinput <- list(male = list(sex = 1, mx = res$mx[[1]]),
                         female = list(sex = 2, mx = res$mx[[2]]))
@@ -1440,8 +1448,8 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
 
 
 survival.fromLT <- function (npred, mxKan, annual = FALSE, verbose=FALSE, debug=FALSE) {
-    nage <- nagemx <- all.age.length(annual, observed = FALSE)
-    if(!annual) nagemx <- nagemx + 1
+    nage <- all.age.length(annual, observed = FALSE)
+    nagemx <- lt.age.length(annual, observed = FALSE)
     sr <- LLm <- lx <- list(matrix(0, nrow=nage, ncol=npred), matrix(0, nrow=nage, ncol=npred))
     Mx <- list(matrix(0, nrow=nagemx, ncol=npred), matrix(0, nrow=nagemx, ncol=npred))
     sx <- rep(0, nage)
@@ -1495,7 +1503,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	#Get Lee-Cater Ax and Bx
 	ne <- ncol(Mxe.m)
 	old.age <- all.age.length(annual, observed = TRUE)
-	nmx <- if(annual) 131 else 28
+	nmx <- lt.age.length(annual, observed = FALSE)
 	years <- as.integer(substr(colnames(male.mx),1,4))
 	year.step <- if(annual) 1 else 5
 	first.year <- years[1]
@@ -1543,7 +1551,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         }
     }
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
-                                   ax.index = ax.index, ax.smooth = smooth.ax)
+                                   ax.index = ax.index, ax.smooth = smooth.ax, nx = year.step)
 
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
