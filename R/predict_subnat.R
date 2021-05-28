@@ -178,7 +178,7 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
 
 load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, 
                                default.country = NULL, fixed.mx = FALSE, 
-                        fixed.pasfr = FALSE, existing.mig = NULL, verbose = FALSE) {
+                        fixed.pasfr = FALSE, existing.mig = NULL, annual = FALSE, verbose = FALSE) {
     observed <- list()
     # check inputs
     for(item in c('popM', 'popF')) {
@@ -214,17 +214,24 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         else stop("mxM must be given if there is no default.country.")
     } else MXm <- swap.reg.code(read.pop.file(inputs$mxM), table.name = "mxM")
     names.MXm.data <- names(MXm)
-    num.columns <- grep('^[0-9]{4}.[0-9]{4}$', names.MXm.data) # index of year-columns
+    numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
+    num.columns <- grep(numcol.expr, names.MXm.data) # index of year-columns
     cols.starty <- as.integer(substr(names.MXm.data[num.columns], 1,4))
-    cols.endy <- as.integer(substr(names.MXm.data[num.columns], 6,9))
-    start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
-    present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
+    if(!annual) {
+        cols.endy <- as.integer(substr(names.MXm.data[num.columns], 6,9))
+        start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
+        present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
+    } else {
+        cols.endy <- cols.starty
+        start.index <- which(cols.starty == start.year)
+        present.index <- which(cols.starty == present.year)
+    }
     #estim.periods <- names.MXm.data[num.columns[start.index:present.index]]
     estim.periods <- names.MXm.data[num.columns[1:present.index]] # ?why
     start.year <- cols.starty[start.index]
     
     if(fixed.mx) {
-        end.index <- which((cols.endy >= end.year) & (cols.starty < end.year))
+        end.index <- which((cols.endy >= end.year) & (cols.starty <= end.year))
         proj.periods <- names.MXm.data[num.columns[(present.index+1):end.index]]
         MXm.pred <- MXm[,c('country_code', 'age', proj.periods)]
     }
@@ -237,14 +244,15 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
     MXf <- MXf[,c('country_code', 'age', estim.periods)]
     
-    estim.years <- cols.starty[start.index:present.index] + 3
+    estim.years <- cols.starty[start.index:present.index]
+    if(!annual) estim.years <- estim.years + 3
     
     # Get sex ratio at birth
     srb.data <- inputs$srb
     if(is.null(srb.data)) 
         srb.data <- create.dataset.from.wpp(default.country, region.codes, 'sexRatio', wpp.year)
     else srb.data <- swap.reg.code(read.pop.file(srb.data), table.name = "srb")
-    srblist <- .get.srb.data.and.time.periods(srb.data, present.year, end.year, wpp.year)
+    srblist <- .get.srb.data.and.time.periods(srb.data, present.year, end.year, wpp.year, annual = annual)
     SRB <- srblist$srb
     observed$SRB <- srblist$obs.srb
     proj.periods <- srblist$proj.periods
@@ -281,6 +289,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     MIGshare <- .get.mig.shares(pattern.data, region.codes)
     
     # Get age-specific migration
+    # TODO: make it work for annual time series
     wppds <- data(package = paste0('wpp', wpp.year))
     recon.mig <- NULL
     if(is.null(inputs[['migM']]) || is.null(inputs[['migF']])) {
@@ -435,10 +444,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-                 'start.year', 'present.year', 'end.year', 'fixed.mx', 'fixed.pasfr', 'observed'))
+                 'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 'observed'))
         assign(par, get(par), envir=inp)
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
-    #stop('')
     env <- new.env()
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms

@@ -31,7 +31,7 @@ void printArray(double *a, int count) {
  * on mx(0,1) insted of qx(0,1)
  * Source from Preston et al. 2001, p.48
  *****************************************************************************/
-double * get_a05(double mx0, int sex) {
+double * get_a05_cd(double mx0, int sex) {
 	static double ax[2];
 	if(sex > 1) {/* female*/
 		if (mx0 < 0.107) {
@@ -52,6 +52,60 @@ double * get_a05(double mx0, int sex) {
 	}
 	return(ax);
 }
+
+double get_a0_ak_female(double mx0){
+    if (mx0 < 0.01724) {return(0.14903 - 2.05527 * mx0);}
+    if (mx0 < 0.06891) {return(0.04667 + 3.88089 * mx0);}
+    return(0.31411);
+}
+
+double get_a0_ak_male(double mx0){
+    if (mx0 < 0.0230) {return(0.14929 - 1.99545 * mx0);}
+    if (mx0 < 0.08307) {return(0.02832 + 3.26021 * mx0);}
+    return(0.29915);
+}
+
+/*****************************************************************************
+ * Function returns the years lived by those who died in the age interval (ax)
+ * for ages 0 and 1-4 (abridged life table)
+ * based on mx(0,1) and sex
+ * using the Andreev-Kingkade method (Demographic Research 2015)
+ *****************************************************************************/
+double * get_a05_ak(double mx0, int sex) {
+    static double ax[2];
+    double *ax_cd, sr, af, am;
+    
+    ax_cd = get_a05_cd(mx0, sex); /* for ages 1-4 */ 
+    if(sex == 2) {/* female*/
+        ax[0] = get_a0_ak_female(mx0);
+    } else { 
+        if(sex == 1) { /* male */
+            ax[0] = get_a0_ak_male(mx0);
+        } else { /* total */
+            af = get_a0_ak_female(mx0);
+            am = get_a0_ak_male(mx0);
+            sr =   1.05 / (1 + 1.05);
+            ax[0] = sr * am + (1-sr) * af;
+        }
+    }
+    ax[1] = ax_cd[1];    /*4a1*/
+    return(ax);
+}
+
+/*****************************************************************************
+ * Function returns the years lived by those who died in the age interval (ax)
+ * for ages 0 and 1-4 (abridged life table)
+ * based on mx(0,1) and sex using 
+ * either the Andreev-Kingkade (a0rule = 1) or Coale-Demeny (a0rule = 2) method
+ *****************************************************************************/
+double * get_a05(int a0rule, double mx0, int sex) {
+    if(a0rule == 1) {
+        return(get_a05_ak(mx0, sex));
+    } else {
+        return(get_a05_cd(mx0, sex));
+    }
+}
+
 /*****************************************************************************
  * Function calculates an abridged life table from age-specific mortality 
  * rates
@@ -65,7 +119,7 @@ double * get_a05(double mx0, int sex) {
  * Lx Person years lived
  * ax proportion of years lived by those who died
  *****************************************************************************/
-void doLifeTable(int sex, int nage, double *mx, 
+void doLifeTable(int sex, int nage, double *mx, int a0rule,
 				double *Lx, double *lx, double *qx, double *ax) {
 	
 	int i;
@@ -74,7 +128,7 @@ void doLifeTable(int sex, int nage, double *mx,
 	int nage1;
 	nage1 = nage -1;
 
-	tmpa = get_a05(mx[0], sex);
+	tmpa = get_a05(a0rule, mx[0], sex);
 	ax[0] = tmpa[0];
 	ax[1] = tmpa[1];
 	qx[0] = mx[0] / (1 + (1 - ax[0]) * mx[0]);                    /* 1q0 */	
@@ -142,7 +196,7 @@ void doLifeTable(int sex, int nage, double *mx,
 /* TB: added missing collapsing of lx column                  */
 /*     candidate for renaming parameters for consistency      */
 /*     also check dimensioning of parameter                  */
-void LifeTableC(int sex, int nage, double *mx,
+void LifeTableC(int sex, int nage, double *mx, int a0rule,
                 double *Lxx, double *lxx) {
   /* life table variables returned from doLifeTable */
   /* need to be declared with nage+1 elements       */
@@ -159,7 +213,7 @@ void LifeTableC(int sex, int nage, double *mx,
   int i;
   
   /* do life table called with nage as last index */
-  doLifeTable(sex, nage, mx, Lx, lx, qx, ax);
+  doLifeTable(sex, nage, mx, a0rule, Lx, lx, qx, ax);
   /* collapse 1L0 and 4L1 into 5L0 */
   Lxx[0] = Lx[0] + Lx[1];
   lxx[0] = lx[0];
@@ -174,7 +228,7 @@ void LifeTableC(int sex, int nage, double *mx,
  * Function calculates a life table for one-year age groups 
  * from age-specific mortality 
  *****************************************************************************/
-void doLifeTable1y(int sex, int nage, double *mx, 
+void doLifeTable1y(int sex, int nage, double *mx, int a0rule, 
                    double *Lx, double *lx, double *qx, double *ax) {
     
     int i;
@@ -182,7 +236,7 @@ void doLifeTable1y(int sex, int nage, double *mx,
     double *tmpa; /* pointer to estimated ax[0] and ax[1] values */
     int nage1;
     nage1 = nage -1;
-    tmpa = get_a05(mx[0], sex); 
+    tmpa = get_a05(a0rule, mx[0], sex); 
     ax[0] = tmpa[0]; /* use only ax[0] */
     for(i = 1; i < nage; ++i) {
         /* k = 0.5 * log(fmax(mx[i+1] / fmax(mx[i-1], DBL_MIN), DBL_MIN));*/
@@ -215,153 +269,17 @@ void doLifeTable1y(int sex, int nage, double *mx,
 /* Wrapper around doLifeTable1y 
  * Used when qx and ax is not needed.
  */
-void LifeTable1yC(int sex, int nage, double *mx, double *Lx, double *lx) {
+void LifeTable1yC(int sex, int nage, double *mx, int a0rule,
+                  double *Lx, double *lx) {
     double qx[nage], ax[nage];
-    doLifeTable1y(sex, nage-1, mx, Lx, lx, qx, ax);
+    doLifeTable1y(sex, nage-1, mx, a0rule, Lx, lx, qx, ax);
 }
 
-
-double get_constrained_mortality(double a, double b, double k, double constraint) {
-	double mx;
-	
-	mx = exp(a + b*k);
-	if(constraint > 0 && mx < constraint) mx = constraint;
-	return mx;
-}
-
-void LCEoKtC(int sex, double *ax, double *bx, 
-			 double eop, double kl, double ku, double *constraints, double *LLm, double *lm, double *Mx) {
-	double LTl[27], LTu[27], mxm[28], LTeo, k2;
-	int i, dim, debug;
-	dim = 27;
-	debug=0;
-	/* check if the eop lies outside of the bounds */
-	for (i=0; i < 28; ++i) {
-		mxm[i] = get_constrained_mortality(ax[i], bx[i], kl, constraints[i]);
-	}
-	LifeTableC(sex, 27, mxm, LTl, lm);
-	
-	if(eop < sum(LTl, dim)) {
-		for (i=0; i < dim; ++i) LLm[i]=LTl[i];
-		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
-		return;
-	}
-	for (i=0; i < 28; ++i) {
-		mxm[i] = get_constrained_mortality(ax[i], bx[i], ku, constraints[i]);
-	}
-	LifeTableC(sex, 27, mxm, LTu, lm);
-
-	if(eop > sum(LTu, dim)) {
-		for (i=0; i < dim; ++i) LLm[i]=LTu[i]; 
-		for (i=0; i < 28; ++i) Mx[i] = mxm[i];
-		if(debug==1) Rprintf("\nBreturn %f", sum(LTu, dim));
-		return;
-	}
-	/* Bi-section method */
-	k2 = 0.5 * (kl + ku);
-	for (i=0; i < 28; ++i) {
-		mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
-	}
-	LifeTableC(sex, 27, mxm, LLm, lm);
-	if(debug==1) Rprintf("\nLLm[2]=%lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);
-	LTeo = sum(LLm, dim);
-	while(fabs(LTeo - eop) > 0.01) {
-		if(LTeo < eop) kl = k2;
-		else ku = k2;
-		k2 = 0.5 * (kl + ku);
-		for (i=0; i < 28; ++i) {
-			mxm[i] = get_constrained_mortality(ax[i], bx[i], k2, constraints[i]);
-		}
-		LifeTableC(sex, 27, mxm, LLm, lm);
-		LTeo = sum(LLm, dim);
-		if(debug==1) Rprintf("\nLTeo=%lf, dif=%lf, LLm0-2=%lf %lf %lf, k2=%f, kl=%f, ku=%f, mxm24-27=%f %f %f %f", LTeo, fabs(LTeo - eop), LLm[0], LLm[1], LLm[2], k2, kl, ku, mxm[24], mxm[25], mxm[26], mxm[27]);
-	}
-	if(debug==1) Rprintf("\nk2=%f, eop=%lf, LTeo=%lf, adif=%lf, LLm[0]=%lf", k2, eop, LTeo, fabs(LTeo - eop), LLm[0]);
-	for (i=0; i < 28; ++i) Mx[i] = mxm[i];
-}
-
-void get_sx(double *LLm, double *sx, int n, int Ldim) {
-	/* compute survival ratios from Lx where the first age group is 0-5 (also for Lx)*/
-	int i, oei;
-	double sumLL;
-	oei=n-1;
-	/* Survival Ratios, radix of life table assumed to be 1.0  */
-    sx[0] = LLm[0] / 5.0;
-	for(i=1; i < oei; ++i) {
-		if(LLm[i-1] == 0) sx[i] = exp(-5);
-		else sx[i] = LLm[i]/LLm[i-1];
-	}
-	/* Last age group */
-	sumLL = 0;
-	for(i=oei; i < Ldim; ++i) {
-		sumLL += LLm[i];
-	}
-	if((sumLL + LLm[oei-1]) == 0 ||  sumLL == 0) sx[oei] = exp(-5);
-	else sx[oei] = sumLL/(sumLL+LLm[oei-1]);
-	if(sx[oei] > sx[oei-1]) sx[oei] = sx[oei-1];
-}
-
-void get_sx27(double *LLm, double *sx) {
-	get_sx(LLm, sx, 27, 27);
-}
-
-void get_sx21(double *LLm, double *sx) {
-	get_sx(LLm, sx, 21, 27);
-}
-
-void get_sx21_21(double *LLm, double *sx) {
-	get_sx(LLm, sx, 21, 21);
-}
-
-/*****************************************************************************
- * Lee Carter model
- * Produces a projection of age -specific mortality rates
- * (more)
- * 
- *****************************************************************************/
-void LC(int *Npred, int *Sex, double *ax, double *bx, 
-		double *Eop, double *Kl, double *Ku, int *constrain, double *FMx, double *FEop, double *LLm, double *Sr, 
-		double *lx, double *Mx) {
-	double eop, sx[27], Lm[27], mxm[28], fmx[28], lm[28], locbx[28], locax[28];
-	int i, sex, npred, pred;
-	
-	npred = *Npred;
-	sex=*Sex;
-	for (i=0; i < 28; ++i) fmx[i] = -1;
-	for (pred=0; pred < npred; ++pred) {
-		eop = Eop[pred];
-		if(*constrain>0) {		
-			if(FEop[pred] > eop) {
-				for (i=22; i < 28; ++i) {fmx[i] = FMx[i + pred*28];}
-			} else {
-				for (i=22; i < 28; ++i) {fmx[i] = -1;}
-			}
-		}
-		for (i=0; i < 28; ++i) {
-			locbx[i] = bx[i + pred*28];
-			locax[i] = ax[i + pred*28];
-		}
-		/*Rprintf("\n%i: eop=%lf", pred, eop);*/
-		LCEoKtC(sex, locax, locbx, eop, Kl[pred], Ku[pred], fmx, Lm, lm, mxm);		
-		get_sx27(Lm, sx);
-		
-		for (i=0; i < 27; ++i) {
-			Sr[i + pred*27] = sx[i];
-			/*Rprintf("\nLLm=%lf, Sr=%lf", LLm[i], Sr[i + pred*27]);*/
-			Mx[i + pred*28] = mxm[i];
-			lx[i + pred*28] = lm[i];
-		}
-		Mx[27 + pred*28] = mxm[27];
-		lx[27 + pred*28] = lm[27];
-		for (i=0; i < 26; ++i) {
-			LLm[i + pred*27] = Lm[i];
-		}
-	}
-}
 
 void get_deaths_from_sr_1x1(int *Sex, double *Sr, int *N, double *Pop, double *MIG, int *MIGtype, 
                         double *Births, double *Deaths, double *Mx) {
     int i, j, nrow, nrowmx, n, sex, nageLT, nageLTmx, multfact;
+    int a0rule = 1;
     
     n = *N; /* periods */
 	sex=*Sex;
@@ -442,7 +360,7 @@ void get_deaths_from_sr_1x1(int *Sex, double *Sr, int *N, double *Pop, double *M
 		/* Create an abridged life table from age-specific mortality rates
 		    for columns Lx and lx alone; note the age format for abridged life table*/
 
-		LifeTable1yC(sex, nrow, mxt, Lx, lx);
+		LifeTable1yC(sex, nrow, mxt, a0rule, Lx, lx);
 			    
 	    /* cohort-period separation factors */
 		int ii;
@@ -475,6 +393,7 @@ void get_deaths_from_sr_abridged(int *Sex, double *Sr, int *N, double *Pop, doub
     double Lx[27], lx[27];
     double cdeaths[27];
     double mxt[28];
+    int a0rule = 1;
     
     /* forward and backward estimated deaths */
     double dfw, dbw;        
@@ -546,7 +465,7 @@ void get_deaths_from_sr_abridged(int *Sex, double *Sr, int *N, double *Pop, doub
 	    }
 	    /* Create an abridged life table from age-specific mortality rates
 	     for columns Lx and lx alone; note the age format for abridged life table*/
-	    LifeTableC(sex, nrow, mxt, Lx, lx);
+	    LifeTableC(sex, nrow, mxt, a0rule, Lx, lx);
 	
 	    /* cohort-period separation factors */
 	    int ii;
@@ -571,37 +490,7 @@ void get_deaths_from_sr_abridged(int *Sex, double *Sr, int *N, double *Pop, doub
 		Deaths[nrow-1 + j*nrow] = cdeaths[nrow-1] * (1-csf[nrow-2]);
 	}
 }
-void get_sr_from_N(int *N, double *Pop, double *MIG, int *MIGtype, double *Births, double *Sr, double *Deaths) {
-	/* function not used */
-	double mmult;
-	int i, j, nrow, n;
-	nrow = 21;
-	n = *N;
-	mmult = 1;
-    if(*MIGtype == 0) mmult=0.5;
-	for(j=0; j<n; ++j) {
-		/* age < 5 */
-		Sr[j*nrow] = (Pop[(j+1)*nrow] - mmult * MIG[j*nrow])/Births[j];
-		Deaths[j*nrow] = Pop[(j+1)*nrow]*(1-Sr[j*nrow]);
-		for(i=1; i<(nrow-1); ++i) {
-			switch (*MIGtype) {
-				case 0: /* migration evenly distributed over each interval (MigCode=0) */
-					/* age >= 5 */
-					Sr[i+j*nrow] = (Pop[i+(j+1)*nrow] - 0.5*MIG[i+j*nrow])/(Pop[i-1+j*nrow] + 0.5*MIG[i-1+j*nrow]);
-					Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]) + 0.5*MIG[i-1+j*nrow]*(1-Sr[i+j*nrow]);
-					break;
-				default: /* migration at the end of each interval (MigCode=9)*/
-					/* age >= 5 */
-					Sr[i+j*nrow] = (Pop[i+(j+1)*nrow] - MIG[i+j*nrow])/Pop[i-1+j*nrow];
-					Deaths[i+j*nrow] = Pop[i-1+j*nrow]*(1-Sr[i+j*nrow]);
-					break;
-			}
-		}
-		/* Last open-ended age category */
-		Sr[nrow-1+j*nrow] = (Pop[nrow-1+(j+1)*nrow] - MIG[nrow-1+j*nrow])/(Pop[nrow-2+j*nrow]+Pop[nrow-1+j*nrow]);
-		Deaths[nrow-1+j*nrow] = Pop[nrow-2+j*nrow]*(1-Sr[nrow-1+j*nrow]);
-	}
-}
+
 /*****************************************************************************
  * Core population projection function TotalPopProj
  * Called from function StoPopProj in predict.pop.R
@@ -633,6 +522,8 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	double Lxm[27], Lxf[27], lxm[27], lxf[27];
 	double cdeathsm[27], cdeathsf[27];
 	double mxtm[28], mxtf[28];
+	int a0rule = 1;
+	
 	/* forward and backward estimated deaths */
 	double dfw, dbw;        
 	/* cohort separation factor males, females*/
@@ -807,8 +698,8 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
 	    }
 	    /* worked when calling with adim = 27 => last index of abridged life table */
 	    /* Note that results have last index at adim1 = 26! */
-	    LifeTableC(male, adim, mxtm, Lxm, lxm);
-	    LifeTableC(female, adim, mxtf, Lxf, lxf);
+	    LifeTableC(male, adim, mxtm, a0rule, Lxm, lxm);
+	    LifeTableC(female, adim, mxtf, a0rule, Lxf, lxf);
 	
 	    /* cohort-period separation factors */
 	    int ii;
@@ -850,6 +741,7 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
 ) {
     
     double b, bm, bf, srb_ratio, mmult;
+    int a0rule= 1;
     
     /* forward and backward estimated deaths */
     double dfw, dbw;        
@@ -1039,8 +931,8 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         }
         /* worked when calling with adim = 27 => last index of abridged life table */
         /* Note that results have last index at adim1 = 26! */
-        LifeTable1yC(male, adim, mxtm, Lxm, lxm);
-        LifeTable1yC(female, adim, mxtf, Lxf, lxf);
+        LifeTable1yC(male, adim, mxtm, a0rule, Lxm, lxm);
+        LifeTable1yC(female, adim, mxtf, a0rule, Lxf, lxf);
         
         /* cohort-period separation factors */
         int ii;
