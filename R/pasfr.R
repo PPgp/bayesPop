@@ -48,7 +48,7 @@ prepare.inputs.for.pasfr.projection <- function(inputs = NULL, present.year = 20
     
     # prepare inputs for the kantorova.pasfr function
     kant <- new.env()
-    for(par in c('PASFR', 'PASFRpattern', 'TFRpred', 'present.year', 'end.year', 'observed'))
+    for(par in c('PASFR', 'PASFRpattern', 'TFRpred', 'present.year', 'end.year', 'annual', 'observed'))
         assign(par, get(par), envir = kant)
     
     # compute global norm

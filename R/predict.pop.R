@@ -954,6 +954,7 @@ compute.pasfr.global.norms <- function(inputs) {
 		ccounter <- rep(0, )
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
+			pasfr <- .fill.pasfr.ages(pasfr, fert.ages(inputs$annual), check.length.only = !inputs$annual)
 			if(is.null(ccounter)) ccounter <- rep(0, ncol(pasfr)) # deals with missing years for some countries
             is.not.observed <- apply(pasfr, 2, function(x) any(is.na(x)))
             if(any(is.not.observed))  # fill NA with 0 
@@ -1091,10 +1092,28 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	idx <- inputs[[par]][,'country_code'] == country
 	if(sum(idx)==0) return (NULL)
 	res <- inputs[[par]][idx,,drop=FALSE]
-	res <- res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]
-	return (if(convert.to.matrix) as.matrix(res) else res)
+	res2 <- res[, !is.element(colnames(res), c('country_code', 'age')),drop=FALSE]
+	if(convert.to.matrix) {
+	    res2 <- as.matrix(res2)
+	    if('age' %in% colnames(res)) rownames(res2) <- res[, 'age']
+	}
+    return (res2)
 }
 
+.fill.pasfr.ages <- function(dat, fages, check.length.only = FALSE){
+    if(is.null(dat)) return(dat)
+    if(check.length.only){
+        if(nrow(dat) != length(fages))
+            stop('PASFR dataset contains ages that are not allowed.\nAllowed: ', paste(fages, collapse = ", "),
+                 '\nUsed: ', paste(rownames(dat), collapse = ", "))
+        return(dat)
+    }
+    # fill-in ages if not complete
+    if(all(fages %in% rownames(dat))) return(dat)
+    datf <- matrix(0, ncol = ncol(dat), nrow = length(fages), dimnames = list(fages, colnames(dat)))
+    datf[rownames(dat), ] <- dat
+    return(datf)
+}
 
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc <- list()
@@ -1104,6 +1123,22 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
+	repr.ages <- fert.ages(inputs$annual)
+	inpc[['PASFR']] <- .fill.pasfr.ages(inpc[['PASFR']], repr.ages, check.length.only = !inputs$annual)
+	obs[['PASFR']] <- .fill.pasfr.ages(obs[['PASFR']], repr.ages, check.length.only = !inputs$annual)
+    if(inputs$fixed.pasfr && is.null(inpc[['PASFR']])) {
+        warning('No PASFR projection for ', country.name, '. No population projection generated.')
+	    return(NULL)
+    }
+	if(!inputs$fixed.pasfr && is.null(obs[['PASFR']])) {
+	    warning('No observed PASFR for ', country.name, '. No population projection generated.')
+	    return(NULL)
+	}
+	if(is.null(inpc[['MXm']]) || is.null(inpc[['MXf']])) {
+	    warning('No mortality data for ', country.name, '. No population projection generated.')
+	    return(NULL)
+	}
+
 	for(par in c('MXpattern', 'PASFRpattern', 'HIVparams')) { # keep these datasets in data.frame format
 	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
 	}
