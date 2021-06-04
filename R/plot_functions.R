@@ -107,7 +107,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	if(!is.null(expression)) {
 		trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, nr.traj, 
 										typical.trajectory=typical.trajectory, adjust=adjust, adj.to.file=adj.to.file, adj.country=country$code)
-		if(missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years - year.step + 1)))
+		if(length(pop.pred$estim.years) > 1 && (missing(xlim) || (!missing(xlim) && min(xlim) < min(pop.pred$proj.years - year.step + 1))))
 			pop.observed.all <- get.pop.observed.from.expression(expression, pop.pred)
 		else {
 			pop.observed.all <- NA

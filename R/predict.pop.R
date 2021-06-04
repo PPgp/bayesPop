@@ -203,10 +203,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(verbose) cat(", mx via ", paste(c(mortcast.args$meth1, mortcast.args$meth2), collapse = ","))
 		} else {
 			MxKan <- runKannisto.noLC(inpc, annual = inp$annual)
-			LTres <- survival.fromLT(npred, MxKan, verbose=verbose, debug=debug)
+			LTres <- survival.fromLT(npred, MxKan, annual = inp$annual, verbose=verbose, debug=debug)
 		}
 		#npasfr <- nrow(inpc$PASFR)
-		if(keep.vital.events) observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, 
+		if(keep.vital.events) 
+		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, 
 															estim.years=inp$estim.years, annual = inp$annual)
 		tfr.med <- apply(inpc$TFRpred, 1, median)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
@@ -233,28 +234,30 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
 			if(keep.vital.events) {
+			    migtrajm <- min(itraj, migMntraj)
+			    migtrajf <- min(itraj, migFntraj)
+			    if(!is.null(observed)) {
+			        btm[1:dim(observed$btm)[1],1,itraj] <- observed$btm[,dim(observed$btm)[2],]
+			        btf[1:dim(observed$btf)[1],1,itraj] <- observed$btf[,dim(observed$btf)[2],]
+			        deathsm[1:dim(observed$deathsm)[1],1,itraj] <- observed$deathsm[,dim(observed$deathsm)[2],]
+			        deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
+			        asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
+			        pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
+			        migm[1:dim(inpc$observed$MIGm)[1],1,migtrajm] <- inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
+			        migf[1:dim(inpc$observed$MIGf)[1],1,migtrajf] <- inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
+			    }
 				btm[,2:npredplus1,itraj] <- popres$mbt
-				btm[1:dim(observed$btm)[1],1,itraj] <- observed$btm[,dim(observed$btm)[2],]
 				btf[,2:npredplus1,itraj] <- popres$fbt
-				btf[1:dim(observed$btf)[1],1,itraj] <- observed$btf[,dim(observed$btf)[2],]
 				deathsm[,2:npredplus1,itraj] <- popres$mdeaths
-				deathsm[1:dim(observed$deathsm)[1],1,itraj] <- observed$deathsm[,dim(observed$deathsm)[2],]
 				deathsf[,2:npredplus1,itraj] <- popres$fdeaths
-				deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
 				asfert[,2:npredplus1,itraj] <- asfr
-				asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 				pasfert[,2:npredplus1,itraj] <- pasfr*100
-				pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]				
 				mxm[,2:npredplus1,itraj] <- LTres$mx[[1]]
 				mxm[1:length(Kan.present$male$mx),1,itraj] <- Kan.present$male$mx
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
 				mxf[1:length(Kan.present$female$mx),1,itraj] <- Kan.present$female$mx
-				migtraj <- min(itraj, migMntraj)
-				migm[,2:npredplus1,migtraj] <- migpred[['M']]
-				migm[1:dim(inpc$observed$MIGm)[1],1,migtraj] <- inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
-				migtraj <- min(itraj, migFntraj)
-				migf[,2:npredplus1,migtraj] <- migpred[['F']]
-				migf[1:dim(inpc$observed$MIGf)[1],1,migtraj] <- inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
+				migm[,2:npredplus1,migtrajm] <- migpred[['M']]
+				migf[,2:npredplus1,migtrajf] <- migpred[['F']]
 			}
 		}
 		for (variant in 1:nvariants) { # compute the two half child variants
@@ -810,7 +813,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
                                                  "AgeMortProjPattern", "AgeMortProjMethodWeights"))
     if(lc.for.hiv) { # replace HIVmortmod with LC
         for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
-            if(col %in% colnames(MXpattern)) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
+            if(col %in% colnames(MXpattern) && "HIVmortmod" %in% MXpattern[[col]]) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
     }
     if(! "HIVregion" %in% colnames(MXpattern) && "area_code" %in% colnames(UNlocations)) 
         MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
@@ -1498,6 +1501,10 @@ survival.fromLT <- function (npred, mxKan, annual = FALSE, verbose=FALSE, debug=
 			    LLm[[mxYKan$sex]][,time] <- .collapse.Lx(res)  
 			    sr[[mxYKan$sex]][,time] <- .collapse.sx(res)			
 			    lx[[mxYKan$sex]][,time] <- .collapse.lx(res)
+			} else {
+			    LLm[[mxYKan$sex]][,time] <- res$Lx
+			    sr[[mxYKan$sex]][,time] <- res$sx	
+			    lx[[mxYKan$sex]][,time] <- res$lx
 			}
 		}
     }
@@ -1663,6 +1670,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
 	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])), length(estim.years))
+	#if(nest <= 1) return(NULL)
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
@@ -1683,9 +1691,10 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	for(sex in 1:2) {
 		tpop <- get.pop.observed.with.age(NULL, country.code, sex=c('male', 'female')[sex], 
 						data=pop.matrix, annual = annual)
-		pop[[sex]] <- tpop$data[tpop$age.idx,(ncol(tpop$data)-nest):ncol(tpop$data)]
+		pop[[sex]] <- tpop$data[tpop$age.idx,(ncol(tpop$data)-nest):ncol(tpop$data), drop = FALSE]
 	}
-	bt <- (pop[[2]][reprod.age,-1] + pop[[2]][reprod.age,-ncol(pop[[2]])]) * asfr * 0.5
+	if(nest == 1) bt <- pop[[2]][reprod.age,, drop = FALSE] * asfr
+	else bt <- (pop[[2]][reprod.age,-1] + pop[[2]][reprod.age,-ncol(pop[[2]])]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
 	for(sex in 1:2) {		
@@ -1693,16 +1702,17 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], abridged = !annual)[1:maxage,,1]
 		deaths[[sex]] <- matrix(0, nrow=maxage, ncol=nest)
 		p <- pop[[sex]]
-		#stop("")
 		p[is.na(p)] <- 0 # set pop for ages with NA to 0
+		#rm(sr, p, nest, mig.data, mig.type, births, mx, estim.years)
+		#source(paste0("~/bayespop/R/UNccmpp/update_inputs_for_CCM_", sex, ".R"))
+		#deaths[[sex]] <- matrix(0, nrow=maxage, ncol=nest)
+		#stop('')
 		if(annual)
 		    res <- .C("get_deaths_from_sr_1x1", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
-		              as.numeric(mig.data[[sex]]), mig.type,
 		              as.numeric(colSums(as.matrix(births[[sex]]))), 
 		              Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
 		else 
 		    res <- .C("get_deaths_from_sr_abridged", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
-					as.numeric(mig.data[[sex]]), mig.type,
 					as.numeric(colSums(as.matrix(births[[sex]]))), 
 					Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
 		#stop("")
@@ -1712,6 +1722,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		rownames(deaths[[sex]]) <- rownames(pop[[sex]])
 		colnames(births[[sex]]) <- estim.years
 	}	
+	#stop('')
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
 	res <- list(btm=births[[1]], btf=births[[2]], 

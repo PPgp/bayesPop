@@ -656,7 +656,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	#if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
 		if (!file.exists(traj.file) && !is.element(event, input.indicators)) 
-			return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
+			return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch, event=event))
 		myenv <- new.env()
 		if (file.exists(traj.file)) load(traj.file, envir=myenv)
 		if(is.observed) myenv <- myenv$observed
@@ -737,13 +737,15 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		}
 	}
 	has.hch <- !is.observed && (!is.null(alltraj$male.hch) || !is.null(alltraj$female.hch) || !is.null(alltraj$both.hch))
+	max.age <- NULL
 	for(s in c("male", "female", "both")) {# max.age should be 7, 21, 27, 28 (28 only if zero is explicitely included in 'age', so never when age=='all')
-	    if(!is.null(alltraj[[s]])) {
-	        max.age <- dim(alltraj[[s]])[1] - subtract.max.age
-	        trajdimnames <- dimnames(alltraj[[s]])
-	        break
-	    }
+        if(is.null(alltraj[[s]])) next
+        max.age <- dim(alltraj[[s]])[1] - subtract.max.age
+        trajdimnames <- dimnames(alltraj[[s]])
+        break
 	}
+	if(is.null(max.age)) # no trajectories available
+	    return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch, event=event))
 	max.age.shift <- 0 # shift for fertility indicators
 	age.obs.length <- all.age.length(pop.pred$annual, observed = TRUE)
 	first.fert.idx <- fert.age.index(pop.pred$annual)[1]
@@ -1022,7 +1024,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		if(country.code != 'XXX') {
 			if(!has.ve) {
 				traj <- get.pop.observed.with.age(pop.pred, country=country.object$code, sex=sex, age=age)
-				d <- traj$data[traj$age.idx,]
+				d <- traj$data[traj$age.idx,,drop = FALSE]
 			} else {
 				traj <- get.popVE.trajectories.and.quantiles(pop.pred, country.object$code, 
 											event=get.expression.indicators()[[what]], sex=sex, age=age, 
@@ -1030,6 +1032,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				traj$age.idx <- traj$age.idx.raw
 				d <- traj$trajectories
 			}
+		    if(is.null(d)) return(NULL)
 			if(sum.over.ages) {
 				if(!is.null(nrow(d)) && nrow(d) == 0) # country not found in the observed data
 					d <- rep(NA, ncol(d))
@@ -1211,7 +1214,7 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 
 get.pop.observed.from.expression <- function(expression, pop.pred, as.vector=TRUE, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='observed=TRUE, ...')))
-	if(as.vector) {
+	if(as.vector && !is.null(result)) {
 		result <- drop(result)
 		if(is.null(names(result))) {
 			l <- length(result)
