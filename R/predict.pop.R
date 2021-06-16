@@ -1485,9 +1485,10 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
 }
 
 
-survival.fromLT <- function (npred, mxKan, annual = FALSE, verbose=FALSE, debug=FALSE) {
-    nage <- all.age.length(annual, observed = FALSE)
-    nagemx <- lt.age.length(annual, observed = FALSE)
+survival.fromLT <- function (npred, mxKan, annual = FALSE, observed = FALSE, 
+                             include01 = annual, verbose=FALSE, debug=FALSE) {
+    nage <- all.age.length(annual, observed = observed)
+    nagemx <- lt.age.length(annual, observed = observed)
     sr <- LLm <- lx <- list(matrix(0, nrow=nage, ncol=npred), matrix(0, nrow=nage, ncol=npred))
     Mx <- list(matrix(0, nrow=nagemx, ncol=npred), matrix(0, nrow=nagemx, ncol=npred))
     sx <- rep(0, nage)
@@ -1496,7 +1497,7 @@ survival.fromLT <- function (npred, mxKan, annual = FALSE, verbose=FALSE, debug=
     	sex <- c('Male', 'Female')[mxYKan$sex]
     	for(time in 1:npred) {
 			res <- LifeTableMx(mxYKan$mx[,time], sex=sex, abridged = !annual)
-			if(!annual) {
+			if(!include01) {
 			    # collapse first two age groups
 			    LLm[[mxYKan$sex]][,time] <- .collapse.Lx(res)  
 			    sr[[mxYKan$sex]][,time] <- .collapse.sx(res)			
@@ -1641,17 +1642,22 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
 	migF <- as.matrix(if(!is.null(mig.pred[['F']])) mig.pred[['F']] else inputs[['MIGf']])
 	#migM <- as.matrix(if(!is.null(mig.pred[['M']])) apply(mig.pred[['M']], 2, '/', popm[1:21,1]) else inputs[['MIGm']])
 	#migF <- as.matrix(if(!is.null(mig.pred[['F']])) apply(mig.pred[['F']], 2, '/', popf[1:21,1]) else inputs[['MIGf']])
-	#stop('')
-	fctname <- if(annual) "TotalPopProj1x1" else "TotalPopProj"
-	res <- .C(fctname, as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
+	
+	res <- if(annual) .C("TotalPopProj1x1", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 		srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		srb=as.numeric(as.matrix(inputs$SRB)), 
-		mxm=LT$mx[[1]], mxf=LT$mx[[2]],
+		Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
 		popm=popm, popf=popf, totp=totp,
 		btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
 		deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
-		)
-	
+		) else .C("TotalPopProj", as.integer(nproj), as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
+		          srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
+		          srb=as.numeric(as.matrix(inputs$SRB)), 
+		          mxm=LT$mx[[1]], mxf=LT$mx[[2]],
+		          popm=popm, popf=popf, totp=totp,
+		          btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
+		          deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF))
+	#stop('')
  	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
 	if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
 
@@ -1669,8 +1675,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
-	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])), length(estim.years))
-	#if(nest <= 1) return(NULL)
+	nest <- min(length(obs$TFRpred), ncol(obs$PASFR), sum(!is.na(obs$MIGm[1,])), length(estim.years),
+	            ncol(pop.matrix[[1]])-1)
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
@@ -1697,9 +1703,13 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	else bt <- (pop[[2]][reprod.age,-1] + pop[[2]][reprod.age,-ncol(pop[[2]])]) * asfr * 0.5
 	births[[1]] <- bt * srb.ratio
 	births[[2]] <- bt - births[[1]]
-	for(sex in 1:2) {		
+	LTinputs <- list(male = list(sex = 1, mx = mx[[1]]), female = list(sex = 2, mx = mx[[2]]))
+	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
+	
+	for(sex in 1:2) {
+	    
 		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], age05=c(TRUE, TRUE, FALSE))[,,1]
-		sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], abridged = !annual)[1:maxage,,1]
+		#sr[[sex]] <- get.survival(abind(mx[[sex]],along=3), sex=c("M","F")[sex], abridged = !annual)[1:maxage,,1]
 		deaths[[sex]] <- matrix(0, nrow=maxage, ncol=nest)
 		p <- pop[[sex]]
 		p[is.na(p)] <- 0 # set pop for ages with NA to 0
@@ -1707,10 +1717,13 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 		#source(paste0("~/bayespop/R/UNccmpp/update_inputs_for_CCM_", sex, ".R"))
 		#deaths[[sex]] <- matrix(0, nrow=maxage, ncol=nest)
 		#stop('')
+		sr[[sex]] <- LT$sr[[sex]]
 		if(annual)
-		    res <- .C("get_deaths_from_sr_1x1", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
+		    res <- .C("get_deaths_from_sr_1x1", as.numeric(sr[[sex]]), as.integer(nest), as.numeric(as.matrix(p)), 
+		              as.integer(mig.type), as.numeric(mig.data[[sex]]),
 		              as.numeric(colSums(as.matrix(births[[sex]]))), 
-		              Deaths=as.numeric(deaths[[sex]]), Mx=as.numeric(mx[[sex]]))
+		              Lx=as.numeric(LT$LLm[[sex]]), lx=as.numeric(LT$lx[[sex]]),
+		              Deaths=as.numeric(deaths[[sex]]))
 		else 
 		    res <- .C("get_deaths_from_sr_abridged", as.numeric(sex), as.numeric(sr[[sex]]), nest, as.numeric(as.matrix(p)), 
 					as.numeric(colSums(as.matrix(births[[sex]]))), 
