@@ -795,28 +795,28 @@ void TotalPopProj(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
  * ****************************************************************************
  */
  
-void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
+void TotalPopProj1x1(int *observed, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
                      int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
+                     int *nages, int *nfages, int *fstart,
                      double *popm, double *popf, double *totp, 
                      double *btagem, double *btagef, double *deathsm, double *deathsf
 ) {
-    
+     
     double b, bm, bf, srb_ratio;
     int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
 
     int debug = 0; /* for testing*/
     
-    adim = 131;         /* number of age groups up to age 130+ */
+    adim = *nages;         /* number of age groups up to age 130+ */
     adim1 = adim - 1;   /* Number of age groups minus one      */
     int adimdif = adim - *migr; /* Difference between number of ages in migration data and age 130 */
-    int adimfert = 45;     /* Number of reproductive age groups */
-    int adimfert_start = 10; /* Start index of reproductive age */
+    int adimfert = *nfages;     /* Number of reproductive age groups */
+    int adimfert_start = *fstart - 1; /* Start index of reproductive age */
     
-    /*double Lxm[adim], Lxf[adim], lxm[adim], lxf[adim], */
     double cdeathsm[adim], cdeathsf[adim], mxtm[adim], mxtf[adim], bt[adimfert];
     double migm[adim][*migc], migf[adim][*migc];
-    double popadjm[adim][*migc], popadjf[adim][*migc];
+    double popadjm[adim][*migc], popadjf[adim][*migc], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc];
     
     /* cohort separation factor males, females*/
@@ -826,8 +826,12 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
     ncol = *migc;
     n = *npred;
     
+    if(debug==2)
+        Rprintf("\nadim = %i adimfert = %i adimfert_start = %i migc = %i npred = %i adimdif = %i", 
+                adim, adimfert, adimfert_start, *migc, n, adimdif);
+    
     for(j=0; j<ncol; ++j) {
-        /* Fill-in migration up to 130 */
+        /* Fill-in migration up to 130 if needed */
         for(i=0; i<nrow; ++i) {		
             migm[i][j] = MIGm[i + j*nrow];
             migf[i][j] = MIGf[i + j*nrow];
@@ -854,6 +858,7 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
     
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
+        if(debug==3) Rprintf("\nj = %i", j);
         jve = j-1;
         t = j*adim;
         t1 = (j-1)*adim; /* used to access the previous time period */
@@ -874,9 +879,11 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         for(i=1; i < adim1; ++i) {
             cdeathsm[i] = popadjm[i-1][j] * (1 - srm[i + t_offset]);
             cdeathsf[i] = popadjf[i-1][j] * (1 - srf[i + t_offset]);
-            popm[i + t] = popadjm[i-1][j] - cdeathsm[i] + migendm[i][jve];
-            popf[i + t] = popadjf[i-1][j] - cdeathsf[i] + migendf[i][jve];
-            if((debug==2) && (j==1)){
+            if(*observed == 0){
+                popm[i + t] = popadjm[i-1][j] - cdeathsm[i] + migendm[i][jve];
+                popf[i + t] = popadjf[i-1][j] - cdeathsf[i] + migendf[i][jve];
+            }
+            if((debug==2) && (j==68) && (*observed == 1)){
                 Rprintf("\ni = %i", i);
                 Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
                         popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
@@ -886,15 +893,24 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         i = adim1;
         cdeathsm[i] = (popadjm[i-1][j] + popadjm[i][j]) * (1 - srm[i + t_offset]);
         cdeathsf[i] = (popadjf[i-1][j] + popadjf[i][j]) * (1 - srf[i + t_offset]);
-        popm[i + t] = popadjm[i-1][j] + popadjm[i][j] - cdeathsm[i] + migendm[i][jve];
-        popf[i + t] = popadjf[i-1][j] + popadjf[i][j] - cdeathsf[i] + migendf[i][jve];
-        
+
+        if(*observed == 0){
+            popm[i + t] = popadjm[i-1][j] + popadjm[i][j] - cdeathsm[i] + migendm[i][jve];
+            popf[i + t] = popadjf[i-1][j] + popadjf[i][j] - cdeathsf[i] + migendf[i][jve];
+        }
         /* calculating births (total & sex-specific)*/
         srb_ratio = srb[jve] / (1 + srb[jve]);
         for(i=adimfert_start; i<adimfert+adimfert_start; ++i) {
-            bt[i-adimfert_start] = (popadjf[i][j] + popf[i + t]) * asfr[i-adimfert_start + jve*adimfert] * 0.5;
+            current_popf = popf[i + t];
+            if(*observed == 1 && *MIGtype != 0) current_popf = popf[i + t] - migm[i][jve]; /* migration at the end of the interval should not count into births */
+            bt[i-adimfert_start] = (popadjf[i][j] + current_popf) * asfr[i-adimfert_start + jve*adimfert] * 0.5;
             btagem[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] * srb_ratio;
             btagef[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] - btagem[i-adimfert_start+jve*adimfert];
+            if((debug==2) && (j==68) && (*observed == 1)){
+                Rprintf("\ni = %i", i);
+                Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
+                        popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
+            }
         }
         b = sum(bt, adimfert); /* total over ages */
         bm = b * srb_ratio; /* male total */
@@ -905,21 +921,22 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         cdeathsf[0] = bf * (1-srf[t_offset]);
         
         /* births surviving to age 1 */
-        popm[t] = bm - cdeathsm[0] + migendm[0][j];
-        popf[t] = bf - cdeathsf[0] + migendf[0][j];
+        if(*observed == 0){
+            popm[t] = bm - cdeathsm[0] + migendm[0][j];
+            popf[t] = bf - cdeathsf[0] + migendf[0][j];
 
-        /* add migration if needed, adjust negative population and compute total pop */
-        totp[j] = 0;
-        for(i=0; i < adim; ++i) {
-            if(*MIGtype != 0) {
-                popm[i+t] = popm[i + t] + migm[i][jve];
-                popf[i+t] = popf[i + t] + migf[i][jve];
+            /* add migration if needed, adjust negative population and compute total pop */
+            totp[j] = 0;
+            for(i=0; i < adim; ++i) {
+                if(*MIGtype != 0) {
+                    popm[i+t] = popm[i + t] + migm[i][jve];
+                    popf[i+t] = popf[i + t] + migf[i][jve];
+                }
+                popm[i+t] = fmax(popm[i + t], 0.0005);
+                popf[i+t] = fmax(popf[i + t], 0.0005);
+                totp[j] += popm[i + t]+popf[i + t]; 
             }
-            popm[i+t] = fmax(popm[i + t], 0.0005);
-            popf[i+t] = fmax(popf[i + t], 0.0005);
-            totp[j] += popm[i + t]+popf[i + t]; 
         }
-        
         /**************************************************************************/
         /* period deaths                                                          */
         /* 1. calculated cohort separation factors                                */
@@ -942,7 +959,7 @@ void TotalPopProj1x1(int *npred, double *MIGm, double *MIGf, int *migr, int *mig
         csfm[adim1] = 1.0; 
         csff[adim1] = 1.0;
         
-        if((debug==1) && (j==1)){
+        if((debug > 2) && (j==1)){
             Rprintf("\n csfm,adim1= %i", adim);
             printArray(csfm,adim);
         }
