@@ -265,18 +265,17 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	max.lage <- dim(pop.pred$quantilesMage)[2]
+	max.lage.fert <- fert.age.length(pop.pred$annual)
+	fert.age.start <- fert.age.index(pop.pred$annual)[1]
+	#mort.ages <- lt.ages(pop.pred$annual)
 	if(pop.pred$annual) {
-	    max.lage.fert <- 42
-	    fert.age.start <- 13
 	    time.step <- 1
 	    mort.ages <- seq(0, length = max.lage)
 	    kannisto.proj.ages <- 100:130
 	    kannisto.est.ages <- 90:99
 	} else { # 5x5
-	    max.lage.fert <- 7
-	    fert.age.start <- 4
 	    time.step <- 5
-	    mort.ages <- c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5))
+	    mort.ages <- c(0,1,seq(5, length = max.lage-1, by = 5))
 	    kannisto.proj.ages <- seq(100, 130, by = 5)
 	    kannisto.est.ages <- seq(80, 95, by = 5)
 	}

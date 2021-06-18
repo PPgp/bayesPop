@@ -932,9 +932,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		ntrajs <- length(utrajs)
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
 		lyears <- length(pred$inputs$proj.years)
-		lage <- all.age.length(pred$annual, observed = TRUE)
+		lage <- all.age.length(pred$inputs$annual, observed = TRUE)
 		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
-									age = get.age.labels(all.ages(pred$annual, observed = TRUE), last.open=TRUE, single.year = pred$annual))
+									age = get.age.labels(all.ages(pred$inputs$annual, observed = TRUE), last.open=TRUE, single.year = pred$inputs$annual))
 		# this is to get rows of the data frame in a particular order
 		migdf <- merge(sorted.df, migdf, sort=FALSE)
 		res <- array(migdf$value, dim=c(lage, ntrajs, lyears))
@@ -1473,7 +1473,8 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
     }
     # consolidate results which can be in different formats from the different methods
     if(!"mx" %in% names(res))
-        res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr))
+        res <- list(mx = list(res$male$mx, res$female$mx), sr = list(res$male$sr, res$female$sr),
+                    LLm = list(res$male$Lx, res$female$Lx), lx = list(res$male$lx, res$female$lx))
     res$male$sex <- 1
     res$female$sex <- 2
     if(is.null(res$sr[[1]]) || nrow(res$sr[[1]]) != nage) {# compute survival
@@ -2057,7 +2058,7 @@ LifeTableMx <- function(mx, sex=c('Male', 'Female', 'Total'), include01=TRUE,
 	# If include01 is FALSE, the first two age groups of the results are collapsed to 0-5
     sex <- tolower(match.arg(sex))
     LT <- MortCast::life.table(mx, sex = sex, abridged = abridged, radix = radix, open.age = open.age)
-    if(!include01 && !abridged) {
+    if(!include01 && abridged) {
         if(all(is.na(LT$ax))) return(LT[-2,])
         age05 <- c(FALSE, FALSE, TRUE)
         LTres <- data.frame(age=LT$age[-2])

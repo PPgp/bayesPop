@@ -40,6 +40,13 @@ lt.age.length <- function(annual = FALSE, ...) {
     return(l)
 }
 
+lt.ages <- function(annual = FALSE, observed = FALSE) {
+    l <- lt.age.length(annual, observed)
+    if(annual) 
+        return(seq(0, length = l))
+    return(c(0, 1, seq(5, by = 5, length = l-2)))
+}
+
 lt.age.index <- function(...) 
     return(1:lt.age.length(...))
 
