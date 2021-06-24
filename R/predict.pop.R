@@ -11,8 +11,9 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							srb=NULL,
 							pasfr=NULL,
 							patterns=NULL,
-							migM=NULL,
-							migF=NULL,	
+							migM=NULL, migF=NULL,
+							migMt = NULL, migFt = NULL,
+							mig = NULL,
 							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
@@ -508,18 +509,23 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	names.MXm.data <- names(MXm)
 	numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
 	num.columns <- grep(numcol.expr, names.MXm.data) # index of year-columns
+	if(length(num.columns) == 0) stop("Column names of numeric columns of mx are not in the right format. Use ",
+	                                  if(annual) "XXXX, e.g. 1963" else "XXXX-XXXX, e.g. 1960-1965" )
 	cols.starty <- as.integer(substr(names.MXm.data[num.columns], 1,4))
 	if(!annual) {
 	    cols.endy <- as.integer(substr(names.MXm.data[num.columns], 6,9))
 	    start.index <- which((cols.starty <= start.year) & (cols.endy > start.year))
+	    if(length(start.index) == 0) {
+	        if(start.year <= cols.starty[1]) start.index <- 1
+	        else stop("start.year not available in the mx dataset")
+	    }
 	    present.index <- which((cols.endy >= present.year) & (cols.starty < present.year))
 	} else {
 	    cols.endy <- cols.starty
-	    start.index <- which(cols.starty == start.year)
+	    start.index <- which(cols.starty >= start.year)[1]
 	    present.index <- which(cols.starty == present.year)
 	}
-	
-	#estim.periods <- names.MXm.data[num.columns[start.index:present.index]]
+	if(length(present.index) == 0) stop("present.year not available in the mx dataset")
 	estim.periods <- names.MXm.data[num.columns[1:present.index]]
 	start.year <- cols.starty[start.index]
 	
@@ -562,44 +568,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	HIVparams <- .get.hiv.params(inputs)
 
 	# Get age-specific migration
-	wppds <- data(package=paste0('wpp', wpp.year))
-	recon.mig <- NULL
-	if(is.null(inputs[['migM']])) {# cannot be inputs$migM because it would take the value of inputs$migMpred
-	 	if('migrationM' %in% wppds$results[,'Item'])
-			MIGm <- load.wpp.dataset('migrationM', wpp.year)
-		else {
-			if(all.countries) { # reconstruct migration for all countries
-				recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
-				MIGm <- recon.mig$male
-			} else {
-				if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a priovous simulation for different country
-					MIGm <- existing.mig$MIGm
-				} else {
-					# Projection for a subset of countries, therefore migration will be recontructed later (in get.country.inputs).
-					# Here create only a dataframe filled with NAs (its structure is taken from the wpp2012 dataset) 
-					MIGm <- load.wpp.dataset('migrationM', 2012)
-					MIGm[,!colnames(MIGm) %in% c("country", "country_code", "age")] <- NA
-				}
-			}
-		}
-	} else MIGm <- read.pop.file(inputs[['migM']])
-	if(is.null(inputs[['migF']])) {
-		if('migrationF' %in% wppds$results[,'Item'])
-			MIGf <- load.wpp.dataset('migrationF', wpp.year)
-		else {
-			if(all.countries) { # reconstruct migration for all countries
-				if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year=wpp.year, verbose=verbose)
-				else MIGf <- recon.mig$female
-			} else { # see the comment for MIGm above
-				if (!is.null(existing.mig)) { 
-					MIGf <- existing.mig$MIGf
-				} else {
-					MIGf <- load.wpp.dataset('migrationF', 2012)
-					MIGf[,!colnames(MIGm) %in% c("country", "country_code", "age")] <- NA
-				}
-			}
-		}
-	} else MIGf <- read.pop.file(inputs[['migF']])
+	miginp <- .get.mig.data(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
+	                        existing.mig = existing.mig, all.countries = all.countries, pop0 = POPm0,
+	                        verbose = verbose)
+
+	MIGm <- miginp[["migM"]]
+	MIGf <- miginp[["migF"]]
+	
 	if(!is.null(obs.periods)) {
 		if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a priovous simulation for different country
 			observed$MIGm <- existing.mig$obsMIGm
@@ -760,6 +735,81 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     else PASFR <- NULL
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
+
+.get.mig.data <- function(inputs, wpp.year, annual, periods, existing.mig = NULL, 
+                          all.countries = TRUE, pop0 = NULL, verbose = FALSE) {
+    # Get age-specific migration
+    wppds <- data(package=paste0('wpp', wpp.year))
+    recon.mig <- NULL
+    miginp <- list()
+    migtempl <- NULL
+    for(sex in c("M", "F")) {
+        inpname <- paste0('mig', sex) 
+        if(!is.null(inputs[[inpname]])) { # migration given by sex and age
+            miginp[[inpname]] <- read.pop.file(inputs[[inpname]])
+            next
+        }
+        # create a template for fill with derived migration
+        if(is.null(migtempl)) {
+            if(!all.countries && !is.null(existing.mig)) { # simulation is run for a subset of countries
+                # AND migration dataset already exists, e.g. from a priovous simulation for different country
+                migtempl <- existing.mig[[paste0('MIG', tolower(sex))]]
+            } else {
+                # Here create only a dataframe filled with NAs 
+                if(!annual)
+                    migtempl <- load.wpp.dataset(paste0('migration', sex), 2012) # structure is taken from the wpp2012 dataset
+                else {
+                    # use countries and ages from the population dataset
+                    migtempl <- cbind(pop0[, c("country_code", "age")], 
+                                      matrix(0, nrow = nrow(pop0), ncol = length(periods), 
+                                             dimnames = list(NULL, periods)))
+                }
+                migtempl[,!colnames(migtempl) %in% c("country", "country_code", "age")] <- NA
+            }
+            migtempl <- data.table(migtempl)
+        }
+        fname <- paste0(inpname, 't')
+        fnametot <- paste0("mig")
+        if(!is.null(inputs[[fname]]) || !is.null(inputs[[fnametot]])) { # migration given as totals or totals by sex
+            if(!is.null(inputs[[fname]]))
+                totmig <- data.table(read.pop.file(inputs[[fname]]))
+            else
+                totmig <- data.table(read.pop.file(inputs[[fnametot]]))
+            migcols <- intersect(colnames(totmig), periods)
+            totmigl <- melt(totmig[, c("country_code", migcols), with = FALSE], id.vars = c("country_code"),
+                            variable.name = "year", value.name = "totmig")
+            migtempll <- melt(migtempl[, c("country_code", "age", migcols), with = FALSE], id.vars = c("country_code", "age"),
+                              variable.name = "year", value.name = "mig")
+            age.idx <- 1:all.age.length(annual, observed = TRUE)
+            rcdf <- data.table(age = migtempl[["age"]][age.idx],
+                               age.idx = age.idx,
+                               rc = rcastro.schedule(annual)[age.idx]/sum(rcastro.schedule(annual)[age.idx]))
+            if(is.null(inputs[[fname]])) 
+                rcdf[, rc := rc/2] # since the totals are sums over sexes
+            migtmp <- merge(merge(migtempll, totmigl, by = c("country_code", "year"), sort = FALSE), 
+                            rcdf, by = "age", sort = FALSE)
+            migtmp[, mig := totmig * rc]
+            miginp[[inpname]] <- data.frame(dcast(migtmp, country_code + age.idx + age ~ year, value.var = "mig"),
+                                            check.names = FALSE)
+            miginp[[inpname]][["age.idx"]] <- NULL
+            next
+        }
+        # if migration is not given load default datasets
+        if(paste0('migration', sex) %in% wppds$results[,'Item']) { # if available in the WPP package
+            miginp[[inpname]] <- load.wpp.dataset(paste0('migration', sex), wpp.year)
+            next
+        }
+        if(all.countries) { # reconstruct migration for all countries
+            if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
+            miginp[[inpname]] <- recon.mig[[list(M = "male", F = "female")[[sex]]]]
+            next
+        }
+        # Projection for a subset of countries, therefore migration will be recontructed later (in get.country.inputs).
+        miginp[[inpname]] <- data.frame(migtempl, check.names = FALSE)
+    }
+    return(miginp)
+}
+
 
 .get.hiv.params <- function(inputs){
     if(is.null(inputs$hiv.params)) return(NULL)
@@ -2268,3 +2318,28 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
 	if(verbose) cat('\n')
 	return(invisible(list(male=all.migM, female=all.migF)))
 }
+
+rcastro.schedule <- function(annual) {
+    if(annual) return(rcastro1.schedule())
+    return(rcastro5.schedule())
+}
+
+rcastro5.schedule <- function()
+    c(0.06133, 0.02667, 0.02067, 0.10467, 0.188, 
+      0.18067, 0.13733, 0.09533, 0.064, 0.04267, 
+      0.028, 0.01867, 0.012, 0.008, 0.00533, 
+      0.00333, 0.00333, 0, 0, 0, 
+      0)
+
+rcastro1.schedule <- function()
+    c(0.00734, 0.00734, 0.00734, 0.00694, 0.00654, 0.00614, 0.00573, 0.00533, 0.0051, 0.00486, 
+      0.00461, 0.00437, 0.00413, 0.0075, 0.01085, 0.01421, 0.01758, 0.02093, 0.02456, 0.02819, 
+      0.03182, 0.03545, 0.03908, 0.03888, 0.03869, 0.03849, 0.0383, 0.0381, 0.03627, 0.03444, 
+      0.03261, 0.03078, 0.02894, 0.02697, 0.02499, 0.02302, 0.02104, 0.01907, 0.01782, 0.01656, 
+      0.0153, 0.01405, 0.0128, 0.01195, 0.01109, 0.01024, 0.00939, 0.00854, 0.00795, 0.00736, 
+      0.00677, 0.00619, 0.0056, 0.00522, 0.00486, 0.00448, 0.00411, 0.00373, 0.00347, 0.0032, 
+      0.00293, 0.00267, 0.0024, 0.00224, 0.00208, 0.00192, 0.00176, 0.0016, 0.00149, 0.00139, 
+      0.00128, 0.00117, 0.00107, 0.00098, 0.00091, 0.00083, 0.00074, 0.00067, 0.00067, 0.00067, 
+      0.00067, 0.00067, 0.00067, 0.00053, 4e-04, 0.00027, 0.00013, 0, 0, 0, 
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+      0)
