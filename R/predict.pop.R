@@ -736,6 +736,44 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
+.get.mig.template <- function(countries, ages, time.periods){
+    nages <- length(ages)
+    df <- data.table(country_code = rep(countries, each = nages), age = rep(ages, length(countries)))
+    df <- cbind(df, matrix(0, nrow = nrow(df), ncol = length(time.periods),
+                           dimnames = list(NULL, time.periods)))
+    df
+}
+
+migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
+                                 rc.schedule = NULL, rc.factor = 1, template = NULL) {
+    if(is.null(time.periods)) {
+        numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
+        time.periods <- colnames(df)[grep(numcol.expr, colnames(df))]
+    }
+    if(is.null(ages))
+        ages <- get.age.labels(all.age.index(annual, observed = TRUE), 
+                               age.is.index=TRUE, single.year = annual, last.open = TRUE)
+        
+    migtempl <- if(is.null(template)) .get.mig.template(unique(df$country_code), ages, time.periods) else template
+    if(length(ages) != length(unique(migtempl$age))) stop("Argument ages does not correspond to age in template.") 
+    
+    totmigl <- melt(df[, c("country_code", time.periods), with = FALSE], id.vars = c("country_code"),
+                    variable.name = "year", value.name = "totmig")
+    migtempll <- melt(migtempl[, c("country_code", "age", time.periods), with = FALSE], 
+                      id.vars = c("country_code", "age"), variable.name = "year", value.name = "mig")
+    age.idx <- 1:length(ages)
+    if(is.null(rc.schedule)) rc.schedule <- rcastro.schedule(annual)
+    rcdf <- data.table(age = migtempl[["age"]][age.idx],
+                       age.idx = age.idx,
+                       rc = rc.factor * rc.schedule[age.idx]/sum(rc.schedule[age.idx]))
+    migtmp <- merge(merge(migtempll, totmigl, by = c("country_code", "year"), sort = FALSE), 
+                    rcdf, by = "age", sort = FALSE)
+    migtmp[, mig := totmig * rc]
+    res <- dcast(migtmp, country_code + age.idx + age ~ year, value.var = "mig")
+    res[["age.idx"]] <- NULL
+    return(res)
+}
+
 .get.mig.data <- function(inputs, wpp.year, annual, periods, existing.mig = NULL, 
                           all.countries = TRUE, pop0 = NULL, verbose = FALSE) {
     # Get age-specific migration
@@ -760,11 +798,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
                     migtempl <- load.wpp.dataset(paste0('migration', sex), 2012) # structure is taken from the wpp2012 dataset
                 else {
                     # use countries and ages from the population dataset
-                    migtempl <- cbind(pop0[, c("country_code", "age")], 
-                                      matrix(0, nrow = nrow(pop0), ncol = length(periods), 
-                                             dimnames = list(NULL, periods)))
+                    #migtempl <- cbind(pop0[, c("country_code", "age")], 
+                    #                  matrix(0, nrow = nrow(pop0), ncol = length(periods), 
+                    #                         dimnames = list(NULL, periods)))
+                    migtempl <- .get.mig.template(unique(pop0$country_code), 
+                                                  ages = pop0$age[all.age.index(annual, observed = TRUE)],
+                                                  time.periods = periods)
                 }
-                migtempl[,!colnames(migtempl) %in% c("country", "country_code", "age")] <- NA
+                migtempl[,which(!colnames(migtempl) %in% c("country", "country_code", "age"))] <- NA
             }
             migtempl <- data.table(migtempl)
         }
@@ -776,22 +817,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
             else
                 totmig <- data.table(read.pop.file(inputs[[fnametot]]))
             migcols <- intersect(colnames(totmig), periods)
-            totmigl <- melt(totmig[, c("country_code", migcols), with = FALSE], id.vars = c("country_code"),
-                            variable.name = "year", value.name = "totmig")
-            migtempll <- melt(migtempl[, c("country_code", "age", migcols), with = FALSE], id.vars = c("country_code", "age"),
-                              variable.name = "year", value.name = "mig")
-            age.idx <- 1:all.age.length(annual, observed = TRUE)
-            rcdf <- data.table(age = migtempl[["age"]][age.idx],
-                               age.idx = age.idx,
-                               rc = rcastro.schedule(annual)[age.idx]/sum(rcastro.schedule(annual)[age.idx]))
-            if(is.null(inputs[[fname]])) 
-                rcdf[, rc := rc/2] # since the totals are sums over sexes
-            migtmp <- merge(merge(migtempll, totmigl, by = c("country_code", "year"), sort = FALSE), 
-                            rcdf, by = "age", sort = FALSE)
-            migtmp[, mig := totmig * rc]
-            miginp[[inpname]] <- data.frame(dcast(migtmp, country_code + age.idx + age ~ year, value.var = "mig"),
-                                            check.names = FALSE)
-            miginp[[inpname]][["age.idx"]] <- NULL
+            miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+                                                                 annual = annual, time.periods = migcols, 
+                                                                 rc.factor = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
+                                                                 template = migtempl), check.names = FALSE)
             next
         }
         # if migration is not given load default datasets
