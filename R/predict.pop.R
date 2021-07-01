@@ -736,7 +736,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
-.get.mig.template <- function(countries, ages, time.periods){
+.get.mig.template <- function(countries, ages, time.periods, template = NULL){
+    if(!is.null(template)) return(template)
     nages <- length(ages)
     df <- data.table(country_code = rep(countries, each = nages), age = rep(ages, length(countries)))
     df <- cbind(df, matrix(0, nrow = nrow(df), ncol = length(time.periods),
@@ -745,16 +746,31 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 }
 
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-                                 rc.schedule = NULL, rc.factor = 1, template = NULL) {
+                                 schedule = NULL, scale = 1, ...) {
+    if(is.null(dim(df))) df <- t(df)
+    if(!is.data.table(df)) df <- data.table(df)
     if(is.null(time.periods)) {
-        numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
-        time.periods <- colnames(df)[grep(numcol.expr, colnames(df))]
-    }
+        if(is.null(colnames(df))) {
+            colnames(df) <- seq_len(ncol(df))
+            time.periods <- colnames(df)
+        } else {
+            numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
+            time.periods <- colnames(df)[grep(numcol.expr, colnames(df))]
+        }
+    } else 
+        time.periods <- intersect(colnames(df), as.character(time.periods))
+    
     if(is.null(ages))
         ages <- get.age.labels(all.age.index(annual, observed = TRUE), 
                                age.is.index=TRUE, single.year = annual, last.open = TRUE)
         
-    migtempl <- if(is.null(template)) .get.mig.template(unique(df$country_code), ages, time.periods) else template
+    if(length(time.periods) == 0) stop("No time periods detected.")
+    cntry.missing <- FALSE
+    if(is.null(df$country_code)) {
+        df[, country_code := seq_len(nrow(df))]
+        cntry.missing <- TRUE
+    }
+    migtempl <- .get.mig.template(unique(df$country_code), ages, time.periods, ...) 
     if(length(ages) != length(unique(migtempl$age))) stop("Argument ages does not correspond to age in template.") 
     
     totmigl <- melt(df[, c("country_code", time.periods), with = FALSE], id.vars = c("country_code"),
@@ -762,15 +778,16 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     migtempll <- melt(migtempl[, c("country_code", "age", time.periods), with = FALSE], 
                       id.vars = c("country_code", "age"), variable.name = "year", value.name = "mig")
     age.idx <- 1:length(ages)
-    if(is.null(rc.schedule)) rc.schedule <- rcastro.schedule(annual)
+    if(is.null(schedule)) schedule <- rcastro.schedule(annual)
     rcdf <- data.table(age = migtempl[["age"]][age.idx],
                        age.idx = age.idx,
-                       rc = rc.factor * rc.schedule[age.idx]/sum(rc.schedule[age.idx]))
+                       rc = scale * schedule[age.idx]/sum(schedule[age.idx]))
     migtmp <- merge(merge(migtempll, totmigl, by = c("country_code", "year"), sort = FALSE), 
                     rcdf, by = "age", sort = FALSE)
     migtmp[, mig := totmig * rc]
     res <- dcast(migtmp, country_code + age.idx + age ~ year, value.var = "mig")
     res[["age.idx"]] <- NULL
+    if(cntry.missing) res[["country_code"]] <- NULL
     return(res)
 }
 
@@ -819,7 +836,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migcols <- intersect(colnames(totmig), periods)
             miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
                                                                  annual = annual, time.periods = migcols, 
-                                                                 rc.factor = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
+                                                                 scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                                  template = migtempl), check.names = FALSE)
             next
         }
@@ -2348,7 +2365,7 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
 	return(invisible(list(male=all.migM, female=all.migF)))
 }
 
-rcastro.schedule <- function(annual) {
+rcastro.schedule <- function(annual = FALSE) {
     if(annual) return(rcastro1.schedule())
     return(rcastro5.schedule())
 }
