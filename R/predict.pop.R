@@ -12,8 +12,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							pasfr=NULL,
 							patterns=NULL,
 							migM=NULL, migF=NULL,
-							migMt = NULL, migFt = NULL,
-							mig = NULL,
+							migMt = NULL, migFt = NULL, mig = NULL,
 							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
@@ -804,10 +803,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             miginp[[inpname]] <- read.pop.file(inputs[[inpname]])
             next
         }
-        # create a template for fill with derived migration
+        # create a template  to be filled with derived migration
         if(is.null(migtempl)) {
             if(!all.countries && !is.null(existing.mig)) { # simulation is run for a subset of countries
-                # AND migration dataset already exists, e.g. from a priovous simulation for different country
+                # AND migration dataset already exists, e.g. from a previous simulation for different country
                 migtempl <- existing.mig[[paste0('MIG', tolower(sex))]]
             } else {
                 # Here create only a dataframe filled with NAs 
@@ -841,6 +840,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             next
         }
         # if migration is not given load default datasets
+        if(annual) stop("Migration must be given.")
         if(paste0('migration', sex) %in% wppds$results[,'Item']) { # if available in the WPP package
             miginp[[inpname]] <- load.wpp.dataset(paste0('migration', sex), wpp.year)
             next
@@ -1145,6 +1145,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
+	if(any(is.na(p.r))) stop("Observed PASFR necessary to estimate future trends.")
 	p.r <- pmax(p.r, min.value)
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
@@ -1161,6 +1162,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    yd <- years[1] - by * (nr.est.points - startTi)
 	} else yd <- years[startTi - nr.est.points]
 	p.e <- pasfr.obs[,ncol(pasfr.obs)-nr.est.points+1]/100.
+	if(any(is.na(p.e))) stop("Not enough data on PASFR available to estimate future trends.")
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
 
