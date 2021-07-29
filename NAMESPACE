@@ -59,7 +59,8 @@ mac.expression1,
 age.specific.migration,
 project.pasfr,
 project.pasfr.traj,
-migration.totals2age
+migration.totals2age,
+rcastro.schedule
 )
 
 # register S3 methods
