@@ -153,6 +153,7 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL, write.to
 	pop.aggr$is.aggregation <- TRUE
 	pop.aggr$cache <- .load.cache(pop.output.directory(pop.aggr))
 	pop.aggr$write.to.cache <- write.to.cache
+	if(is.null(pop.aggr$annual)) pop.aggr$annual <- FALSE
 
 	return(pop.aggr)	
 }
