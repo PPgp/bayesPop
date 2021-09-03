@@ -15,7 +15,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             tfr.file = NULL, 
                             e0F.sim.dir = NULL, e0M.sim.dir = NULL, 
                             tfr.sim.dir = NULL,
-                            migMtraj = NULL, migFtraj = NULL	
+                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL	
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
                         replace.output = FALSE, verbose = TRUE) {
@@ -311,20 +311,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
     MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
     # Get migration trajectories if available
-    migMpred <- migFpred <- NULL
-    for(sex in c('M', 'F')) {
-        if(is.null(inputs[[paste0('mig',sex,'traj')]])) next
-        file.name <- inputs[[paste0('mig',sex,'traj')]]
-        if(!file.exists(file.name))
-            stop('File ', file.name, ' does not exist.')
-        # comma separated trajectories file
-        var.name <- paste0('mig',sex, 'pred')
-        if(verbose) cat('\nLoading ', file.name)
-        migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-        migpred <- migpred.raw[,c('LocID', 'Year', 'Trajectory', 'Age', 'Migration')]
-        colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
-        assign(var.name, migpred)
-    }
+    migpr <- .load.mig.traj(inputs, verbose = verbose)
+    migMpred <- migpr$M
+    migFpred <- migpr$F
     
     # Get life expectancy
     e0F.wpp.median.loaded <- FALSE
@@ -404,6 +393,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
     inp$lc.for.hiv <- TRUE
+    #stop("")
     return(inp)
 }
 

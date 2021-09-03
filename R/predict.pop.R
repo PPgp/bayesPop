@@ -17,7 +17,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
-							migMtraj=NULL, migFtraj=NULL,
+							migMtraj=NULL, migFtraj=NULL, migtraj = NULL,
 							average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
@@ -587,20 +587,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
 	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
 	# Get migration trajectories if available
-	migMpred <- migFpred <- NULL
-	for(sex in c('M', 'F')) {
-		if(is.null(inputs[[paste0('mig',sex,'traj')]])) next
-		file.name <- inputs[[paste0('mig',sex,'traj')]]
-		if(!file.exists(file.name))
-			stop('File ', file.name, ' does not exist.')
-		# comma separated trajectories file
-		var.name <- paste0('mig',sex, 'pred')
-		if(verbose) cat('\nLoading ', file.name)
-		migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-		migpred <- migpred.raw[,c('LocID', 'Year', 'Trajectory', 'Age', 'Migration')]
-		colnames(migpred) <- c('country_code', 'year', 'trajectory', 'age', 'value')
-		assign(var.name, migpred)
-	}
+	migpr <- .load.mig.traj(inputs, verbose = verbose)
+	migMpred <- migpr$M
+	migFpred <- migpr$F
 	
 	# Get life expectancy
 	e0F.wpp.median.loaded <- FALSE
@@ -735,17 +724,18 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(pasfr=PASFR, obs.pasfr=obs.PASFR))
 }
 
-.get.mig.template <- function(countries, ages, time.periods, template = NULL){
+.get.mig.template <- function(countries, ages, time.periods, template = NULL, id.col = "country_code"){
     if(!is.null(template)) return(template)
     nages <- length(ages)
-    df <- data.table(country_code = rep(countries, each = nages), age = rep(ages, length(countries)))
+    df <- data.table(id = rep(countries, each = nages), age = rep(ages, length(countries)))
     df <- cbind(df, matrix(0, nrow = nrow(df), ncol = length(time.periods),
                            dimnames = list(NULL, time.periods)))
+    setnames(df, "id", id.col)
     df
 }
 
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-                                 schedule = NULL, scale = 1, ...) {
+                                 schedule = NULL, scale = 1, id.col = "country_code", ...) {
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
     if(is.null(time.periods)) {
@@ -765,28 +755,29 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         
     if(length(time.periods) == 0) stop("No time periods detected.")
     cntry.missing <- FALSE
-    if(is.null(df$country_code)) {
-        df[, country_code := seq_len(nrow(df))]
+    if(is.null(df[[id.col]])) {
+        df[, (id.col) := seq_len(nrow(df))]
         cntry.missing <- TRUE
     }
-    migtempl <- .get.mig.template(unique(df$country_code), ages, time.periods, ...) 
+    migtempl <- .get.mig.template(unique(df[[id.col]]), ages, time.periods, id.col = id.col, ...) 
     if(length(ages) != length(unique(migtempl$age))) stop("Argument ages does not correspond to age in template.") 
     
-    totmigl <- melt(df[, c("country_code", time.periods), with = FALSE], id.vars = c("country_code"),
+    totmigl <- melt(df[, c(id.col, time.periods), with = FALSE], id.vars = id.col,
                     variable.name = "year", value.name = "totmig")
-    migtempll <- melt(migtempl[, c("country_code", "age", time.periods), with = FALSE], 
-                      id.vars = c("country_code", "age"), variable.name = "year", value.name = "mig")
+    migtempll <- melt(migtempl[, c(id.col, "age", time.periods), with = FALSE], 
+                      id.vars = c(id.col, "age"), variable.name = "year", value.name = "mig")
     age.idx <- 1:length(ages)
     if(is.null(schedule)) schedule <- rcastro.schedule(annual)
     rcdf <- data.table(age = migtempl[["age"]][age.idx],
                        age.idx = age.idx,
                        rc = scale * schedule[age.idx]/sum(schedule[age.idx]))
-    migtmp <- merge(merge(migtempll, totmigl, by = c("country_code", "year"), sort = FALSE), 
+    migtmp <- merge(merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE), 
                     rcdf, by = "age", sort = FALSE)
     migtmp[, mig := totmig * rc]
-    res <- dcast(migtmp, country_code + age.idx + age ~ year, value.var = "mig")
+    frm <- paste(id.col, "+ age.idx + age ~ year")
+    res <- dcast(migtmp, frm, value.var = "mig")
     res[["age.idx"]] <- NULL
-    if(cntry.missing) res[["country_code"]] <- NULL
+    if(cntry.missing) res[[id.col]] <- NULL
     return(res)
 }
 
@@ -1019,6 +1010,39 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	return(pred.all)
 }
 
+.load.mig.traj <- function(inputs, verbose = FALSE) {
+    migMpred <- migFpred <- NULL
+    migtrajcols <- list(LocID = "country_code", Year = "year", Trajectory = "trajectory", Age = "age", Migration = "value")
+    for(sex in c('M', 'F', '')) {
+        if(is.null(inputs[[paste0('mig', sex, 'traj')]])) next
+        file.name <- inputs[[paste0('mig', sex, 'traj')]]
+        if(!file.exists(file.name))
+            stop('File ', file.name, ' does not exist.')
+        # comma separated trajectories file
+        if(verbose) cat('\nLoading ', file.name)
+        
+        migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+        cols.to.keep <- intersect(names(migtrajcols), colnames(migpred.raw))
+        if(length((miss <- setdiff(setdiff(names(migtrajcols), "Age"), cols.to.keep)))>0)
+            stop("Columns ", paste(miss, collapse = ", "), "are missing from ", file.name)
+        migpred <- migpred.raw[, cols.to.keep]
+        colnames(migpred) <- unlist(migtrajcols[cols.to.keep])
+        if(sex == '') { # total for both sexes in one file; split it into two objects
+            for(sext in c('M', 'F')){
+                var.name <- paste0('mig',sext, 'pred')
+                if(!is.null(get(var.name))) next
+                migpreds <- migpred
+                migpreds$value <- migpreds$value/2
+                assign(var.name, migpreds)
+            }
+        } else {
+            var.name <- paste0('mig',sex, 'pred')
+            assign(var.name, migpred)
+        }
+    }
+    return(list(M = migMpred, F = migFpred))
+}
+
 .get.migration.traj <- function(pred, par, country) {
 		cidx <- pred$inputs[[par]][,'country_code'] == country 
 		idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
@@ -1026,6 +1050,12 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		migdf <- pred$inputs[[par]][idx,-1]
 		utrajs <- sort(unique(migdf$trajectory))
 		ntrajs <- length(utrajs)
+		if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
+		    dfw <- dcast(data.table(migdf), trajectory ~ year)
+		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
+		                                id.col = "trajectory")
+		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
+		}
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
 		lyears <- length(pred$inputs$proj.years)
 		lage <- all.age.length(pred$inputs$annual, observed = TRUE)
