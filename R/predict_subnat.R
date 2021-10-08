@@ -17,7 +17,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             tfr.sim.dir = NULL,
                             migMtraj = NULL, migFtraj = NULL, migtraj = NULL	
                         ), nr.traj = 1000, keep.vital.events = FALSE,
-                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
+                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
     #prediction.exist <- FALSE
     ages <- all.ages(annual, observed = FALSE)

@@ -57,11 +57,12 @@ void printArray(double *a, int count) {
  */
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
-                     int *MIGtype, double *srm, double *srf, double *asfr, double *srb, 
+                     int *MIGtype, int *MIGisrate, double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
                      double *popm, double *popf, double *totp, 
-                     double *btagem, double *btagef, double *deathsm, double *deathsf
+                     double *btagem, double *btagef, double *deathsm, double *deathsf,
+                     double *finmigm, double *finmigf
 ) {
      
     double b, bm, bf, srb_ratio;
@@ -82,6 +83,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
+    const double minpop = 0.0005; /* minimum accepted population */
+
     nrow = *migr;
     ncol = *migc;
     n = *npred;
@@ -127,7 +130,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             break;
         }
     }
-    
+
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
         if(debug==3) Rprintf("\nj = %i", j);
@@ -141,6 +144,17 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
          * Thus, j and t for pop vs. and jve and t_offset for vital rates/events refer to the same time period.
          */
         
+        /* If migration is a rate, compute the migration counts */
+        if(*MIGisrate > 0){
+            for(i=0; i < adim; ++i) {
+                migstartm[i][jve] = popm[i + t1]*migstartm[i][jve];
+                migstartf[i][jve] = popf[i + t1]*migstartf[i][jve];
+                migmidm[i][jve] = popm[i + t1]*migmidm[i][jve];
+                migmidf[i][jve] = popf[i + t1]*migmidf[i][jve];
+                migendm[i][jve] = popm[i + t1]*migendm[i][jve];
+                migendf[i][jve] = popf[i + t1]*migendf[i][jve];
+            }
+        }
         /* Adjust population by migrants at the start of time interval*/
         for(i=0; i < adim; ++i) {
             popadjm[i][j] = popm[i + t1] + migstartm[i][jve];
@@ -194,19 +208,25 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         
         if(*nobserved <= j){
             /* births surviving to age 1 */
-            popm[t] = bm - cdeathsm[0] + migmidm[0][j];
-            popf[t] = bf - cdeathsf[0] + migmidf[0][j];
-
+            popm[t] = bm - cdeathsm[0] + migmidm[0][jve];
+            popf[t] = bf - cdeathsf[0] + migmidf[0][jve];
+                
             /* add migration at the end of the interval, adjust negative population and compute total pop */
             totp[j] = 0;
             for(i=0; i < adim; ++i) {
+                migendm[i][jve] = fmax(migendm[i][jve], -popm[i+t] + minpop); /* adjust migration if it would yield negative population */
                 popm[i+t] = popm[i + t] + migendm[i][jve];
+                migendf[i][jve] = fmax(migendf[i][jve], -popf[i+t] + minpop);
                 popf[i+t] = popf[i + t] + migendf[i][jve];
-                popm[i+t] = fmax(popm[i + t], 0.0005);
-                popf[i+t] = fmax(popf[i + t], 0.0005);
-                totp[j] += popm[i + t]+popf[i + t]; 
+                totp[j] += popm[i + t] + popf[i + t]; 
             }
         }
+        
+        for(i=0; i < adim; ++i) {
+            finmigm[i + t_offset] = migstartm[i][jve] + migmidm[i][jve] + migendm[i][jve];
+            finmigf[i + t_offset] = migstartf[i][jve] + migmidf[i][jve] + migendf[i][jve];
+        }
+        
         /**************************************************************************/
         /* period deaths                                                          */
         /* 1. calculated cohort separation factors                                */

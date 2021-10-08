@@ -21,7 +21,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
-						my.locations.file = NULL, 
+						mig.is.rate = FALSE, my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages <- all.ages(annual, observed = FALSE)
@@ -36,7 +36,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 			stop('Prediction in ', output.dir,
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, 
-		                   lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, annual = annual, verbose=verbose)
+		                   lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
+		                   annual = annual, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
@@ -52,7 +53,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 			ages <- pred$ages
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
-		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, annual = annual, verbose=verbose)
+		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
+		                          annual = annual, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -207,8 +209,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		#npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) 
-		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, 
-															estim.years=inp$estim.years, annual = inp$annual)
+		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, estim.years=inp$estim.years, 
+															mig.is.rate = inp$mig.is.rate, annual = inp$annual)
 		tfr.med <- apply(inpc$TFRpred, 1, median)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
@@ -228,8 +230,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				par <- paste0('mig', sex, 'pred')
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 			}
-			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, country.name=UNlocations[country.idx,'name'],
-									keep.vital.events=keep.vital.events, annual = inp$annual)
+			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.is.rate = inp$mig.is.rate,
+			                     country.name=UNlocations[country.idx,'name'],
+								 keep.vital.events=keep.vital.events, annual = inp$annual)
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -243,8 +246,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			        deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
 			        asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 			        pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
-			        migm[1:dim(inpc$observed$MIGm)[1],1,migtrajm] <- inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
-			        migf[1:dim(inpc$observed$MIGf)[1],1,migtrajf] <- inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
+			        migm[1:dim(inpc$observed$MIGm)[1],1,migtrajm] <- observed$mmig[, dim(observed$mmig)[2],] # inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
+			        migf[1:dim(inpc$observed$MIGf)[1],1,migtrajf] <- observed$fmig[, dim(observed$fmig)[2],] # inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
 			    }
 				btm[,2:npredplus1,itraj] <- popres$mbt
 				btf[,2:npredplus1,itraj] <- popres$fbt
@@ -256,10 +259,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				mxm[1:length(Kan.present$male$mx),1,itraj] <- Kan.present$male$mx
 				mxf[,2:npredplus1,itraj] <- LTres$mx[[2]]
 				mxf[1:length(Kan.present$female$mx),1,itraj] <- Kan.present$female$mx
-				migm[,2:npredplus1,migtrajm] <- migpred[['M']]
-				migf[,2:npredplus1,migtrajf] <- migpred[['F']]
+				migm[,2:npredplus1,migtrajm] <- popres$mmig # migpred[['M']]
+				migf[,2:npredplus1,migtrajf] <- popres$fmig # migpred[['F']]
 			}
 		}
+		#stop("")
 		for (variant in 1:nvariants) { # compute the two half child variants
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
@@ -276,8 +280,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				migpred.hch[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]])
 			}
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred.hch, inpc$MIGtype, 
-							country.name=UNlocations[country.idx,'name'], 
-							keep.vital.events=keep.vital.events, annual = inp$annual)
+			                     mig.is.rate = inp$mig.is.rate,
+							    country.name=UNlocations[country.idx,'name'], 
+							    keep.vital.events=keep.vital.events, annual = inp$annual)
 			totp.hch[,variant] <- popres$totpop
 			totpm.hch[,,variant] <- popres$mpop
 			totpf.hch[,,variant] <- popres$fpop
@@ -476,7 +481,8 @@ load.wpp.dataset <- function(...)
 
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
                         fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, 
-                        lc.for.hiv = TRUE, lc.for.all = FALSE, annual = FALSE, verbose=FALSE) {
+                        lc.for.hiv = TRUE, lc.for.all = FALSE, mig.is.rate = FALSE,
+                        annual = FALSE, verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -656,7 +662,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'observed'))
+				'lc.for.hiv', 'lc.for.all', 'mig.is.rate', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -1756,7 +1762,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 }
 
 
-StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, country.name=NULL, 
+StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mig.is.rate = FALSE, country.name=NULL, 
                        keep.vital.events=FALSE, annual = FALSE) {
     nagecat <- all.age.length(annual, observed = FALSE)
     nbagecat <- fert.age.length(annual)
@@ -1769,10 +1775,13 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
 	nproj <- npred
 	migM <- as.matrix(if(!is.null(mig.pred[['M']])) mig.pred[['M']] else inputs[['MIGm']])
 	migF <- as.matrix(if(!is.null(mig.pred[['F']])) mig.pred[['F']] else inputs[['MIGf']])
+	finmigM <- as.numeric(migM)
+	finmigF <- as.numeric(migF)
 	observed <- 0
 
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
+	            as.integer(mig.is.rate),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -1780,7 +1789,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
 		        fstart = as.integer(fert.age.index(annual)[1]),
 		        popm=popm, popf=popf, totp=totp,
 		        btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
-		        deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF)
+		        deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
+		        finmigm = finmigM, finmigf = finmigF
 		        )
 	#stop('')
  	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
@@ -1793,10 +1803,11 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, co
 		vital.events$mdeaths <- res$deathsm
 		vital.events$fdeaths <- res$deathsf
 	}
-	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf), vital.events))
+	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmig = res$finmigm, fmig = res$finmigf), vital.events))
 }
 
-compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years, annual = FALSE) {
+compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years, mig.is.rate = FALSE, 
+                               annual = FALSE) {
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
@@ -1832,31 +1843,34 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
     totp <- rep(0, ncol(pop[[1]])) # not used for observed data
 	LTinputs <- list(male = list(sex = 1, mx = mx[[1]]), female = list(sex = 2, mx = mx[[2]]))
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
-
+	finmigM <- as.numeric(mig.data[[1]])
+	finmigF <- as.numeric(mig.data[[2]])
 	
-	res <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
+	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
-	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type),
+	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), as.integer(mig.is.rate),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
 	              nages = as.integer(maxage), nfages = as.integer(nfertages), fstart = as.integer(reprod.age[1]),
 	              popm=as.numeric(pop[[1]]), popf=as.numeric(pop[[2]]), totp=totp,
 	              btagem=as.numeric(births[[1]]), btagef=as.numeric(births[[2]]), 
-	              deathsm=as.numeric(deaths[[1]]), deathsf=as.numeric(deaths[[2]])
+	              deathsm=as.numeric(deaths[[1]]), deathsf=as.numeric(deaths[[2]]),
+	              finmigm = finmigM, finmigf = finmigF
 	            ) 
-    deaths[[1]] <- matrix(res$deathsm, ncol = nest)
-    deaths[[2]] <- matrix(res$deathsf, ncol = nest)
-    births[[1]] <- matrix(res$btagem, ncol = nest)
-    births[[2]] <- matrix(res$btagef, ncol = nest)
+    deaths[[1]] <- matrix(ccmres$deathsm, ncol = nest)
+    deaths[[2]] <- matrix(ccmres$deathsf, ncol = nest)
+    births[[1]] <- matrix(ccmres$btagem, ncol = nest)
+    births[[2]] <- matrix(ccmres$btagef, ncol = nest)
     colnames(deaths[[1]]) <- colnames(deaths[[2]]) <- colnames(births[[1]]) <- colnames(births[[2]]) <- estim.years
     rownames(deaths[[1]]) <- rownames(deaths[[2]]) <- rownames(pop[[sex]])
-
+    mig.data[[1]][] <- matrix(ccmres$finmigm, ncol = nest)
+    mig.data[[2]][] <- matrix(ccmres$finmigf, ncol = nest)
 	colnames(asfr) <- estim.years
 	rownames(asfr) <- rownames(births[[1]])
 	res <- list(btm=births[[1]], btf=births[[2]], 
 				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, pasfert=pasfr, 
-				mxm=mx[[1]], mxf=mx[[2]])
+				mxm=mx[[1]], mxf=mx[[2]], mmig = mig.data[[1]], fmig = mig.data[[2]])
 	for(par in names(res))
 		res[[par]] <- abind(res[[par]], NULL, along=3) # add trajectory dimension
 	return(res)
