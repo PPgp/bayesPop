@@ -1309,7 +1309,7 @@ period.diff1 <- function(data) return(period.diff(data))
     data[,,-1,] <- newdata
     # adjust period names
     periods <- as.integer(dimnames(data)[[3]])
-    if(!annuall && periods[1] %% 5 == 0)
+    if(!annual && periods[1] %% 5 == 0)
         dimnames(data)[[3]] <- periods - 2
     data
 }
