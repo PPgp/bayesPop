@@ -2127,11 +2127,11 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				}
 				proj.result <- round(rbind(
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
-											trajectories=traj, reload=reload), 
+											trajectories=traj, reload=reload, sex=sex, age=age), 
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
-											trajectories=traj, reload=reload),
+											trajectories=traj, reload=reload, sex=sex, age=age),
 					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
-											trajectories=traj, reload=reload)),
+											trajectories=traj, reload=reload, sex=sex, age=age)),
 					digits)
 				if(!is.null(observed.data)) {
 					# put it into the same shape as proj.result minus the last observed
