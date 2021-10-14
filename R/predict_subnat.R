@@ -183,7 +183,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         if(is.null(inputs[[item]]))
             stop("Item ", item, " is missing in the 'inputs' argument.")
     }
-    pop.ini.matrix <- pop.ini <- list(M = NULL, F = NULL)
+    pop.ini.matrix <- pop.ini <- GQ <- list(M = NULL, F = NULL)
     # Get initial population counts
     for(sex in c('M', 'F')) {
         dataset.name <- paste0('pop', sex)
@@ -200,9 +200,22 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                 as.character(as.integer(num.columns)))
         pop.ini[[sex]] <- POP0[ ,c('reg_code', 'age', present.year)]
         colnames(pop.ini[[sex]])[1] <- 'country_code'
+        # Group quarters
+        dataset.name <- paste0('GQpop', sex)
+        if(!is.null(inputs[[dataset.name]])) {
+            GQ[[sex]] <- read.pop.file(inputs[[dataset.name]])
+            colnames(GQ[[sex]]) <- tolower(colnames(GQ[[sex]]))
+            if(! 'age' %in% colnames(GQ[[sex]]) || ! 'reg_code' %in% colnames(GQ[[sex]]) || ! 'gq' %in% colnames(GQ[[sex]]))
+                stop('Columns "age", "reg_code" and "gq" must be present in the GQpop datasets.')
+            GQ[[sex]] <- GQ[[sex]][, c("reg_code", "age", "gq")]
+            colnames(GQ[[sex]])[1] <- 'country_code'
+        }
     }
     POPm0 <- pop.ini[['M']]
     POPf0 <- pop.ini[['F']]
+    GQm <- GQ[['M']]
+    GQf <- GQ[['F']]
+    
     region.codes <- unique(POPm0$country_code)
     # Get death rates
     MXm.pred <- MXf.pred <- NULL
@@ -384,7 +397,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     TFRpred <- .get.tfr.data.subnat(inputs, wpp.year, default.country, region.codes, verbose=verbose)
     inp <- new.env()
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
-                 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
+                 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 'lc.for.all', 'observed'))
         assign(par, get(par), envir=inp)
@@ -393,7 +406,6 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
     inp$lc.for.hiv <- TRUE
-    #stop("")
     return(inp)
 }
 
