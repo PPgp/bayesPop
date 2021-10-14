@@ -1,3 +1,7 @@
+8.1-x
+-----
+Fixed bug in write.pop.projection.summary for "tpopage" (reported by Budi Setiawan).
+
 8.1-3 (5/5/2020)
 -----
 Minor updates related to changes in MortCast.
