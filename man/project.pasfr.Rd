@@ -16,7 +16,7 @@ project.pasfr(inputs = NULL, present.year = 2020, end.year = 2100,
 project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
     present.year = 2020, end.year = 2100, wpp.year = 2019, 
     annual = FALSE, nr.est.points = if(annual) 15 else 3,
-    digits = 2, out.file.name = "percentASFRtraj.txt")
+    digits = 2, out.file.name = "percentASFRtraj.txt", verbose = FALSE)
 }
 
 \arguments{

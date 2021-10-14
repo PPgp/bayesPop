@@ -572,7 +572,7 @@ get.bPop.pyramid.list <- function(data, main.label=NULL, legend=NULL, CI=NULL, .
 }
 
 get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indicator=c('P', 'B', 'D'),
-												pi=c(80, 95), proportion=FALSE, age=1:21, 
+												pi=c(80, 95), proportion=FALSE, age=NULL, 
 												nr.traj=0, sort.pi=TRUE, pop.max=NULL, ...) {
 	pop.pred <- data
 	country <- get.country.object(country, country.table=pop.pred$countries)
@@ -593,6 +593,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		if(all(is.na(year.idx))) stop('Unable to find data for year ', year)
 		if(any(is.na(year.idx))) warning('Unable to find data for year ', year[is.na(year.idx)])
 	}
+	if(is.null(age)) age <- all.age.index(pop.pred$annual, observed = TRUE)
 	ages.idx <- age[age <=  length(pop.pred$ages)]
 	lages <- length(ages.idx)
 	nquant <- length(pi)
@@ -880,7 +881,7 @@ pop.pyramid.bayesPop.prediction <- function(pop.object, country, year=NULL, indi
 	if (missing(country)) {
 		stop('Argument "country" must be given.')
 	}
-    if(is.null(age)) age <- if(pop.object$annual) 1:131 else 1:21
+    if(is.null(age)) age <- all.age.index(pop.object$annual, observed = TRUE)
 	data <- get.bPop.pyramid(pop.object, country, year=year, indicator=indicator, pi=pi, proportion=proportion, age=age, pop.max=pop.max)
 	if (plot) pop.pyramid(data, ...)
 	invisible(data)

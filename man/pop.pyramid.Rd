@@ -24,7 +24,7 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
 \usage{
 \method{pop.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
     indicator = c("P", "B", "D"), pi = c(80, 95), 
-    proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
+    proportion = FALSE, age = NULL, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     pyr1.par = list(border="black", col=NA, density=NULL, height=0.9),
@@ -38,7 +38,7 @@ pop.pyramidAll(pop.pred, year = NULL,
 	
 \method{pop.trajectories.pyramid}{bayesPop.prediction}(pop.object, country, year = NULL, 
     indicator = c("P", "B", "D"), pi = c(80, 95), nr.traj = NULL, 
-    proportion = FALSE, age = 1:21, plot = TRUE, pop.max = NULL, \dots)
+    proportion = FALSE, age = NULL, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), axes = TRUE, 
@@ -52,7 +52,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
 
 \method{get.bPop.pyramid}{bayesPop.prediction}(data, country, year = NULL, 
     indicator = c("P", "B", "D"), pi = c(80, 95), 
-    proportion = FALSE, age = 1:21, nr.traj = 0, sort.pi=TRUE, pop.max = NULL, \dots)
+    proportion = FALSE, age = NULL, nr.traj = 0, sort.pi=TRUE, pop.max = NULL, \dots)
     
 \method{get.bPop.pyramid}{data.frame}(data, main.label = NULL, legend = "observed", 
     is.proportion = FALSE, ages = NULL, pop.max = NULL, 
@@ -73,7 +73,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   	\item{indicator}{One of the characters \dQuote{P} (population), \dQuote{B} (births), \dQuote{D} (deaths) determining the pyramid indicator.}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{proportion}{Logical. If \code{TRUE} the pyramid contains the distribution of rates of age-specific counts and population totals.}
-  \item{age}{Integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last available age goup is 130+ which corresponds to index 27. The purpose of this argument here is mainly to control the height of the pyramid.}
+  \item{age}{Integer vector of age indices. In a 5-year simulation, value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. In a 1x1 simulation, values 1, 2, 3 correpond to ages 0, 1, 2. Last available age goup is 130+ which corresponds to index 27 in a 5-year simulation and index 131 in an annual simulation. The purpose of this argument here is mainly to control the height of the pyramid.}
   \item{plot}{If \code{FALSE}, nothing is plotted. It can be used to retrieve the pyramid object without drawing it.}
   \item{main}{Titel of the plot. By default it is the country name and projection year if known.}
   \item{show.legend}{Logical controlling if the plot legend is drawn.}

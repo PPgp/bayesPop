@@ -12,12 +12,14 @@ The function generates trajectories of probabilistic population projection for a
 pop.predict(end.year = 2100, start.year = 1950, present.year = 2020, 
     wpp.year = 2019, countries = NULL, 
     output.dir = file.path(getwd(), "bayesPop.output"),
+    annual = FALSE,
     inputs = list(popM=NULL, popF=NULL, mxM=NULL, mxF=NULL, srb=NULL,
         pasfr=NULL, patterns=NULL, 
         migM=NULL, migF=NULL, migMt=NULL, migFt=NULL, mig=NULL,
         e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
-        migMtraj = NULL, migFtraj = NULL), 
+        migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
+        GQpopM = NULL, GQpopF = NULL, average.annual = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
     lc.for.hiv = TRUE, lc.for.all = TRUE,
@@ -31,6 +33,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
   	\item{wpp.year}{Year for which WPP data is used. The functions loads a package called \pkg{wpp}\eqn{x} where \eqn{x} is the \code{wpp.year} and uses the various datasets as default if the corresponding \code{inputs} element is missing (see below).}
   	\item{countries}{Array of country codes or country names for which a projection is generated. If it is \code{NULL}, all available countries are used. If it is \code{NA} and there is an existing projection in \code{output.dir} and \code{replace.output=FALSE}, then a projection is performed for all countries that are not included in the existing projection. Names of countries are matched to those in the \code{\link[wpp2019]{UNlocations}} dataset (or in the dataset loaded from \code{my.locations.file} if used).}
   	\item{output.dir}{Output directory of the projection. If there is an existing projection in \code{output.dir} and \code{replace.output=TRUE}, everything in the directory will be deleted.}
+  	\item{annual}{Logical. If \code{TRUE} it is assumed that this is 1x1 simulation, i.e. one year age groups and one year time periods.}
   	\item{inputs}{A list of file names where input data is stored. It contains the following elements (Unless otherwise noted, these are tab delimited ASCII files; Names of default datasets from the corresponding \pkg{wpp} package which are used if the corresponding element is \code{NULL} are shown in brackets):
   		\describe{
   			\item{popM, popF}{Initial male/female age-specific population (at time \code{present.year}) [\code{\link[wpp2019]{popM}}, \code{\link[wpp2019]{popF}}].}
@@ -45,8 +48,10 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
   			\item{e0F.sim.dir}{Simulation directory with results of female life expectancy (generated using \pkg{\link{bayesLife}}). It is only used if \code{e0F.file} is \code{NULL}.}
   			\item{e0M.sim.dir}{Simulation directory with results of male life expectancy (generated using \pkg{\link{bayesLife}}). Alternatively, it can be the string \dQuote{joint_}, in which case it is assumed that the male life expectancy was projected jointly from the female life expectancy (see \link[bayesLife]{joint.male.predict}) and thus contained in the \code{e0F.sim.dir} directory. The argument is only used if \code{e0M.file} is \code{NULL}.}
   			\item{tfr.sim.dir}{Simulation directory with results of total fertility rate (generated using \pkg{\link{bayesTFR}}). It is only used if \code{tfr.file} is \code{NULL}.}
-  			\item{migMtraj, migFtraj}{Comma-delimited CSV file with male/female age-specific migration trajectories. If present, it replaces deterministic projections given by the \code{mig*} items. It has a similar format as e.g. \code{e0M.file} with columns \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, \dQuote{Age} and \dQuote{Migration}. The \dQuote{Age} column must have values \dQuote{0-4}, \dQuote{5-9}, \dQuote{10-14}, \dots, \dQuote{95-99}, \dQuote{100+}.}
-  		}
+  			\item{migMtraj, migFtraj, migtraj}{Comma-delimited CSV file with male/female age-specific migration trajectories, or total migration trajectories (\code{migtraj}). If present, it replaces deterministic projections given by the \code{mig*} items. It has a similar format as e.g. \code{e0M.file} with columns \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, \dQuote{Age} (except for \code{migtraj}) and \dQuote{Migration}. For a five-year simulation, the \dQuote{Age} column must have values \dQuote{0-4}, \dQuote{5-9}, \dQuote{10-14}, \dots, \dQuote{95-99}, \dQuote{100+}. In an annual simulation, age is given by a single number between 0 and 100.}
+  			\item{GQpopM, GQpopF}{Age-specific population counts (male and female) that should be excluded from application of the cohort-component method (CCM). It can be used for defining group quarters. These counts are removed from population before the CCM projection and added back afterwards. It is not used when computing vital events on observed data. The datasets should have columns \dQuote{country_code}, \dQuote{age} and \dQuote{gq}. For a five-year simulation, the \dQuote{age} column should include values \dQuote{0-4}, \dQuote{5-9}, \dQuote{10-14}, \dots, \dQuote{95-99}, \dQuote{100+}. However, rows with zeros do not need to be included. In an annual simulation, age is given by a single number between 0 and 100.}
+  		\item{average.annual}{Character string with values \dQuote{TFR}, \dQuote{e0M}, \dQuote{e0F}. If this is a 5-year simulation, but the inputs of TFR or/and e0 comes from an annual simulation, including the corresponding string here will cause that the TFR or/and e0 trajectories are converted into 5-year averages.}
+  	}
   	}
   	\item{nr.traj}{Number of trajectories to be generated. If this number is smaller than the number of available trajectories of the probabilistic components (TFR, life expectancy and migration), the trajectories are equidistantly thinned. 
   		If all of those components contain less trajectories than \code{nr.traj}, the value is adjusted to the maximum of available trajectories of the components. For those that have less trajectories than the adjusted number, the available trajectories are re-sampled, so that all components have the same number of trajectories.}

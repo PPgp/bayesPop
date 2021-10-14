@@ -18,7 +18,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
 							migMtraj=NULL, migFtraj=NULL, migtraj = NULL,
-							average.annual = NULL
+							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
 						my.locations.file = NULL, 
@@ -748,6 +748,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, id.col = "country_code", ...) {
+    mig <- totmig <- rc <- NULL
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
     if(is.null(time.periods)) {
@@ -785,7 +786,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                        rc = scale * schedule[age.idx]/sum(schedule[age.idx]))
     migtmp <- merge(merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE), 
                     rcdf, by = "age", sort = FALSE)
-    migtmp[, `mig` := `totmig` * `rc`]
+    migtmp[, mig := totmig * rc]
     frm <- paste(id.col, "+ age.idx + age ~ year")
     res <- dcast(migtmp, frm, value.var = "mig")
     res[["age.idx"]] <- NULL
@@ -922,6 +923,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 }
 
 .get.tfr.data <- function(inputs,  wpp.year, verbose=FALSE) {
+    trajectory <- NULL
   if(!is.null(inputs$tfr.file)) {
     if(inputs$tfr.file == 'median_')
       TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
@@ -938,7 +940,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
           TFRpred <- melt(TFRpred, id.vars = "country_code", 
                           measure.vars = setdiff(colnames(TFRpred), c("country_code", "country_name", "name", "last.observed")),
                           variable.name = "year")
-          TFRpred[, `trajectory` := 1]
+          TFRpred[, trajectory := 1]
           TFRpred <- as.data.frame(TFRpred)
       } else { # file in comma-separated long format 
         TFRpred <- read.csv(file=file.name, comment.char='#', check.names=FALSE)

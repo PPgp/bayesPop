@@ -5,17 +5,15 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                                locations = NULL, default.country = NULL, annual = FALSE,
                         inputs = list(
                             popM = NULL, popF = NULL,
-                            mxM = NULL, mxF = NULL,
-                            srb = NULL,
-                            pasfr = NULL,
-                            patterns = NULL,
+                            mxM = NULL, mxF = NULL, srb = NULL,
+                            pasfr = NULL, patterns = NULL,
                             migM = NULL, migF = NULL,	
                             migMt = NULL, migFt = NULL, mig = NULL,
-                            e0F.file = NULL, e0M.file = NULL, 
-                            tfr.file = NULL, 
+                            e0F.file = NULL, e0M.file = NULL, tfr.file = NULL, 
                             e0F.sim.dir = NULL, e0M.sim.dir = NULL, 
                             tfr.sim.dir = NULL,
-                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL	
+                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
+                            GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
                         replace.output = FALSE, verbose = TRUE) {
@@ -406,6 +404,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
     inp$lc.for.hiv <- TRUE
+    inp$average.annual <- inputs$average.annual
     return(inp)
 }
 
