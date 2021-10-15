@@ -40,7 +40,8 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
     }
     inp <- load.subnat.inputs(inputs, start.year, present.year, end.year, wpp.year, 
                               default.country = default.country,
-                              fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, annual = annual, verbose = verbose)
+                              fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, 
+                              lc.for.all = lc.for.all, annual = annual, verbose = verbose)
 
     reg.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
     
