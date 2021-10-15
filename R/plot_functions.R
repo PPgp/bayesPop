@@ -47,7 +47,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 		country <- get.country.object(country, country.table=pop.pred$countries)
 		if(is.null(country$code)) stop('Country not available.')
 	}
-	if(sum.over.ages || age[1]=='psr' || !is.null(expression))
+	if(sum.over.ages || !is.null(expression))
 		do.pop.trajectories.plot(pop.pred, country, expression=expression, pi=pi, sex=sex, age=age,
 									half.child.variant=half.child.variant, nr.traj=nr.traj,
 									typical.trajectory=typical.trajectory,
@@ -145,13 +145,10 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 		if(!is.null(expression)) main <- expression
 		else {
 			main <- country$name 
-			if(sex != 'both') main <- paste(main, ': ', sex, sep='')
-			if(age[1] == 'psr') main <- paste(main, ' (Potential Support Ratio)', sep='')
-			else {
-				if(age[1] != 'all') {
-					age.labels <- get.age.labels(pop.pred$ages[age], collapsed=TRUE, single.year = pop.pred$annual)
-					main <- paste(main, ' (Age ', paste(age.labels, collapse=','), ')', sep='')
-				}
+			if(sex != 'both') main <- paste0(main, ': ', sex)
+			if(age[1] != 'all') {
+				age.labels <- get.age.labels(pop.pred$ages[age], collapsed=TRUE, single.year = pop.pred$annual)
+				main <- paste(main, ' (Age ', paste(age.labels, collapse=','), ')', sep='')
 			}
 		}
 	}
