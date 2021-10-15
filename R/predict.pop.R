@@ -1869,6 +1869,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	births <- list(matrix(0, nrow=nfertages, ncol=nest), matrix(0, nrow=nfertages, ncol=nest))
 	for(sex in 1:2) {
 	    pop[[sex]] <- matrix(0, nrow=maxage, ncol=nest+1)
+	    rownames(pop[[sex]]) <- rownames(mig.data[[sex]])
 		popage <- get.pop.observed.with.age(NULL, country.code, sex=c('male', 'female')[sex], 
 						data=pop.matrix, annual = annual)
 		popage <- popage$data[popage$age.idx,(ncol(popage$data)-nest):ncol(popage$data), drop = FALSE]
@@ -1880,7 +1881,6 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	LTinputs <- list(male = list(sex = 1, mx = mx[[1]]), female = list(sex = 2, mx = mx[[2]]))
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
 
-	
 	res <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type),
@@ -1896,11 +1896,10 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
     deaths[[2]] <- matrix(res$deathsf, ncol = nest)
     births[[1]] <- matrix(res$btagem, ncol = nest)
     births[[2]] <- matrix(res$btagef, ncol = nest)
-    colnames(deaths[[1]]) <- colnames(deaths[[2]]) <- colnames(births[[1]]) <- colnames(births[[2]]) <- estim.years
-    rownames(deaths[[1]]) <- rownames(deaths[[2]]) <- rownames(pop[[sex]])
+    colnames(deaths[[1]]) <- colnames(deaths[[2]]) <- colnames(births[[1]]) <- colnames(births[[2]]) <- colnames(asfr) <- estim.years
+    rownames(deaths[[1]]) <- rownames(deaths[[2]]) <- all.ages(annual = annual, observed = TRUE)
+    rownames(births[[1]]) <- rownames(births[[2]]) <- rownames(asfr) <- fert.ages(annual = annual)
 
-	colnames(asfr) <- estim.years
-	rownames(asfr) <- rownames(births[[1]])
 	res <- list(btm=births[[1]], btf=births[[2]], 
 				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, pasfert=pasfr, 
 				mxm=mx[[1]], mxf=mx[[2]])
