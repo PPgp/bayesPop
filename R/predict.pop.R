@@ -209,7 +209,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		if(keep.vital.events) 
 		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, 
 															estim.years=inp$estim.years, annual = inp$annual)
-		tfr.med <- apply(inpc$TFRpred, 1, median)[nrow(inpc$TFRpred)]
+		tfr.med <- apply(inpc$TFRpred, 1, median, na.rm = TRUE)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			if(!fixed.pasfr) 
