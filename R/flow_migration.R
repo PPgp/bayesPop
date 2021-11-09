@@ -28,6 +28,8 @@ do.pop.predict.flow <- function(inp, outdir, nr.traj, ages, batch=1, batch.size=
 	# set intitial outflow rate values
 	mig.out.rates.ini <- migration.settings$ini.out.rates[country.codes.char]
 	flow.obs <- migration.settings$flowData
+	#truncateOutflows <- migration.settings$truncate.outflows
+	#truncateBounds <- migration.settings$truncate.bounds
 
 	# save a Roger's Castro curve (taken from China)
 	migRC <- age.specific.migration(wpp.year=inp$wpp.year, countries=156, verbose=FALSE)
@@ -58,7 +60,7 @@ do.pop.predict.flow <- function(inp, outdir, nr.traj, ages, batch=1, batch.size=
 	b <- min(batch, 10)
 	trajSubsetIndex <- (batch.size*(b-1) + 1):(batch.size*b)
 	nr.traj.subset <- length( trajSubsetIndex )
-	muColNames <- c("country_code", as.character(trajSubsetIndex) )
+	mcmcColNames <- c("country_code", as.character(trajSubsetIndex) )
 
 	kannisto <- surv <- mortcast.args <- list()
 	observed <- new.env()
@@ -77,7 +79,7 @@ do.pop.predict.flow <- function(inp, outdir, nr.traj, ages, batch=1, batch.size=
 			observed[[country]] <- compute.observedVE(countries.input[[country]], inp$pop.matrix, 
 										countries.input[[country]]$MIGtype, kann, 
 										as.integer(country), inp$estim.years)
-		tfr.med <- apply(countries.input[[country]]$TFRpred[,trajSubsetIndex], 1, median)[nrow(countries.input[[country]]$TFRpred)]
+		tfr.med <- apply(countries.input[[country]]$TFRpred, 1, median)[nrow(countries.input[[country]]$TFRpred)]
 		kantor.pasfr[[country]] <- list()
 		for(itraj in 1:nr.traj.subset)	
 			kantor.pasfr[[country]][[itraj]] <- if(fixed.pasfr) countries.input[[country]]$PASFR/100. else
@@ -95,13 +97,13 @@ do.pop.predict.flow <- function(inp, outdir, nr.traj, ages, batch=1, batch.size=
 	debug <- FALSE
 
 	# set flow model parameter values
-	mu.oos <- migration.settings$mu.oos[,muColNames,with=FALSE]
+	mu.oos <- migration.settings$mu.oos[,mcmcColNames,with=FALSE]
 	phi.oos <- migration.settings$phi.oos[trajSubsetIndex]
-	sigma.oos <- migration.settings$sigma.oos[trajSubsetIndex]
+	sigma.oos <- migration.settings$sigma.oos[,mcmcColNames,with=FALSE]
 
-	mu <- migration.settings$mu[,muColNames,with=FALSE]
+	mu <- migration.settings$mu[,mcmcColNames,with=FALSE]
 	phi <- migration.settings$phi[trajSubsetIndex]
-	sigma <- migration.settings$sigma[trajSubsetIndex]
+	sigma <- migration.settings$sigma[,mcmcColNames,with=FALSE]
 
 	pi.dir <- migration.settings$pi.dir
 
@@ -212,15 +214,15 @@ do.pop.predict.flow <- function(inp, outdir, nr.traj, ages, batch=1, batch.size=
 		popF.prev <- res.env$totpf
 		out.mig.cum <- res.env$out.mig.rate[,1:time,] 
 		out.mig.rate.prev <- res.env$out.mig.rate[,time,]
-		if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
-			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
-			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
-			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-				which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
-			}
-		}
+		#if (any(res.env$totpm < get.zero.constant()) || any(res.env$totpf < get.zero.constant())){
+		#	cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
+		#	cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
+		#	for(country in unique(c(cntries.m, cntries.f))) {
+		#		neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+		#		which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+		#		add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+		#	}
+		#}
 		with(res.env, {
 			file.name <- file.path(outdir.raw, paste0('pop_time_', time, '.rda'))
 			colnames(totp) <- as.character( 1:nr.traj.subset )
@@ -286,17 +288,19 @@ get.flow.1traj <- function(time, itraj, work.env, res.env) {
         inpc$origin.code.char <- ccc
         inpc$pi.dir <- res.env$pi.dir
         inpc$mig.rogers.castro <- res.env$mig.rogers.castro
+        inpc$mig.gcc.schedule <- res.env$mig.gcc.schedule
         inpc$out.mig.rate.prev <- res.env$out.mig.rate.prev[ccc]
+        #inpc$truncateBound <- as.numeric( res.env$truncateBounds[country_code==ccc,.(`1`, `2`, `3`, `4`, `5`, `6`)] )[min(time, 6)]
         if(time==2) inpc$out.mig.cum <- res.env$out.mig.cum[ccc]
         if(time>2) inpc$out.mig.cum <- res.env$out.mig.cum[ccc,]
         inpc$ages21 <- res.env$ages21
         if(is.incomplete.flow(ccc)){
         	inpc$mu <- as.numeric( res.env$mu.oos[country_code==ccc,-"country_code"] )[itraj]
-        	inpc$sigma <- as.numeric( res.env$sigma.oos )[itraj]
+        	inpc$sigma <- as.numeric( res.env$sigma.oos[country_code==ccc,-"country_code"] )[itraj]
         	inpc$phi <- as.numeric( res.env$phi.oos )[itraj]
         } else {
         	inpc$mu <- as.numeric( res.env$mu[country_code==ccc,-"country_code"] )[itraj]
-        	inpc$sigma <- as.numeric( res.env$sigma )[itraj]
+        	inpc$sigma <-  as.numeric( res.env$sigma[country_code==ccc,-"country_code"] )[itraj]
         	inpc$phi <- as.numeric( res.env$phi )[itraj]
         }
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
@@ -307,7 +311,7 @@ get.flow.1traj <- function(time, itraj, work.env, res.env) {
         pop <- sum(res.env$totpm[,cidx] + res.env$totpf[,cidx])
         outmigpred <- sample.migration.trajectory(inpc, itraj, time, pop, 
     									popM=res.env$totpm[,cidx], popF=res.env$totpf[,cidx], 
-                                    	country.code=res.env$country.codes[cidx],
+										truncate=res.env$truncateOutflows,
                                     	warn.template=res.env$warns[["_template_"]])
         res.env$flow.age.male[ccc,,] <- outmigpred$flow.age.m
         res.env$flow.age.female[ccc,,] <- outmigpred$flow.age.f
@@ -343,10 +347,10 @@ get.flow.1traj <- function(time, itraj, work.env, res.env) {
 
 
 sample.migration.trajectory <- function(inpc, itraj=NULL, time=NULL, pop=NULL, 
-									popM=NULL, popF=NULL, country.code=NULL, warn.template=NULL) {
-	# TO DO: 
-    # - Switch Rogers-Castro with country-specific age schedules or model schedules
+									popM=NULL, popF=NULL, truncate=FALSE, warn.template=NULL) {
 
+	origin <- inpc$origin.code.char
+	
 	zero.constant <- get.zero.constant()
 	warns <- NULL
 	popM21 <- popM[1:21]
@@ -355,54 +359,25 @@ sample.migration.trajectory <- function(inpc, itraj=NULL, time=NULL, pop=NULL,
 	popFdistr <- popF21/pop
 	age21 <- inpc$ages21
 	mig.age.schedule.f <- inpc$mig.rogers.castro
-	mig.age.schedule.m <- inpc$mig.rogers.castro
+	if( is.gcc(origin) ) {
+		mig.age.schedule.m <- 1*(inpc$mig.rogers.castro>0) * popM21/sum(popM21)
+	} else {
+		mig.age.schedule.m <- inpc$mig.rogers.castro
+	}
 
-	origin <- inpc$origin.code.char
+	#truncateBound <- inpc$truncateBound
+
 	piDestTrajectory <- get.pi.1trajectory(country.code=origin, itraj=itraj, dir=inpc$pi.dir)
 	mu <- inpc$mu
 	phi <- inpc$phi
 	sigma <- inpc$sigma
 	out.mig.rate.prev <- inpc$out.mig.rate.prev
-
+	out.mig.cum <- inpc$out.mig.cum 
+	
 	rho <- mu * (1 - phi) + phi * out.mig.rate.prev
-
-    maxIter <- iter <- 0
-    while(iter<100){
-		out.mig.rate.prop <- rgamma(n=1, shape=rho*sigma, rate=sigma)
-
-		if(time==1){
-			popdrop <- 1 - out.mig.rate.prop/200
-    	} else {
-    		out.mig.cum <- inpc$out.mig.cum 
-    	    popdrop <- tail( cumprod(1 - c( out.mig.cum, out.mig.rate.prop)/200 ), 1 )
-    	}
-
-
-    	if( !is.special.case(origin) & !is.gcc(origin) & !is.labor(origin) ){
-        	popdrop.lower.bound <- general.outflow.bounds(time)
-        	if( popdrop >= popdrop.lower.bound ) break
-        } 
-        
-        if( is.special.case(origin) ){
-        	popdrop.lower.bound <- special.case.outflow.bounds(time)
-        	if( popdrop >= popdrop.lower.bound ) break
-        } 
-        
-        if( is.gcc(origin) & !is.special.case(origin) ){
-        	popdrop.lower.bound <- gcc.outflow.bounds(time)
-        	if( popdrop >= popdrop.lower.bound ) break
-        } 
-        
-        if( is.labor(origin) & !is.special.case(origin) ){
-        	popdrop.lower.bound <- labor.outflow.bounds(time)
-        	if( popdrop >= popdrop.lower.bound ) break
-        } 
-        
-        iter <- iter+1
-    }
-
-    out.mig.rate.raw <- out.mig.rate.prop 
-    out.mig.count.raw <- round( out.mig.rate.raw * 5 * pop ) 
+   
+	out.mig.rate.raw <- get.raw.out.rate(rho=rho, sigma=sigma, time=time, origin=origin, out.mig.cum=out.mig.cum, itermax=100)
+    out.mig.count.raw <- round( out.mig.rate.raw* 5 * pop ) 
     # rate = migrants / (5 * Pop / 1000) = migrants * (1 / (5*Pop/1000)) = migrants * 1 / 5*pop000
     # 	=> migrants = rate * 5 * pop000 with pop000 = Pop/1000
 
@@ -416,7 +391,10 @@ sample.migration.trajectory <- function(inpc, itraj=NULL, time=NULL, pop=NULL,
     outmigM <- out.mig.count.raw * outflow.sched[22:42]
 
     # check that no age-sex group drops by more than 40%
-    outflow.sched.supremum <- 0.4 * 1e3 * c(popF21*((mig.age.schedule.f>0)*1), popM21*((mig.age.schedule.m>0)*1))
+	resampleAttempt <- 0
+	limF <- 0.4
+	limM <- ifelse( is.gcc(origin), 0.8, 0.4)
+    outflow.sched.supremum <- 1e3 * c( limF*popF21*((mig.age.schedule.f>0)*1), limM*popM21*((mig.age.schedule.m>0)*1))
     if( any( c(outmigF, outmigM) > outflow.sched.supremum) ){ # adjust age schedules
 		prev.isneg <- rep(FALSE, 42)
 		j <- 1
@@ -435,8 +413,22 @@ sample.migration.trajectory <- function(inpc, itraj=NULL, time=NULL, pop=NULL,
 			prev.isneg <- isneg
 			outflow.sched <- sched.new
 			j <- j+1
-			if(j>100) break
-			}
+			if( (j>=10 & resampleAttempt<=100) | any(c(is.nan(outmigF), is.nan(outmigM))) ){
+				resampleAttempt <- resampleAttempt + 1
+				out.mig.rate.raw <- get.raw.out.rate(rho=rho, sigma=sigma, time=time, origin=origin, out.mig.cum=out.mig.cum, itermax=100)
+				out.mig.count.raw <- round( out.mig.rate.raw * 5 * pop ) 
+				outflow.sched <- c( outflow.sched.f, outflow.sched.m ) / sum( outflow.sched.f + outflow.sched.m )
+				outmigF <- out.mig.count.raw * outflow.sched[1:21]
+				outmigM <- out.mig.count.raw * outflow.sched[22:42]
+
+				if( all( c(outmigF, outmigM) <= outflow.sched.supremum) ){
+					break
+					} else {
+					prev.isneg <- rep(FALSE, 42)
+					j <- 1
+				}
+			}	
+		}
 
 		# if the simulation broke before an acceptable shift, then set the remaining outflows to the maximum
 		if( any( outmigF > outflow.sched.supremum[1:21] ) ){
@@ -448,6 +440,9 @@ sample.migration.trajectory <- function(inpc, itraj=NULL, time=NULL, pop=NULL,
 			getsMaxOutflow <- which( outmigM > outflow.sched.supremum[22:42] )
 			outmigM[ getsMaxOutflow ] <- outflow.sched.supremum[22:42][ getsMaxOutflow ]
 		}
+
+		outmigF[ is.na(outmigF) | is.nan(outmigF) ] <- 0
+		outmigM[ is.na(outmigM) | is.nan(outmigM) ] <- 0
 
 		out.mig.count.raw <- sum(outmigF + outmigM)
 		outflow.sched <- c(outmigF, outmigM) / out.mig.count.raw
@@ -579,7 +574,38 @@ restructure.flow.data.and.compute.quantiles <- function(source.dir, nr.traj, pro
         } 
 }
 
+get.raw.out.rate <- function(rho, sigma, time, origin, out.mig.cum, itermax=100){
 
+	iter <- 0	
+	while(iter<itermax){
+		out.mig.rate.prop <- rgamma(n=1, shape=rho*sigma, rate=sigma)
+		if(time==1){
+			popdrop <- 1 - out.mig.rate.prop/200
+    	} else {
+    	    popdrop <- tail( cumprod(1 - c( out.mig.cum, out.mig.rate.prop)/200 ), 1 )
+    	}
+
+		if( !is.gcc(origin) & !is.labor(origin) ){
+			bound <- general.outflow.bounds(time) 
+			if( popdrop >= bound) break
+		}
+
+		if( is.gcc(origin) ){
+			bound <- gcc.outflow.bounds(time)
+			if( popdrop >= bound) break
+		}
+    	
+		if( is.labor(origin) ){
+			bound <- labor.outflow.bounds(time)
+			if( popdrop >= bound) break
+		}
+
+       iter <- iter+1
+    }
+
+	return(out.mig.rate.prop)
+
+}
 
 
 get.pi.1trajectory <- function(country.code, itraj, dir){
