@@ -107,7 +107,7 @@ pred <- pop.predict.subnat(output.dir = sim.dir,
 pop.trajectories.plot(pred, "Alberta", sum.over.ages = TRUE)
 unlink(sim.dir, recursive=TRUE)
 
-# Use subnational TFR simulation
+# Use subnational probabilistic TFR simulation
 ###
 # Subnational TFR projections for Canada (from ?tfr.predict.subnat)
 my.subtfr.file <- file.path(find.package("bayesTFR"), 'extdata', 'subnational_tfr_template.txt')
@@ -116,14 +116,27 @@ tfr.reg.dir <- tempfile()
 tfr.preds <- tfr.predict.subnat(124, my.tfr.file = my.subtfr.file,
     sim.dir = tfr.nat.dir, output.dir = tfr.reg.dir, start.year = 2013)
  
-# Pop projections
+# Use subnational probabilistic e0
+### 
+# Subnational e0 projections for Canada (from ?e0.predict.subnat)
+# (here using the same female and male data, just for illustration)
+my.sube0.file <- file.path(find.package("bayesLife"), 'extdata', 'subnational_e0_template.txt')
+e0.nat.dir <- file.path(find.package("bayesLife"), "ex-data", "bayesLife.output")
+e0.reg.dir <- tempfile()
+e0.preds <- e0.predict.subnat(124, my.e0.file = my.sube0.file,
+    sim.dir = e0.nat.dir, output.dir = e0.reg.dir, start.year = 2018,
+    predict.jmale = TRUE, my.e0M.file = my.sube0.file)
+ 
+# Population projections
 sim.dir <- tempfile()
 pred <- pop.predict.subnat(output.dir = sim.dir,
             locations = file.path(data.dir, "CANlocations.txt"),
             inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
                           popF = file.path(data.dir, "CANpopF.txt"),
                           patterns = file.path(data.dir, "CANpatterns.txt"),
-                          tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124")
+                          tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124"),
+                          e0F.sim.dir = file.path(e0.reg.dir, "subnat_ar1", "c124"),
+                          e0M.sim.dir = "joint_"
                         ),
             verbose = TRUE)
 pop.trajectories.plot(pred, "Alberta", sum.over.ages = TRUE)
@@ -137,6 +150,7 @@ pop.trajectories.plot(aggr, "Canada", sum.over.ages = TRUE)
 
 unlink(sim.dir, recursive = TRUE)
 unlink(tfr.reg.dir, recursive = TRUE)
+unlink(e0.reg.dir, recursive = TRUE)
 }}
 
 % Add one or more standard keywords, see file 'KEYWORDS' in the
