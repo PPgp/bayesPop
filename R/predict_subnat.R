@@ -445,7 +445,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            template = migtempl), check.names = FALSE)
       next
     }
-    # If we get here, migration is not given. Thus, get it from the national values and gien shares
+    # If we get here, migration is not given. Thus, get it from the national values and given shares
     if(annual) stop("Migration must be given.")
     mignat <- load.wpp.dataset.for.country(default.country, 'migration', wpp.year) # TODO: Allow input of annual national values 
     migdistr <- migration.totals2age(mignat, annual = annual)

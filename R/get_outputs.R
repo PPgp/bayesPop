@@ -866,7 +866,7 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	if (l > 1) result <- c(result, if(is.na(all.age[ages.idx.shift[l]]) || last.open) paste0(all.age[ages.idx[l]], '+')
 			else ifelse(all.age[ages.idx[l]] == all.age[ages.idx.shift[l]]-1, all.age[ages.idx[l]], 
 			            paste0(all.age[ages.idx[l]], '-', all.age[ages.idx.shift[l]]-1)))
-	return(result)
+	return(as.character(result))
 }	
 
 .get.year.index <- function(year, years, annual = FALSE) {
@@ -1078,6 +1078,8 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		} else dimnames(data) <- list(NULL, dimnames(traj$trajectories)[[1]], dimnames(traj$trajectories)[[2]], NULL)
 	}
 	if(length(traj$age.idx) == dim(data)[[2]]) dimnames(data)[[2]] <- traj$age.idx
+	    #dimnames(data)[[2]] <- if(pop.pred$annual) traj$age.idx - 1 else traj$age.idx
+	    
 	return(data)
 }
 
