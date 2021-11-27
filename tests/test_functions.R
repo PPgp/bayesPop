@@ -128,12 +128,12 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	stopifnot(all(tb[, 5:ncol(tb)] < 7))
 	
 	write.pop.projection.summary(pred, expression="BXXX[5] / BXXX", output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
+	t1 <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(all(dim(t1) == c(10,20))) # 2 countries 5 rows each
 	
 	write.pop.projection.summary(pred, expression="pop.combine(BXXX[5], BXXX, '/')", output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
-	stopifnot(all(dim(t) == c(10,20))) # 2 countries 5 rows each
+	t2 <- read.table(file.path(sim.dir, 'projection_summary_expression.csv'), sep=',', header=TRUE)
+	stopifnot(identical(t1, t2))
 	
 	t <- pop.byage.table(pred, expression='M528_M{}')
 	stopifnot(all(dim(t) == c(27,5)))
@@ -362,15 +362,24 @@ test.subnat <- function() {
   test.ok(test.name)
 }
 
-test.subnat.with.subnat.tfr <- function() {
-  test.name <- "Subnational projections with subnational TFR"
+test.subnat.with.subnat.tfr.e0 <- function() {
+  test.name <- "Subnational projections with subnational TFR and e0"
   start.test(test.name)
+  # TFR projections
   data.dir <- file.path(find.package("bayesPop"), "extdata")
   my.subtfr.file <- file.path(find.package("bayesTFR"), 'extdata', 'subnational_tfr_template.txt')
   tfr.nat.dir <- file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output")
   tfr.reg.dir <- tempfile()
   tfr.preds <- tfr.predict.subnat(124, my.tfr.file = my.subtfr.file,
-                                  sim.dir = tfr.nat.dir, output.dir = tfr.reg.dir)
+                                  sim.dir = tfr.nat.dir, output.dir = tfr.reg.dir, start.year = 2013)
+  
+  # e0 projections
+  my.sube0.file <- file.path(find.package("bayesLife"), 'extdata', 'subnational_e0_template.txt')
+  e0.nat.dir <- file.path(find.package("bayesLife"), "ex-data", "bayesLife.output")
+  e0.reg.dir <- tempfile()
+  e0.preds <- e0.predict.subnat(124, my.e0.file=my.sube0.file,
+                             sim.dir=e0.nat.dir, output.dir=e0.reg.dir, 
+                             predict.jmale = TRUE, my.e0M.file = my.sube0.file)
   
   # Pop projections
   sim.dir <- tempfile()
@@ -379,9 +388,10 @@ test.subnat.with.subnat.tfr <- function() {
                              inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
                                            popF = file.path(data.dir, "CANpopF.txt"),
                                            patterns = file.path(data.dir, "CANpatterns.txt"),
-                                           tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124")
-                             ),
-                             verbose = FALSE)
+                                           tfr.sim.dir = file.path(tfr.reg.dir, "subnat", "c124"),
+                                           e0F.sim.dir = file.path(e0.reg.dir, "subnat_ar1", "c124"),
+                                           e0M.sim.dir = "joint_"
+                             ), verbose = FALSE)
   stopifnot(all(dim(get.pop("P658", pred)) == c(1,1,9,30))) # 30 trajectories because TFR example has 30 national trajs. 
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                                locations = file.path(data.dir, "CANlocations.txt"))
@@ -391,6 +401,7 @@ test.subnat.with.subnat.tfr <- function() {
 
   unlink(sim.dir, recursive = TRUE)
   unlink(tfr.reg.dir, recursive = TRUE)
+  unlink(e0.reg.dir, recursive = TRUE)
 }
 
 

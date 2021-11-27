@@ -55,9 +55,12 @@ extract.trajectories.le,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
+mac.expression1,
 age.specific.migration,
 project.pasfr,
-project.pasfr.traj
+project.pasfr.traj,
+migration.totals2age,
+rcastro.schedule
 )
 
 # register S3 methods

@@ -14,7 +14,8 @@ if(!CRAN) {
 	test.prediction(parallel = TRUE)
 	test.prediction.with.prob.migration()
 	test.prediction.with.prob.migration(parallel = TRUE)
-	test.expressions.with.VE(map=TRUE)
+	#test.expressions.with.VE(map=TRUE)
+	test.expressions.with.VE(map=FALSE)
 	test.expressions.with.VE(map=FALSE, parallel = TRUE)
 	test.regional.aggregation()
 	test.regional.aggregation(parallel = TRUE)
@@ -22,6 +23,6 @@ if(!CRAN) {
 	test.life.table(parallel = TRUE)
 	test.adjustment()
 	test.subnat()
-	test.subnat.with.subnat.tfr()
 	options(warn=warn$warn)
+	test.subnat.with.subnat.tfr.e0()
 }

@@ -39,7 +39,7 @@ extract.trajectories.le(pop.pred, country = NULL, expression = NULL,
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
   \item{country}{Name or numerical code of a country.}
   \item{sex}{One of \dQuote{both}  (default), \dQuote{male} or \dQuote{female}. By default the male and female projections are summed up.}
-  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. Results is summed over the given age categories.}
+  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. In a 5x5 simulation, value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. In a 1x1 simulation, value 1 corresponds to age 0, value 2 to age 1 etc, up to 131 corresponding to the last age group. Results is summed over the given age categories.}
   \item{object}{Character string giving a basic component of an expression (see \link{pop.expressions}).}  
   \item{aggregation}{If the basic component is to be evaluated on an aggregated prediction object, this argument gives the name of the aggregation (corresponds argument \code{name} in \code{\link{pop.aggregate}}). By default, the function searches for available aggregations and gives priority to the one called \dQuote{country}.}
   \item{observed}{Logical. Determines if the evaluation uses observed data (\code{TRUE}) or predictions (\code{FALSE}).}
