@@ -1,6 +1,7 @@
 # bayesPop
 
-[![Travis-CI Build Status](https://travis-ci.org/PPgp/bayesPop.svg?branch=cran)](https://travis-ci.org/PPgp/bayesPop)
+[![R build status](https://github.com/PPgp/bayesPop/workflows/R-CMD-check/badge.svg?branch=cran)](https://github.com/PPgp/bayesPop/actions?workflow=R-CMD-check)
+
 
 R package for obtaining probabilisitc population projections. [This paper](http://www.unece.org/fileadmin/DAM/stats/documents/ece/ces/ge.11/2013/WP_13.2.pdf)
 shows how to use it.
