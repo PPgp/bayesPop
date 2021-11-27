@@ -67,7 +67,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
   \item{x}{Object of class \code{bayesPop.pyramid}.}
   \item{data}{Data frame, matrix, list or object of class \code{\link{bayesPop.prediction}}. For data frame and matrix, it must have columns defined by \code{LRcolnames} (\dQuote{male} and \dQuote{female} by default). The row names will determine the age labels. For lists, it can be a collection of such data frames. The names of the list elements are used for legend, unless \code{legend} is given.}
-  \item{country}{Name or numerical code of a country.}
+  \item{country}{Name or numerical code of a country. It can also be given as ISO-2 or ISO-3 characters.}
   \item{year}{Year within the projection or estimation period to be plotted. Default is the start year of the prediction. It can also be a vector of years. \code{pop.pyramid} draws the first two, \code{pop.trajectories.pyramid} draws all of them.
   	In the functions \code{pop.pyramidAll} and \code{pop.trajectories.pyramidAll}, the \code{year} argument can be a list of years, in which case the pyramids are created for all elements in the list.}
   	\item{indicator}{One of the characters \dQuote{P} (population), \dQuote{B} (births), \dQuote{D} (deaths) determining the pyramid indicator.}
@@ -139,7 +139,7 @@ sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.pyramid(pred, "Netherlands", c(2045, 2010))
 dev.new()
-pop.trajectories.pyramid(pred, "Netherlands", c(2045, 2010, 1960), age=1:25, proportion=TRUE)
+pop.trajectories.pyramid(pred, "NL", c(2045, 2010, 1960), age=1:25, proportion=TRUE)
 # using manual manipulation of the data: e.g. show only the prob. intervals 
 pred.pyr <- get.bPop.pyramid(pred, country="Ecuador", year=2090, age=1:27)
 pred.pyr$pyramid <- NULL

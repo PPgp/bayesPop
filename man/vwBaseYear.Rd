@@ -22,7 +22,7 @@ Datasets giving information on the baseyear and type of migration for each count
 \format{
   A data frame containing the following variables:
   \describe{
-    \item{\code{country_code}}{Numerical Location Code (3-digit codes following ISO 3166-1 numeric standard) - see \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}.}
+    \item{\code{country_code}}{Numerical Location Code (3-digit codes following ISO 3166-1 numeric standard) - see \url{https://en.wikipedia.org/wiki/ISO_3166-1_numeric}.}
     \item{\code{country}}{Country name. Not used by the package.}
     \item{\code{isSmall}}{UN internal code. Not used by the package.}
     \item{\code{ProjFirstYear}}{The base year of migration.}
@@ -48,7 +48,7 @@ There is one record for each country. See Sevcikova et al (2015) on how informat
 Data provided by the United Nations Population Division.
 }
 \references{
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{http://arxiv.org/abs/1503.05215}
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{https://arxiv.org/abs/1503.05215}
 }
 \examples{
 data(vwBaseYear2019)

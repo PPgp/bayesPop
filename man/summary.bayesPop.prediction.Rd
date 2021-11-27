@@ -15,30 +15,15 @@ Summary of an object \code{\link{bayesPop.prediction}} created using the \code{\
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{object}{Object of class \code{\link{bayesPop.prediction}}.}
-  \item{country}{Country name or code. If it is \code{NULL}, only meta information included.}
+  \item{country}{Country name or code. It can also be given as ISO-2 or ISO-3 characters. If it is \code{NULL}, only meta information included.}
   \item{sex}{One of \dQuote{both} (default), \dQuote{male}, or \dQuote{female}. If it is not \dQuote{both}, the summary is given for sex-specific trajectories.}
   \item{compact}{Logical switching between a smaller and larger number of displayed quantiles.}
   \item{\dots}{A list of further arguments.}
 }
-%\details{
-%%  ~~ If necessary, more details than the description above ~~
-%}
-%\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-%}
-%\references{
-%% ~put references to the literature/web site here ~
-%}
+
 \author{
 Hana Sevcikova
 }
-%\note{
-%%  ~~further notes~~
-%}
 
 
 \seealso{

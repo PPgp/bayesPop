@@ -45,7 +45,7 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
 }
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
-  \item{country}{Name or numerical code of a country.}
+  \item{country}{Name or numerical code of a country. It can also be given as ISO-2 or ISO-3 characters.}
   \item{expression}{Expression defining the population measure to be plotted. For syntax see \code{\link{pop.expressions}}. For \code{pop.trajectories.plot}, \code{pop.trajectories.table}, \code{pop.byage.plot} and \code{pop.byage.table} the basic components of the expression must be country-specific. For \code{pop.trajectories.plotAll} and \code{pop.byage.plotAll} the country part should be given as \dQuote{XXX}. In addition, expressions passed into \code{pop.byage.plot} and \code{pop.byage.table} must contain curly braces (i.e. be age specific).}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{sex}{One of \dQuote{both}  (default), \dQuote{male} or \dQuote{female}. By default the male and female projections are summed up.}
@@ -88,7 +88,7 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.trajectories.plot(pred, country="Ecuador", pi=c(80, 95))
-pop.trajectories.table(pred, country="Ecuador", pi=c(80, 95))
+pop.trajectories.table(pred, country="ECU", pi=c(80, 95))
 # female population of Ecuador in child bearing ages (by time)
 pop.trajectories.plot(pred, expression="PEC_F[4:10]") 
 # Population by age in Netherands for two different years 

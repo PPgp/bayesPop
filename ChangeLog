@@ -8,6 +8,8 @@ Support for 1x1 projections (1 year age x 1 year time); still an experimental fe
     
 The cohort component method modified so that it exactly reproduces the UN-implemented CCM (thanks to Sara Hertog for help).
 
+A 5x5 projection can be generated using annual TFR and e0 inputs. They are hen averaged.
+
 Fixed bug in write.pop.projection.summary for "tpopage" (reported by Budi Setiawan).
 
 The inputs argument in pop.predict and pop.predict.subnat accepts total migration (mig) or sex-specific total migration (migMt, migFt). The disaggregation into ages is done via Rogers-Castro.
@@ -17,6 +19,8 @@ Another new element of inputs argument in pop.predict and pop.predict.subnat is 
 Support for the "psr" option in various functions removed as it can be derived using expressions.
 
 Other mortality projection methods than Lee-Carter can be used in subnational projections (argument lc.for.all enabled).
+
+Updates in bayesTFR now allow to define the argument "country" in various functions as ISO-2 or ISO-3 characters (pop.trajectories.plot, pop.pyramid, summary, etc)
 
 New functions:
 o project.pasfr - allows to generate PASFR outside of a bayesPop simulation
