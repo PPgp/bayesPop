@@ -77,8 +77,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     
     double cdeathsm[adim], cdeathsf[adim], bt[adimfert];
     double migm[adim][*migc], migf[adim][*migc];
-    double popadjm[adim][*migc], popadjf[adim][*migc], current_popf;
-    double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc], migstartm[adim][*migc], migstartf[adim][*migc];
+    double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
+    double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
+    double migstartm[adim][*migc], migstartf[adim][*migc];
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -86,7 +87,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     ncol = *migc;
     n = *npred;
     
-    if(debug==2)
+    if(debug>=2)
         Rprintf("\nadim = %i adimfert = %i adimfert_start = %i migc = %i npred = %i adimdif = %i", 
                 adim, adimfert, adimfert_start, *migc, n, adimdif);
     
@@ -130,8 +131,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
-        if(debug==3) Rprintf("\nj = %i", j);
         jve = j-1;
+        if(debug==3) Rprintf("\nj = %i, jve = %i", j, jve);
         t = j*adim;
         t1 = (j-1)*adim; /* used to access the previous time period */
         t_offset = jve*adim; /* although the same as t1, using a different name for clarity, see comment below */
@@ -155,7 +156,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                 popm[i + t] = popadjm[i-1][j] - cdeathsm[i] + migmidm[i][jve];
                 popf[i + t] = popadjf[i-1][j] - cdeathsf[i] + migmidf[i][jve];
             }
-            if((debug==2) && (j==1)){
+            if((debug>=2) && (j==1)){
                 Rprintf("\ni = %i", i);
                 Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
                         popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
@@ -178,7 +179,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             bt[i-adimfert_start] = (popadjf[i][j] + current_popf) * asfr[i-adimfert_start + jve*adimfert] * 0.5;
             btagem[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] * srb_ratio;
             btagef[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] - btagem[i-adimfert_start+jve*adimfert];
-            if((debug==2) && (*nobserved > 1)){
+            if((debug>=2) && (*nobserved > 1)){
                 Rprintf("\ni = %i", i);
                 Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
                         popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
@@ -194,8 +195,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         
         if(*nobserved <= j){
             /* births surviving to age 1 */
-            popm[t] = bm - cdeathsm[0] + migmidm[0][j];
-            popf[t] = bf - cdeathsf[0] + migmidf[0][j];
+            popm[t] = bm - cdeathsm[0] + migmidm[0][jve];
+            popf[t] = bf - cdeathsf[0] + migmidf[0][jve];
 
             /* add migration at the end of the interval, adjust negative population and compute total pop */
             totp[j] = 0;

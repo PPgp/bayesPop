@@ -1,8 +1,8 @@
 Package: bayesPop
 Type: Package
 Title: Probabilistic Population Projection
-Version: 9.0-0
-Date: 2021-11-25
+Version: 9.0-1
+Date: 2021-11-28
 Author: Hana Sevcikova, Adrian Raftery, Thomas Buettner
 Maintainer: Hana Sevcikova <hanas@uw.edu>
 Depends: R (>= 2.14.2), bayesTFR (>= 7.1-0), bayesLife (>= 5.0-0), MortCast (>= 2.6-1)
