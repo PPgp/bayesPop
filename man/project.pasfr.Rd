@@ -16,7 +16,7 @@ project.pasfr(inputs = NULL, present.year = 2020, end.year = 2100,
 project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
     present.year = 2020, end.year = 2100, wpp.year = 2019, 
     annual = FALSE, nr.est.points = if(annual) 15 else 3,
-    digits = 2, out.file.name = "percentASFRtraj.txt")
+    digits = 2, out.file.name = "percentASFRtraj.txt", verbose = FALSE)
 }
 
 \arguments{
@@ -49,7 +49,7 @@ Returns invisible data frame with the projected PASFR.
 }
 
 \references{
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version: \url{http://arxiv.org/abs/1503.05215}
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version: \url{https://arxiv.org/abs/1503.05215}
 }
 
 \author{

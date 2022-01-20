@@ -1,5 +1,6 @@
 \name{mac.expression}
 \alias{mac.expression}
+\alias{mac.expression1}
 \title{
 Expression Generator
 }
@@ -8,6 +9,7 @@ Help functions to easily generate commonly used expressions.
 }
 \usage{
 mac.expression(country)
+mac.expression1(country)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -15,12 +17,16 @@ mac.expression(country)
 }
 }
 \details{
-\code{mac.expression} generates an expression for the mean age of childbearing of the given country. Note that \code{\link{pop.predict}} has to be run with \code{keep.vital.events=TRUE} for this to work.
+\code{mac.expression} and \code{mac.expression1} generate expressions for the mean age of childbearing of the given country, for 5-year age groups and 1-year age groups, respectively.
+Note that \code{\link{pop.predict}} has to be run with \code{keep.vital.events=TRUE} for this to work.
 }
 \value{
 \code{mac.expression} returns a character string corresponding to the formula
-{\eqn{(17.5*R_c(15-19) + 22.5*R_c(20=24) + ... + 47.5*R_c(45-49))/100}}
+{\eqn{(17.5*R_c(15-19) + 22.5*R_c(20-24) + ... + 47.5*R_c(45-49))/100}}
 where \eqn{R_c(x)} denotes the country-specific percent age-specific fertility for the age group \eqn{x}. 
+
+\code{mac.expression1} returns a character string corresponding to the formula
+{\eqn{(10.5*R_c(10-11) + 11.5*R_c(11-12) + ... + 54.5*R_c(54-55))/100}}
 }
 
 \seealso{

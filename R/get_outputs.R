@@ -225,7 +225,7 @@ get.pop.observed.with.age <- function(pop.pred, country, sex=c('both', 'male', '
 			colnames(data) <- as.integer(colnames(data)) + 2
 	}
 	max.age <- as.integer(round(nrow(data)/length(country),0))
-	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
+	age.idx <- if(age[1]=='all') 1:max.age else age
 	age.idx <- age.idx[age.idx <= max.age]
 	return(list(data=data, age.idx=age.idx, max.age=max.age))
 }
@@ -240,8 +240,6 @@ get.pop.observed <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 		return(d)
 	}
 	age.idx <- data.age$age.idx
-	if(age[1]=='psr')  # potential support ratio
-		return(colSums(data[get.psr.nominator.index(pop.pred$annual),])/colSums(data[get.psr.denominator.startindex(pop.pred$annual):nrow(data),]))
 	if(sum.over.ages) return(colSums(data[age.idx,,drop=FALSE]))
 	return(data[age.idx,,drop=FALSE])
 }
@@ -255,9 +253,6 @@ get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both
 	max.age <- data.age$max.age
 	cindex <- lapply(countries, function(x) grep(paste0("^", x, "_"), rownames(data), value=FALSE)[1:max.age])
 	names(cindex) <- countries
-	if(age[1]=='psr')  # potential support ratio
-		return(list(data=t(sapply(cindex, function(country.idx) 
-				colSums(data[country.idx,][get.psr.nominator.index(pop.pred$annual),])/colSums(data[country.idx,][get.psr.denominator.startindex(pop.pred$annual):max.age,]))), age.idx=age.idx))
 	sum.over.countries <- function(country.idx) return(colSums(data[country.idx,][age.idx,]))
 	if(sum.over.ages) return(list(data=t(sapply(cindex, sum.over.countries)), age.idx=age.idx))
 	res <- array(NA, c(ncountries, length(age.idx), ncol(data)), dimnames=list(countries, age.idx, colnames(data)))
@@ -265,14 +260,6 @@ get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both
 	for(i in 1:ncountries) res[i,,] <- as.matrix(data[cindex[[countries.char[i]]],])
 	return(list(data=res, age.idx=age.idx))
 }
-
-get.psr.nominator.index <- function(single) {
-    ages <- all.ages(single)
-    return(all.age.index(single)[ages >= 20 & ages < 65])
-}
-
-get.psr.denominator.startindex <- function(single) 
-    return(all.age.index(single)[all.ages(single) == 65])
 
 .get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE) {
 	quant <- pop.pred[[paste0('quantiles', what)]]
@@ -307,7 +294,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	}
 	sex <- match.arg(sex)
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
-	age.idx <- if(age[1]=='all' || age[1]=='psr') 1:max.age else age
+	age.idx <- if(age[1]=='all') 1:max.age else age
 	annual <- pop.pred$annual
 	max.age.allowed <- all.age.length(annual)
 	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) {
@@ -319,36 +306,22 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
 		hch <- e$totp.hch
 	} else {
-		if (age[1] == 'psr') { # potential support ratio
-			if(sex == 'both' && load.traj)
-				traj <- (colSums(e$totpm[get.psr.nominator.index(annual),,,drop=FALSE]) + 
-								colSums(e$totpf[get.psr.nominator.index(annual),,,drop=FALSE]))/(
-								colSums(e$totpm[get.psr.denominator.startindex(annual):max.age,,,drop=FALSE]) + 
-									colSums(e$totpf[get.psr.denominator.startindex(annual):max.age,,,drop=FALSE]))
-			if(sex == 'male' && load.traj) 
-				traj <- colSums(e$totpm[get.psr.nominator.index(annual),,,drop=FALSE])/colSums(
-											e$totpm[get.psr.denominator.startindex(annual):max.age,,,drop=FALSE])
-			if(sex == 'female' && load.traj) 
-				traj <- colSums(e$totpf[get.psr.nominator.index(annual),,,drop=FALSE])/colSums(
-											e$totpf[get.psr.denominator.startindex(annual):max.age,,,drop=FALSE])
-		} else {
-			if(sex == 'both') {
-				if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE]) + colSums(e$totpf[age.idx,,,drop=FALSE])
-				hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE]) + colSums(e$totpf.hch[age.idx,,,drop=FALSE])
-			} else {
-				if(sex=='male') {
-					if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
-					hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
-					if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust)
-					else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust)[,age.idx,,]}
-				} else { # female
-					if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
-					hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
-					if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust)
-					else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust)[,age.idx,,]}
-				}
-			}
-		}
+	    if(sex == 'both') {
+	        if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE]) + colSums(e$totpf[age.idx,,,drop=FALSE])
+	        hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE]) + colSums(e$totpf.hch[age.idx,,,drop=FALSE])
+	    } else {
+	        if(sex=='male') {
+	            if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
+	            hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust)[,age.idx,,]}
+	        } else { # female
+	            if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
+	            hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust)[,age.idx,,]}
+	        }
+	    }
 	}
 	if(load.traj) {
 		if(typical.trajectory) {
@@ -893,7 +866,7 @@ get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=
 	if (l > 1) result <- c(result, if(is.na(all.age[ages.idx.shift[l]]) || last.open) paste0(all.age[ages.idx[l]], '+')
 			else ifelse(all.age[ages.idx[l]] == all.age[ages.idx.shift[l]]-1, all.age[ages.idx[l]], 
 			            paste0(all.age[ages.idx[l]], '-', all.age[ages.idx.shift[l]]-1)))
-	return(result)
+	return(as.character(result))
 }	
 
 .get.year.index <- function(year, years, annual = FALSE) {
@@ -1105,6 +1078,8 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 		} else dimnames(data) <- list(NULL, dimnames(traj$trajectories)[[1]], dimnames(traj$trajectories)[[2]], NULL)
 	}
 	if(length(traj$age.idx) == dim(data)[[2]]) dimnames(data)[[2]] <- traj$age.idx
+	    #dimnames(data)[[2]] <- if(pop.pred$annual) traj$age.idx - 1 else traj$age.idx
+	    
 	return(data)
 }
 
@@ -1309,7 +1284,7 @@ period.diff1 <- function(data) return(period.diff(data))
     data[,,-1,] <- newdata
     # adjust period names
     periods <- as.integer(dimnames(data)[[3]])
-    if(!annuall && periods[1] %% 5 == 0)
+    if(!annual && periods[1] %% 5 == 0)
         dimnames(data)[[3]] <- periods - 2
     data
 }

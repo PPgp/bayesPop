@@ -44,7 +44,7 @@ Function \code{pop.aggregate} triggers an aggregations over countries while func
 
 The dataset \code{\link[wpp2019]{UNlocations}} or \code{my.location.file} is used to determine countries to be aggregated, in particular the field \dQuote{location_type} of the entries with \dQuote{country_code} given in the \code{regions} argument. One can aggregate over the following location types: Type 0 means aggregating all countries of the world (or in the file), type 2 is aggregating over continents, type 3 is aggregating over regions within continents, and any other integer (except 4) correponds to user-defined aggregations. Note that type 4 is reserved as a location type of countries and thus, all aggregations are performed over entries of this type. For type 2, countries are matched using the \dQuote{area_code} column; for type 3 the matching is done using the \dQuote{reg_code} column of the \code{\link[wpp2012]{UNlocations}} dataset. E.g., if \code{regions=908} (Europe) which has location type 2 in the default \code{\link[wpp2012]{UNlocations}} dataset, all countries are aggregated for which values of 908 are found in the \dQuote{area_code} column. If the location type is other than 0, 2, 3 and 4, there must be a column in the file called \dQuote{agcode_\eqn{x}} with \eqn{x} being the location type. This column is then used to match the countries to be aggregated. 
 
-Consider the following example. Say we want to pair four countries (Germany [DE], France [FR], Netherlands [NL], Italy [IT]) in two different ways, so we have two overlapping grouppings, each of which has two groups (A,B): 
+Consider the following example. Say we want to pair four countries (Germany [DE], France [FR], Netherlands [NL], Italy [IT]) in two different ways, so we have two overlapping groupings, each of which has two groups (A,B): 
 \enumerate{
 	\item{group A = (DE, FR), group B = (NL, IT)}
 	\item{group A = (DE, NL), group B = (FR, IT)}
@@ -53,17 +53,17 @@ Then,  \code{my.location.file} should have the following entries:
 
 \tabular{rlrrr}{
 	country_code \tab name \tab location_type \tab agcode_98 \tab agcode_99 \cr
-	1001  \tab		groupping1_groupA \tab	98	\tab	-1 \tab -1 \cr			
-	1002	  \tab		groupping1_groupB \tab	98	\tab	-1 \tab -1 \cr
-	1003	  \tab		groupping2_groupA \tab	99  \tab	-1 \tab -1 \cr
-	1004	 \tab		groupping2_groupB \tab	99 \tab	-1 \tab -1 \cr
+	1001  \tab		grouping1_groupA \tab	98	\tab	-1 \tab -1 \cr			
+	1002	  \tab		grouping1_groupB \tab	98	\tab	-1 \tab -1 \cr
+	1003	  \tab		grouping2_groupA \tab	99  \tab	-1 \tab -1 \cr
+	1004	 \tab		grouping2_groupB \tab	99 \tab	-1 \tab -1 \cr
 	276	\tab	Germany	\tab		4		\tab	1001	 \tab 1003 \cr
 	250	\tab	France	\tab		4	\tab		1001	\tab 1004 \cr
 	258	\tab	Netherlands	 \tab	4	\tab	1002		\tab	1003 \cr
 	380	\tab	Italy		\tab		4	\tab		1002	 \tab 1004 \cr
 	1005 \tab		all \tab 0 \tab	-1 \tab -1 
 }
-The \dQuote{country_code} of the groups is user-specific, but it must be unique within the file. Values of \dQuote{country_code} for countries must match those in the prediction object. To run the aggregation for the four groups above we set \code{regions=1001:1004}. Having \dQuote{location_type} being 98 and 99, it is expected the file to have columns  \dQuote{agcode_98} and \dQuote{agcode_99} containing assignements to each of the two grouppings. Values in this columns corresponding to groups are not used and thus can have any value. For aggregating over all four countries, set \code{regions=1005} which has \dQuote{location_type} equal 0 and thus, it is aggregated over all entries with \dQuote{location_type} equals 4.
+The \dQuote{country_code} of the groups is user-specific, but it must be unique within the file. Values of \dQuote{country_code} for countries must match those in the prediction object. To run the aggregation for the four groups above we set \code{regions=1001:1004}. Having \dQuote{location_type} being 98 and 99, it is expected the file to have columns  \dQuote{agcode_98} and \dQuote{agcode_99} containing assignements to each of the two groupings. Values in this columns corresponding to groups are not used and thus can have any value. For aggregating over all four countries, set \code{regions=1005} which has \dQuote{location_type} equal 0 and thus, it is aggregated over all entries with \dQuote{location_type} equals 4.
 
 
 There are two methods available for generating aggregations of population projection:

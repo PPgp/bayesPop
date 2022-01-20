@@ -5,17 +5,15 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                                locations = NULL, default.country = NULL, annual = FALSE,
                         inputs = list(
                             popM = NULL, popF = NULL,
-                            mxM = NULL, mxF = NULL,
-                            srb = NULL,
-                            pasfr = NULL,
-                            patterns = NULL,
+                            mxM = NULL, mxF = NULL, srb = NULL,
+                            pasfr = NULL, patterns = NULL,
                             migM = NULL, migF = NULL,	
                             migMt = NULL, migFt = NULL, mig = NULL,
-                            e0F.file = NULL, e0M.file = NULL, 
-                            tfr.file = NULL, 
+                            e0F.file = NULL, e0M.file = NULL, tfr.file = NULL, 
                             e0F.sim.dir = NULL, e0M.sim.dir = NULL, 
                             tfr.sim.dir = NULL,
-                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL	
+                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
+                            GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
@@ -42,7 +40,8 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
     }
     inp <- load.subnat.inputs(inputs, start.year, present.year, end.year, wpp.year, 
                               default.country = default.country,
-                              fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, annual = annual, verbose = verbose)
+                              fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, 
+                              lc.for.all = lc.for.all, annual = annual, verbose = verbose)
 
     reg.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
     
@@ -183,7 +182,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         if(is.null(inputs[[item]]))
             stop("Item ", item, " is missing in the 'inputs' argument.")
     }
-    pop.ini.matrix <- pop.ini <- list(M = NULL, F = NULL)
+    pop.ini.matrix <- pop.ini <- GQ <- list(M = NULL, F = NULL)
     # Get initial population counts
     for(sex in c('M', 'F')) {
         dataset.name <- paste0('pop', sex)
@@ -200,9 +199,22 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                 as.character(as.integer(num.columns)))
         pop.ini[[sex]] <- POP0[ ,c('reg_code', 'age', present.year)]
         colnames(pop.ini[[sex]])[1] <- 'country_code'
+        # Group quarters
+        dataset.name <- paste0('GQpop', sex)
+        if(!is.null(inputs[[dataset.name]])) {
+            GQ[[sex]] <- read.pop.file(inputs[[dataset.name]])
+            colnames(GQ[[sex]]) <- tolower(colnames(GQ[[sex]]))
+            if(! 'age' %in% colnames(GQ[[sex]]) || ! 'reg_code' %in% colnames(GQ[[sex]]) || ! 'gq' %in% colnames(GQ[[sex]]))
+                stop('Columns "age", "reg_code" and "gq" must be present in the GQpop datasets.')
+            GQ[[sex]] <- GQ[[sex]][, c("reg_code", "age", "gq")]
+            colnames(GQ[[sex]])[1] <- 'country_code'
+        }
     }
     POPm0 <- pop.ini[['M']]
     POPf0 <- pop.ini[['F']]
+    GQm <- GQ[['M']]
+    GQf <- GQ[['F']]
+    
     region.codes <- unique(POPm0$country_code)
     # Get death rates
     MXm.pred <- MXf.pred <- NULL
@@ -384,7 +396,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     TFRpred <- .get.tfr.data.subnat(inputs, wpp.year, default.country, region.codes, verbose=verbose)
     inp <- new.env()
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
-                 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf',
+                 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 'lc.for.all', 'observed'))
         assign(par, get(par), envir=inp)
@@ -393,7 +405,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     do.call("data", list("pasfr_global_norms", envir = env))
     inp$PASFRnorms <- env$pasfr.glob.norms
     inp$lc.for.hiv <- TRUE
-    #stop("")
+    inp$average.annual <- inputs$average.annual
     return(inp)
 }
 
@@ -433,7 +445,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            template = migtempl), check.names = FALSE)
       next
     }
-    # If we get here, migration is not given. Thus, get it from the national values and gien shares
+    # If we get here, migration is not given. Thus, get it from the national values and given shares
     if(annual) stop("Migration must be given.")
     mignat <- load.wpp.dataset.for.country(default.country, 'migration', wpp.year) # TODO: Allow input of annual national values 
     migdistr <- migration.totals2age(mignat, annual = annual)

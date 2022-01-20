@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- FALSE
+CRAN <- TRUE
 
 test.expressions()
 
@@ -23,6 +23,6 @@ if(!CRAN) {
 	test.life.table(parallel = TRUE)
 	test.adjustment()
 	test.subnat()
-	test.subnat.with.subnat.tfr()
 	options(warn=warn$warn)
+	test.subnat.with.subnat.tfr.e0()
 }

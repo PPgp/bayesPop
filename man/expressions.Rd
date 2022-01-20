@@ -25,14 +25,18 @@ A \bold{basic component} is a character string constituted of four parts, two of
 	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
 \item Country part. One of the following:
 	\itemize{
-  		\item Numerical country code (as used in {\code{\link[wpp2012]{UNlocations}}}, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_numeric}), 
-  		\item two- or three-character ISO 3166 code, see \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{http://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}, 
+  		\item Numerical country code (as used in {\code{\link[wpp2012]{UNlocations}}}, see \url{https://en.wikipedia.org/wiki/ISO_3166-1_numeric}), 
+  		\item two- or three-character ISO 3166 code, see \url{https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2}, \url{https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3}, 
   		\item characters \dQuote{XXX} which serves as a wildcard for a country code.
   	}
 \item Sex part (optional): The country part can be followed by either \dQuote{_F} (for female) or \dQuote{_M} (for male).
-\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. Age index one corresponds to age 0-4, index two corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} allow an index -1 which corresponds to age 0-1 and an index 0 which corresponds to age 1-4. Use the pre-defined functions \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
+\item Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (\dQuote{[} and \dQuote{]}) or curly braces (\dQuote{\{} and \dQuote{\}}). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. 
+    \itemize{
+  		\item For 5x5 predictions, the age index 1 corresponds to age 0-4, index 2 corresponds to age 5-9 etc. Indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} allow an index -1 which corresponds to age 0-1 and an index 0 which corresponds to age 1-4. Use the pre-defined functions \code{age.index01(\dots)} and \code{age.index05(\dots)} (see below) to define the right indices.
+  		\item For 1x1 predictions, the age index starts with 0 for all indicators and matches exactly the age. I.e., indices 0,1,2,\dots correspond to ages 0,1,2,\dots.
+  	}
 }
-Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10). Or, there is no point in summing the life table based indicators (M, Q, E, S) over sexes, i.e. using it without the sex part, or over multiple age groups, i.e. using brackets.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10 in 5x5, or 11 to 55 in 1x1). Or, there is no point in summing the life table based indicators (M, Q, E, S) over sexes, i.e. using it without the sex part, or over multiple age groups, i.e. using brackets.
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 

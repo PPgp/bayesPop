@@ -17,7 +17,7 @@ age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5),
     depratio = wpp.year == 2015, verbose = TRUE)
     
 migration.totals2age(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-    schedule = NULL, scale = 1, \dots)
+    schedule = NULL, scale = 1, id.col = "country_code", \dots)
     
 rcastro.schedule(annual = FALSE)
 }
@@ -34,12 +34,13 @@ rcastro.schedule(annual = FALSE)
   \item{file.prefix}{If \code{write.to.disk} is \code{TRUE} results are written into two text files with this prefix, a letter \dQuote{M} and \dQuote{F} determining the sex, and concluded by the \dQuote{.txt} suffix. By default \dQuote{migrationM.txt} and \dQuote{migrationF.txt}.}
   \item{depratio}{If it is \code{TRUE} it will use an internal dataset on migration dependency ratios to adjust the first three age groups. It can also be a name of a binary file containing such dataset.}
   \item{verbose}{Logical controlling the amount of output messages.}
-  \item{df}{data.frame, marix or data.table containing total migration counts. Columns correspond to time, rows correspond to locations. Coulumn \dQuote{country_code} contains identifiers of the locations. Names of the time columns should be either single years if \code{annual} is \code{TRUE}, e.g. \dQuote{2018}, \dQuote{2019} etc.,  or five year time periods if \code{annual} is \code{FALSE}, e.g. \dQuote{2010-2015}, \dQuote{2015-2020} etc.}
+  \item{df}{data.frame, marix or data.table containing total migration counts. Columns correspond to time, rows correspond to locations. Column \dQuote{country_code} (or column identified by \code{id.col}) contains identifiers of the locations. Names of the time columns should be either single years if \code{annual} is \code{TRUE}, e.g. \dQuote{2018}, \dQuote{2019} etc.,  or five year time periods if \code{annual} is \code{FALSE}, e.g. \dQuote{2010-2015}, \dQuote{2015-2020} etc.}
   \item{ages}{Labels of age groups into which the total migration is to be disaggregated. If it is missing, default age groups are determined depending on the argument \code{annual}.}
   \item{annual}{Logical determining if the age groups are 5-year age groups (\code{FALSE}) or 1-year ages (\code{TRUE}) on which the choice of the default schedule is dependent, if \code{schedule} is missing. It also determines the expected syntax of the names of time columns in \code{df}.}
   \item{time.periods}{Character vector determining which columns should be considered in the \code{df} dataset. It should be a subset of column names in \code{df}. By default, all time columns in \code{df} are considered.}
   \item{schedule}{Numeric vector used for distributing total migration across ages. It should have the same length as \code{ages}. By default a Rogers-Castro schedule is used, using the function \code{rcastro.schedule}.}
   \item{scale}{The migration schedule is multiplied by this number. It can be used for example, if total migration needs to be distributed between sexes.}
+  \item{id.col}{Name of the unique identifier of the locations.}
   \item{\dots}{Further arguments passed to the underlying functions.}
 }
 \details{
