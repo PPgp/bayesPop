@@ -57,13 +57,13 @@ void printArray(double *a, int count) {
  */
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
-                     int *MIGtype, int *MIGisrate, double *srm, double *srf, double *asfr, double *srb, 
+                     int *MIGtype, int *MIGratecode, double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
                      double *popm, double *popf, double *totp, 
                      double *btagem, double *btagef, double *deathsm, double *deathsf,
                      double *finmigm, double *finmigf
-) {
+    ) {
      
     double b, bm, bf, srb_ratio;
     int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
@@ -81,10 +81,16 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
+    double trmigstart, trmigmid, trmigend, tmigstart, tmigmid, tmigend, tpop;
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
     const double minpop = 0.0005; /* minimum accepted population */
+    /* Rogers-Castro schedule in case migration is given as total rate */
+    const double migrc_schedule[27] = {0.06133, 0.02667, 0.02067, 0.10467, 0.188, 
+                                        0.18067, 0.13733, 0.09533, 0.064, 0.04267, 
+                                        0.028, 0.01867, 0.012, 0.008, 0.00533, 
+                                        0.00333, 0.00333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     nrow = *migr;
     ncol = *migc;
@@ -135,7 +141,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
         jve = j-1;
-        if(debug==3) Rprintf("\nj = %i, jve = %i", j, jve);
+        if(debug==1) Rprintf("\nj = %i, jve = %i", j, jve);
         t = j*adim;
         t1 = (j-1)*adim; /* used to access the previous time period */
         t_offset = jve*adim; /* although the same as t1, using a different name for clarity, see comment below */
@@ -146,14 +152,32 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
          */
         
         /* If migration is a rate, compute the migration counts */
-        if(*MIGisrate > 0){
-            for(i=0; i < adim; ++i) {
-                migstartm[i][jve] = popm[i + t1]*migstartm[i][jve];
-                migstartf[i][jve] = popf[i + t1]*migstartf[i][jve];
-                migmidm[i][jve] = popm[i + t1]*migmidm[i][jve];
-                migmidf[i][jve] = popf[i + t1]*migmidf[i][jve];
-                migendm[i][jve] = popm[i + t1]*migendm[i][jve];
-                migendf[i][jve] = popf[i + t1]*migendf[i][jve];
+        if(*MIGratecode > 0){
+            if(*MIGratecode == 3) { /* migration rates are disaggregated totals */
+                trmigstart = 0;
+                trmigmid = 0;
+                trmigend = 0;
+                tpop = 0;
+                for(i=0; i < adim; ++i) { /* first sum together */
+                    trmigstart = trmigstart + migstartm[i][jve] + migstartf[i][jve];
+                    trmigmid = trmigmid + migmidm[i][jve] + migmidf[i][jve];
+                    trmigend = trmigend + migendm[i][jve] + migendf[i][jve];
+                    tpop = tpop + popm[i + t1] + popf[i + t1];
+                }
+                tmigstart = trmigstart*tpop;
+                tmigmid = trmigmid*tpop;
+                tmigend = trmigend*tpop;
+                for(i=0; i < adim; ++i) { /* distribute into ages using Rogers Castro */
+                    migstartm[i][jve] = 0.5*tmigstart*migrc_schedule[i];
+                    migstartf[i][jve] = 0.5*tmigstart*migrc_schedule[i];
+                    migmidm[i][jve] = 0.5*tmigmid*migrc_schedule[i];
+                    migmidf[i][jve] = 0.5*tmigmid*migrc_schedule[i];
+                    migendm[i][jve] = 0.5*tmigend*migrc_schedule[i];
+                    migendf[i][jve] = 0.5*tmigend*migrc_schedule[i];
+                }
+                if(debug>=1){
+                    Rprintf("\ntmigend = %f, tpop = %f, migendm[5] = %f, migendm[10] = %f",  tmigend, tpop, migendm[5][jve], migendm[10][jve]);
+                }
             }
         }
         /* Adjust population by migrants at the start of time interval*/
@@ -223,9 +247,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             }
         }
         
-        for(i=0; i < adim; ++i) {
-            finmigm[i + t_offset] = migstartm[i][jve] + migmidm[i][jve] + migendm[i][jve];
-            finmigf[i + t_offset] = migstartf[i][jve] + migmidf[i][jve] + migendf[i][jve];
+        for(i=0; i < nrow; ++i) {
+            finmigm[i + jve*nrow] = migstartm[i][jve] + migmidm[i][jve] + migendm[i][jve];
+            finmigf[i + jve*nrow] = migstartf[i][jve] + migmidf[i][jve] + migendf[i][jve];
         }
         
         /**************************************************************************/

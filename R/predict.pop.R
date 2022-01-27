@@ -210,7 +210,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) 
 		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, estim.years=inp$estim.years, 
-															mig.is.rate = inp$mig.is.rate, annual = inp$annual)
+															mig.rate.code = inp$mig.rate.code[1], annual = inp$annual)
 		tfr.med <- apply(inpc$TFRpred, 1, median, na.rm = TRUE)[nrow(inpc$TFRpred)]
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
@@ -230,7 +230,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				par <- paste0('mig', sex, 'pred')
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 			}
-			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.is.rate = inp$mig.is.rate,
+			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.rate.code = inp$mig.rate.code[2],
 			                     country.name=UNlocations[country.idx,'name'],
 								 keep.vital.events=keep.vital.events, annual = inp$annual)
 			totp[,itraj] <- popres$totpop
@@ -280,7 +280,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				migpred.hch[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]])
 			}
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred.hch, inpc$MIGtype, 
-			                     mig.is.rate = inp$mig.is.rate,
+			                     mig.rate.code = inp$mig.rate.code[2],
 							    country.name=UNlocations[country.idx,'name'], 
 							    keep.vital.events=keep.vital.events, annual = inp$annual)
 			totp.hch[,variant] <- popres$totpop
@@ -592,8 +592,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	MIGm <- miginp[["migM"]]
 	MIGf <- miginp[["migF"]]
 	
+	if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
+
 	if(!is.null(obs.periods)) {
-		if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a priovous simulation for different country
+		if (!is.null(existing.mig)) { # Migration dataset already exists, e.g. from a previous simulation for different country
 			observed$MIGm <- existing.mig$obsMIGm
 			observed$MIGf <- existing.mig$obsMIGf
 		} else {
@@ -608,6 +610,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	migpr <- .load.mig.traj(inputs, verbose = verbose)
 	migMpred <- migpr$M
 	migFpred <- migpr$F
+	
+	mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1], migpr[["migcode"]]*mig.is.rate[2])
 	
 	# Get life expectancy
 	e0F.wpp.median.loaded <- FALSE
@@ -674,7 +678,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.is.rate', 'observed'))
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -807,6 +811,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     recon.mig <- NULL
     miginp <- list()
     migtempl <- NULL
+    migcode <- 0
     for(sex in c("M", "F")) {
         inpname <- paste0('mig', sex) 
         if(!is.null(inputs[[inpname]])) { # migration given by sex and age
@@ -838,10 +843,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         fname <- paste0(inpname, 't')
         fnametot <- paste0("mig")
         if(!is.null(inputs[[fname]]) || !is.null(inputs[[fnametot]])) { # migration given as totals or totals by sex
-            if(!is.null(inputs[[fname]]))
+            if(!is.null(inputs[[fname]])) {
                 totmig <- data.table(read.pop.file(inputs[[fname]]))
-            else
+                migcode <- 2
+            } else {
                 totmig <- data.table(read.pop.file(inputs[[fnametot]]))
+                migcode <- 3
+            }
             migcols <- intersect(colnames(totmig), periods)
             miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
                                                                  annual = annual, time.periods = migcols, 
@@ -863,6 +871,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         # Projection for a subset of countries, therefore migration will be recontructed later (in get.country.inputs).
         miginp[[inpname]] <- data.frame(migtempl, check.names = FALSE)
     }
+    miginp[["migcode"]] <- migcode
     return(miginp)
 }
 
@@ -1033,6 +1042,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 .load.mig.traj <- function(inputs, verbose = FALSE) {
     migMpred <- migFpred <- NULL
     migtrajcols <- list(LocID = "country_code", Year = "year", Trajectory = "trajectory", Age = "age", Migration = "value")
+    migcode <- 0
     for(sex in c('M', 'F', '')) {
         if(is.null(inputs[[paste0('mig', sex, 'traj')]])) next
         file.name <- inputs[[paste0('mig', sex, 'traj')]]
@@ -1042,9 +1052,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         if(verbose) cat('\nLoading ', file.name)
         
         migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
+        if("Mig" %in% colnames(migpred.raw) && !"Migration" %in% colnames(migpred.raw)) # Both Mig and Migration are OK
+            colnames(migpred.raw)[colnames(migpred.raw) == "Mig"] <- "Migration"
         cols.to.keep <- intersect(names(migtrajcols), colnames(migpred.raw))
         if(length((miss <- setdiff(setdiff(names(migtrajcols), "Age"), cols.to.keep)))>0)
-            stop("Columns ", paste(miss, collapse = ", "), "are missing from ", file.name)
+            stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
         migpred <- migpred.raw[, cols.to.keep]
         colnames(migpred) <- unlist(migtrajcols[cols.to.keep])
         if(sex == '') { # total for both sexes in one file; split it into two objects
@@ -1054,13 +1066,14 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 migpreds <- migpred
                 migpreds$value <- migpreds$value/2
                 assign(var.name, migpreds)
+                migcode <- 3
             }
         } else {
             var.name <- paste0('mig',sex, 'pred')
             assign(var.name, migpred)
         }
     }
-    return(list(M = migMpred, F = migFpred))
+    return(list(M = migMpred, F = migFpred, migcode = migcode))
 }
 
 .get.migration.traj <- function(pred, par, country) {
@@ -1791,7 +1804,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 }
 
 
-StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mig.is.rate = FALSE, country.name=NULL, 
+StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mig.rate.code = 0, country.name=NULL, 
                        keep.vital.events=FALSE, annual = FALSE) {
     change.by.gq <- function(gq, pop, factor = -1){
         pop <- pop + factor * gq
@@ -1822,7 +1835,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
-	            as.integer(mig.is.rate),
+	            as.integer(mig.rate.code),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -1833,7 +1846,6 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 		        deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
 		        finmigm = finmigM, finmigf = finmigF
 		        )
-
 	if(use.gq) {
 	    if(!is.null(inputs$GQm)) res$popm <- change.by.gq(inputs$GQm, res$popm, factor = 1)
 	    if(!is.null(inputs$GQf)) res$popf <- change.by.gq(inputs$GQf, res$popf, factor = 1)
@@ -1853,7 +1865,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmig = res$finmigm, fmig = res$finmigf), vital.events))
 }
 
-compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years, mig.is.rate = FALSE, 
+compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years, mig.rate.code = 0, 
                                annual = FALSE) {
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
@@ -1896,7 +1908,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
-	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), as.integer(mig.is.rate),
+	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), as.integer(mig.rate.code),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],

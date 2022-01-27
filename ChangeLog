@@ -1,3 +1,7 @@
+9.0-1.9001 (01/27/2022)
+-------
+Option of giving migration inputs as rates.
+
 9.0-0/1 (11/28/2021)
 -------
 Support for 1x1 projections (1 year age x 1 year time); still an experimental feature!
