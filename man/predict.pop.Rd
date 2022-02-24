@@ -22,7 +22,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
         GQpopM = NULL, GQpopF = NULL, average.annual = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
-    lc.for.hiv = TRUE, lc.for.all = TRUE,
+    lc.for.hiv = TRUE, lc.for.all = TRUE, mig.is.rate = FALSE,
     my.locations.file = NULL, replace.output = FALSE, 
     verbose = TRUE, \dots)
 }
@@ -62,6 +62,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
   	for projection of mortality rates for countries with HIV epidemics. If \code{FALSE}, the function \code{hiv.mortmod} from the HIV.LifeTables package is used.}
   	\item{lc.for.all}{Logical controlling if the modified Lee-Carter method should be used 
   	for projection of mortality rates for all countries. If \code{FALSE}, the corresponding method is determined by the columns \dQuote{AgeMortProjMethod1} and \dQuote{AgeMortProjMethod2} of the \code{\link{vwBaseYear}} dataset.}
+  	\item{mig.is.rate}{Logical determining if migration data are to be interpreted as net migration rates (\code{TRUE}) or counts (\code{FALSE}, default). It can also be a vector two logicals, where the first element refers to observed data and the second element refers to predictions. A value of \code{c(FALSE, TRUE)} could for example be used if observed data in \code{inputs$migration} are counts, and migration trajectories in \code{inputs$migtraj} are rates.}
   	\item{my.locations.file}{Name of a tab-delimited ascii file with a set of all locations for which a projection is generated. Use this argument if you are projecting for a country/region that is not included in the standard \code{\link[wpp2019]{UNlocations}} dataset. It must have the same structure.}
   	\item{replace.output}{Logical. If \code{TRUE}, everything in the directory \code{output.dir} is deleted prior to the prediction.} 
   	\item{verbose}{Logical controlling the amount of output messages.} 
