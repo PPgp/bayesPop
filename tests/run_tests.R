@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- FALSE
+CRAN <- TRUE
 
 test.expressions()
 
@@ -14,7 +14,8 @@ if(!CRAN) {
 	test.prediction(parallel = TRUE)
 	test.prediction.with.prob.migration()
 	test.prediction.with.prob.migration(parallel = TRUE)
-	test.expressions.with.VE(map=TRUE)
+	#test.expressions.with.VE(map=TRUE)
+	test.expressions.with.VE(map=FALSE)
 	test.expressions.with.VE(map=FALSE, parallel = TRUE)
 	test.regional.aggregation()
 	test.regional.aggregation(parallel = TRUE)
@@ -22,7 +23,6 @@ if(!CRAN) {
 	test.life.table(parallel = TRUE)
 	test.adjustment()
 	test.subnat()
-	test.balance.migration()
-	test.balance.migration(parallel = TRUE)
 	options(warn=warn$warn)
+	test.subnat.with.subnat.tfr.e0()
 }

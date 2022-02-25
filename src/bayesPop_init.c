@@ -6,18 +6,12 @@
 */
 
 /* .C calls */
-extern void get_deaths_from_sr(void *, void *, void *, void *, void *, void *, void *);
-extern void get_sx27(void *, void *);
-extern void LC(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void TotalPopProj(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-extern void PopProjNoMigration(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
+extern void CCM(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, 
+                void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, 
+                void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CMethodDef CEntries[] = {
-    {"get_deaths_from_sr", (DL_FUNC) &get_deaths_from_sr,  7},
-    {"get_sx27",           (DL_FUNC) &get_sx27,            2},
-    {"LC",                 (DL_FUNC) &LC,                 14},
-    {"TotalPopProj",       (DL_FUNC) &TotalPopProj,       19},
-    {"PopProjNoMigration", (DL_FUNC) &PopProjNoMigration, 15},
+    {"CCM",    (DL_FUNC) & CCM ,    29},
     {NULL, NULL, 0}
 };
 

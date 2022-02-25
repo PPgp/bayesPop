@@ -45,11 +45,11 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
 }
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
-  \item{country}{Name or numerical code of a country.}
+  \item{country}{Name or numerical code of a country. It can also be given as ISO-2 or ISO-3 characters.}
   \item{expression}{Expression defining the population measure to be plotted. For syntax see \code{\link{pop.expressions}}. For \code{pop.trajectories.plot}, \code{pop.trajectories.table}, \code{pop.byage.plot} and \code{pop.byage.table} the basic components of the expression must be country-specific. For \code{pop.trajectories.plotAll} and \code{pop.byage.plotAll} the country part should be given as \dQuote{XXX}. In addition, expressions passed into \code{pop.byage.plot} and \code{pop.byage.table} must contain curly braces (i.e. be age specific).}
   \item{pi}{Probability interval. It can be a single number or an array.}
   \item{sex}{One of \dQuote{both}  (default), \dQuote{male} or \dQuote{female}. By default the male and female projections are summed up.}
-  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. Value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. It can also be the string \dQuote{psr} (potential support ratio), in which case a ratio of population of ages 20-64 to 65+ (indices 5:13 to 14:27) is shown.}
+  \item{age}{Either a character string \dQuote{all} (default) or an integer vector of age indices. In a five year simulation, value 1 corresponds to age 0-4, value 2 corresponds to age 5-9 etc. Last age goup \eqn{130+} corresponds to index 27. In an annual simulation, the age indices 1, 2, 3, \dots, 131 corrrespond to ages 0, 1, 2, \dots, \eqn{130+}.}
   \item{sum.over.ages}{Logical.  If \code{TRUE}, the values are summed up over given age groups. Otherwise there is a separate plot for each age group.}
   \item{half.child.variant}{Logical. If TRUE the United Nations \dQuote{+/-0.5 child} variant computed with fertility \eqn{+/- 0.5*} TFR median and the median of life expectancy is shown.
 }
@@ -88,7 +88,7 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir)
 pop.trajectories.plot(pred, country="Ecuador", pi=c(80, 95))
-pop.trajectories.table(pred, country="Ecuador", pi=c(80, 95))
+pop.trajectories.table(pred, country="ECU", pi=c(80, 95))
 # female population of Ecuador in child bearing ages (by time)
 pop.trajectories.plot(pred, expression="PEC_F[4:10]") 
 # Population by age in Netherands for two different years 

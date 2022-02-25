@@ -209,7 +209,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 .aggregate.migtype <- function(pop.pred, countries, countries.index, aggr.id) {
 	idx <- is.element(pop.pred$inputs[["MIGtype"]][,'country_code'], countries)
 	obsN <- round(pop.pred$quantiles[countries.index, "0.5", 1],0) # observed in present year
-	res <- matrix(NA, nrow=1, ncol=3, dimnames=list(NULL, colnames(pop.pred$inputs[["MIGtype"]])[1:3]))
+	res <- matrix(NA, nrow=1, ncol=3, dimnames=list(NULL, colnames(pop.pred$inputs[["MIGtype"]])))
 	res[,1] <- aggr.id
 	res[,2] <- max(pop.pred$inputs[["MIGtype"]][idx,"ProjFirstYear"])
 	f <- factor(rep(pop.pred$inputs[["MIGtype"]][idx,"MigCode"], obsN), levels=c(0,9))
@@ -217,21 +217,18 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	return(res)
 }
 
+split.pop05 <- function(dat) {
+    # split first pop age group into 0-1 & 1-4
+    res <- abind(array(NA, dim(dat)[2:3]), dat, along = 1) # add row for the first age group (0-1)
+    # using the sprague formula for P_0
+    res[1,,] <- apply(dat[1,,, drop = FALSE]*0.3616 + dat[2,,, drop = FALSE]*-0.2768 + dat[3,,, drop = FALSE]*0.1488 + dat[4,,, drop = FALSE]*-0.0336, c(2,3), sum)
+    res[2,,] <- dat[1,,] - res[1,,]
+    return(res)
+}
 
 pop.aggregate.countries <- function(pop.pred, regions, name, 
-                                    use.kannisto = TRUE,
+                                    use.kannisto = TRUE, keep.vital.events = NULL,
                                     verbose=verbose, adjust=FALSE) {
-    
-    split.pop05 <- function(dat) {
-        # split first pop age group
-        popu.spl <- array(NA, c(5, dim(dat)[2:3]))
-        res <- abind(array(NA, dim(dat)[2:3]), dat, along = 1) # add row for the first age group (0-1)
-        for(i in 1:dim(dat)[3])
-            popu.spl[,,i] <- DemoTools::sprague(dat[,,i], Age = seq(0, by = 5, length = nrow(dat)))[1:5,]
-        res[1,,] <- popu.spl[1,,] # age group 0-1
-        res[2,,] <- apply(popu.spl[2:5,,, drop = FALSE], c(2,3), sum) # age group 1-4
-        return(res)
-    }
     
 	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
@@ -241,6 +238,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 						dimnames=c(list(regions), dimnames(pop.pred$quantilesMage)[2:4]))
 	mean_sd <- mean_sdM <- mean_sdF <- array(NA, c(nreg,dim(pop.pred$traj.mean.sd)[2:3]))
 	obs.data <- pop.pred$inputs$pop.matrix
+	# convert to arrays for performance reasons
+	for(sex in names(obs.data)) 
+	    obs.data[[sex]] <- data.matrix(obs.data[[sex]])
+
 	aggr.obs.data <- aggrobs <- abrpop <- abrpopobs <- aggrabrpop <- aggrabrpopobs <- abrd <- aggrabrdeaths <- abrdobs <- aggrabrdeathsobs <- abrpop.hch <- aggrabrpop.hch <- abrd.hch <- aggrabrdeaths.hch <- list(male=NULL, female=NULL)
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.output.directory(pop.pred))
 	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
@@ -250,19 +251,39 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	valid.regions <- rep(FALSE, length(regions))
 	status.for.gui <- paste('out of', nreg, 'regions.')
 	gui.options <- list()
-	has.vital.events <- FALSE
-	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch',
-								'migm', 'migf')
+	no.vital.events <- !is.null(keep.vital.events) && keep.vital.events == FALSE
+	aggr.quantities <- c('totp', 'totpm', 'totpf', 'totp.hch', 'totpm.hch', 'totpf.hch')
 	aggr.quantities.ve <- c('btm', 'btf', 'btm.hch', 'btf.hch', 
-								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch')
+								'deathsm', 'deathsf', 'deathsm.hch', 'deathsf.hch',
+								'migm', 'migf')
 	ind.names <- list(male = list(pop = "totpm", mx = "mxm"), 
 	                 female = list(pop = "totpf", mx = "mxf"))
+	ind.names.hch <- list(male = list(pop = "totpm.hch", mx = "mxm.hch"), 
+	                  female = list(pop = "totpf.hch", mx = "mxf.hch"))
 	# The next two lines need to be there for the R checker to get to know these objects
-	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- migm <- migf <- NULL
-	btm <- btf <- deathsm <- deathsf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
+	totp <- totpm <- totpf <- totp.hch <- totpm.hch <- totpf.hch <- NULL
+	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
+	max.lage <- dim(pop.pred$quantilesMage)[2]
+	max.lage.fert <- fert.age.length(pop.pred$annual)
+	fert.age.start <- fert.age.index(pop.pred$annual)[1]
+	#mort.ages <- lt.ages(pop.pred$annual)
+	if(pop.pred$annual) {
+	    time.step <- 1
+	    mort.ages <- seq(0, length = max.lage)
+	    kannisto.proj.ages <- 100:130
+	    kannisto.est.ages <- 90:99
+	} else { # 5x5
+	    time.step <- 5
+	    mort.ages <- c(0,1,seq(5, length = max.lage-1, by = 5))
+	    kannisto.proj.ages <- seq(100, 130, by = 5)
+	    kannisto.est.ages <- seq(80, 95, by = 5)
+	}
+	fert.age.idx <- seq(fert.age.start, length = max.lage.fert)
+	obs.cols.ve <- colnames(obs.data[["male"]])
+	if(!pop.pred$annual) obs.cols.ve <- paste(as.integer(colnames(obs.data[["male"]]))-5, obs.cols.ve, sep = "-")
+	prev.year <- as.character(pop.pred$proj.years.pop[1]-time.step)
 	
-	if(has.vital.events) requireNamespace("DemoTools")
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
 			# This is to unblock the GUI, if the run is invoked from bayesDem
@@ -280,48 +301,52 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 		countries.index <- which(is.element(pop.pred$countries[,'code'], countries))
 		e <- new.env()
 		if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
-		prev.year <- as.character(pop.pred$proj.years.pop[1]-5)
+		
 		#debug.df <- NULL
 		for(cidx in 1:length(countries.index)) {
-			country.obs.idx <- grep(paste('^', countries[cidx], '_', sep=''), rownames(obs.data[['male']]), value=FALSE)
+			country.obs.idx <- grep(paste0('^', countries[cidx], '_'), rownames(obs.data[['male']]), value=FALSE)
 			traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', countries[cidx], '.rda', sep=''))
 			load(traj.file, envir=e)
 			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env)
-			if(has.vital.events || cidx == 1) {
+			if(!no.vital.events) {
 				ve.file <- file.path(pop.output.directory(pop.pred), 
 									paste('vital_events_country', countries[cidx], '.rda', sep=''))
 				if(file.exists(ve.file)) {
 					if(cidx == 1) {
-						has.vital.events <- TRUE
+					    #requireNamespace("DemoTools")
 						aggr.quantities.all <- c(aggr.quantities, aggr.quantities.ve)
 						observed <- list()
 					}
 					load(ve.file, envir=e)
-					use.obs.cols <- intersect(paste(as.integer(colnames(obs.data[["male"]]))-5, colnames(obs.data[["male"]]), sep = "-"),
-					                      colnames(e$observed$mxm))
-					use.obs.cols.pop <- substr(use.obs.cols, 6, 9)
+					use.obs.cols <- intersect(obs.cols.ve, colnames(e$observed$mxm))
+					use.obs.cols.pop <- if(pop.pred$annual) use.obs.cols else substr(use.obs.cols, 6, 9)
 					
 					# compute abridged population and deaths
 					for(sex in c("male", "female")) {
-					    # Attach the second last observed year of population
-					    popavg <- abind(abind(abind(c(obs.data[[sex]][country.obs.idx, prev.year], rep(0, 6)), # fill in old ages
-					                 NULL, along = 2, new.names = prev.year), NULL, along = 3)[,,rep(1,dim(e[[ind.names[[sex]]$pop]])[3]), drop = FALSE],
-					               e[[ind.names[[sex]]$pop]], along = 2)
+					   # Attach the second last observed year of population
+					    popavg <- array(0, c(max.lage, dim(e[[ind.names[[sex]]$pop]])[2]+1, dim(e[[ind.names[[sex]]$pop]])[3]))
+					    popavg[1:length(country.obs.idx),1,] <- obs.data[[sex]][country.obs.idx, prev.year]
+					    popavg[,-1,] <- e[[ind.names[[sex]]$pop]]
 					    popavg <- (popavg[,-1, ,drop = FALSE] + popavg[,-dim(popavg)[2],, drop = FALSE])/2.
-					    popavg.hch <- abind(abind(abind(c(obs.data[[sex]][country.obs.idx, prev.year], rep(0, 6)), # fill in old ages
-					                                NULL, along = 2, new.names = prev.year), NULL, along = 3)[,,rep(1,2)],
-					                    e[[paste0(ind.names[[sex]]$pop, ".hch")]], along = 2)
+					    popavg.hch <- array(0, c(max.lage, dim(e[[ind.names[[sex]]$pop]])[2]+1, 2))
+					    popavg.hch[1:length(country.obs.idx),1,] <- obs.data[[sex]][country.obs.idx, prev.year]
+					    popavg.hch[,-1,] <- e[[ind.names.hch[[sex]]$pop]]
 					    popavg.hch <- (popavg.hch[,-1, ,drop = FALSE] + popavg.hch[,-dim(popavg)[2],, drop = FALSE])/2.
-					    # projected abridged pop and deaths
-					    abrpop[[sex]] <- split.pop05(popavg)
-					    abrpop.hch[[sex]] <- split.pop05(popavg.hch)
-					    abrd[[sex]] <- abrpop[[sex]] * e[[ind.names[[sex]]$mx]] # should be multiplied by five but that would get canceled out later
-					    abrd.hch[[sex]] <- abrpop.hch[[sex]] * e[[paste0(ind.names[[sex]]$mx, ".hch")]]
-					    # observed abridged pop  and deaths
 					    popavgobs <- (obs.data[[sex]][country.obs.idx, -1 , drop=FALSE] + 
-					                    obs.data[[sex]][country.obs.idx, -dim(obs.data[[sex]])[2] , drop=FALSE])/2.
-					    abrpopobs[[sex]] <- split.pop05(abind(popavgobs[,use.obs.cols.pop, drop = FALSE], NULL, along = 3))
-					    abrdobs[[sex]] <- abrpopobs[[sex]]*e$observed[[ind.names[[sex]]$mx]][,use.obs.cols,,drop=FALSE]
+					                      obs.data[[sex]][country.obs.idx, -dim(obs.data[[sex]])[2] , drop=FALSE])/2.
+					    if(!pop.pred$annual){
+					        # projected abridged pop and deaths
+					        abrpop[[sex]] <- split.pop05(popavg)
+					        abrpop.hch[[sex]] <- split.pop05(popavg.hch)
+					        abrpopobs[[sex]] <- split.pop05(abind(popavgobs[,use.obs.cols.pop, drop = FALSE], NULL, along = 3))
+                        } else {
+                            abrpop[[sex]] <- popavg
+                            abrpop.hch[[sex]] <- popavg.hch
+                            abrpopobs[[sex]] <- abind(popavgobs[,use.obs.cols.pop, drop = FALSE], NULL, along = 3)
+                        }
+					    abrd[[sex]] <- abrpop[[sex]] * e[[ind.names[[sex]]$mx]] # should be multiplied by five but that would get canceled out later
+					    abrd.hch[[sex]] <- abrpop.hch[[sex]] * e[[ind.names.hch[[sex]]$mx]]
+					    abrdobs[[sex]] <- abrpopobs[[sex]]*e$observed[[ind.names[[sex]]$mx]][,use.obs.cols,, drop = FALSE]
 					}
 					# debug.df <- rbind(debug.df, data.frame(
 					#                     country = countries[cidx],
@@ -339,18 +364,20 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					#                   mxM_2020_25 = e$mxm[,"2023",],
 					#                   deathsM_2020_25 = abrd[["male"]][,"2025",])
 					# )
+				} else {
+				    no.vital.events <- TRUE
 				}
 			}
 			#debug.dt <- data.table(debug.df)
 			#debug.dt[]
-			if(cidx == 1) {
+			if(cidx == 1) { # first country to be processed
 				for(par in aggr.quantities.all)
 					assign(par, e[[par]])
 			    for(sex in names(aggrobs)) 
 				    aggrobs[[sex]] <- obs.data[[sex]][country.obs.idx,, drop=FALSE]
-				rownames(aggrobs[["male"]]) <- rownames(aggrobs[["female"]]) <- sub(paste(countries[cidx], '_', sep=''), 
-																paste(id, '_', sep=''), rownames(obs.data[['male']][country.obs.idx,, drop=FALSE]))
-				if(has.vital.events) {
+				rownames(aggrobs[["male"]]) <- rownames(aggrobs[["female"]]) <- sub(paste0(countries[cidx], '_'), 
+																paste0(id, '_'), rownames(obs.data[['male']][country.obs.idx,, drop=FALSE]))
+				if(!no.vital.events) {
 					for(par in aggr.quantities.ve)
 						if(!is.null(e$observed[[par]]))
 							observed[[par]] <- e$observed[[par]]
@@ -364,12 +391,12 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					}
 				}
 				trajectory.indices <- e$trajectory.indices											
-			} else {
-				for(par in aggr.quantities.all)
+			} else { # at least one country was already processed
+				for(par in aggr.quantities.all) 
 					assign(par, get(par) + e[[par]])
 			    for(sex in names(aggrobs)) 
 			        aggrobs[[sex]] <- aggrobs[[sex]] + obs.data[[sex]][country.obs.idx,]
-				if(has.vital.events) {
+				if(!no.vital.events) {
 					for(par in names(observed))
 						observed[[par]] <- observed[[par]] + e$observed[[par]]
 					for(sex in names(aggrabrdeaths)) {
@@ -383,47 +410,52 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 				}
 			}
 		}
-		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, migm, migf, trajectory.indices,
+		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
 			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
-		if(has.vital.events) {
-		    tmp <- abind(aggrobs[["female"]][4:10, prev.year, drop=FALSE], NULL, along=3)
-		    popfwprev <- abind(tmp[,,rep(1,dim(totpf)[3]), drop=FALSE], totpf[4:10,,,drop=FALSE], along=2)
-			# asfert
-			asfert <- 2*(btm + btf)/(popfwprev[,-dim(popfwprev)[2],,drop=FALSE]+
-										popfwprev[,-1,,drop=FALSE])
-			popfwprev.hch <- abind(tmp[,,rep(1,dim(totpf.hch)[3]), drop=FALSE], totpf.hch[4:10,,,drop=FALSE], along=2)
-			asfert.hch <- 2*(btm.hch + btf.hch)/(popfwprev.hch[,-dim(popfwprev.hch)[2],,drop=FALSE]+
-										popfwprev.hch[,-1,,drop=FALSE])
-			# pasfert
-			tfr <- apply(asfert, c(2,3), sum)
-			pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
-			tfr.hch <- apply(asfert.hch, c(2,3), sum)
-			pasfert.hch <- asfert.hch/abind(tfr.hch, NULL, along=0)[rep(1,dim(asfert.hch)[1]),,,drop=FALSE]*100
-			
-			# compute mortality rates from aggregated abridged deaths and population
-			mxm <- aggrabrdeaths[["male"]] / aggrabrpop[["male"]] 
-			mxf <- aggrabrdeaths[["female"]] / aggrabrpop[["female"]]
-			mxm.hch <- aggrabrdeaths.hch[["male"]] / aggrabrpop.hch[["male"]] 
-			mxf.hch <- aggrabrdeaths.hch[["female"]] / aggrabrpop.hch[["female"]]
-			dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- dimnames(mxm.hch)[1:2] <- dimnames(mxf.hch)[1:2] <- list(
-			    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
-
+		if(!no.vital.events) {
+		    popfwprev <- array(0, c(max.lage.fert, dim(totpf)[2]+1, dim(totpf)[3]))
+		    popfwprev[,1,] <- aggrobs[["female"]][fert.age.idx, prev.year]
+		    popfwprev[,-1,] <- totpf[fert.age.idx,,]
+		    # asfert
+		    asfert <- 2*(btm + btf)/(popfwprev[,-dim(popfwprev)[2],,drop=FALSE]+
+		                                 popfwprev[,-1,,drop=FALSE])
+		    popfwprev.hch <- array(0, c(max.lage.fert, dim(totpf)[2]+1, dim(totpf.hch)[3]))
+		    popfwprev.hch[,1,] <- aggrobs[["female"]][fert.age.idx, prev.year]
+		    popfwprev.hch[,-1,] <- totpf.hch[fert.age.idx,,]
+		    asfert.hch <- 2*(btm.hch + btf.hch)/(popfwprev.hch[,-dim(popfwprev.hch)[2],,drop=FALSE]+
+		                                             popfwprev.hch[,-1,,drop=FALSE])
+		    # pasfert
+		    tfr <- apply(asfert, c(2,3), sum)
+		    pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
+		    tfr.hch <- apply(asfert.hch, c(2,3), sum)
+		    pasfert.hch <- asfert.hch/abind(tfr.hch, NULL, along=0)[rep(1,dim(asfert.hch)[1]),,,drop=FALSE]*100
+		    
+		    # compute mortality rates from aggregated abridged deaths and population
+		    mxm <- aggrabrdeaths[["male"]] / aggrabrpop[["male"]] 
+		    mxf <- aggrabrdeaths[["female"]] / aggrabrpop[["female"]]
+		    mxm.hch <- aggrabrdeaths.hch[["male"]] / aggrabrpop.hch[["male"]] 
+		    mxf.hch <- aggrabrdeaths.hch[["female"]] / aggrabrpop.hch[["female"]]
+		    dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- dimnames(mxm.hch)[1:2] <- dimnames(mxf.hch)[1:2] <- list(
+		        mort.ages, dimnames(btm)[[2]])
+		    
 			# apply kannisto for old age groups
 			if(use.kannisto) {
 			    for(itraj in 1:dim(mxm)[3]) {
-			        kan <- do.call("cokannisto", c(list(mxm[1:21,,itraj], mxf[1:21,,itraj])))
+			        kan <- do.call("cokannisto", list(mxm[1:max.lage,,itraj], mxf[1:max.lage,,itraj], 
+			                       est.ages = kannisto.est.ages, proj.ages = kannisto.proj.ages))
 			        mxm[,,itraj] <- kan$male
 			        mxf[,,itraj] <- kan$female
 			    }
 			    for(ivar in 1:dim(mxm.hch)[3]) {
-			        kan.hch <- do.call("cokannisto", c(list(mxm.hch[1:21,,ivar], mxf.hch[1:21,,ivar])))
+			        kan.hch <- do.call("cokannisto", list(mxm.hch[1:max.lage,,ivar], mxf.hch[1:max.lage,,ivar],
+			                                              est.ages = kannisto.est.ages, proj.ages = kannisto.proj.ages))
 			        mxm.hch[,,ivar] <- kan.hch$male
 			        mxf.hch[,,ivar] <- kan.hch$female
 			    }
 			}
 			# asfert, pasfert for observed data
 			observed <- within(observed, {
-			    tmp <- abind(aggrobs[["female"]][4:10, , drop=FALSE], NULL, along=3)
+			    tmp <- abind(aggrobs[["female"]][fert.age.idx, , drop=FALSE], NULL, along=3)
 				if(dim(tmp)[2] > dim(btf)[2]+1) # if dimension of births doesn't match population
 					tmp <- tmp[,-(1:(dim(tmp)[2]-dim(btf)[2]-1)),, drop=FALSE]
 				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
@@ -433,17 +465,16 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 				# mortality
 				mxm <- aggrabrdeathsobs[["male"]] / aggrabrpopobs[["male"]] 
 				mxf <- aggrabrdeathsobs[["female"]] / aggrabrpopobs[["female"]]
-				dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- list(
-				    c(0,1,seq(5, length = dim(mxm)[1]-2, by = 5)), dimnames(btm)[[2]])
+				dimnames(mxm)[1:2] <- dimnames(mxf)[1:2] <- list(mort.ages[1:dim(mxm)[1]], dimnames(btm)[[2]])
 			})
-			save(btm, btf, deathsm, deathsf, mxm, mxf, asfert, pasfert,
+			save(btm, btf, deathsm, deathsf, mxm, mxf, migm, migf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, mxm.hch, mxf.hch,
 				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
 		}
 		#stop("")
 		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
 		mean_sd[id.idx,1,] <- apply(totp, 1, mean, na.rm = TRUE)
-		mean_sd[id.idx,2,] = apply(totp, 1, sd, na.rm = TRUE)
+		mean_sd[id.idx,2,] <- apply(totp, 1, sd, na.rm = TRUE)
 		
 		for (i in 1:dim(totpm)[1]) {
 			if(dim(totpm)[3] == 1) { # 1 trajectory
@@ -476,7 +507,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	aggr.pred <- pop.pred
 	which.reg.index <- function(x, set) return(which(set == x))
 	reg.idx <- sapply(regions[valid.regions], which.reg.index, set=UNlocations[,'country_code']) 
-	aggr.pred$countries=data.frame(code=UNlocations[reg.idx, 'country_code'], name=UNlocations[reg.idx, 'name'])
+	aggr.pred$countries <- data.frame(code=UNlocations[reg.idx, 'country_code'], name=UNlocations[reg.idx, 'name'])
 	aggr.pred$quantiles <- quant
 	aggr.pred$quantilesM <- quantM
 	aggr.pred$quantilesF <- quantF

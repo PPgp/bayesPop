@@ -2,7 +2,7 @@ useDynLib(bayesPop, .registration = TRUE)
 
 # import
 import(
-    bayesTFR, bayesLife, MortCast, parallel, abind, wpp2017, wpp2012, fields, googleVis, rworldmap
+    bayesTFR, bayesLife, MortCast, parallel, abind, wpp2019, wpp2012, fields, googleVis, rworldmap
 )
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
@@ -10,7 +10,6 @@ importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
 importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", 
            "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
-importFrom("truncnorm", "rtruncnorm")
 importFrom("reshape2", "melt")
 importFrom("plyr", "aaply")
 import(data.table, except=c(melt))
@@ -56,10 +55,12 @@ extract.trajectories.le,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
+mac.expression1,
 age.specific.migration,
 project.pasfr,
 project.pasfr.traj,
-get.migration.thresholds
+migration.totals2age,
+rcastro.schedule
 )
 
 # register S3 methods
