@@ -922,10 +922,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
-    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", "LatestAgeMortalityPattern", 
-                                          "SmoothLatestAgeMortalityPattern", "WPPAIDS", "HIVregion"),
+    MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", 
+                                          "SmoothLatestAgeMortalityPattern", "SmoothDFLatestAgeMortalityPattern", "WPPAIDS", "HIVregion"),
                                 char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
-                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights"))
+                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights", "LatestAgeMortalityPattern"))
     if(lc.for.hiv) { # replace HIVmortmod with LC
         for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
             if(col %in% colnames(MXpattern) && "HIVmortmod" %in% MXpattern[[col]]) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
@@ -1738,6 +1738,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables"
     avg.ax <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, 1) == 0
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
+    smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, NULL)
     is.aids.country <- .pattern.value("WPPAIDS", mx.pattern, 0) == 1
     if(is.aids.country) {
     	avg.ax <- FALSE
@@ -1771,7 +1772,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         }
     }
     lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
-                                   ax.index = ax.index, ax.smooth = smooth.ax, nx = year.step)
+                                   ax.index = ax.index, ax.smooth = smooth.ax, 
+                                   ax.smooth.df = smooth.df, nx = year.step)
 
     if(is.aids.country) { # modify ax and bx
         for(sex in c('male', 'female')) {
