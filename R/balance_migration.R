@@ -32,6 +32,7 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	mig.rate.prev <- mig.rate <- NULL
 	fixed.mig.rate <- FALSE
 	adjust.mig <- FALSE
+	world.pop.distr.ini <- NULL
 	if(use.migration.model) {
 		if(is.null(migration.settings$posterior) && is.null(migration.settings[['projected.rates']]))
 			stop('Argument migration.settings must either have an element "posterior" or an element "projected.rates".')
@@ -61,6 +62,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 		              'migration.adjust.to', 'migration.adjustM.to', 'migration.adjustF.to')) 
 		    if(par %in% names(inp) && any(remove.cols %in% colnames(inp[[par]])))
 		        inp[[par]] <- inp[[par]][, -which(colnames(inp[[par]]) %in% remove.cols)]
+		# save inital world pop distribution
+		pop0all <- data.table(inp$POPm0)[country_code %in% country.codes][, 1:3, with = FALSE]
+		colnames(pop0all)[3] <- "pop0"
+		pop0all$pop0 <- pop0all$pop0 + data.table(inp$POPf0)[country_code %in% country.codes][, 3, with = FALSE]
+		pop0all <- pop0all[, .(totpop = sum(pop0)), by = "age"]
+		world.pop.distr.ini <- pop0all$totpop/sum(pop0all$totpop)
+		# save a Roger's Castro curve (taken from China)
+		migRC <- age.specific.migration(wpp.year=inp$wpp.year, countries=156, verbose=FALSE)
+		mig.rogers.castro <- migRC$male[,"2020-2025"]/sum(migRC$male[,"2020-2025"])
 	} 
 	outdir.tmp <- file.path(outdir, '_tmp_')
 	if(file.exists(outdir.tmp) && start.time.index==1 && !reformat.only) unlink(outdir.tmp, recursive=TRUE)
@@ -213,7 +223,8 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	                    "nvariants", "keep.vital.events", "verbose",
 	                    "npred", "country.codes.char", "kantor.pasfr", 
 	                    "rebalance", "use.migration.model", "fixed.mig.rate", "outdir.tmp", 
-	                    "migration.thresholds", "adjust.mig")
+	                    "migration.thresholds", "adjust.mig", 
+	                    "world.pop.distr.ini", "mig.rogers.castro")
 	assign("migration.thresholds", migration.thresholds, envir=.GlobalEnv)
 	work.env <- create.work.env()
 	#mapply(assign, global.objects, mget(global.objects, inherits = TRUE), MoreArgs = list(envir=settings.env))
@@ -250,7 +261,15 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 	    if(time > 1) {
 	        work.env$popM.prev <- popM.prev[,,itraj]
 	        work.env$popF.prev <- popF.prev[,,itraj]
-	    }
+	        if(is.null(dim(work.env$popM.prev))) # one country only; dimension dropped
+	            work.env$popM.prev <- abind(work.env$popM.prev, along=2)
+	        if(is.null(dim(work.env$popF.prev))) 
+	            work.env$popF.prev <- abind(work.env$popF.prev, along=2)
+	        # recompute world pop age distribution
+	        popall <- rowSums(work.env$popM.prev + work.env$popF.prev)
+	        popall <- c(popall[1:20], sum(popall[21:length(popall)]))
+	        work.env$world.pop.distr <- popall/sum(popall)
+	    } else work.env$world.pop.distr <- work.env$world.pop.distr.ini
 	    #})
         #memch2 <- mem_change({
 	    balanced.migration.1traj(time, itraj, work.env = work.mig.env, res.env = work.env)
@@ -354,9 +373,9 @@ do.pop.predict.balance <- function(inp, outdir, nr.traj, ages, pred=NULL, countr
 			cntries.m <- which(apply(res.env$totpm, 2, function(x) any(x < get.zero.constant())))
 			cntries.f <- which(apply(res.env$totpf, 2, function(x) any(x < get.zero.constant())))
 			for(country in unique(c(cntries.m, cntries.f))) {
-				neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
-								which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
-				add.pop.warn(country.codes.char[country], neg.times, 5, res.env)  #'Final population negative for some age groups'
+				#neg.times <- unique(which(apply(res.env$totpm[,country,], 2, function(x) any(x<0))),
+				#				which(apply(res.env$totpf[,country,], 2, function(x) any(x<0))))
+				add.pop.warn(country.codes.char[country], time, 5, res.env)  #'Final population negative for some age groups'
 			}
 		}#})
 		#memch4 <- mem_change({
@@ -580,6 +599,9 @@ balanced.migration.1traj <- function(time, itraj, work.env, res.env) {
     lages <- length(res.env$ages21)
     for(cidx in 1:res.env$ncountries) {
         inpc <- res.env$countries.input[[res.env$country.codes.char[cidx]]]
+        inpc$world.pop.distr <- res.env$world.pop.distr
+        inpc$world.pop.distr.ini <- res.env$world.pop.distr.ini
+        inpc$mig.rogers.castro <- res.env$mig.rogers.castro
         pop.ini <- if(time == 1) list(M = inpc$POPm0, F = inpc$POPf0) else
                           list(M = res.env$popM.prev[,cidx,drop=FALSE],
                                F = res.env$popF.prev[,cidx,drop=FALSE])
@@ -800,20 +822,28 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	k <- 1
 	zero.constant <- get.zero.constant()
 	warns <- NULL
-	popM21 <- popM[1:21]
-	popF21 <- popF[1:21]
+	popM21 <- c(popM[1:20], sum(popM[21:length(popM)]))
+	popF21 <- c(popF[1:20], sum(popF[21:length(popF)]))
 	popMdistr <- popM21/pop
 	popFdistr <- popF21/pop
-	emigrant.rate.bound <- -0.8
+	emigrant.rate.bound <- -0.3
 	country.code.char <- as.character(country.code)
+	# adjustment constant for adjusting the rate by the population distribution
+	popdistr <- (popM21 + popF21)/sum(popM21 + popF21)
+	adj.constant.neg.numer <- sum(inpc$mig.rogers.castro * popdistr)
+	pop0distr <- c(inpc$POPm0 + inpc$POPf0)/sum(c(inpc$POPm0 + inpc$POPf0))
+	adj.constant.neg.denom <- sum(inpc$mig.rogers.castro * pop0distr)
+	adj.constant.neg <- adj.constant.neg.numer/adj.constant.neg.denom
+	adj.constant.pos.numer <- sum(inpc$mig.rogers.castro * inpc$world.pop.distr)
+	adj.constant.pos.denom <- sum(inpc$mig.rogers.castro * inpc$world.pop.distr.ini)
 	while(i <= 1000) {
 		i <- i + 1
 		if(is.null(fixed.rate)) {
 			if(all(pars == 0)) rate <- 0
 			else {
-			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - 0.0019*land.area)/pop else NULL
+			    rlim1 <- if(pop>0 && !is.na(land.area)) -(pop - min(0.0019, inpc$minimum.pop/land.area)*land.area)/pop else NULL
 			    #rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) 44*land.area/pop - 1 else NA)
-			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA)
+			    rlim2a <- c(gcc.upper.threshold(country.code.char)/pop, if(!is.na(land.area)) exp(5.118 + 0.771*log(land.area))/pop - 1 else NA) # maximum net change in country population
 			    rlim <- list(rlim1, 
 			                 if(pop>0 && any(!is.na(rlim2a))) min(rlim2a, na.rm=TRUE) else NULL)
 			    rate <- project.migration.one.country.one.step(pars$mu, pars$phi, pars$sigma, 
@@ -825,7 +855,20 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		} else rate <- fixed.rate
 		if(is.na(rate)) stop('Migration rate is NA for country ', country.code, ', time ', time, ', traj ', itraj, 
 					'.\npop=', paste(pop, collapse=', '), '\nmig rate=', paste(c(as.numeric(inpc$migration.rates), mig.rates[1:time]), collapse=', '))
+		# adjustment of the rate by the population distribution
+		if(is.null(fixed.rate)) {
+		    if(rate < 0) { # adjust using the country pop distr
+		        adj.constant <- adj.constant.neg.numer/adj.constant.neg.denom
+		    } else { # adjust using the world pop distr
+		        adj.constant <- adj.constant.pos.numer/adj.constant.pos.denom
+		    }
+		    #browser()
+		    #print(c(country.code, time, itraj, ":", round(adj.constant,3), round(rate, 3), round(rate * adj.constant,3), 
+		    #        round(rate * pop), round(rate * adj.constant * pop)))
+		    rate <- rate * adj.constant
+		}
 		mig.count <- rate * pop
+		if(rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate)) next # resample if the outmigration would be larger than what is allowed
 		schedMname <- 'M'
 		schedFname <- 'F'
 		if(rate < 0 && !is.null(inpc$migration.age.schedule[['Mnegative']])) {
@@ -834,7 +877,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		msched <- inpc$migration.age.schedule[[schedMname]][,time]
 		fsched <- inpc$migration.age.schedule[[schedFname]][,time]
-		 if(FALSE && is.gcc(country.code)) { # This is switched off for 2300 projections
+		if(is.gcc(country.code)) { # This is switched off for 2300 projections
 			modeloutsched <- inpc$migration.age.schedule[['Mnegative']][,time]
 			insched <- inpc$migration.age.schedule[['M']][,time] # China
 			coefs <- gcc.inrate.coefs()
@@ -843,7 +886,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
 	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		outsched <- outmodsched #* c(popMdistr, popFdistr) # updated based on convo with Hana 16 October 2020
 	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
@@ -870,19 +913,24 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 			 }
 			 #msched[isneg[1:21]] <- msched[isneg[1:21]] * popMdistr[isneg[1:21]] / denom
 			 #fsched[isneg[22:42]] <- fsched[isneg[22:42]] * popFdistr[isneg[22:42]] / denom
-		}
+		 }
 		if(rate < 0 && !is.gcc(country.code)) {
+		#if(rate < 0) { # this is on for GCC countries for the 2300 projections 
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
-				denom2 <- c(msched, fsched)/denom
-				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
-				#stop('')
-				msched <- msched * popMdistr / denom
-				fsched <- fsched * popFdistr / denom
+				if(denom == 0) { # not enough people to migrate out
+				    msched[] <- 0
+				    fsched[] <- 0
+				} else {
+				    denom2 <- c(msched, fsched)/denom
+				    if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000 && is.null(fixed.rate)) next
+				    msched <- msched * popMdistr / denom
+				    fsched <- fsched * popFdistr / denom
+				}
 		}
-		# age-specific migration counts		
+		# age-specific migration counts
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
-		if(!is.null(fixed.rate) || rate == 0) break
+		if(!is.null(fixed.rate) || rate == 0 || mig.count == 0) break
 		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
 		lower.bounds <- c(popM21 + emigrant.rate.bound * popM21, popF21 + emigrant.rate.bound * popF21)
 		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
@@ -902,6 +950,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new <- c(msched, fsched) + shifts/mig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
+				sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
 				migM <- mig.count * msched
@@ -1249,9 +1298,12 @@ migration.age.schedule <- function(country, npred, inputs) {
 	cidxF <- which(inputs$MIGf$country_code==sched.country)
 	col.idx <- which(colnames(inputs$MIGm)==first.year.period):ncol(inputs$MIGm)
 	if(is.gcc(country)) {
+	    cidxM <- which(inputs$MIGm$country_code==156)
+	    cidxF <- which(inputs$MIGf$country_code==156)
 		cidxM.neg <- which(inputs$MIGm$country_code==country)
 		cidxF.neg <- which(inputs$MIGf$country_code==country)
 		first.year.neg <- FALSE
+		first.year <- TRUE
 	}
 	if(!is.null(inputs$migration.year.of.schedule)) { 
 		first.year.period <- inputs$migration.year.of.schedule
