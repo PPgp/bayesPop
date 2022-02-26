@@ -477,25 +477,29 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL,
 }
 
 get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL) {
-	par <- if(sex == 'M') 'MIGm' else 'MIGf'
-	res <- NULL	
-	if(is.observed) {
-		inputs <- pop.pred$inputs$observed
-	} else {
-		obs <- .get.par.from.inputs(par, pop.pred$inputs$observed, country)
-		parpred <- paste0('mig',tolower(sex))
-		if(!is.null(VEenv) && !is.null(VEenv[[parpred]]))
-			res <- VEenv[[parpred]]
-		else inputs <- pop.pred$inputs
-	}
-	if(is.null(res)) {
-		res <- .get.par.from.inputs(par, inputs, country)
-		if(!is.observed) { #add present year 
-			res <- cbind(obs[,ncol(obs)], res)
-			colnames(res) <- pop.pred$proj.years
-		}
-		res <- abind(res, along=3)
-	}
+    par1 <- paste0('mig',tolower(sex))
+    par2 <- paste0(tolower(sex), 'mig')
+    res <- NULL	
+    if(!is.null(VEenv)) {
+        for(par in c(par1, par2)) {
+            if(!is.null(VEenv[[par]])) {
+                res <- VEenv[[par]]
+                break
+            }
+        }
+    }
+    if(is.null(res)) {
+        par3 <- paste0('MIG',tolower(sex))
+        inputs <- if(is.observed) pop.pred$inputs$observed else pop.pred$inputs
+        res <- .get.par.from.inputs(par3, inputs, country)
+        if(!is.observed) {
+            #add present year 
+            obs <- .get.par.from.inputs(par3, pop.pred$inputs$observed, country)
+            res <- cbind(obs[,ncol(obs)], res)
+            colnames(res) <- pop.pred$proj.years
+        }
+        res <- abind(res, along=3)
+    }
 	return(res)
 }
 
@@ -699,7 +703,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			}
 		}
 	} else { # no life table events
-		if (is.element(event, input.indicators)) { #migration
+		if (is.element(event, input.indicators)) { # migration
  			alltraj <- list(male=NULL, female=NULL, male.hch=NULL, female.hch=NULL)
  			sex.index <- 1:2
 			if(sex=='male') sex.index <- sex.index[1]
@@ -708,14 +712,13 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 				alltraj[[names(alltraj)[is]]] <- do.call(paste0('get.', event), 
 									list(pop.pred, country, sex=c("M","F","M","F")[is], is.observed=is.observed, VEenv=myenv))
 			}
- 		} else {
-			alltraj <- switch(event,
-				births = list(male=myenv$btm, female=myenv$btf, male.hch=myenv$btm.hch, female.hch=myenv$btf.hch),
-				deaths = list(male=myenv$deathsm, female=myenv$deathsf, male.hch=myenv$deathsm.hch, female.hch=myenv$deathsf.hch),
-				fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
-				pasfr = list(female=myenv$pasfert, female.hch=myenv$pasfert.hch)
-				)
-		}
+		} else
+		    alltraj <- switch(event,
+		                      births = list(male=myenv$btm, female=myenv$btf, male.hch=myenv$btm.hch, female.hch=myenv$btf.hch),
+		                      deaths = list(male=myenv$deathsm, female=myenv$deathsf, male.hch=myenv$deathsm.hch, female.hch=myenv$deathsf.hch),
+		                      fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
+		                      pasfr = list(female=myenv$pasfert, female.hch=myenv$pasfert.hch)
+		                )
 	}
 	has.hch <- !is.observed && (!is.null(alltraj$male.hch) || !is.null(alltraj$female.hch) || !is.null(alltraj$both.hch))
 	max.age <- NULL

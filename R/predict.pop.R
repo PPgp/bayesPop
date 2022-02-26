@@ -246,8 +246,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			        deathsf[1:dim(observed$deathsf)[1],1,itraj] <- observed$deathsf[,dim(observed$deathsf)[2],]
 			        asfert[1:dim(observed$asfert)[1],1,itraj] <- observed$asfert[,dim(observed$asfert)[2],]
 			        pasfert[1:dim(pasfr)[1],1,itraj] <- inpc$observed$PASFR[,dim(inpc$observed$PASFR)[2]]
-			        migm[1:dim(inpc$observed$MIGm)[1],1,migtrajm] <- observed$mmig[, dim(observed$mmig)[2],] # inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
-			        migf[1:dim(inpc$observed$MIGf)[1],1,migtrajf] <- observed$fmig[, dim(observed$fmig)[2],] # inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
+			        migm[1:dim(inpc$observed$MIGm)[1],1,migtrajm] <- observed$migm[, dim(observed$migm)[2],] # inpc$observed$MIGm[,dim(inpc$observed$MIGm)[2]]
+			        migf[1:dim(inpc$observed$MIGf)[1],1,migtrajf] <- observed$migf[, dim(observed$migf)[2],] # inpc$observed$MIGf[,dim(inpc$observed$MIGf)[2]]
 			    }
 				btm[,2:npredplus1,itraj] <- popres$mbt
 				btf[,2:npredplus1,itraj] <- popres$fbt
@@ -1933,7 +1933,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 
 	res <- list(btm=births[[1]], btf=births[[2]], 
 				deathsm=deaths[[1]], deathsf=deaths[[2]], asfert=asfr, pasfert=pasfr, 
-				mxm=mx[[1]], mxf=mx[[2]], mmig = mig.data[[1]], fmig = mig.data[[2]])
+				mxm=mx[[1]], mxf=mx[[2]], migm = mig.data[[1]], migf = mig.data[[2]])
 	for(par in names(res))
 		res[[par]] <- abind(res[[par]], NULL, along=3) # add trajectory dimension
 	return(res)
