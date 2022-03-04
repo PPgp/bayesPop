@@ -1736,9 +1736,11 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables"
-    avg.ax <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, 1) == 0
+    lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL)))
+    avg.ax <- length(lpat) == 1  && lpat == 0
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
-    smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, NULL)
+    smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, 0)
+    if(smooth.df == 0) smooth.df <- NULL
     is.aids.country <- .pattern.value("WPPAIDS", mx.pattern, 0) == 1
     if(is.aids.country) {
     	avg.ax <- FALSE
@@ -1746,9 +1748,18 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.idx <- if(!has.nas.in.old.ages) which(years < 1985) else 1:length(years)
     	aids.npred <- min((2100-(as.integer(years[ne])+year.step))/year.step, npred)
     }
-    if(!avg.ax && !is.null(lpat <- .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL))) {
+    if(!avg.ax && !is.null(lpat)) {
         # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
-        ax.latest.periods <- lpat 
+        ax.latest.periods <- sort(lpat) # negatives should go first 
+        if(length(ax.latest.periods) > 2 || 
+           (length(ax.latest.periods) == 2 && (ax.latest.periods[1] >= 0 || 
+                                               ax.latest.periods[2] < 0))){
+           warning("Illegal value for LatestAgeMortalityPattern:", 
+                   paste(ax.latest.periods, collapse = ", "), 
+                   "It should have at most 2 elements, one negative and one positive. Truncated to one value.", 
+                    immediate. = TRUE)
+               ax.latest.periods <- ax.latest.periods[1]
+           }
     }
     mlt.bx <- NULL
     if(model.bx) {
@@ -1758,13 +1769,14 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	if (!bx.pattern %in% rownames(bx.env$MLTbx)) bx.pattern <- "UN_General"
     	mlt.bx <- as.numeric(bx.env$MLTbx[bx.pattern,])
     }
-    #this.ns <- if(any(is.na(result$male$mx[,ns:ne]))) 
-    #    ns + sum(apply(result$male$mx[,ns:ne], 2, function(z) all(is.na(z))))
-    #else ns
+
     length.mx <- length(ns:ne)
-    if(ax.latest.periods < 0) { # remove ax.latest.periods from the end
-        ax.index <- (1:length.mx)[-(max(length.mx+ax.latest.periods+1, 2):length.mx)] # at least one period should stay in
-    } else { # take the ax.latest.periods latest time periods
+    if(ax.latest.periods[1] < 0) { # remove ax.latest.periods from the end
+        ax.index <- (1:length.mx)[-(max(length.mx+ax.latest.periods[1]+1, 2):length.mx)] # at least one period should stay in
+        if(length(ax.latest.periods) > 1 && ax.latest.periods[2] > 0)
+             # take the latest time points from the already modified ax.index
+            ax.index <- max(length(ax.index) - ax.latest.periods[2] + 1, 1):length(ax.index)
+    } else { # take the ax.latest.periods latest time periods. If we get here, ax.latest.periods has just one element
         if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx
         else {
             ax.ns <- max(length.mx - ax.latest.periods+1, 1)
@@ -1797,10 +1809,8 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
     }
     # merge results
-    #sex.code <- list(male = 1, female = 2)
     for(sex in c('male', 'female')) {
         lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
-        #lc.est[[sex]]$sex <- sex.code[[sex]]
     }
 	return(lc.est)
 }

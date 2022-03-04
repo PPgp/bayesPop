@@ -25,4 +25,5 @@ if(!CRAN) {
 	test.subnat()
 	options(warn=warn$warn)
 	test.subnat.with.subnat.tfr.e0()
+	test.prediction.with.patterns()
 }

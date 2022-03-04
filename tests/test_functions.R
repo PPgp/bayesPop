@@ -402,7 +402,41 @@ test.subnat.with.subnat.tfr.e0 <- function() {
   unlink(sim.dir, recursive = TRUE)
   unlink(tfr.reg.dir, recursive = TRUE)
   unlink(e0.reg.dir, recursive = TRUE)
+  test.ok(test.name)
 }
 
+test.prediction.with.patterns <- function() {
+    test.name <- paste('Running prediction with different patterns')
+    start.test(test.name)
+    data("vwBaseYear2019")
+    patterns <- vwBaseYear2019
+    cntries <- c(528,218,450)
+    patterns <- subset(patterns, country_code %in% cntries)
+    patterns$AgeMortProjMethod1[] <- "LC"
+    patterns$AgeMortProjMethod2[] <- ""
+    patterns$SmoothDFLatestAgeMortalityPattern <- c(4, 0, 19)
+    patterns$SmoothLatestAgeMortalityPattern[] <- 1
+    patterns$LatestAgeMortalityPattern <- c("c(-2, 3)", -2, "c(1, 1)") # the last one should give a warning
+    pattern.file <- tempfile()
+    write.table(patterns, file = pattern.file, sep = "\t", row.names = FALSE)
+    set.seed(1)
+    sim.dir <- tempfile()	
+    pred <- pop.predict(countries = cntries, 
+                        nr.traj = 3, verbose=TRUE, output.dir=sim.dir,
+                        inputs = list(patterns = pattern.file),
+                        keep.vital.events = TRUE
+                        )
+    # there isn't really a way to test that the patterns were used, 
+    # apart from exploring the resulting mx, e.g.
+    # pop.byage.plot(pred, expression = "log(M218_M{age.index01(27)})", year = 2023)
+    # pop.byage.plot(pred, expression = "log(M218_M{age.index01(27)})", add = TRUE)
+    s <- summary(pred)
+    stopifnot(s$nr.traj == 3)
+    stopifnot(s$nr.countries == 3)
+    stopifnot(length(s$projection.years) == 16)
+    unlink(sim.dir, recursive = TRUE)
+    unlink(pattern.file)
+    test.ok(test.name)
+}    
 
 #TODO: test project.pasfr function
