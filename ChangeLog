@@ -1,6 +1,9 @@
-9.0-1.9001 (01/27/2022)
+9.0-1.9001 (02/25/2022)
 -------
 Option of giving migration inputs as rates.
+
+Fixed bug related to extracting observed migration which did not work for aggregations 
+(thanks to Crystal Yu).
 
 9.0-0/1 (11/28/2021)
 -------
