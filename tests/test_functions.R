@@ -412,7 +412,8 @@ test.prediction.with.patterns <- function() {
     patterns <- vwBaseYear2019
     cntries <- c(528,218,450)
     patterns <- subset(patterns, country_code %in% cntries)
-    patterns$AgeMortProjMethod1[] <- "LC"
+    #patterns$AgeMortProjMethod1[] <- "LC"
+    patterns$AgeMortProjMethod1[] <- "modPMD"
     patterns$AgeMortProjMethod2[] <- ""
     patterns$SmoothDFLatestAgeMortalityPattern <- c(4, 0, 19)
     patterns$SmoothLatestAgeMortalityPattern[] <- 1
@@ -424,7 +425,7 @@ test.prediction.with.patterns <- function() {
     pred <- pop.predict(countries = cntries, 
                         nr.traj = 3, verbose=TRUE, output.dir=sim.dir,
                         inputs = list(patterns = pattern.file),
-                        keep.vital.events = TRUE
+                        keep.vital.events = TRUE, lc.for.all = FALSE, replace.output = TRUE
                         )
     # there isn't really a way to test that the patterns were used, 
     # apart from exploring the resulting mx, e.g.

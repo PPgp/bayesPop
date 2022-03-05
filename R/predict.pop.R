@@ -1597,6 +1597,20 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
             nx = if(annual) 1 else 5
         )
     }
+    if("modPMD" %in% c(meth1, meth2)) {
+        adj.code <- .pattern.value("AgeMortProjAdjSR", pattern, 0)
+        args[["modPMD"]] <- list(
+            mxm0 = mxKan$male$mx.orig[,mxKan$mx.index, drop = FALSE],
+            mxf0 = mxKan$female$mx.orig[,mxKan$mx.index, drop = FALSE],
+            interp.rho = TRUE, keep.lt = TRUE,
+            sexratio.adjust = adj.code == 1,
+            adjust.sr.if.needed = adj.code == 3,
+            use.modpmd = TRUE,
+            ax.index = mxKan$ax.index, ax.smooth = mxKan$ax.smooth,
+            ax.smooth.df = mxKan$ax.smooth.df,
+            nx = if(annual) 1 else 5
+        )
+    }
     if("LC" %in% c(meth1, meth2)) {
         args[["LC"]] <- list(lc.pars = mxKan, keep.lt = TRUE, constrain.all.ages = TRUE)
     }
@@ -1632,13 +1646,14 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
     if(args$meth2 == "") { # apply a single method 
         res <- switch(args$meth1, 
             LC = do.call("mortcast", c(list(eopm, eopf), args[["LC"]])),
+            modPMD = do.call("copmd", c(list(eopm, eopf), args[["modPMD"]])),
             PMD = do.call("copmd", c(list(eopm, eopf), args[["PMD"]])),
             MLT = do.call("mltj", c(list(eopm, eopf), args[["MLT"]])),
             HIVmortmod = do.call(".hiv.mortality", c(list(eopm, eopf), args[["HIVmortmod"]])),
             LogQuad = do.call("logquadj", c(list(eopm, eopf), args[["LQ"]]))
             )
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = min.age.groups,
-                                                    proj.ages = kann.proj.ages, est.ages = kann.est.ages)
+                                                    list(proj.ages = kann.proj.ages, est.ages = kann.est.ages))
     } else { # combination of two methods
         res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
                               meth2 = tolower(args$meth2), 
@@ -1691,9 +1706,11 @@ survival.fromLT <- function (npred, mxKan, annual = FALSE, observed = FALSE,
 
 runKannisto <- function(inputs, start.year, lc.for.all = FALSE, ...) {
 	# extend mx, get LC ax,bx,k1
+    meths <- c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, "LC"),
+               .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE))
 	KannistoAxBx.joint(inputs$MXm, inputs$MXf, start.year=start.year, mx.pattern=inputs$MXpattern, 
-	                   compute.AxBx = lc.for.all || any(c(.pattern.value("AgeMortProjMethod1", inputs$MXpattern, "LC"),
-	                                        .pattern.value("AgeMortProjMethod2", inputs$MXpattern, "", na.means.missing = TRUE)) == "LC"), 
+	                   compute.AxBx = lc.for.all || any(meths %in% c("LC", "modPMD")), 
+	                   estimate.lc = lc.for.all || any(meths == "LC"),
 	                   ...)
 }
 
@@ -1704,7 +1721,7 @@ runKannisto.noLC <- function(inputs, ...) {
 
 
 KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=NULL, ax.latest.periods=99, npred=19, 
-								joint=TRUE, compute.AxBx=TRUE, annual = FALSE)  {
+								joint=TRUE, compute.AxBx=TRUE, estimate.lc = TRUE, annual = FALSE)  {
 	# Extending mx to age 130 using Kannisto model and mx 80-99, OLS
 	rownames(male.mx) <- rownames(female.mx) <- if(!annual) c(0,1, seq(5, by=5, length=nrow(male.mx)-2)) else 0:(nrow(male.mx)-1)
 	proj.ages <- if(annual) 100:130 else seq(100, 130, by = 5)
@@ -1783,36 +1800,42 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
             ax.index <- ax.ns:length.mx
         }
     }
-    lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
+    if(estimate.lc){
+        lc.est <- lileecarter.estimate(result$male$mx[,ns:ne], result$female$mx[,ns:ne],
                                    ax.index = ax.index, ax.smooth = smooth.ax, 
                                    ax.smooth.df = smooth.df, nx = year.step)
 
-    if(is.aids.country) { # modify ax and bx
-        for(sex in c('male', 'female')) {
-    	    lMxe <- log(result[[sex]]$mx)
-		    axt <- matrix(lc.est[[sex]]$ax, nrow=nmx, ncol=npred)
-			ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
-			ax.end.sm <- smooth.spline(ax.end[1:old.age], df=11)$y
-    		ax.end[2:old.age] <- ax.end.sm[2:old.age] # keep value of the first age group
-			for (i in 1:nmx) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
-				axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(lc.est[[sex]]$ax[i], ax.end[i]), xout=1:aids.npred)$y
-				if(aids.npred < npred)
-					axt[i,(aids.npred+1):npred] <- ax.end[i]	
-			}
-    		lc.est[[sex]]$axt <- axt
+        if(is.aids.country) { # modify ax and bx
+            for(sex in c('male', 'female')) {
+    	        lMxe <- log(result[[sex]]$mx)
+		        axt <- matrix(lc.est[[sex]]$ax, nrow=nmx, ncol=npred)
+			    ax.end <- apply(lMxe[,aids.idx, drop=FALSE], 1, sum, na.rm=TRUE)/length(aids.idx)
+			    ax.end.sm <- smooth.spline(ax.end[1:old.age], df=11)$y
+    		    ax.end[2:old.age] <- ax.end.sm[2:old.age] # keep value of the first age group
+			    for (i in 1:nmx) { # linear interpolation to the average ax ending in 2050; after that the avg ax is used
+				    axt[i,1:aids.npred] <- approx(c(1,aids.npred), c(lc.est[[sex]]$ax[i], ax.end[i]), xout=1:aids.npred)$y
+				    if(aids.npred < npred)
+					    axt[i,(aids.npred+1):npred] <- ax.end[i]	
+			    }
+    		    lc.est[[sex]]$axt <- axt
+            }
         }
+        if(model.bx) {
+            names(mlt.bx) <- names(lc.est$male$bx)
+            lc.est$male$bx <- lc.est$female$bx <- mlt.bx
+            lc.est$bx <- (lc.est$male$bx + lc.est$female$bx)/2
+            lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
+        }
+        # merge results
+        for(sex in c('male', 'female')) {
+            lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
+        }
+        result <- lc.est
+    } else { # no need for estimating LC, but need info about ax (for modPMD)
+        result <- c(result, list(mx.index = ns:ne, ax.index = ax.index, ax.smooth = smooth.ax,
+                                 ax.smooth.df = smooth.df))
     }
-    if(model.bx) {
-        names(mlt.bx) <- names(lc.est$male$bx)
-        lc.est$male$bx <- lc.est$female$bx <- mlt.bx
-        lc.est$bx <- (lc.est$male$bx + lc.est$female$bx)/2
-        lc.est$ultimate.bx <- ultimate.bx(lc.est$bx)
-    }
-    # merge results
-    for(sex in c('male', 'female')) {
-        lc.est[[sex]] <- c(lc.est[[sex]], result[[sex]])
-    }
-	return(lc.est)
+	return(result)
 }
 
 

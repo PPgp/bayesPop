@@ -24,7 +24,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
         ), 
         nr.traj = 1000, keep.vital.events = FALSE, 
         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
-        replace.output = FALSE, verbose = TRUE)
+         mig.is.rate = FALSE, replace.output = FALSE, verbose = TRUE)
 }
 
 \arguments{
