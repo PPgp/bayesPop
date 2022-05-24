@@ -933,7 +933,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     if(! "HIVregion" %in% colnames(MXpattern) && "area_code" %in% colnames(UNlocations)) 
         MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
     
-    PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm)))))
+    PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm))), "ConstantPasfr"))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
 
@@ -1162,7 +1162,9 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	pattern <- inputs$PASFRpattern
 	min.value <- 1e-6
 	pasfr.obs <- inputs$observed$PASFR
-	
+	if(.pattern.value('ConstantPasfr', pattern, 0) == 1)
+	    return(matrix(rep(pasfr.obs[, ncol(pasfr.obs)]/100., length(proj.years)),
+	                  nrow = nrow(pasfr.obs)))
 	years <- as.integer(names(tfr))
 	if(length(years)==0)
 		years <- sort(seq(proj.years[length(proj.years)], length=length(tfr), by=-by))
