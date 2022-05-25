@@ -1663,7 +1663,7 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
     } else { # combination of two methods
         res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
                               meth2 = tolower(args$meth2), 
-                              weights = args$weights,
+                              weights = args$weights, nx = if(annual) 1 else 5,
                               min.age.groups = min.age.groups,
                               meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]],
                               kannisto.args = list(proj.ages = kann.proj.ages, est.ages = kann.est.ages))
