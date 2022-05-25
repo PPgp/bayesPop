@@ -1275,7 +1275,11 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
         return(dat)
     }
     # fill-in ages if not complete
-    if(all(fages %in% rownames(dat))) return(dat)
+    if(all(fages %in% rownames(dat))) {
+        if(!all(rownames(dat) %in% fages)) 
+            warning("PASFR ages ignored: ", paste(setdiff(rownames(dat), fages), collapse = ", "))
+        return(dat[as.character(fages), ])
+    }
     datf <- matrix(0, ncol = ncol(dat), nrow = length(fages), dimnames = list(fages, colnames(dat)))
     datf[rownames(dat), ] <- dat
     return(datf)
