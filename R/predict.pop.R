@@ -1180,7 +1180,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
             tbeyond <- 50/by
 			df <- data.frame(tfr=tfr[(lyears-nrpoints):lyears], time=(lyears-nrpoints):lyears)
 			reg <- lm(tfr~time, df)
-			if(reg$coefficients[2] < -1e-3) {# use only if it has negative slope 
+			if(reg$coefficients[2] < -1e-3 && reg$coefficients[1] > 1.8) {# use only if it has negative slope starting above 1.8
 				start.phase3 <- min(round((1.8-reg$coefficients[1])/reg$coefficients[2],0)+1, lyears + tbeyond)
 			} else {
 				start.phase3 <- lyears + tbeyond
