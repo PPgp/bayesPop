@@ -350,6 +350,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		    nr.traj <- nr.traj
 		    stotp <- stotpf <- NULL
 		})
+		gc()
     } # end of predict.one.country
     
     update.results <- function(cidx, res, bayesPop.prediction) {
