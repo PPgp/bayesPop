@@ -146,8 +146,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 
 	
 	# prediction function
-    predict.one.country <- function(cidx, nr.traj, nr_project) {
+    predict.one.country <- function(cidx, nr.traj, nr_project, do.gc = FALSE) {
 		#unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
+        if(do.gc) gc()
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
 		if(verbose)
@@ -350,7 +351,6 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		    nr.traj <- nr.traj
 		    stotp <- stotpf <- NULL
 		})
-		gc()
     } # end of predict.one.country
     
     update.results <- function(cidx, res, bayesPop.prediction) {
@@ -461,7 +461,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
     if(parallel) {
         cl <- create.pop.cluster(nr.nodes, ...)
         clusterExport(cl, exporting.objects, envir=environment())
-        cntry.res <- clusterApplyLB(cl, 1:ncountries, predict.one.country, nr.traj = nr.traj, nr_project = nr_project)
+        cntry.res <- clusterApplyLB(cl, 1:ncountries, predict.one.country, nr.traj = nr.traj, nr_project = nr_project, do.gc = TRUE)
         stopCluster(cl)
         bayesPop.prediction <- update.results(1:ncountries, cntry.res, bayesPop.prediction)
     } else {
