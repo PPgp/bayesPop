@@ -1662,8 +1662,9 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
         res <- MortCast:::.apply.kannisto.if.needed(res, min.age.groups = min.age.groups,
                                                     list(proj.ages = kann.proj.ages, est.ages = kann.est.ages))
     } else { # combination of two methods
-        res <- mortcast.blend(eopm, eopf, meth1 = tolower(args$meth1),
-                              meth2 = tolower(args$meth2), 
+        meth1 <- if(args$meth1 == "modPMD") "pmd" else tolower(args$meth1)
+        meth2 <- if(args$meth2 == "modPMD") "pmd" else tolower(args$meth2)
+        res <- mortcast.blend(eopm, eopf, meth1 = meth1, meth2 = meth2, 
                               weights = args$weights, nx = if(annual) 1 else 5,
                               min.age.groups = min.age.groups,
                               meth1.args = args[[args$meth1]], meth2.args = args[[args$meth2]],
