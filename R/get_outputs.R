@@ -516,11 +516,10 @@ aggregate.mx <- function(mx, pop, abridged = TRUE) {
         abr.pop[[s]] <- mx[[s]]
         abr.pop[[s]][] <- NA
         apop <- mid.period3d(pop[[s]])
-        if(abridged) {
+        if(abridged) 
             apop <- split.pop05(apop)
-            if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
-                apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
-        } 
+        if(dim(apop)[2] > dim(abr.pop[[s]])[2]) # remove time periods from apop to align with mx
+            apop <- apop[,-(1:(dim(apop)[2] - dim(abr.pop[[s]])[2])),,drop = FALSE]
         itime <- (dim(abr.pop[[s]])[2] - dim(apop)[2] + 1):dim(abr.pop[[s]])[2]
         abr.pop[[s]][,itime,] <- pmax(apop, 1e-4)
         # abridged deaths
