@@ -261,10 +261,11 @@ get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both
 	return(list(data=res, age.idx=age.idx))
 }
 
-.get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE) {
+.get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE, allow.negative.adj = TRUE) {
 	quant <- pop.pred[[paste0('quantiles', what)]]
 	if(!adjust) return(quant)
-	return(adjust.quantiles(quant, what, wpp.year=pop.pred$wpp.year, env=pop.pred$adjust.env))
+	return(adjust.quantiles(quant, what, wpp.year=pop.pred$wpp.year, annual = pop.pred$annual, 
+	                        env=pop.pred$adjust.env, allow.negatives = allow.negative.adj))
 }
 
 .load.traj.file <- function(dir, country, e) {
@@ -281,7 +282,7 @@ pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 }
 
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
- 									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE) {
+ 									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE, allow.negative.adj = TRUE) {
 	
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
 	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust
@@ -290,7 +291,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	if(adjust) {
 		if(is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
-		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env)
+		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env, allow.negatives = allow.negative.adj)
 	}
 	sex <- match.arg(sex)
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
@@ -303,7 +304,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	}
 	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
-		quant <- .get.pop.quantiles(pop.pred, adjust=adjust)
+		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj)
 		hch <- e$totp.hch
 	} else {
 	    if(sex == 'both') {
@@ -313,13 +314,13 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	        if(sex=='male') {
 	            if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
-	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust)[,age.idx,,]}
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
 	        } else { # female
 	            if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
-	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust)[,age.idx,,]}
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
 	        }
 	    }
 	}
@@ -340,7 +341,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 
 get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), 
 												age='all', nr.traj=NULL, proportion=FALSE, typical.trajectory=FALSE,
-												adjust=FALSE) {
+												adjust=FALSE, ...) {
 	# Like get.pop.trajectories() but it doesn't sum up over ages.
 	# Called when creating pop pyramid and pop.byage.*. Doesn't handle potential support ratio.
 	age.idx <- traj.idx <- traj <- quant <- hch <- NULL
@@ -355,11 +356,11 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		} else {
 			if(sex=='male') {
 				traj <- e$totpm[age.idx,,,drop=FALSE] 
-				quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust)[,age.idx,,]
+				quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, ...)[,age.idx,,]
 				hch <- e$totpm.hch[age.idx,,,drop=FALSE]
 			} else {
 				traj <- e$totpf[age.idx,,,drop=FALSE]
-				quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust)[,age.idx,,]
+				quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, ...)[,age.idx,,]
 				hch <- e$totpf.hch[age.idx,,,drop=FALSE]
 			}
 			if(proportion) {
@@ -1118,7 +1119,7 @@ get.pop.exba <- function(expression, pop.pred, observed=FALSE, ...) {
 }
 
 get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=NULL, typical.trajectory=FALSE, 
-													adj.to.file=NULL, adj.country=NULL, ...) {
+													adj.to.file=NULL, adj.country=NULL, allow.negative.adj = TRUE, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='...')))
 	odim <- length(dim(result))
 	ntraj <- dim(result)[odim]
@@ -1147,7 +1148,8 @@ get.pop.trajectories.from.expression <- function(expression, pop.pred, nr.traj=N
 	    result[1,] <- observed[length(observed)]
 	}
 	if(!is.null(adj.to.file))
-		result <- adjust.to.dataset(adj.country, result, adj.file=adj.to.file, use='trajectories')
+		result <- adjust.to.dataset(adj.country, result, adj.file=adj.to.file, use='trajectories',
+		                            allow.negatives = allow.negative.adj)
 	return(list(trajectories=result, index=traj.idx))
 }
 
@@ -1423,10 +1425,10 @@ mac.expression <- function(country) {
 	return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = FALSE), "]", collapse=" + "), ")/100"))
 }
 	
-.solve.expression.for.country <- function(icountry, pop.pred, expression, adjust=FALSE) {
+.solve.expression.for.country <- function(icountry, pop.pred, expression, adjust=FALSE, ...) {
 	country <- pop.pred$countries$code[icountry]
 	expr <- gsub('XXX', as.character(country), expression, fixed=TRUE)
-	trajectories <- get.pop.trajectories.from.expression(expr, pop.pred, adjust=adjust)
+	trajectories <- get.pop.trajectories.from.expression(expr, pop.pred, adjust=adjust, ...)
 	return(get.pop.traj.quantiles(NULL, pop.pred, icountry, country, 
 						trajectories=trajectories$trajectories,	q=get.quantiles.to.keep()))
 }
@@ -1439,7 +1441,8 @@ mac.expression <- function(country) {
 
 get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles = NULL, 
                                                   time.index, observed = FALSE, 
-                                                  adjust=FALSE, adj.to.file=NULL) {
+                                                  adjust=FALSE, adj.to.file=NULL, 
+                                                  allow.negative.adj = TRUE) {
 	compressed.expr <- gsub("[[:blank:]]*", "", expression) # remove spaces
 	if(observed) compressed.expr <- paste0(compressed.expr, "_observed")
 	if(!is.null(adj.to.file)) {
@@ -1452,7 +1455,8 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		for(i in 1:nrow(dat)) {
 			cntry <- pop.pred$countries$code[cidx[i]]
 			tmp <- adjust.to.dataset(country=cntry, q=dat[rownames(dat)==cntry,], adj.dataset=adjdata, 
-			                         years=get.pop.prediction.periods(pop.pred, end.time.only=TRUE)[time.index], use="write")
+			                         years=get.pop.prediction.periods(pop.pred, end.time.only=TRUE)[time.index], use="write",
+			                         allow.negatives = allow.negative.adj)
 			if(length(tmp)==0) next # no adjustment
 			res[i,] <- tmp
 		}
@@ -1485,7 +1489,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		cl <- create.pop.cluster(ncores)
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
 		if(!observed)
-		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust))
+		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust, allow.negative.adj = allow.negative.adj))
 		else 
 		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.observed.expression.for.country(i, pop.pred, expression))
 		stopCluster(cl)
@@ -1497,7 +1501,7 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		if(length(countries.idx)>10) cat('Evaluating expression for all countries sequentially. Please be patient.\n')
 		for(icountry in countries.idx) {
 		    if(!observed) {
-			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust)
+			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust, allow.negative.adj = allow.negative.adj)
 			    data[icountry,] <- quant[paste0(quantiles*100, '%'), time.index]
 			    #stop('')
 		    } else {

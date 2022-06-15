@@ -2060,7 +2060,7 @@ write.pfertilityage <- function(pop.pred, output.dir, ...)
 	
 write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
 							expression.label=expression, include.observed=FALSE, digits=NULL, 
-							adjust=FALSE, adj.to.file=NULL, end.time.only=FALSE) {
+							adjust=FALSE, adj.to.file=NULL, allow.negative.adj = TRUE, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
@@ -2090,7 +2090,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 	for(iyear in 1:nr.proj) {	
 		result <- cbind(result, as.vector(t(get.pop.from.expression.all.countries(expression, pop.pred, 
-						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, adjust=adjust, adj.to.file=adj.to.file))))
+						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, adjust=adjust, 
+						adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj))))
 	}
 	if(!is.null(digits)) result <- round(result, digits)
 	colnames(result) <- col.names
@@ -2110,7 +2111,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	
 .write.pop <- function(pop.pred, output.dir, bysex=FALSE, byage=FALSE, vital.event=NULL, file.suffix='tpop', 
 							what.log='total population', include.observed=FALSE, digits=0, adjust=FALSE, 
-							end.time.only=FALSE) {
+							allow.negative.adj = TRUE, end.time.only=FALSE) {
 	cat('Creating summary file of ', what.log, ' ')
 	if(bysex) cat('by sex ')
 	if(byage) cat('by age ')
@@ -2177,7 +2178,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				if(is.null(vital.event)) {
 					if(include.observed) 
 						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
-					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, adjust=adjust)$quantiles
+					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, 
+					                              adjust=adjust, allow.negative.adj = allow.negative.adj)$quantiles
 					traj <- NULL
 					reload <- TRUE
 				} else { # vital event

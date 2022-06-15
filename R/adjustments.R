@@ -1,6 +1,8 @@
-adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
+adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.negatives = TRUE) {
 	if(is.null(adj.env)) adj.env <- new.env()
 	wpp.year <- quant.env$wpp.year
+	annual <- quant.env$annual
+	if(is.null(annual)) annual <- FALSE
 	datasets <- list(totp='', totp.hch='', totpf='Fage', totpm='Mage', totpm.hch='Mage', totpf.hch='Fage')
 	country.char <- as.character(country)
 	for(traj.name in names(datasets)) {
@@ -10,16 +12,19 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
 		if(is.null(adj.env[[dif.name]])) {
 			#print(c(dif.name, adj.name))
 			q <- quant.env[[paste0('quantiles', adj.name)]]
-			adjust.quantiles(q, adj.name, wpp.year=wpp.year, env=adj.env)
+			adjust.quantiles(q, adj.name, wpp.year=wpp.year, env=adj.env, annual = annual)
 		}
 		dif <- if(length(dim(adj.env[[dif.name]]))>2) adj.env[[dif.name]][country.char,,] else adj.env[[dif.name]][country.char,,drop=FALSE]
 		res <- env[[traj.name]]		
 		if(length(dim(res))>2) { # includes age
-			res21 <- aaply(res[1:21,,], 3, '-', dif)
+		    age.idx <- all.age.index(annual = annual, observed = TRUE)
+			res21 <- aaply(res[age.idx,,], 3, '-', dif)
+            if(!allow.negatives) res21 <- pmax(0, res21)
 			res21 <- aperm(res21, c(2,3,1))
-			res[1:21,,] <- res21
+			res[age.idx,,] <- res21
 		} else {
 			res <- aaply(res, 2, '-', dif)
+			if(!allow.negatives) res <- pmax(0, res)
 			res <- aperm(res, c(2,1))
 		}
 		if(is.list(res)) stop('')
@@ -28,12 +33,15 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL) {
 	}
 }
 
-adjust.quantiles <- function(q, what, wpp.year, env=NULL) {
+adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.negatives = TRUE) {
 	dif <- NULL
 	if(!is.null(env)) {
 		if(!is.null(env[[paste0('AdjQpop', what)]])) return(env[[paste0('AdjQpop', what)]])
 		if(!is.null(env[[paste0('AdjDpop', what)]])) dif <- env[[paste0('AdjDpop', what)]]
 	}
+	age.idx <- all.age.index(annual = annual, observed = TRUE)
+	age.idx.all <- all.age.index(annual = annual, observed = FALSE)
+	age.idx.old <- age.idx.all[age.idx.all > max(age.idx)]
 	if(is.null(dif)) {
 		if(is.null(env)) env <- new.env()
 		countries <- dimnames(q)[[1]]
@@ -45,40 +53,41 @@ adjust.quantiles <- function(q, what, wpp.year, env=NULL) {
 		wpp <- .get.wpp(env, what, countries, ages, wpp.year=wpp.year)
 		if(length(dim(q))>3) { # includes age dimension
 			years <- as.numeric(dimnames(q)[[4]])
-			if((years[1] %% 5) != 0) years <- years+2 
+			if(!annual && (years[1] %% 5) != 0) years <- years+2 
 			med.raw <- q[,,'0.5',as.character(years)%in%dimnames(wpp)[[3]]]
 			if(length(dim(med.raw))>2) { # multiple countries
-				med <- med.raw[,1:21,] # collapse to 21 age categories
-				med[,21,] <- med.raw[,21,] + apply(med.raw[,22:27,], c(1,3), sum) 
+				med <- med.raw[,age.idx,] # collapse to 21 age categories
+				med[,age.idx.old[1]-1,] <- med.raw[,age.idx.old[1]-1,] + apply(med.raw[,age.idx.old,], c(1,3), sum) 
 			} else { #1 country
-				med <- med.raw[1:21,]
-				med[21,] <- med.raw[21,] + apply(med.raw[22:27,], 2, sum) 
+				med <- med.raw[age.idx,]
+				med[age.idx.old[1]-1,] <- med.raw[age.idx.old[1]-1,] + apply(med.raw[age.idx.old,], 2, sum) 
 				med <- abind(med, along=0) # add dimension
 			}
-			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=21), med-wpp, along=3)		
+			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=length(age.idx)), med-wpp, along=3)		
 		} else {
 			years <- as.numeric(dimnames(q)[[3]])
-			if((years[1] %% 5) != 0) years <- years+2 
+			if(!annual && (years[1] %% 5) != 0) years <- years+2 
 			med <- q[,'0.5',as.character(years)%in%colnames(wpp)]
 			dif <- as.matrix(cbind(0, med-wpp))
 		}
 	} else countries <- dimnames(dif)
 	if(length(dim(q))>3) {
 		if(dim(q)[1]==1){ # one country - the generic aaply fails because of some dimension dropping 
-			res21 <- aaply(q[,1:21,,], 2, '-', dif[1,,], .drop=FALSE)
+			res21 <- aaply(q[,age.idx,,], 2, '-', dif[1,,], .drop=FALSE)
 			res21 <- aperm(res21, c(2,1,3))
 		} else {
-			res21 <- aaply(q[,1:21,,], 3, '-', dif, .drop=FALSE)
+			res21 <- aaply(q[,age.idx,,], 3, '-', dif, .drop=FALSE)
 			res21 <- aperm(res21, c(2,3,1,4))
 		}
 		res <- q
-		res[,1:21,,] <- res21
+		res[,age.idx,,] <- res21
 	} else { # no age dimension
 		res <- aaply(q, 2, '-', dif, .drop=FALSE)
 		res <- aperm(res, c(2,1,3))
 	}
 	if(is.null(dimnames(dif)[[1]])) dimnames(dif)[[1]] <- countries
 	if(is.null(dimnames(res)[[1]])) dimnames(res)[[1]] <- countries
+	if(!allow.negatives) res <- pmax(0, res)
 	env[[paste0('AdjDpop', what)]] <- dif
 	env[[paste0('AdjQpop', what)]] <- res
 	return(res)
@@ -180,7 +189,8 @@ sumMFbycountry <- function(datasetM, datasetF, e) {
     tpopM
 }
 
-adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years=NULL, use=c('write', 'trajectories')) {
+adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years=NULL, 
+                              use=c('write', 'trajectories'), allow.negatives = TRUE) {
 	if(is.null(adj.dataset)) {
 		adj.dataset <- read.table(adj.file, header=TRUE, check.names=FALSE)
 	}
@@ -189,12 +199,14 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	if(use=='write') {
 		med <- q['0.5']
 		dif <- med - adj.dataset[idx1,colidx]
+		if(!allow.negatives) dif <- pmin(q, dif)
 		return(q-dif)
 	}
 	if(use=='trajectories') {
 		med <- apply(q, 1, 'median')[colnames(adj.dataset[,colidx])]
 		dif <- as.matrix(med - adj.dataset[idx1,colidx])
 		res <- aaply(q[colnames(adj.dataset[,colidx]),], 2, '-', dif)
+		if(!allow.negatives) res <- pmax(res, 0)
 		res <- aperm(res, c(2,1))
 		if(! rownames(q)[1] %in% rownames(res))
 			res <- rbind(q[1,], res) # add current year
