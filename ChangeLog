@@ -1,5 +1,11 @@
-9.0-1.9010 (03/04/2022)
+9.0-1.9013 (06/16/2022)
 -------
+pop.trajectories.plot: default for sum.over.ages changed to TRUE
+
+Added argument xshift to  pop.trajectories.plot and pop.trajectories.table.
+
+Added adjustment argument for not letting adjustments to be negative. 
+
 Option of giving migration inputs as rates.
 
 Fixed bug related to extracting observed migration which did not work for aggregations 

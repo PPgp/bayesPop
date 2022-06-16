@@ -14,18 +14,19 @@ The functions plot and tabulate the distribution of population projection for a 
 }
 \usage{
 pop.trajectories.plot(pop.pred, country = NULL, expression = NULL, pi = c(80, 95), 
-    sex = c("both", "male", "female"), age = "all", sum.over.ages = FALSE, 
+    sex = c("both", "male", "female"), age = "all", sum.over.ages = TRUE, 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory = FALSE,
     main = NULL, dev.ncol = 5, lwd = c(2, 2, 2, 2, 1), 
     col = c("black", "red", "red", "blue", "#00000020"), show.legend = TRUE, 
-    ann = par("ann"), \dots)
+    ann = par("ann"), xshift = 0, \dots)
     
 pop.trajectories.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.trajectories"),
     output.type="png", expression = NULL, verbose=FALSE, \dots)
     
 pop.trajectories.table(pop.pred, country = NULL, expression = NULL, pi = c(80, 95), 
-    sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE, \dots)
+    sex = c("both", "male", "female"), age = "all", half.child.variant = FALSE,  
+    xshift = 0, \dots)
     
 pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL, 
     pi = c(80, 95), sex = c("both", "male", "female"), 
@@ -56,6 +57,7 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{typical.trajectory}{Logical. If \code{TRUE} one trajectory is shown that has the smallest distance to the median.}
   \item{xlim, ylim, xlab, ylab, main, ann, pt.cex}{Graphical parameters passed to the \code{plot} function.}
+  \item{xshift}{Constant added to the x-axis (year).}
   \item{dev.ncol}{Number of column for the graphics device if \code{sum.over.ages} is \code{FALSE}. If the number of age groups is smaller than \code{dev.ncol}, the number of columns is automatically decreased.}
     \item{lwd, col}{For the first three functions it is a vector of five elements giving the line width and color for: 1. observed data, 2. median, 3. quantiles, 4. half-child variant, 5. trajectories. For functions that show results by age it is a vector of four elements - as above without the first item (observed data).}
     \item{type, pch}{Currently works for plotting by age only. It is a vector of four elements giving the plot type and point type for: 1. median, 2. quantiles, 3. half-child variant, 4. trajectories. The last element of the array is recycled.}

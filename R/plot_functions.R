@@ -21,11 +21,11 @@ pop.trajectories.plotAll <- function(pop.pred,
 
 pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), age='all',
-								  sum.over.ages=FALSE,
+								  sum.over.ages=TRUE,
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE, main=NULL,
 								  dev.ncol=5, lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
-								  show.legend=TRUE, ann=par('ann'), ...
+								  show.legend=TRUE, ann=par('ann'), xshift = 0, ...
 								  ) {
 	# lwd is a vector of 5 line widths for: 
 	#	1. observed data, 2. median, 3. quantiles, 4. half child variant, 5. trajectories
@@ -52,7 +52,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 									half.child.variant=half.child.variant, nr.traj=nr.traj,
 									typical.trajectory=typical.trajectory,
 									main=main, lwd=lwd, col=col,
-									show.legend=show.legend, ann=ann, ...)
+									show.legend=show.legend, ann=ann, xshift=xshift, ...)
 	else {
 	    # plot individual ages
 		all.ages <- pop.pred$ages
@@ -79,7 +79,7 @@ pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi=c(
 									half.child.variant=half.child.variant, nr.traj=nr.traj,
 									typical.trajectory=typical.trajectory,
 									xlab='', ylab='', main=age.labels[iage], cex.main=0.9, 
-									lwd=lwd, col=col, show.legend=show.legend, ann=ann, ...)
+									lwd=lwd, col=col, show.legend=show.legend, ann=ann, xshift=xshift, ...)
 		}
 		if(ann) mtext(main, line = 0.5, outer = TRUE)
 		par(cur.par)
@@ -93,7 +93,8 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  xlim=NULL, ylim=NULL, type='b', 
 								  xlab='', ylab='Population projection', main=NULL, 
 								  lwd=c(2,2,2,2,1), col=c('black', 'red', 'red', 'blue', '#00000020'),
-								  show.legend=TRUE, ann=par('ann'), add=FALSE, adjust=FALSE, adj.to.file=NULL, ...
+								  show.legend=TRUE, ann=par('ann'), xshift = 0,
+								  add=FALSE, adjust=FALSE, adj.to.file=NULL, ...
 								  ) {
 
 	sex <- match.arg(sex)
@@ -127,10 +128,10 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	
 	obs.not.na <- !is.na(pop.observed.all)
 	pop.observed.idx <- if(sum(obs.not.na)==0) length(pop.observed.all) else which(obs.not.na)
-	x1 <- as.integer(names(pop.observed.all)[pop.observed.idx])
-	x2 <- if(!is.null(dimnames(trajectories$trajectories)) && !is.null(dimnames(trajectories$trajectories)[[1]])) 
+	x1 <- as.integer(names(pop.observed.all)[pop.observed.idx]) + xshift
+	x2 <- (if(!is.null(dimnames(trajectories$trajectories)) && !is.null(dimnames(trajectories$trajectories)[[1]])) 
 				as.numeric(dimnames(trajectories$trajectories)[[1]])
-			else as.numeric(dimnames(pop.pred$quantiles)[[3]])
+			else as.numeric(dimnames(pop.pred$quantiles)[[3]])) + xshift
 	y1 <- pop.observed.all[pop.observed.idx]
 	if(is.null(xlim)) xlim <- c(min(x1, x2), max(x1, x2))
 	if(is.null(ylim)) 
@@ -203,14 +204,16 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 
 pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), age='all',
-								  half.child.variant=FALSE, ...) {
+								  half.child.variant=FALSE, xshift = 0, ...) {
 	do.pop.trajectories.table(pop.pred, country=country, expression=expression, pi=pi,
-								  sex=sex, age=age, half.child.variant=half.child.variant, ...)					  	
+								  sex=sex, age=age, half.child.variant=half.child.variant, 
+								  xshift = xshift, ...)					  	
 }
 
 do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), age='all',
-								  half.child.variant=FALSE, adjust=FALSE, adj.to.file=NULL, ...) {
+								  half.child.variant=FALSE, xshift = 0, 
+								  adjust=FALSE, adj.to.file=NULL, ...) {
 	if (is.null(country)  && is.null(expression)) 
 		stop('Argument "country" or "expression" must be given.')
 				
@@ -247,6 +250,10 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	x1 <- names(pop.observed)[-length(pop.observed)]
 	x2 <- if(!is.null(dimnames(trajectories$trajectories))) dimnames(trajectories$trajectories)[[1]]
 			else dimnames(pop.pred$quantiles)[[3]]
+	if(abs(xshift) >  0){
+	    x1 <- as.character(as.numeric(x1)+xshift)
+	    x2 <- as.character(as.numeric(x2)+xshift)
+	}
 	l <- length(x1) + length(x2)
 	pred.table <- matrix(NA, ncol=2*length(pi)+1, nrow=l)
 	rownames(pred.table) <- c(x1, x2)
