@@ -844,7 +844,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 	  		sum.msched <- sum(insched) # proportion of male
 	  		insched <- c(insched, fsched)
 	  		outmodsched <- c(modeloutsched, fsched)
-	  		outsched <- outmodsched * c(popMdistr, popFdistr)
+	  		outsched <- outmodsched #* c(popMdistr, popFdistr)
 	  		outsched <- outsched/sum(outsched)
 	  		inrate <- insched * Ict
 	  		outrate <- Oct*outsched
@@ -874,18 +874,25 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 		}
 		if(rate < 0 && !is.gcc(country.code)) {
 				denom <- sum(msched * popMdistr + fsched * popFdistr)
-				denom2 <- c(msched, fsched)/denom
-				if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				if(denom == 0) { # not enough people to migrate out
+				    msched[] <- 0
+				    fsched[] <- 0
+				} else {
+				    denom2 <- c(msched, fsched)/denom
+				#if(abs(rate) > min((abs(emigrant.rate.bound) / denom2)[denom2 > 0]) && i < 1000) next
+				    if( rate < 0 && mig.count < emigrant.rate.bound*pop && i < 1000 && is.null(fixed.rate) ) next
 				#stop('')
-				msched <- msched * popMdistr / denom
-				fsched <- fsched * popFdistr / denom
+				    msched <- msched * popMdistr / denom
+				    fsched <- fsched * popFdistr / denom
+				}
 		}
 		# age-specific migration counts		
 		migM <- mig.count*msched
 		migF <- mig.count*fsched
 		if(!is.null(fixed.rate) || rate == 0) break
 		#if(all(popM21 + migM >= zero.constant) && all(popF21 + migF >= zero.constant))  break # assure positive count
-		lower.bounds <- c(popM21 + emigrant.rate.bound * popM21, popF21 + emigrant.rate.bound * popF21)
+		#lower.bounds <- c(popM21 + emigrant.rate.bound * popM21, popF21 + emigrant.rate.bound * popF21)
+		lower.bounds <- c(popM21 + 1.5*emigrant.rate.bound * popM21, popF21 + 1.5*emigrant.rate.bound * popF21) # added 1.2* based on email Re: Updated Pop Projection Results with Mig Uncertainty on 11/5/2020
 		if(all(c(popM21 + migM, popF21 + migF) >= lower.bounds))  break
 		if(((sum(popM21[abs(msched)>0]) + sum(popF21[abs(fsched)>0]) + mig.count) > sum(lower.bounds[c(abs(msched)>0, abs(fsched)>0)]))
 				) { # adjust age schedules
@@ -903,6 +910,7 @@ sample.migration.trajectory.from.model <- function(inpc, itraj=NULL, time=NULL, 
 				sched.new <- c(msched, fsched) + shifts/mig.count
 				delta <- sum(c(msched, fsched) - sched.new)
 				sched.new[!isneg] <- sched.new[!isneg] + delta*abs(sched.new[!isneg])/sum(abs(sched.new[!isneg]))
+				sched.new[is.na(sched.new)] <- 0 # updated 9 oct 2020 by Hana and Nathan to remove issue with Puerto Rico NaNs
 				msched <- sched.new[1:21]
 				fsched <- sched.new[22:length(sched.new)]	
 				migM <- mig.count * msched
@@ -953,7 +961,8 @@ rebalance.migration <- function(e, pop, what='', check.negatives=FALSE) {
 			this.pop <- pop
 			while(i < 100) {		
 				dif <- sum(e[[par]][age,])
-				dif.countries <- dif/this.sumpop * this.pop
+				dif.countries <- dif/sum(abs(e[[par]])) * colSums(abs(e[[par]])) # rebalance based on migrants vs population 28 Oct 2020
+				#dif.countries <- dif/this.sumpop * this.pop
 				e[[par]][age,] <- e[[par]][age,] - dif.countries
 				if(!check.negatives) break
 				wneg <- which(e[[par]][age,] + e[[poppar]][age,] < zero.constant)
