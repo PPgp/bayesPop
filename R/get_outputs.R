@@ -1420,6 +1420,8 @@ mac.expression1 <- function(country) {
     return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = TRUE)-1, "]", collapse=" + "), ")/100"))
 }
 
+mac.expression5 <- function(country) mac.expression(country)
+
 mac.expression <- function(country) {
 	factors <- fert.ages(annual = FALSE) + 2.5
 	return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = FALSE), "]", collapse=" + "), ")/100"))

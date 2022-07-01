@@ -1,5 +1,7 @@
-9.0-1.9013 (06/16/2022)
+9.0-1.9014 (06/30/2022)
 -------
+pop.pyramid and pop.trajectories.pyramid got an argument for showing birth years, called show.birth.year.
+
 pop.trajectories.plot: default for sum.over.ages changed to TRUE
 
 Added argument xshift to  pop.trajectories.plot and pop.trajectories.table.

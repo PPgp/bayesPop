@@ -29,6 +29,7 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
 \method{pop.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     pyr1.par = list(border="black", col=NA, density=NULL, height=0.9),
     pyr2.par = list(density = -1, height = 0.3), 
+    show.birth.year = FALSE,
     col.pi = NULL, ann = par("ann"), axes = TRUE, grid = TRUE, 
     cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
@@ -41,8 +42,8 @@ pop.pyramidAll(pop.pred, year = NULL,
     proportion = FALSE, age = NULL, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), axes = TRUE, 
-    grid = TRUE, cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
+    show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), 
+    axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), "pop.traj.pyramid"),
@@ -78,6 +79,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{main}{Titel of the plot. By default it is the country name and projection year if known.}
   \item{show.legend}{Logical controlling if the plot legend is drawn.}
   \item{pyr1.par, pyr2.par}{List of graphical parameters (color, border, density and height) for drawing the pyramid rectangles, for the first and second pyramid, respectively (see Details). The \code{height} component should be a number between 0 (corresponds to a line) and 1 (for non-overelapping rectangles). If \code{density} is \code{NULL}, the rectangles are transparent, see the argument \code{density} in \code{\link{rect}}.}
+  \item{show.birth.year}{Logical. If \code{TRUE} the corresponding birth years are shown on the right vertical axis.}
   \item{col.pi}{Vector of colors for drawing the probability boxes. If it is given, it must be of the same length as \code{pi}.}
    \item{ann}{Logical controlling if any annotation (main and legend) is plotted.}
    \item{axes}{Logical controlling if axes are plotted.}
@@ -100,7 +102,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{LRmain}{Vector of character strings giving the secondary titles for the left and right panel, respectively.}
   \item{LRcolnames}{Vector of character strings giving the column names of data to be used for the left and right panel of the pyramid, respectively.}
   \item{CI}{Confidence intervals. It should be of the same format as the \code{bayesPop.pyramid$CI} object, see below.}
-  \item{\dots}{Arguments passed to the underlying functions.}
+  \item{\dots}{Arguments passed to the underlying functions. For \code{get.bPop.pyramid}, these can be additional items to be added to the resulting object, e.g. \code{pyr.year} and \code{is.annual}.}
 }
 \details{
 The \code{pop.pyramid} function generates one or two population pyramids in one plot. The first (main) one is usually the median of a future year prediction, but it can also be the current year or any population estimates. The second one serves the purpose of comparing two pyramids with one another and is drawn on top of the main pyramid. For example, one can use it to compare a future prediction with the present, or two different time points in the past, or two different geographies. The main pyramid can have confidence intervals associated with it, which are also plotted. If \code{pop.pyramid} is called on a \code{bayesPop.prediction} object, the main and secondary pyramid, respectively, is generated from data of a time period given by the first and second element, respectively, of the \code{year} argument. In such a case, confidence intervals only of the first year are shown. Thus, it makes sense to set the first year to be a prediction year and the second year to an observed time period. If \code{pop.pyramid} is called on a \code{bayesPop.pyramid} object, data in the first and second element, respectively, of the \code{bayesPop.pyramid$pyramid} list are used, and only the first element of \code{bayesPop.pyramid$CI} is used.
@@ -120,6 +122,8 @@ The core of these functions operates on a \code{bayesPop.pyramid} object which i
 	\item{CI}{List of lists of confidence intervals with one element per pyramid. The order corresponds to the order in the \code{pyramid} component and it is \code{NULL} if the corresponding pyramid does not have confidence intervals. Each element is a list with one element per probability interval whose names are the values of the intervals. Each element is again a list with components \code{low} and \code{high} which have the same structure as \code{pyramid} and contain the lower and upper bounds of the corresponding interval.}
 	\item{trajectories}{List of lists of trajectories with one element per pyramid. As in the case of \code{CI}, it is ordered the same way as the \code{pyramid} component and is \code{NULL} if the corresponding pyramid does not have any trajectories to be shown. Each element is again a list with two components, one for the left part and one for the right part of the pyramid. Their names correspond to \code{LRcolnames} and each of them is a matrix of size number of age categories x number of trajectories. This is only used by the \code{pop.trajectories.pyramid} function.}
 	\item{is.proportion}{Logical indicating if values in the various data frames in this object are proportions or raw values.}
+	\item{is.annual}{Logical indicating if the data correspond to 1-year age groups. If \code{FALSE}, the ages are considered to be 5-year age groups.}
+	\item{pyr.year}{Year of the main pyramid. It is used as the base year when \code{show.birth.year} is \code{TRUE}.}
 	\item{pop.max}{Maximum value for the x-axis.}
 	\item{LRmain}{Vector of character strings determining the titles for the left and right panels, respectively.}
 	\item{LRcolnames}{Vector of character strings determining the column names in \code{pyramid}, \code{CI} and \code{trajectories} used to plot data into the left and right panel, respectively.}
@@ -143,7 +147,7 @@ pop.trajectories.pyramid(pred, "NL", c(2045, 2010, 1960), age=1:25, proportion=T
 # using manual manipulation of the data: e.g. show only the prob. intervals 
 pred.pyr <- get.bPop.pyramid(pred, country="Ecuador", year=2090, age=1:27)
 pred.pyr$pyramid <- NULL
-plot(pred.pyr)
+plot(pred.pyr, show.birth.year = TRUE)
 
 # pyramids for user-defined data
 ################################
@@ -158,11 +162,13 @@ King <- data[,c("King.male", "King.female")]; colnames(King) <- c("male", "femal
 # create and plot a bayesPop.pyramid object
 pyramid <- get.bPop.pyramid(list(WA, King), legend=c("Washington", "King"))
 plot(pyramid, main="Population in 2011", pyr2.par=list(height=0.7, col="violet", border="violet"))
-# show data as proportions
-pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, legend=c("Washington", "King"))
+# show data as proportions and include birth year
+pyramid.prop <- get.bPop.pyramid(list(WA, King), is.proportion=NA, 
+    legend=c("Washington", "King"), pyr.year = 2011)
 pop.pyramid(pyramid.prop, main="Population in 2011 (proportions)",
-    pyr1.par=list(col="lightgreen", border="lightgreen", density=30), 
-    pyr2.par=list(col="darkred", border="darkred", density=50))
+    pyr1.par=list(col="lightgreen", border="lightgreen", density=2), 
+    pyr2.par=list(col="darkred", border="darkred"),
+    show.birth.year = TRUE)
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
