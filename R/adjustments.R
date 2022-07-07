@@ -203,7 +203,7 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 		return(q-dif)
 	}
 	if(use=='trajectories') {
-		med <- apply(q, 1, 'median')[colnames(adj.dataset[,colidx])]
+		med <- apply(q, 1, 'median', na.rm = TRUE)[colnames(adj.dataset[,colidx])]
 		dif <- as.matrix(med - adj.dataset[idx1,colidx])
 		res <- aaply(q[colnames(adj.dataset[,colidx]),], 2, '-', dif)
 		if(!allow.negatives) res <- pmax(res, 0)
