@@ -50,7 +50,7 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 			ages <- dimnames(q)[[2]]
 			ages <- ages[as.numeric(ages)<=100]
 		}
-		wpp <- .get.wpp(env, what, countries, ages, wpp.year=wpp.year)
+		wpp <- .get.wpp(env, what, countries, ages, wpp.year=wpp.year, annual = annual)
 		if(length(dim(q))>3) { # includes age dimension
 			years <- as.numeric(dimnames(q)[[4]])
 			if(!annual && (years[1] %% 5) != 0) years <- years+2 
@@ -93,13 +93,13 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 	return(res)
 }
 
-.get.wpp <- function(env, what, countries=NULL, ages=NULL, ...) {
+.get.wpp <- function(env, what, countries=NULL, ages=NULL, annual = FALSE, ...) {
 	switch(which(c('', 'M', 'F', 'Mage', 'Fage') == what), 
 				tpop(countries, prediction.only=TRUE, e=env, ...),
 				tpopM(countries, prediction.only=TRUE, e=env, ...),
 				tpopF(countries, prediction.only=TRUE, e=env, ...),
-				tpopM(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, ...),
-				tpopF(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, ...)
+				tpopM(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...),
+				tpopF(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...)
 			)
 }
 
@@ -129,7 +129,7 @@ tpop <- function(countries, prediction.only=FALSE, e=NULL, ...) {
 tpopF <- function(...) return(tpop.sex('F', ...))
 tpopM <- function(...) return(tpop.sex('M', ...))
 
-tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.only=FALSE, e=NULL, ...) {
+tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.only=FALSE, e=NULL, annual = FALSE, ...) {
 	# Create a dataset of total population by sex
 	if(is.null(e)) e <- new.env()
 	if(!prediction.only) {
@@ -143,7 +143,7 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	popp <- if(sum.over.ages) sum.by.country(e[[dataset]]) else sum.by.country.and.age(e[[dataset]])
 	if(!prediction.only)  popp <- merge(pop.obs, popp, by='country_code')
 	if(sum.over.ages) return(.reduce.to.countries(popp, countries))
-	.reduce.to.countries.and.ages(popp, countries, ages)
+	.reduce.to.countries.and.ages(popp, countries, ages, annual = annual)
 }
 
 .reduce.to.countries <- function(dataset, countries){
@@ -153,12 +153,20 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	tpop[countries,]
 }
 
-.reduce.to.countries.and.ages <- function(dataset, countries, ages){
+.reduce.to.countries.and.ages <- function(dataset, countries, ages, annual = FALSE){
 	dataset <- as.data.frame(dataset[dataset$country_code %in% as.integer(countries),])
-	if(is.null(ages)) ages <- as.character(seq(0,100, by=5))
-	age.vector <- as.character(dataset$age[1:21])
-	age.vector <- unlist(strsplit(gsub('\\+', '-130', age.vector), '-'))
-	age.vector <- age.vector[seq(1,length(age.vector), by=2)]
+	if(annual){
+	    by <- 1
+	} else {
+	    by <- 5
+	}
+	nage <- length(unique(dataset$age))
+	if(is.null(ages)) ages <- as.character(seq(0,100, by=by))
+	age.vector <- as.character(dataset$age[1:nage])
+	if(!annual) {
+	    age.vector <- unlist(strsplit(gsub('\\+', '-130', age.vector), '-'))
+	    age.vector <- age.vector[seq(1,length(age.vector), by=2)]
+	} else age.vector <- gsub('\\+', '', age.vector)
 	colidx <- (1:ncol(dataset))[-which(colnames(dataset) %in% c('country_code', 'age'))]
 	res <- array(NA, c(length(countries), length(ages), ncol(dataset)-2))
 	for(i in 1:length(countries)) {
