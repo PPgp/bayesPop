@@ -1,6 +1,7 @@
 
 get.expression.indicators <- function() {
-		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', G='migration', R='pasfr', E='ex'))
+		return(list(D='deaths', B='births', S='survival', F='fertility', Q='qx', M='mx', 
+		            G='migration', R='pasfr', E='ex', A='ax'))
 }
 
 all.age.index <- function(...) 
@@ -513,7 +514,7 @@ aggregate.mx <- function(mx, pop, abridged = TRUE) {
     abr.deaths <- abr.pop <- list()
     for(s in c("male", "female")) {
         if(length(dim(pop[[s]]))<3) pop[[s]] <- abind(pop[[s]], along=3)
-        # abridged average population splitted to 0-1 and 1-4
+        # abridged average population split to 0-1 and 1-4
         abr.pop[[s]] <- mx[[s]]
         abr.pop[[s]][] <- NA
         apop <- mid.period3d(pop[[s]])
@@ -591,6 +592,10 @@ get.ex <- function(...) {
     return(.get.lt.col('ex', ...))
 }
 
+get.ax <- function(...) {
+    return(.get.lt.col('ax', ...))
+}
+
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE,
                          replace.na = TRUE, pop = NULL) {
     if(sex == "T") mxm <- aggregate.mx(mxm, pop, abridged = abridged) # aggregate over sexes
@@ -625,14 +630,14 @@ get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE,
 }
 
 get.popVE.trajectories.and.quantiles <- function(pop.pred, country, 
-									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr', 'ex'), 
+									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr', 'ex', 'ax'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
  									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE,
 									allow.higher.ages = FALSE, ...) {
  	# get trajectories and quantiles for vital events and other indicators
  	input.indicators <- c('migration')
  	#input.indicators <- c()
- 	life.table.indicators <- c('survival', 'qx', 'mx', 'ex')
+ 	life.table.indicators <- c('survival', 'qx', 'mx', 'ex', 'ax')
  	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
  	event <- match.arg(event)
  	sex <- match.arg(sex)
