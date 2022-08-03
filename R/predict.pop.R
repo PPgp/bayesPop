@@ -1389,7 +1389,13 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		country.obj <- get.country.object(country, inputs$TFRpred$mcmc.set$meta)
 		medians$TFRpred <- bayesTFR::get.median.from.prediction(inputs$TFRpred, country.obj$index, country.obj$code)[-1]
 		obs.tfr <- bayesTFR:::get.tfr.reconstructed(inputs$TFRpred$tfr_matrix_reconstructed, inputs$TFRpred$mcmc.set$meta)
-		obs$TFRpred <- obs.tfr[1:if(!is.null(inputs$TFRpred$present.year.index)) inputs$TFRpred$present.year.index else nrow(obs.tfr),country.obj$index]
+		obs.tfr <- obs.tfr[1:if(!is.null(inputs$TFRpred$present.year.index)) inputs$TFRpred$present.year.index else nrow(obs.tfr),country.obj$index]
+		# if simulation with estimated uncertainty, get the median
+		if(bayesTFR:::has.est.uncertainty(inputs$TFRpred$mcmc.set)) {
+		    tmp <- bayesTFR::get.tfr.estimation(mcmc.list = inputs$TFRpred$mcmc.set, country = country.obj$code, probs = 0.5)$tfr_quantile
+		    obs.tfr[as.character(tmp$year)] <- tmp$V1
+		}
+		obs$TFRpred <- obs.tfr
 	} 
 	inpc$TFRhalfchild <- bayesTFR:::get.half.child.variant(median=medians$TFRpred, increment=c(0.25, 0.4, 0.5))
 	if(!all(is.element(inputs$proj.years, colnames(inpc$TFRhalfchild))))
