@@ -967,9 +967,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
   } else {
     if(!is.null(inputs$tfr.sim.dir)){
         #mcmc.dir <- getOption("tfr.mcmc.dir", NA)
-        if(!bayesTFR:::has.est.uncertainty(TFRpred$mcmc.set$meta)) 
-            TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
-        else
+        TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
+        if(bayesTFR:::has.est.uncertainty(TFRpred$mcmc.set$meta)) 
             TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir)
     } else TFRpred <- .load.wpp.traj('tfr', wpp.year)
   }
