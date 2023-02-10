@@ -490,7 +490,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	for(sex in c('M', 'F')) {
 		dataset.name <- paste0('pop', sex)
 		if(is.null(inputs[[dataset.name]])) 
-			POP0 <- load.wpp.dataset(dataset.name, wpp.year)	
+			POP0 <- bayesTFR:::load.from.wpp(dataset.name, wpp.year = wpp.year, annual = annual)	
 		else POP0 <- read.pop.file(inputs[[dataset.name]])
 		num.columns <- grep('^[0-9]{4}$', colnames(POP0), value=TRUE) # values of year-columns
 		if(!is.element(as.character(present.year), colnames(POP0))) {
@@ -522,7 +522,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	# Get death rates
 	MXm.pred <- MXf.pred <- NULL
 	if(is.null(inputs$mxM)) 
-		MXm <- load.wpp.dataset('mxM', wpp.year)
+		MXm <- bayesTFR:::load.from.wpp('mxM', wpp.year, annual = annual)
 	else MXm <- read.pop.file(inputs$mxM)
 	names.MXm.data <- names(MXm)
 	numcol.expr <- if(annual) '^[0-9]{4}$' else '^[0-9]{4}.[0-9]{4}$'
@@ -554,7 +554,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	}
 	MXm <- MXm[,c('country_code', 'age', estim.periods)]
 	if(is.null(inputs$mxF)) 
-		MXf <- load.wpp.dataset('mxF', wpp.year)
+		MXf <- bayesTFR:::load.from.wpp('mxF', wpp.year, annual = annual)
 	else MXf <- read.pop.file(inputs$mxF)
 	if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
 	MXf <- MXf[,c('country_code', 'age', estim.periods)]
@@ -572,7 +572,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 
 	# Get percentage age-specific fertility rate
 	pasfrlist <- .get.pasfr.data(inputs$pasfr, wpp.year, obs.periods, proj.periods, 
-	                             include.projection=fixed.pasfr)
+	                             include.projection=fixed.pasfr, annual = annual)
 	PASFR <- pasfrlist$pasfr
 	observed$PASFR <- pasfrlist$obs.pasfr
 	
@@ -620,7 +620,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	if(!fixed.mx){
 	if(!is.null(inputs$e0F.file)) { # female
 		if(inputs$e0F.file == 'median_') {
-			e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE)
+			e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE, annual = annual)
 			e0F.wpp.median.loaded <- TRUE
 		} else {
 			file.name <-  inputs$e0F.file
@@ -636,16 +636,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	} else {
 		if(!is.null(inputs$e0F.sim.dir)) { 
 			if(inputs$e0F.sim.dir == 'median_') {
-				e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE)
+				e0Fpred <- .load.wpp.traj('e0F', wpp.year, median.only=TRUE, annual = annual)
 				e0F.wpp.median.loaded <- TRUE
 			} else 
 				e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
-		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year)			
+		} else e0Fpred <- .load.wpp.traj('e0F', wpp.year, annual = annual)			
 	}
 	
 	if(!is.null(inputs$e0M.file)) { # male
 		if(inputs$e0M.file == 'median_')
-			e0Mpred <- .load.wpp.traj('e0M', wpp.year, median.only=TRUE)
+			e0Mpred <- .load.wpp.traj('e0M', wpp.year, median.only=TRUE, annual = annual)
 		else {
 			file.name <-  inputs$e0M.file
 			if(!file.exists(file.name)) 
@@ -659,7 +659,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	} else {
 		if(!is.null(inputs$e0M.sim.dir)) { 
 			if(inputs$e0M.sim.dir == 'joint_') {
-				if(e0F.wpp.median.loaded) e0Mpred <- .load.wpp.traj('e0M', wpp.year)
+				if(e0F.wpp.median.loaded) e0Mpred <- .load.wpp.traj('e0M', wpp.year, annual = annual)
 				else {
 					if(!has.e0.jmale.prediction(e0Fpred))
 						stop('No joint prediction for female and male available. Correct the e0M.sim.dir argument.' )
@@ -667,12 +667,12 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				}
 			} else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA) # independent from female
 		} else
-			e0Mpred <- .load.wpp.traj('e0M', wpp.year)
+			e0Mpred <- .load.wpp.traj('e0M', wpp.year, annual = annual)
 	}
 	} # end if(!fixed.mx)
 	
 	# Get TFR
-	TFRpred <- .get.tfr.data(inputs, wpp.year, verbose=verbose)
+	TFRpred <- .get.tfr.data(inputs, wpp.year, annual = annual, verbose=verbose)
 	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
@@ -689,7 +689,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 
 .get.srb.data.and.time.periods <- function(srb.data, present.year, end.year, wpp.year, annual = FALSE) {
     if(is.null(srb.data)) 
-        SRB <- load.wpp.dataset('sexRatio', wpp.year)
+        SRB <- bayesTFR:::load.from.wpp('sexRatio', wpp.year, annual = annual)
     else {
         if(is.character(srb.data)) # file name
             SRB <- read.pop.file(srb.data)
@@ -728,9 +728,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 }
 
 .get.pasfr.data <- function(pasfr.data, wpp.year, obs.periods, proj.periods,
-                            include.projection=TRUE) {
+                            include.projection=TRUE, annual = FALSE) {
     if(is.null(pasfr.data)) 
-        PASFR <- load.wpp.dataset('percentASFR', wpp.year)
+        PASFR <- bayesTFR:::load.from.wpp('percentASFR', wpp.year, annual = annual)
     else {
         if(is.character(pasfr.data)) # file name
             PASFR <- read.pop.file(pasfr.data)
@@ -827,7 +827,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             } else {
                 # Here create only a dataframe filled with NAs 
                 if(!annual)
-                    migtempl <- load.wpp.dataset(paste0('migration', sex), 2012) # structure is taken from the wpp2012 dataset
+                    migtempl <- bayesTFR:::load.from.wpp(paste0('migration', sex), 2012, annual = annual) # structure is taken from the wpp2012 dataset
                 else {
                     # use countries and ages from the population dataset
                     #migtempl <- cbind(pop0[, c("country_code", "age")], 
@@ -861,7 +861,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         # if migration is not given load default datasets
         if(annual) stop("Migration must be given.")
         if(paste0('migration', sex) %in% wppds$results[,'Item']) { # if available in the WPP package
-            miginp[[inpname]] <- load.wpp.dataset(paste0('migration', sex), wpp.year)
+            miginp[[inpname]] <- bayesTFR:::load.from.wpp(paste0('migration', sex), wpp.year, annual = annual)
             next
         }
         if(all.countries) { # reconstruct migration for all countries
@@ -938,11 +938,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
 
-.get.tfr.data <- function(inputs,  wpp.year, verbose=FALSE) {
+.get.tfr.data <- function(inputs,  wpp.year, annual = FALSE, verbose=FALSE) {
     trajectory <- NULL
   if(!is.null(inputs$tfr.file)) {
     if(inputs$tfr.file == 'median_')
-      TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
+      TFRpred <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE, annual = annual)
     else {
       file.name <- inputs$tfr.file
       if(!file.exists(file.name))
@@ -970,7 +970,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
         if(bayesTFR:::has.est.uncertainty(TFRpred$mcmc.set))
             TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir)
-    } else TFRpred <- .load.wpp.traj('tfr', wpp.year)
+    } else TFRpred <- .load.wpp.traj('tfr', wpp.year, annual = annual)
   }
     return(TFRpred)
 }
@@ -993,7 +993,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	return(migr.modified)
 }
 
-.load.wpp.traj <- function(type, wpp.year, median.only=FALSE) {
+.load.wpp.traj <- function(type, wpp.year, median.only=FALSE, annual = FALSE) {
 	dataset.obs <- dataset.low <- dataset.high <- NA
 	if(type %in% c('e0F', 'e0M')){
 		if(wpp.year < 2010) stop('e0 projections not available for wpp 2008.')
@@ -1015,13 +1015,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		}
 	}
 	if(!is.na(dataset.obs)) 
-		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year)
+		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year, annual = annual)
 		
 	pred.all <- NULL
 	itraj <- 1
 	for(dataset.name in c(dataset, dataset.low, dataset.high)) {
 		if(is.na(dataset.name)) next
-		pred <- bayesTFR:::load.bdem.dataset(dataset.name, wpp.year)
+		pred <- bayesTFR:::load.bdem.dataset(dataset.name, wpp.year, annual = annual)
 		remove.cols <- which(colnames(pred) %in% c('name', 'country', 'last.observed'))
 		pred <- pred[,-remove.cols]
 		if(!is.na(dataset.obs)) {
