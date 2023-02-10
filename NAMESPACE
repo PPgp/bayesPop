@@ -7,7 +7,7 @@ import(
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
-importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", 
+importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "splinefun", "approx", "median", "quantile", 
            "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 importFrom("reshape2", "melt")

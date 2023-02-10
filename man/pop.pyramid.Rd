@@ -31,7 +31,7 @@ Functions for plotting probabilistic population pyramid. \code{pop.pyramid} crea
     pyr2.par = list(density = -1, height = 0.3), 
     show.birth.year = FALSE,
     col.pi = NULL, ann = par("ann"), axes = TRUE, grid = TRUE, 
-    cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
+    cex.main = 0.9, cex.sub = 0.9, cex = 0.8, cex.axis = 0.8, \dots)
     
 pop.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), "pop.pyramid"),
@@ -43,7 +43,7 @@ pop.pyramidAll(pop.pred, year = NULL,
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
     show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), 
-    axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 1, cex = 1, cex.axis = 1, \dots)
+    axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 0.9, cex = 0.8, cex.axis = 0.8, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), "pop.traj.pyramid"),

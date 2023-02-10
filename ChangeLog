@@ -1,5 +1,7 @@
-9.0-1.9014 (06/30/2022)
+9.0-1.9014 (02/10/2023)
 -------
+Making default datasets from wpp2022 work with pop.predict.
+
 pop.pyramid and pop.trajectories.pyramid got an argument for showing birth years, called show.birth.year.
 
 pop.trajectories.plot: default for sum.over.ages changed to TRUE

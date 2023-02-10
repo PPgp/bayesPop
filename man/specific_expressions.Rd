@@ -1,6 +1,7 @@
 \name{mac.expression}
 \alias{mac.expression}
 \alias{mac.expression1}
+\alias{mac.expression5}
 \title{
 Expression Generator
 }
@@ -10,6 +11,7 @@ Help functions to easily generate commonly used expressions.
 \usage{
 mac.expression(country)
 mac.expression1(country)
+mac.expression5(country)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,7 +19,7 @@ mac.expression1(country)
 }
 }
 \details{
-\code{mac.expression} and \code{mac.expression1} generate expressions for the mean age of childbearing of the given country, for 5-year age groups and 1-year age groups, respectively.
+\code{mac.expression} and \code{mac.expression1} generate expressions for the mean age of childbearing of the given country, for 5-year age groups and 1-year age groups, respectively. \code{mac.expression5} is a synonym for \code{mac.expression}.
 Note that \code{\link{pop.predict}} has to be run with \code{keep.vital.events=TRUE} for this to work.
 }
 \value{
