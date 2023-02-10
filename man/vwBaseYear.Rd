@@ -5,6 +5,7 @@
 \alias{vwBaseYear2015}
 \alias{vwBaseYear2017}
 \alias{vwBaseYear2019}
+\alias{vwBaseYear2022}
 \docType{data}
 \title{
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
@@ -13,6 +14,7 @@ Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patter
 Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017 and 2019 datasets also give information on country's specifics regarding mortality and fertility age patterns.
 }
 \usage{
+    data(vwBaseYear2022)
     data(vwBaseYear2019)
     data(vwBaseYear2017)
     data(vwBaseYear2015)
@@ -35,9 +37,9 @@ Datasets giving information on the baseyear and type of migration for each count
     \item{\code{AgeMortProjPattern}}{If one of the \code{AgeMortProjMethodX} colums contains the \dQuote{MLT} method, this column determines the type of the life table (see the argument \code{type} in the \code{\link[MortCast]{mlt}} function).}
     \item{\code{AgeMortProjMethodWeights}}{If the mortality rates are to be projected via a blend of two methods, this column determines the weights in the first and the last year of the projection, respectively. It should be given as an R vector, e.g. \dQuote{c(1, 0.5)} (see the argument \code{weights} in \code{\link[MortCast]{mortcast.blend}}).}
     \item{\code{AgeMortProjAdjSR}}{Code determining how the \dQuote{PMD} method should be adjusted if it's used. 0 means no adjustment, 1 means the argument \code{sexratio.adjust} in \code{\link[MortCast]{copmd}} is set to \code{TRUE}, and code 3 means that the argument \code{adjust.sr.if.needed} in \code{\link[MortCast]{copmd}} is set to \code{TRUE}.}
-    \item{\code{LatestAgeMortalityPattern}}{Indicator \eqn{n} for how many latest time periods should be used to compute  the \eqn{a_x} Lee-Carter and modPMD parameter. If \eqn{n} is zero, all time periods are used. If \eqn{n} is one, only the latest time period is used. If \eqn{n} is negative, the latest \eqn{n} time periods are excluded. This can have also a form of vector of size 2, where the first element (must be negative) determines how many latest time periods should be excluded, while the second element (must be positive) determines how many latest time periods to include after the exclusion. E.g. \dQuote{c(-2, 3)} would mean exclude 2 time periods and use the following 3 time points.}
+    \item{\code{LatestAgeMortalityPattern}, \code{LatestAgeMortalityPattern1}}{Indicator \eqn{n} for how many latest time periods should be used to compute  the \eqn{a_x} Lee-Carter and modPMD parameter. If \eqn{n} is zero, all time periods are used. If \eqn{n} is one, only the latest time period is used. If \eqn{n} is negative, the latest \eqn{n} time periods are excluded. This can have also a form of vector of size 2, where the first element (must be negative) determines how many latest time periods should be excluded, while the second element (must be positive) determines how many latest time periods to include after the exclusion. E.g. \dQuote{c(-2, 3)} would mean exclude 2 time periods and use the following 3 time points. If the \code{LatestAgeMortalityPattern1} column is present, it should contain values related to an annual simulation (1x1) while the \code{LatestAgeMortalityPattern} column relates to a 5x5 simulation.}
     \item{\code{SmoothLatestAgeMortalityPattern}}{If \code{LatestAgeMortalityPattern} is 1, this column indicates if the \eqn{a_x} should be smoothed.}
-    \item{\code{SmoothDFLatestAgeMortalityPattern}}{Degree of freedom for smoothing \eqn{a_x}. By default (value 0) a half of the number of age groups is taken.}
+    \item{\code{SmoothDFLatestAgeMortalityPattern}, \code{SmoothDFLatestAgeMortalityPattern1}}{Degree of freedom for smoothing \eqn{a_x}. By default (value 0) a half of the number of age groups is taken. If the \code{SmoothDFLatestAgeMortalityPattern1} column is present, it should contain values related to a 1x1 simulation while the \code{SmoothDFLatestAgeMortalityPattern} column relates to a 5x5 simulation.}
     \item{\code{PasfrNorm}}{Type of norm for computing age-specific fertility pattern to which the country belongs to. Currently only \dQuote{GlobalNorm} is used.}
     \item{\code{PasfrGlobalNorm, PasfrFarEastAsianNorm, PasfrSouthAsianNorm}}{Dummies indicating which country to include to compute the specific norms.}
   }

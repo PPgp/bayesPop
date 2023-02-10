@@ -577,7 +577,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	observed$PASFR <- pasfrlist$obs.pasfr
 	
 	# Get migration type, migration base year, mx & pasfr patterns
-	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, lc.for.hiv = lc.for.hiv)
+	patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, lc.for.hiv = lc.for.hiv, annual = annual)
 	MIGtype <- patterns$mig.type
 	MXpattern <- patterns$mx.pattern
 	PASFRpattern <- patterns$pasfr.pattern
@@ -727,11 +727,26 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
            obs.periods=obs.periods, proj.years=proj.years))
 }
 
+.consolidate.pasfr <- function(pasfr){
+    # If using wpp2022 with 5-year data, the age column contains age categories 
+    # 10-14 and 50-54 which are not included in previous WPPs. Here we consolidate 
+    # the two groups with their neighboring groups.
+    groups <- data.table::data.table(age = paste(seq(10, 50, by = 5), seq(14, 54, by = 5), sep = "-"), 
+                                     new.age = c(15, seq(15, 45, by = 5), 45))
+    dt <- data.table::data.table(pasfr)
+    dt <- merge(dt, groups, by = "age", sort = FALSE)
+    num.cols <- grep('^[0-9]{4}', colnames(dt), value=TRUE)
+    condt <- dt[, lapply(.SD, sum), .SDcols = num.cols, by = c("country_code", "name", "new.age")]
+    setnames(condt, "new.age", "age")
+    return(as.data.frame(condt))
+}
+
 .get.pasfr.data <- function(pasfr.data, wpp.year, obs.periods, proj.periods,
                             include.projection=TRUE, annual = FALSE) {
-    if(is.null(pasfr.data)) 
+    if(is.null(pasfr.data)) {
         PASFR <- bayesTFR:::load.from.wpp('percentASFR', wpp.year, annual = annual)
-    else {
+        if(wpp.year >= 2022 && ! annual) PASFR <- .consolidate.pasfr(PASFR)
+    } else {
         if(is.character(pasfr.data)) # file name
             PASFR <- read.pop.file(pasfr.data)
         else PASFR <- pasfr.data
@@ -859,14 +874,26 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             next
         }
         # if migration is not given load default datasets
-        if(annual) stop("Migration must be given.")
-        if(paste0('migration', sex) %in% wppds$results[,'Item']) { # if available in the WPP package
-            miginp[[inpname]] <- bayesTFR:::load.from.wpp(paste0('migration', sex), wpp.year, annual = annual)
+        if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation.")
+        #stop('')
+        migdsname <- paste0('migration', sex)
+        if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
+        if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package
+            miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
             next
         }
         if(all.countries) { # reconstruct migration for all countries
-            if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
-            miginp[[inpname]] <- recon.mig[[list(M = "male", F = "female")[[sex]]]]
+            if(annual) {
+                miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration1", wpp.year, 
+                                                                                   annual = annual),
+                                                          ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+                                                          annual = annual, time.periods = periods,
+                                                          scale = if(is.null(inputs[[fname]])) 0.5 else 1,
+                                                          template = migtempl), check.names = FALSE)
+            } else {
+                if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
+                miginp[[inpname]] <- recon.mig[[list(M = "male", F = "female")[[sex]]]]
+            }
             next
         }
         # Projection for a subset of countries, therefore migration will be recontructed later (in get.country.inputs).
@@ -899,7 +926,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     return(params)
 }
 
-.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL, lc.for.hiv = TRUE) {
+.get.mig.mx.pasfr.patterns <- function(inputs, wpp.year, pattern.data = NULL, 
+                                       lc.for.hiv = TRUE, annual = FALSE) {
     if(is.null(pattern.data)) {
         pattern.file <- if(!is.null(inputs$patterns)) inputs$patterns else inputs$mig.type
         if(is.null(pattern.file)) 
@@ -923,10 +951,23 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         return(pattern)
     }
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
+    age.mort.pat.col <- "LatestAgeMortalityPattern"
+    age.mort.pat.df.col <- "SmoothDFLatestAgeMortalityPattern"
+    rename.cols <- list()
+    if(annual) { # check if the annual equivalent columns are present in the dataset
+        if((new.pat.col <- paste0(age.mort.pat.col, 1)) %in% colnames(vwBase)){
+            rename.cols[[age.mort.pat.col]] <- new.pat.col
+            age.mort.pat.col <- new.pat.col
+        }
+        if((new.df.col <- paste0(age.mort.pat.df.col, 1)) %in% colnames(vwBase)){
+            rename.cols[[age.mort.pat.df.col]] <- new.df.col
+            age.mort.pat.df.col <- new.df.col
+        }
+    }
     MXpattern <- create.pattern(vwBase, c("AgeMortProjAdjSR", 
-                                          "SmoothLatestAgeMortalityPattern", "SmoothDFLatestAgeMortalityPattern", "WPPAIDS", "HIVregion"),
+                                          "SmoothLatestAgeMortalityPattern", age.mort.pat.df.col, "WPPAIDS", "HIVregion"),
                                 char.columns = c("AgeMortalityType", "AgeMortalityPattern", "AgeMortProjMethod1", "AgeMortProjMethod2",
-                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights", "LatestAgeMortalityPattern"))
+                                                 "AgeMortProjPattern", "AgeMortProjMethodWeights", age.mort.pat.col))
     if(lc.for.hiv) { # replace HIVmortmod with LC
         for(col in c("AgeMortProjMethod1", "AgeMortProjMethod2"))
             if(col %in% colnames(MXpattern) && "HIVmortmod" %in% MXpattern[[col]]) MXpattern[MXpattern[[col]] == "HIVmortmod", col] <- "LC"
@@ -934,6 +975,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     if(! "HIVregion" %in% colnames(MXpattern) && "area_code" %in% colnames(UNlocations)) 
         MXpattern[["HIVregion"]] <- as.integer(UNlocations[match(MXpattern$country_code, UNlocations$country_code), "area_code"] == 903)
     
+    # rename solumns if needed
+    for(col in names(rename.cols)){
+        colnames(MXpattern)[which(colnames(MXpattern) == rename.cols[[col]])] <- col
+    }
     PASFRpattern <- create.pattern(vwBase, c("PasfrNorm", paste0("Pasfr", .remove.all.spaces(levels(vwBase$PasfrNorm))), "ConstantPasfr"))
     return(list(mig.type=MIGtype, mx.pattern=MXpattern, pasfr.pattern=PASFRpattern))
 }
@@ -1015,13 +1060,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		}
 	}
 	if(!is.na(dataset.obs)) 
-		pred.obs <- bayesTFR:::load.bdem.dataset(dataset.obs, wpp.year, annual = annual)
+		pred.obs <- bayesTFR:::load.from.wpp(dataset.obs, wpp.year, annual = annual)
 		
 	pred.all <- NULL
 	itraj <- 1
 	for(dataset.name in c(dataset, dataset.low, dataset.high)) {
 		if(is.na(dataset.name)) next
-		pred <- bayesTFR:::load.bdem.dataset(dataset.name, wpp.year, annual = annual)
+		pred <- bayesTFR:::load.from.wpp(dataset.name, wpp.year, annual = annual)
 		remove.cols <- which(colnames(pred) %in% c('name', 'country', 'last.observed'))
 		pred <- pred[,-remove.cols]
 		if(!is.na(dataset.obs)) {
@@ -1769,7 +1814,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	}
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
-    model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables"
+    model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables" && !annual # we don't have model bx available for 1x1
     lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL)))
     avg.ax <- length(lpat) == 1  && lpat == 0
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
@@ -2381,6 +2426,7 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
 	mig.num.cols <- grep('^[0-9]{4}', colnames(mig), value=TRUE)
 	tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
 	pasfr <- load.wpp.dataset("percentASFR", wpp.year)
+	if(wpp.year >= 2022) pasfr <- .consolidate.pasfr(pasfr)
 	pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
 	vwBase <- get(paste0('vwBaseYear', wpp.year))[,c('country_code', 'MigCode')]
 	pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
