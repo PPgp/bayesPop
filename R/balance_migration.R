@@ -462,7 +462,9 @@ print.pop.warnings <- function(pop.pred, which.warns=NULL) {
 add.pop.warn <- function(country, time, code, env, count = 1) {
 	if(is.null(env$warns[[country]])) 
 		env$warns[[country]] <- env$warns[["_template_"]]
-	env$warns[[country]][code, time] <- env$warns[[country]][code, time] + count
+	if(inherits(try(	
+		env$warns[[country]][code, time] <- env$warns[[country]][code, time] + count, silent = TRUE), "try-error"))
+	      cat("\nError in add.pop.warn. country = ", country, ", time = ", time, ", code = ", code, "dims: ", paste(dim(env$warns[[country]]), collapse = ","), "\n")
 }
 
 .ini.pop.res.env <- function(e, vital.events=FALSE, debug = FALSE) {
