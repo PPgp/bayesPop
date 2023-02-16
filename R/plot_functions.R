@@ -969,13 +969,13 @@ pop.trajectories.pyramid.bayesPop.prediction <- function(pop.object, country, ye
 
 pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, show.legend=TRUE, 
                                                        show.birth.year = FALSE,
-													col=rainbow, col.traj='#00000020',
+													col=rainbow, col.traj='#00000020', omit.page.pars = FALSE,
 													lwd=2, ann=par('ann'), axes=TRUE, grid=TRUE, 
 													cex.main=0.9, cex.sub=0.9, cex=0.8, cex.axis=0.8, ...) {
 	# col/lwd is color and line width for:
 	# 1. median, 2. quantiles, 3. past data, 4. trajectories
-	cur.par <- par(oma = c(0, 0, 2, 0), mgp=c(3,0.5,0), mar=c(5, 4, 2, 4) + 0.1)
-	#par(mfrow=c(1,2),  mar=c(5,6,2,-0.1)+0.1)
+    if(!omit.page.pars)
+	    cur.par <- par(oma = c(0, 0, 2, 0), mgp=c(3,0.5,0), mar=c(5, 4, 2, 4) + 0.1)
 	if((is.null(pop.object$pyramid) || length(pop.object$pyramid) == 0) && is.null(pop.object$CI) && is.null(pop.object$trajectories))
 		stop('Nothing to be plotted. Either pyramid, CI or trajectories must be given in pop.object.')
 	pyr.indicator <- !sapply(pop.object$pyramid, is.null)
@@ -1071,7 +1071,7 @@ pop.trajectories.pyramid.bayesPop.pyramid  <- function(pop.object, main=NULL, sh
 		if(ann) title(main, cex.main=cex.main, line=1)	
 		if(show.legend && ann) legend('topright', legend=legend, lty=ltys, bty='n', col=cols, lwd=lwds, cex=cex)
 	})
-	par(cur.par)
+	if(!omit.page.pars) par(cur.par)
 }
 
 pop.trajectories.pyramidAll <- function(pop.pred, year=NULL,
