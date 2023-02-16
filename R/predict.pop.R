@@ -593,7 +593,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 
 	MIGm <- miginp[["migM"]]
 	MIGf <- miginp[["migF"]]
-	
+
 	if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
 
 	if(!is.null(obs.periods)) {
@@ -680,7 +680,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'observed'))
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -1366,15 +1366,15 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 	# generate sex and age-specific migration if needed
 	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
-		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, verbose=FALSE)
+		mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, use.rc = inputs$mig.age.method == "rc", verbose=FALSE)
 		mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
 			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
-				# extact predicted migration
+				# extract predicted migration
 				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
 				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 				rownames(inpc[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
-				# extact observed migration
+				# extract observed migration
 				if(!is.null(obs[[what.mig]])) {
 					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]]))
 					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
@@ -2396,7 +2396,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 }
 
 age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
-									rescale=TRUE, ages.to.zero=18:21,
+									rescale=TRUE, ages.to.zero=18:21, use.rc = FALSE,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
 									depratio=wpp.year == 2015, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
@@ -2497,66 +2497,84 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
       		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
 			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
-			else {			
-				B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
-				netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
-				netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
-				B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
-				netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
-				netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
-				migdata <- list(M=netmigM, F=netmigF)
-				sxdata <- list(M=sxm, F=sxf)
-				for(sex in c('M', 'F')) {
-				    # In wpp2017, for some past years population is reported only up to 85+. 
-				    # Set migration of the open age group to 0. 
-				    if(any(is.na(pop1m[1:max.ages]))) {
-				        # find the index of the first NA 
-				        ina <- which(is.na(migdata[[sex]])==TRUE)[1]
-				        migdata[[sex]][ina-1] = 0
-				    }
-					if(mtype == 0) { 
-					  # Migration distributed across the time interval.
-					  # In projections in this case, the migration is derived as 
-					  # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
-					  # Thus, here is the reverse of that. 
-					  # However, it can yield zig-zags, which are removed in the smoothing step.
-					  migdata[[sex]][1] <- 2*migdata[[sex]][1]
-						for(i in 2:max.ages) {
-					       migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
-						}
-					  #stop('')
-					}
-					migdata[[sex]][ages.to.zero] <- 0
-					if(smooth) { #smoothing					
-						for(izig in 1:2) { # two passes of smoothing
-							# are there significant zig-zags?						
-							tops <- ((migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][1:(max.ages-2)] & 
-											migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][3:max.ages]) | 
-								(migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][1:(max.ages-2)] & migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][3:max.ages])) & 
-								abs(diff(migdata[[sex]])[1:(max.ages-2)]/(totmigy/100)) > 0.05
-							cs <- cumsum(c(TRUE, tops)) # consider first point as top
-							if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
-								migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
-								migdata[[sex]][ages.to.zero] <- 0
-							} else break
-						}
-					}
-				}
-				netmigM <- migdata[['M']]
-				netmigF <- migdata[['F']]
-				if(depratio.correction) {
-					# correct dependency ratio
-					cntry <- country
-					rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
-					if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
-					rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
-					if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
-				}
-				if(rescale) {
-					s <- sum(netmigM + netmigF)
-					netmigM <- netmigM/s * totmigy
-					netmigF <- netmigF/s * totmigy
-				}
+			else {
+			    if(use.rc) 
+			        netmigM <- netmigF <- totmigy * rcastro.schedule() / 2
+			    else {
+			        B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
+			        netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
+			        netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
+			        B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
+			        netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
+			        netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
+			        migdata <- list(M=netmigM, F=netmigF)
+			        sxdata <- list(M=sxm, F=sxf)
+			        for(sex in c('M', 'F')) {
+			            # In wpp2017, for some past years population is reported only up to 85+. 
+			            # Set migration of the open age group to 0. 
+			            if(any(is.na(pop1m[1:max.ages]))) {
+			                # find the index of the first NA 
+			                ina <- which(is.na(migdata[[sex]])==TRUE)[1]
+			                migdata[[sex]][ina-1] = 0
+			            }
+			            if(mtype == 0) { 
+			                # Migration distributed across the time interval.
+			                # In projections in this case, the migration is derived as 
+			                # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
+			                # Thus, here is the reverse of that. 
+			                # However, it can yield zig-zags, which are removed in the smoothing step.
+			                migdata[[sex]][1] <- 2*migdata[[sex]][1]
+			                for(i in 2:max.ages) {
+			                    migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+			                }
+			                #stop('')
+			            }
+			            migdata[[sex]][ages.to.zero] <- 0
+			            if(smooth) { #smoothing					
+			                for(izig in 1:2) { # two passes of smoothing
+			                    # are there significant zig-zags?						
+			                    tops <- ((migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][1:(max.ages-2)] & 
+			                                  migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][3:max.ages]) | 
+			                                 (migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][1:(max.ages-2)] & migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][3:max.ages])) & 
+			                        abs(diff(migdata[[sex]])[1:(max.ages-2)]/(totmigy/100)) > 0.05
+			                    cs <- cumsum(c(TRUE, tops)) # consider first point as top
+			                    if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
+			                        migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
+			                        migdata[[sex]][ages.to.zero] <- 0
+			                    } else break
+			                }
+			            }
+			        }
+			        netmigM <- migdata[['M']]
+			        netmigF <- migdata[['F']]
+			        if(depratio.correction) {
+			            # correct dependency ratio
+			            cntry <- country
+			            rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
+			            if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
+			            rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
+			            if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
+			        }
+			        if(rescale) {
+			            # don't allow the total male mig have a different sign than the female or the totals have a different sign
+			            if(sign((sM <- sum(netmigM))) != sign((sF <- sum(netmigF))) || sign(totmigy) != sign(sum(netmigM + netmigF))) { 
+			                if(sign(totmigy) == sign(sF)) 
+			                    shift <- -sign(sM)*(abs(sM) + min(0.01, abs(sF)))
+			                else {  
+			                    if(sign(totmigy) == sign(sM)) {
+			                        shift <- -sign(sF)*(abs(sF) + min(0.01, abs(sM)))
+			                    } else # totmigy has a different sign then the sum of netmigM + netmigF
+			                        shift <- -sign(sM)*(max(abs(sF), abs(sM)) + min(0.01, abs(sM), abs(sF)))
+			                }
+			                age.shift <- shift * rcastro.schedule()
+			                netmigF <- netmigF + age.shift
+			                netmigM <- netmigM + age.shift
+			            }
+			            s <- sum(netmigM + netmigF)
+			            netmigM <- netmigM/s * totmigy
+			            netmigF <- netmigF/s * totmigy
+			        }
+			    }
 			}
 			this.all.migM <- cbind(this.all.migM, netmigM)
 			this.all.migF <- cbind(this.all.migF, netmigF)
