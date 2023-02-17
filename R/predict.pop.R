@@ -842,9 +842,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 migtempl <- existing.mig[[paste0('MIG', tolower(sex))]]
             } else {
                 # Here create only a dataframe filled with NAs 
-                if(!annual)
-                    migtempl <- bayesTFR:::load.from.wpp(paste0('migration', sex), 2012, annual = annual) # structure is taken from the wpp2012 dataset
-                else {
+                #if(!annual)
+                #    migtempl <- bayesTFR:::load.from.wpp(paste0('migration', sex), 2012, annual = annual) # structure is taken from the wpp2012 dataset
+                #else {
                     # use countries and ages from the population dataset
                     #migtempl <- cbind(pop0[, c("country_code", "age")], 
                     #                  matrix(0, nrow = nrow(pop0), ncol = length(periods), 
@@ -852,7 +852,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                     migtempl <- .get.mig.template(unique(pop0$country_code), 
                                                   ages = pop0$age[all.age.index(annual, observed = TRUE)],
                                                   time.periods = periods)
-                }
+                #}
                 migtempl[,which(!colnames(migtempl) %in% c("country", "country_code", "age"))] <- NA
             }
             migtempl <- data.table(migtempl)
