@@ -91,7 +91,17 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                                         0.18067, 0.13733, 0.09533, 0.064, 0.04267, 
                                         0.028, 0.01867, 0.012, 0.008, 0.00533, 
                                         0.00333, 0.00333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
+    const double migrc_schedule1y[101] = {0.00734, 0.00734, 0.00734, 0.00694, 0.00654, 0.00614, 0.00573, 0.00533, 0.0051, 0.00486, 
+                                            0.00461, 0.00437, 0.00413, 0.0075, 0.01085, 0.01421, 0.01758, 0.02093, 0.02456, 0.02819, 
+                                            0.03182, 0.03545, 0.03908, 0.03888, 0.03869, 0.03849, 0.0383, 0.0381, 0.03627, 0.03444, 
+                                            0.03261, 0.03078, 0.02894, 0.02697, 0.02499, 0.02302, 0.02104, 0.01907, 0.01782, 0.01656, 
+                                            0.0153, 0.01405, 0.0128, 0.01195, 0.01109, 0.01024, 0.00939, 0.00854, 0.00795, 0.00736, 
+                                            0.00677, 0.00619, 0.0056, 0.00522, 0.00486, 0.00448, 0.00411, 0.00373, 0.00347, 0.0032, 
+                                            0.00293, 0.00267, 0.0024, 0.00224, 0.00208, 0.00192, 0.00176, 0.0016, 0.00149, 0.00139, 
+                                            0.00128, 0.00117, 0.00107, 0.00098, 0.00091, 0.00083, 0.00074, 0.00067, 0.00067, 0.00067, 
+                                            0.00067, 0.00067, 0.00067, 0.00053, 4e-04, 0.00027, 0.00013, 0, 0, 0, 
+                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                            0};
     nrow = *migr;
     ncol = *migc;
     n = *npred;
@@ -167,13 +177,24 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                 tmigstart = trmigstart*tpop;
                 tmigmid = trmigmid*tpop;
                 tmigend = trmigend*tpop;
-                for(i=0; i < adim; ++i) { /* distribute into ages using Rogers Castro */
-                    migstartm[i][jve] = 0.5*tmigstart*migrc_schedule[i];
-                    migstartf[i][jve] = 0.5*tmigstart*migrc_schedule[i];
-                    migmidm[i][jve] = 0.5*tmigmid*migrc_schedule[i];
-                    migmidf[i][jve] = 0.5*tmigmid*migrc_schedule[i];
-                    migendm[i][jve] = 0.5*tmigend*migrc_schedule[i];
-                    migendf[i][jve] = 0.5*tmigend*migrc_schedule[i];
+                if(*abridged == 1) {
+                    for(i=0; i < adim; ++i) { /* distribute into ages using 5-year Rogers Castro */
+                        migstartm[i][jve] = 0.5*tmigstart*migrc_schedule[i];
+                        migstartf[i][jve] = 0.5*tmigstart*migrc_schedule[i];
+                        migmidm[i][jve] = 0.5*tmigmid*migrc_schedule[i];
+                        migmidf[i][jve] = 0.5*tmigmid*migrc_schedule[i];
+                        migendm[i][jve] = 0.5*tmigend*migrc_schedule[i];
+                        migendf[i][jve] = 0.5*tmigend*migrc_schedule[i];
+                    }
+                } else {
+                    for(i=0; i < adim; ++i) { /* distribute into ages using annual Rogers Castro */
+                        migstartm[i][jve] = 0.5*tmigstart*migrc_schedule1y[i];
+                        migstartf[i][jve] = 0.5*tmigstart*migrc_schedule1y[i];
+                        migmidm[i][jve] = 0.5*tmigmid*migrc_schedule1y[i];
+                        migmidf[i][jve] = 0.5*tmigmid*migrc_schedule1y[i];
+                        migendm[i][jve] = 0.5*tmigend*migrc_schedule1y[i];
+                        migendf[i][jve] = 0.5*tmigend*migrc_schedule1y[i];
+                    }
                 }
                 if(debug>=1){
                     Rprintf("\ntmigend = %f, tpop = %f, migendm[5] = %f, migendm[10] = %f",  tmigend, tpop, migendm[5][jve], migendm[10][jve]);
