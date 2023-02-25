@@ -21,12 +21,14 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
-						mig.is.rate = FALSE, mig.age.method = c("rc", "resid"), my.locations.file = NULL, 
+						mig.is.rate = FALSE, mig.age.method = c("rc", "resid"), mig.age.gcc = c("un", "rc", "default"),
+						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages <- all.ages(annual, observed = FALSE)
 	unblock.gtk.if.needed('reading inputs')
 	mig.age.method <- match.arg(mig.age.method)
+	mig.age.gcc <- match.arg(mig.age.gcc)
 	if(!is.null(my.locations.file)) {
 		UNlocations <- NULL # needed for R check not to complain
 		UNlocations <<- read.delim(file=my.locations.file, comment.char='#', check.names=FALSE)
@@ -38,7 +40,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, 
 		                   lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-		                   annual = annual, mig.age.method = mig.age.method, verbose=verbose)
+		                   annual = annual, mig.age.method = mig.age.method, mig.age.gcc = mig.age.gcc, verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
 			pred <- get.pop.prediction(output.dir)
@@ -47,7 +49,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
 								lc.for.hiv = pred$inputs$lc.for.hiv, lc.for.all = pred$inputs$lc.for.all,
-								annual = pred$inputs$annual, mig.age.method = mig.age.method, verbose=verbose)
+								annual = pred$inputs$annual, mig.age.method = mig.age.method, mig.age.gcc = mig.age.gcc, verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
 			nr.traj <- pred$nr.traj
@@ -55,7 +57,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
 		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-		                          annual = annual, mig.age.method = mig.age.method, verbose=verbose)
+		                          annual = annual, mig.age.method = mig.age.method, mig.age.gcc = mig.age.gcc, verbose=verbose)
 	}
 
 	outdir <- file.path(output.dir, 'predictions')
@@ -484,7 +486,7 @@ load.wpp.dataset <- function(...)
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
                         fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, 
                         lc.for.hiv = TRUE, lc.for.all = FALSE, mig.is.rate = FALSE,
-                        annual = FALSE, mig.age.method = "rc", verbose=FALSE) {
+                        annual = FALSE, mig.age.method = "rc", mig.age.gcc = "un", verbose=FALSE) {
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- GQ <- list(M=NULL, F=NULL)
 	# Get initial population counts
@@ -589,7 +591,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	# Get age-specific migration
 	miginp <- .get.mig.data(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
 	                        existing.mig = existing.mig, all.countries = all.countries, pop0 = POPm0,
-	                        mig.age.method = mig.age.method, verbose = verbose)
+	                        mig.age.method = mig.age.method, mig.age.gcc = mig.age.gcc, verbose = verbose)
 
 	MIGm <- miginp[["migM"]]
 	MIGf <- miginp[["migF"]]
@@ -680,7 +682,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'observed'))
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.age.gcc', 'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
@@ -822,7 +824,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 }
 
 .get.mig.data <- function(inputs, wpp.year, annual, periods, existing.mig = NULL, 
-                          all.countries = TRUE, pop0 = NULL, mig.age.method = "rc", verbose = FALSE) {
+                          all.countries = TRUE, pop0 = NULL, mig.age.method = "rc", mig.age.gcc = "un", 
+                          verbose = FALSE) {
     # Get age-specific migration
     wppds <- data(package=paste0('wpp', wpp.year))
     recon.mig <- NULL
@@ -882,15 +885,15 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
             next
         }
-        if(all.countries) { # reconstruct migration for all countries
-            if(annual || mig.age.method == "rc") {
+        if(all.countries) { # split total migration into ages for all countries
+            if(annual || mig.age.method == "rc") { # Rogers-Castro
                 miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration", wpp.year, 
                                                                                    annual = annual),
                                                           ages = migtempl$age[all.age.index(annual, observed = TRUE)],
                                                           annual = annual, time.periods = periods,
                                                           scale = if(is.null(inputs[[fname]])) 0.5 else 1,
                                                           template = migtempl), check.names = FALSE)
-            } else {
+            } else { # residual method (only for 5-year data)
                 if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
                 miginp[[inpname]] <- recon.mig[[list(M = "male", F = "female")[[sex]]]]
             }
