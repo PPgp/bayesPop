@@ -833,7 +833,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
         }
         setnames(gcc, "country_code", id.col)
-        migtmp <- merge(migtmp, gcc, by = c(id.col, "age.idx", "year"))
+        migtmp <- merge(migtmp, gcc, by = c(id.col, "age.idx", "year"), all.x = TRUE)
         migtmp[!is.na(gcc.mig), mig := gcc.mig][, gcc.mig := NULL]
     }
     frm <- paste(id.col, "+ age.idx + age ~ year")
