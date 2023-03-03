@@ -2331,6 +2331,16 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
+# write.pop.trajectories <- function(pop.pred, expression, byage = FALSE, output.file = "pop_trajectories.csv"){
+#     dat <- if(byage) get.pop.exba(expression) else get.pop.ex(expression)
+#     if(!byage) {
+#         obs <- get.pop.observed.from.expression.all.countries(expression, pop.pred)
+#         pred <- get.pop.from.expression.all.countries(expression, pop.pred, observed = FALSE)
+#     } else {
+#         
+#     }
+# }
+
 LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), ...){
 	colname <- match.arg(colname)
 	if(is.null(dim(mx))) return(.doLifeTableMxCol(mx, colname, ...))
