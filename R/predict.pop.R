@@ -2331,15 +2331,23 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-# write.pop.trajectories <- function(pop.pred, expression, byage = FALSE, output.file = "pop_trajectories.csv"){
-#     dat <- if(byage) get.pop.exba(expression) else get.pop.ex(expression)
-#     if(!byage) {
-#         obs <- get.pop.observed.from.expression.all.countries(expression, pop.pred)
-#         pred <- get.pop.from.expression.all.countries(expression, pop.pred, observed = FALSE)
-#     } else {
-#         
-#     }
-# }
+write.pop.trajectories <- function(pop.pred, expression, output.file = "pop_trajectories.csv", 
+                                   byage = FALSE, observed = FALSE,  wide = FALSE, ...){
+    if(grepl("{", expression, fixed = TRUE) && !byage)
+        warning("Expression seem to contain {} and thus is probably age-specific. If it is the case, set byage = TRUE or use [] instead of {}.")
+    if(!grepl("{", expression, fixed = TRUE) && byage)
+        warning("The function is asked to return results by age by the expression does not contain {}. Either set byage = FALSE or make the expression age-specific by using {}.")
+    
+    dat <- if(byage) get.pop.exba.all(expression, pop.pred, observed = observed, ...) else get.pop.ex.all(expression, pop.pred, observed = observed, ...)
+    if(wide){
+        if(!pop.pred$annual && (dat$year[1] %% 5) > 0)
+            dat[, year := paste(year - 3, year + 2, sep = "-")]
+        frm <- paste("country_code", if(byage) "+ age" else "", "~ year")
+        dat <- dcast(dat, frm, value.var = "indicator")
+    }
+    fwrite(dat, file = output.file)
+    cat("\n", if(observed) "Observed data" else "Trajectories", " for all countries stored in ", output.file, ".\n")
+}
 
 LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), ...){
 	colname <- match.arg(colname)
