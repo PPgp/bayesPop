@@ -2332,26 +2332,37 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 }
 
 write.pop.trajectories <- function(pop.pred, expression = "PXXX", output.file = "pop_trajectories.csv", 
-                                   byage = FALSE, observed = FALSE,  wide = FALSE, 
-                                   include.name = FALSE, sep = ",", ...){
+                                   byage = FALSE, observed = FALSE,  wide = FALSE, digits = NULL,
+                                   include.name = FALSE, sep = ",", na.rm = TRUE, ...){
     if(grepl("{", expression, fixed = TRUE) && !byage)
         warning("Expression seem to contain {} and thus is probably age-specific. If it is the case, set byage = TRUE or use [] instead of {}.")
     if(!grepl("{", expression, fixed = TRUE) && byage)
         warning("The function is asked to return results by age by the expression does not contain {}. Either set byage = FALSE or make the expression age-specific by using {}.")
     
-    dat <- if(byage) get.pop.exba.all(expression, pop.pred, observed = observed, ...) else get.pop.ex.all(expression, pop.pred, observed = observed, ...)
+    fct <- if(byage) "get.pop.exba" else "get.pop.ex"
+    dat <- do.call(fct, c(list(expression, pop.pred, observed = observed, as.dt = TRUE), ...))
+    if(na.rm)
+        dat <- dat[!is.na(indicator)]
+    if(nrow(dat) == 0)
+        stop("Expression yields an empty dataset.")
+    
+    if(!is.null(digits))
+        dat[, indicator := round(indicator, digits)]
+    if(!pop.pred$annual && (dat$year[1] %% 5) > 0){
+        dat <- dat[, period := paste(year - 3, year + 2, sep = "-")]
+        data.table::setcolorder(dat, c("country_code", "period", "year"))
+    }
     if(wide){
-        if(!pop.pred$annual && (dat$year[1] %% 5) > 0)
-            dat[, year := paste(year - 3, year + 2, sep = "-")]
-        frm <- paste("country_code", if(byage) "+ age" else "", "~ year")
-        dat <- dcast(dat, frm, value.var = "indicator")
+        frm <- paste("country_code", if(byage) "+ age" else "", "~", 
+                     if("period" %in% colnames(dat)) "period" else "year")
+        dat <- data.table::dcast(dat, frm, value.var = "indicator")
     }
     if(include.name){
         dat <- merge(data.table(pop.pred$countries), dat, by.x = "code", by.y = "country_code", sort = FALSE)
         setnames(dat, "code", "country_code")
     }
 
-    fwrite(dat, file = output.file, sep = sep)
+    data.table::fwrite(dat, file = output.file, sep = sep)
     cat("\n", if(observed) "Observed data" else "Trajectories", "for all countries stored in", output.file, ".\n")
 }
 
