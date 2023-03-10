@@ -1045,6 +1045,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			dim(data) <- c(1, dim(data)) # adding country dimension
 			dimnames(data)[2:length(dim(data))] <- dimnam
 		} else { # multiple countries
+		    if(has.ve) stop("XXX is only allowed for population.")
 			traj <- get.pop.observed.multiple.countries(pop.pred, countries=pop.pred$countries$code, sex=sex, 
 														age=age, sum.over.ages=sum.over.ages)
 			data <- traj$data
@@ -1107,14 +1108,17 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			paste("get.pop('\\1', pop.pred,", args, ")"), expression))
 }
 
-get.pop.ex <- function(expression, pop.pred, observed = FALSE, ...) {
+get.pop.ex <- function(expression, pop.pred, observed = FALSE, as.dt = FALSE, ...) {
 	# Return trajectories or observed values for an expression (defined by time)
     if(grepl("XXX", expression, fixed = TRUE))
-        return(get.pop.ex.all(expression, pop.pred, observed = observed, ...))
+        return(get.pop.ex.all(expression, pop.pred, observed = observed, as.dt = as.dt, ...))
 	if(observed) 
-		return(get.pop.observed.from.expression(expression, pop.pred, ...))
+		return(get.pop.observed.from.expression(expression, pop.pred, as.dt = as.dt, ...))
 	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
-	return(result$trajectories[,result$index])
+	res <- result$trajectories[,result$index]
+	if(as.dt)
+	    res <- data.table::data.table(res, keep.rownames = TRUE)
+	return(res)
 }
 
 get.pop.exba <- function(expression, pop.pred, observed = FALSE, ...) {
@@ -1127,15 +1131,11 @@ get.pop.exba <- function(expression, pop.pred, observed = FALSE, ...) {
 	return(result$trajectories[,,result$index])
 }
 
-get.pop.ex.all <- function(expression, pop.pred, observed=FALSE, ...){
+get.pop.ex.all <- function(expression, pop.pred, observed=FALSE, as.dt = TRUE, ...){
     # Return trajectories or observed values for an expression for all countries
-    if(observed) {
-        obs <- data.table::data.table(get.pop.observed.from.expression.all.countries(expression, pop.pred))[, `:=`(country_code = pop.pred$countries$code)]
-        resdt <- melt(obs, id.vars = c("country_code"), value.name = "indicator", variable.name = "year",
-                      variable.factor = FALSE)
-        resdt[, year := as.integer(year)]
-        return(resdt)
-    }
+    if(observed) 
+        return(get.pop.observed.from.expression.all.countries(expression, pop.pred, as.dt = as.dt, ...))
+
     result <- list()
     for(icntry in seq_along(pop.pred$countries$code)){
         cntry <- pop.pred$countries$code[icntry]
@@ -1151,10 +1151,10 @@ get.pop.ex.all <- function(expression, pop.pred, observed=FALSE, ...){
     return(resdt)
 }
 
-get.pop.exba.all <- function(expression, pop.pred, ...){
+get.pop.exba.all <- function(expression, pop.pred, observed=FALSE, ...){
     # Return trajectories or observed values for an expression (defined by age, i.e. includes {}) for all countries
     if(observed) {
-        obs <- data.table::data.table(bayesPop:::get.pop.observed.from.expression.multiple.age.all.countries(expression, pop.pred))[, `:=`(country_code = pop.pred$countries$code)]
+        obs <- data.table::data.table(get.pop.observed.from.expression.multiple.age.all.countries(expression, pop.pred))[, `:=`(country_code = pop.pred$countries$code)]
         resdt <- data.table::as.data.table(obs, sorted = FALSE, value.name = "indicator")
         resdt[, `:=`(V3 = as.integer(V3), V2 = as.integer(V2))]
         setnames(resdt, c("V1", "V2", "V3"), c("country_code", if(pop.pred$annual) "age" else "age_index", "year"))
@@ -1257,7 +1257,7 @@ get.pop.trajectories.from.expression.multiple.age <- function(expression, pop.pr
 	return(if(is.null(pop.pred$proj.years.pop)) as.character(as.integer(years)+2) else years)
 }
 
-get.pop.observed.from.expression <- function(expression, pop.pred, as.vector=TRUE, ...) {
+get.pop.observed.from.expression <- function(expression, pop.pred, as.vector=TRUE, as.dt = FALSE, ...) {
 	result <- eval(parse(text=.parse.pop.expression(expression, args='observed=TRUE, ...')))
 	if(as.vector && !is.null(result)) {
 		result <- drop(result)
@@ -1267,6 +1267,8 @@ get.pop.observed.from.expression <- function(expression, pop.pred, as.vector=TRU
 			names(result) <- .get.compatible.pop.matrix.middle.years(pop.pred)[(end-l+1):end]
 		}
 	}
+	if(as.dt)
+	    result <- data.table::as.data.table(result, keep.rownames = TRUE)
 	return(result)
 }
 
@@ -1276,22 +1278,38 @@ get.pop.observed.from.expression.multiple.age <- function(expression, pop.pred, 
 }
 
 
-get.pop.observed.from.expression.all.countries <- function(expression, pop.pred, time.index = NULL, ...) {
-	data <- get.pop.observed.from.expression(expression, pop.pred, as.vector=FALSE, ...)
-	if(dim(data)[[1]] != nrow(pop.pred$countries)) stop('Error in first dimension of the expression.')
-	if(length(dim(data))==4 && dim(data)[[2]]==1) 
-		data <- adrop(data, drop=2) # remove age dimension
-	if(length(dim(data))==3 && dim(data)[[3]]==1) 
-		data <- adrop(data, drop=3) # remove trajectory dimension
-	years <- .get.compatible.pop.matrix.middle.years(pop.pred)
-	if(!all(is.element(years, dimnames(data)[[2]]))) {
-		years <- .get.compatible.pop.matrix.end.years(pop.pred)
-		if(!all(is.element(years, dimnames(data)[[2]]))) 
-			stop('Error in second dimension of the expression.')
-	}
-	data <- data[,years, drop = FALSE]
-	if(is.null(time.index)) time.index <- 1:ncol(data)
-	return(data[,time.index, drop = FALSE])
+get.pop.observed.from.expression.all.countries <- function(expression, pop.pred, time.index = NULL, as.dt = FALSE, ...) {
+    years <- .get.compatible.pop.matrix.middle.years(pop.pred)
+    years.pop <- .get.compatible.pop.matrix.end.years(pop.pred)
+    set.year.dimnames <- FALSE
+    result <- list()
+    for(icntry in seq_along(pop.pred$countries$code)){
+        cntry <- pop.pred$countries$code[icntry]
+        expr <- gsub('XXX', as.character(cntry), expression, fixed=TRUE)
+        thisres <- get.pop.observed.from.expression(expr, pop.pred, as.vector=FALSE, ...)
+        if(icntry == 1){
+           if(is.null(dimnames(thisres)[[3]])){
+                end.time <- ncol(pop.pred$inputs$pop.matrix[['male']])
+                years.to.use <- years[(end.time-dim(thisres)[3]+1):end.time]
+                set.year.dimnames <- TRUE
+            } else years.to.use <- years.pop[1:dim(thisres)]
+            if(is.null(time.index)) time.index <- seq_along(years.to.use)
+        }
+        if(set.year.dimnames) dimnames(thisres)[[3]] <- years.to.use
+        result[[icntry]] <- thisres[1, , years.to.use[time.index],]
+        if(as.dt){
+            result[[icntry]] <- data.table::as.data.table(result[[icntry]], keep.rownames = TRUE)[, `:=`(country_code = cntry)]
+        }
+    }
+    if(as.dt){
+        resdt <- rbindlist(result)
+        setnames(resdt, c("V1", "V2"), c("year", "indicator"))
+        resdt[, year := as.integer(year)]
+        setcolorder(resdt, "country_code")
+    } else {
+        resdt <- do.call("abind", c(result, list(along = 1)))
+    }
+	return(resdt)
 }
 
 get.pop.observed.from.expression.multiple.age.all.countries <- function(expression, pop.pred, time.index = NULL, ...) {
@@ -1299,12 +1317,12 @@ get.pop.observed.from.expression.multiple.age.all.countries <- function(expressi
     data <- adrop(data, drop=4) # remove trajectory dimension
     if(dim(data)[[1]] != nrow(pop.pred$countries)) stop('Error in first dimension of the expression.')
     years <- .get.compatible.pop.matrix.middle.years(pop.pred)
-    if(!all(is.element(years, dimnames(data)[[2]]))) {
+    if(!all(is.element(years, dimnames(data)[[3]]))) {
         years <- .get.compatible.pop.matrix.end.years(pop.pred)
         if(!all(is.element(years, dimnames(data)[[2]]))) 
             stop('Error in second dimension of the expression.')
     }
-    data <- data[,years, drop = FALSE]
+    data <- data[,years, , drop = FALSE]
     if(is.null(time.index)) time.index <- 1:ncol(data)
     return(data[,time.index, drop = FALSE])
 }

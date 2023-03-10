@@ -2331,8 +2331,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
-write.pop.trajectories <- function(pop.pred, expression, output.file = "pop_trajectories.csv", 
-                                   byage = FALSE, observed = FALSE,  wide = FALSE, ...){
+write.pop.trajectories <- function(pop.pred, expression = "PXXX", output.file = "pop_trajectories.csv", 
+                                   byage = FALSE, observed = FALSE,  wide = FALSE, 
+                                   include.name = FALSE, sep = ",", ...){
     if(grepl("{", expression, fixed = TRUE) && !byage)
         warning("Expression seem to contain {} and thus is probably age-specific. If it is the case, set byage = TRUE or use [] instead of {}.")
     if(!grepl("{", expression, fixed = TRUE) && byage)
@@ -2345,8 +2346,13 @@ write.pop.trajectories <- function(pop.pred, expression, output.file = "pop_traj
         frm <- paste("country_code", if(byage) "+ age" else "", "~ year")
         dat <- dcast(dat, frm, value.var = "indicator")
     }
-    fwrite(dat, file = output.file)
-    cat("\n", if(observed) "Observed data" else "Trajectories", " for all countries stored in ", output.file, ".\n")
+    if(include.name){
+        dat <- merge(data.table(pop.pred$countries), dat, by.x = "code", by.y = "country_code", sort = FALSE)
+        setnames(dat, "code", "country_code")
+    }
+
+    fwrite(dat, file = output.file, sep = sep)
+    cat("\n", if(observed) "Observed data" else "Trajectories", "for all countries stored in", output.file, ".\n")
 }
 
 LifeTableMxCol <- function(mx, colname=c('Lx', 'lx', 'qx', 'mx', 'dx', 'Tx', 'sx', 'ex', 'ax'), ...){
