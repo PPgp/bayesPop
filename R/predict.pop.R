@@ -619,6 +619,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	migpr <- .load.mig.traj(inputs, verbose = verbose)
 	migMpred <- migpr$M
 	migFpred <- migpr$F
+	migBpred <- migpr$B
 	
 	mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1], migpr[["migcode"]]*mig.is.rate[2])
 	
@@ -685,7 +686,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
-				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
+				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
 				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', #'mig.age.gcc', 
 				'observed'))
@@ -850,13 +851,15 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migtmp[mig.neg.schedule, prop.neg := i.prop, on = c("country_code", "year", "age")]
             # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
             # so that we don't loose the schedule
-            #if(!is.null(country_code) && country_code == 512) stop("")
+            #loadif(!is.null(country_code) && country_code == 512) stop("")
             migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := if(annual) 0.001 else 0.005] #totmigl[abs(totmig) > 0, min(abs(totmig))]
             # use the negative schedule if total migration is negative and there is a different schedule for such cases
             migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
             if(scale == 1){
                 # need to rescale it to sum to 1 over one sex as the default datasets sum to 1 over both sexes
-                migtmp[, prop := prop/sum(prop), by = c(id.col, "year")]
+                migtmp[, sprop := sum(prop), by = c(id.col, "year")]
+                migtmp[sprop != 0, prop := prop/sprop]
+                migtmp[sprop = 0, prop := 0]
             }
             if(!"country_code" %in% colnames(df)) migtmp[, country_code := NULL] # remove this column if it was added above
         }
@@ -1167,7 +1170,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 }
 
 .load.mig.traj <- function(inputs, verbose = FALSE) {
-    migMpred <- migFpred <- NULL
+    migMpred <- migFpred <- migBpred <- NULL
     migtrajcols <- list(LocID = "country_code", Year = "year", Trajectory = "trajectory", Age = "age", Migration = "value")
     migcode <- 0
     for(sex in c('M', 'F', '')) {
@@ -1187,12 +1190,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         migpred <- migpred.raw[, cols.to.keep]
         colnames(migpred) <- unlist(migtrajcols[cols.to.keep])
         if(sex == '') { # total for both sexes in one file; split it into two objects
-            for(sext in c('M', 'F')){
-                var.name <- paste0('mig',sext, 'pred')
-                if(!is.null(get(var.name))) next
-                migpreds <- migpred
-                migpreds$value <- migpreds$value/2
-                assign(var.name, migpreds)
+            if(is.null(migMpred) || is.null(migFpred)) {
+                migBpred <- migpred
                 migcode <- 3
             }
         } else {
@@ -1200,7 +1199,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             assign(var.name, migpred)
         }
     }
-    return(list(M = migMpred, F = migFpred, migcode = migcode))
+    return(list(M = migMpred, F = migFpred, B = migBpred, migcode = migcode))
 }
 
 .get.migration.traj <- function(pred, par, country, ...) {
@@ -1521,12 +1520,22 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	e <- new.env()
 	e$inputs <- inputs
-	for(sex in c('M', 'F')) {
+	for(sex in c('M', 'F', 'B')) {
 		par <- paste0('mig', sex, 'pred')
 		if(is.null(inputs[[par]])) next
-		inpc[[par]] <- .get.migration.traj(e, par, country, sex = sex)
-		if(is.null(inpc[[par]])) next
-		medians[[par]] <- apply(inpc[[par]], c(1,3), quantile, 0.5, na.rm = TRUE)
+		if(sex == "B"){
+		    for(sx in c('M', 'F')){
+		        parsx <- paste0('mig', sx, 'pred')
+		        if(!is.null(inputs[[parsx]])) next # ignore if already derived
+		        inpc[[parsx]] <- .get.migration.traj(e, par, country, sex = sex, scale = 0.5)
+		    }
+		} else
+		    inpc[[par]] <- .get.migration.traj(e, par, country, sex = sex)
+	}
+	for(sex in c('M', 'F')){
+	    par <- paste0('mig', sex, 'pred')
+	    if(is.null(inpc[[par]])) next
+	    medians[[par]] <- apply(inpc[[par]], c(1,3), quantile, 0.5, na.rm = TRUE)
 	}
 	inpc$migMmedian <- medians$migMpred
 	inpc$migFmedian <- medians$migFpred
