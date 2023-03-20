@@ -851,7 +851,6 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migtmp[mig.neg.schedule, prop.neg := i.prop, on = c("country_code", "year", "age")]
             # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
             # so that we don't loose the schedule
-            #loadif(!is.null(country_code) && country_code == 512) stop("")
             migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := if(annual) 0.001 else 0.005] #totmigl[abs(totmig) > 0, min(abs(totmig))]
             # use the negative schedule if total migration is negative and there is a different schedule for such cases
             migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
@@ -875,7 +874,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     }
     migtmp <- merge(migtmp, agedf, by = "age", sort = FALSE)
     migtmp[, mig := totmig * prop]
-    
+    #if(!is.null(country_code) && country_code == 634) stop("")
     # gcc.cntries <- c(784, 634, 512, 48) # UAE, Qatar, Oman, Bahrain
     # if(gcc.schedule == "un" && ((!cntry.missing && any(gcc.cntries %in% totmigl[[id.col]])) || (!is.null(country_code) && country_code %in% gcc.cntries))){
     #     gcc <- NULL
