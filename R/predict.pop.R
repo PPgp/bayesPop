@@ -21,7 +21,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
-						mig.is.rate = FALSE, mig.age.method = c("auto", "un", "rc"), #mig.age.gcc = c("un", "rc", "default"),
+						mig.is.rate = FALSE, mig.age.method = c("auto", "un", "rc"), 
 						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
@@ -785,7 +785,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, method = "auto", #gcc.schedule = "un", 
                                  sex = "M", id.col = "country_code", country_code = NULL, ...) {
-    mig <- totmig <- rc <- NULL
+    mig <- totmig <- rc <- prop <- age <- i.prop <- prop.neg <- sprop <- NULL
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
     if(is.null(time.periods)) {
@@ -842,7 +842,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         cntries <- country_code
         if(id.col == "country_code")
             cntries <- unique(unlist(migtempll[, "country_code", with = FALSE]))
-        uncodes <- intersect(cntries, UNcountries())
+        # load UN codes (do not rely on the function UNcountries() as the UNlocatins object can contain user-specified locations)
+        locs.env <- new.env()
+        bayesTFR:::load.bdem.dataset('UNlocations', 2022, envir=locs.env, verbose=FALSE)
+        uncodes <- intersect(cntries, locs.env$UNlocations$country_code[locs.env$UNlocations$location_type==4])
         if(length(uncodes) > length(cntries)/2) { # here guessing if these are UN codes
             if(annual) migtmp[, year := as.integer(year)]
             if(!"country_code" %in% colnames(migtmp)) migtmp[, country_code := cntries] # this will be true only if migtmp corresponds to one country
@@ -863,7 +866,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             if(!"country_code" %in% colnames(df)) migtmp[, country_code := NULL] # remove this column if it was added above
         }
     }
-    na.records <- migtmp[, .(is.na = all(is.na(prop))), by = c(id.col, "year")][is.na == TRUE][, is.na := NULL]
+    na.records <- migtmp[, list(is.na = all(is.na(prop))), by = c(id.col, "year")][is.na == TRUE][, is.na := NULL]
     if(nrow(na.records) > 0){
         # all non-matched countries & years are filled with Rogers-Castro curves
         if(is.null(schedule)) schedule <- rcastro.schedule(annual)
@@ -2410,6 +2413,7 @@ write.pop.trajectories <- function(pop.pred, expression = "PXXX", output.file = 
     if(nrow(dat) == 0)
         stop("Expression yields an empty dataset.")
     
+    indicator <- period <- NULL
     if(!is.null(digits))
         dat[, indicator := round(indicator, digits)]
     if(!pop.pred$annual && (dat$year[1] %% 5) > 0){
@@ -2543,7 +2547,7 @@ create.pop.cluster <- function(nr.nodes, ...) {
 }
 
 age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
-									rescale=TRUE, ages.to.zero=18:21, use.rc = FALSE, gcc.un = FALSE,
+									rescale=TRUE, ages.to.zero=18:21, #use.rc = FALSE, gcc.un = FALSE,
 									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
 									depratio=wpp.year == 2015, verbose=TRUE) {
 	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
@@ -2645,13 +2649,13 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
 			totmigy <- round(totmig[,year.col],3)
 			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
 			else {
-			    if(gcc.un && country %in% c(784, 634, 512, 48)) { # UAE, Qatar, Oman, Bahrain)
-			        netmigM <- gcc.mig.schedule(country, sex = "M", total.mig = totmigy, annual = FALSE)
-			        netmigF <- gcc.mig.schedule(country, sex = "F", total.mig = totmigy, annual = FALSE)
-			    } else {
-			        if(use.rc) 
-			            netmigM <- netmigF <- totmigy * rcastro.schedule() / 2
-			        else {
+			    #if(gcc.un && country %in% c(784, 634, 512, 48)) { # UAE, Qatar, Oman, Bahrain)
+			     #   netmigM <- gcc.mig.schedule(country, sex = "M", total.mig = totmigy, annual = FALSE)
+			     #   netmigF <- gcc.mig.schedule(country, sex = "F", total.mig = totmigy, annual = FALSE)
+			    #} else {
+			        #if(use.rc) 
+			        #       netmigM <- netmigF <- totmigy * rcastro.schedule() / 2
+			        #else {
 			            B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
 			            netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
 			            netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
@@ -2725,8 +2729,8 @@ age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), c
 			                netmigM <- netmigM/s * totmigy
 			                netmigF <- netmigF/s * totmigy
 			            }
-			        }
-			    }
+			        #}
+			    #}
 			}
 			this.all.migM <- cbind(this.all.migM, netmigM)
 			this.all.migF <- cbind(this.all.migF, netmigF)

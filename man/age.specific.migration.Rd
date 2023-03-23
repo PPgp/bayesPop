@@ -17,7 +17,8 @@ age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5),
     depratio = wpp.year == 2015, verbose = TRUE)
     
 migration.totals2age(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-    schedule = NULL, scale = 1, id.col = "country_code", \dots)
+    schedule = NULL, scale = 1, method = "auto", sex = "M",
+    id.col = "country_code", country_code = NULL, \dots)
     
 rcastro.schedule(annual = FALSE)
 }
@@ -38,9 +39,12 @@ rcastro.schedule(annual = FALSE)
   \item{ages}{Labels of age groups into which the total migration is to be disaggregated. If it is missing, default age groups are determined depending on the argument \code{annual}.}
   \item{annual}{Logical determining if the age groups are 5-year age groups (\code{FALSE}) or 1-year ages (\code{TRUE}) on which the choice of the default schedule is dependent, if \code{schedule} is missing. It also determines the expected syntax of the names of time columns in \code{df}.}
   \item{time.periods}{Character vector determining which columns should be considered in the \code{df} dataset. It should be a subset of column names in \code{df}. By default, all time columns in \code{df} are considered.}
-  \item{schedule}{Numeric vector used for distributing total migration across ages. It should have the same length as \code{ages}. By default a Rogers-Castro schedule is used, using the function \code{rcastro.schedule}.}
+  \item{schedule}{Numeric vector used for distributing total migration across ages. It should have the same length as \code{ages}. If not given, the argument \code{method} determines how the totals are distributed.}
   \item{scale}{The migration schedule is multiplied by this number. It can be used for example, if total migration needs to be distributed between sexes.}
+  \item{method}{Method to use for the distrbution of totals into age groups. The \dQuote{un} method, available only for \pkg{wpp2022} and only for projected migration, uses the UN migration schedules. The \dQuote{rc} method uses a simple Rogers-Castro disaggregation via the function \code{rcastro.schedule}. The \dQuote{auto} method tries to apply the \dQuote{un} method first and for countries or time periods where there is no match, it applies the \dQuote{rc} method.}
+  \item{sex}{\dQuote{M} or \dQuote{F} determining the sex of this schedule. It is used for matching to the UN schedules, i.e. if the \dQuote{auto} or \dQuote{un} method is used.}
   \item{id.col}{Name of the unique identifier of the locations.}
+  \item{country_code}{Code of the country if the data belongs to only country only. It is used for matching to the UN schedules, i.e. if the \dQuote{auto} or \dQuote{un} method is used.}
   \item{\dots}{Further arguments passed to the underlying functions.}
 }
 \details{
@@ -50,7 +54,7 @@ Unlike in \code{\link[wpp2012]{wpp2012}}, for the three latest releases of the W
 If \code{smooth} is \code{TRUE} a smoothing procedure is performed over ages where necessary. Also, for simplicity, we set migration of old ages to zero (default is 85+). Both is done before the scaling. If it is desired to obtain raw residuals without any additional processing, set \code{smooth=FALSE}, \code{rescale=FALSE}, \code{ages.to.zero=c()}. 
 }
 \subsection{Function \code{migration.totals2age}}{
-This function allows to disagregate total migration counts (for multiple time periods and multiple locations) into age-specific ones by a user-defined schedule. By default the Rogers-Castro schedule is used. The default schedule can be accessed via the function \code{rcastro.schedule} where the \code{annual} argument specifies if it is for 1-year or 5-year age groups. 
+This function allows to disagregate total migration counts (for multiple time periods and multiple locations) into age-specific ones by a user-defined schedule. By default the UN schedule is used for records that match in terms of country code and time periods. For the remaining records, or for all records if the \code{method} argument is set to \dQuote{rc}, the Rogers-Castro schedule is used. The latter schedule can be accessed via the function \code{rcastro.schedule} where the \code{annual} argument specifies if it is for 1-year or 5-year age groups. 
 }
 }
 
@@ -66,7 +70,7 @@ Function \code{rcastro.schedule} returns a vector of proportions for each age gr
 Hana Sevcikova
 }
 
-\note{The \code{age.specific.migration} function is called automatically from \code{\link{pop.predict}} if no migration input is given. Similarly, if migration is given as totals, i.e. via the entries \code{mig}, \code{migMt}, or \code{migFt}, the function \code{migration.totals2age} is called using the default Rogers-Castro schedule. 
+\note{The \code{age.specific.migration} function is called automatically from \code{\link{pop.predict}} if no migration input is given. Similarly, if migration is given as totals, i.e. via the entries \code{mig}, \code{migMt}, or \code{migFt}, the function \code{migration.totals2age} is called using either the UN schedules or the default Rogers-Castro schedule. 
 Thus, only users that need sex- and age-specific migration for other purposes, or modify the defaults, will need to call these functions explicitly.}
  
 \section{Warning}{
@@ -87,12 +91,12 @@ head(asmig$female)}
 # simple disaggregation for one location
 totmig <- c(30, -50, -100)
 names(totmig) <- 2018:2020
-asmig.simple <- migration.totals2age(totmig, annual = TRUE)
+asmig.simple <- migration.totals2age(totmig, annual = TRUE, method = "rc")
 head(asmig.simple)
 
 # disaggregate WPP 2019 migration for all countries, one sex
 data(migration, package = "wpp2019")
-asmig.all <- migration.totals2age(migration, scale = 0.5) # assuming equal sex migration ratio
+asmig.all <- migration.totals2age(migration, scale = 0.5, method = "rc") # assuming equal sex migration ratio
 # plot result for the US in 2095-2100
 mig1sex.us <- subset(asmig.all, country_code == 840)[["2095-2100"]]
 plot(ts(mig1sex.us))

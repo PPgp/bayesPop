@@ -1117,6 +1117,7 @@ get.pop.ex <- function(expression, pop.pred, observed = FALSE, as.dt = FALSE, ..
 	result <- get.pop.trajectories.from.expression(expression, pop.pred, ...)
 	res <- result$trajectories[,result$index]
 	if(as.dt){
+	    trajectory <- NULL
 	    res <- data.table::data.table(result$trajectories[,result$index, drop = FALSE], keep.rownames = TRUE)
 	    res <- data.table::melt(res, id.vars = "rn", value.name = "indicator", variable.name = "trajectory",
 	                  variable.factor = FALSE)
@@ -1135,6 +1136,7 @@ get.pop.exba <- function(expression, pop.pred, observed = FALSE, as.dt = FALSE, 
 	result <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred, ...)
 	res <- result$trajectories[,,result$index]
 	if(as.dt){
+	    age <- NULL
 	    res <- data.table::as.data.table(result$trajectories[,,result$index, drop = FALSE], keep.rownames = TRUE, sorted = FALSE)
 	    colnames(res) <- c("age", "year", "trajectory", "indicator")
         res <- res[, `:=`(age = all.ages(pop.pred$annual, observed = observed)[as.integer(age)], 
@@ -1168,6 +1170,7 @@ get.pop.ex.all <- function(expression, pop.pred, observed=FALSE, as.dt = TRUE, p
         }
     }
     if(as.dt) {
+        trajectory <- NULL
         resdt <- data.table::rbindlist(result)
         resdt <- data.table::melt(resdt, id.vars = c("country_code", "rn"), value.name = "indicator", variable.name = "trajectory",
                     variable.factor = FALSE)
@@ -1211,6 +1214,7 @@ get.pop.exba.all <- function(expression, pop.pred, observed=FALSE, as.dt = TRUE,
         }
     }
     if(as.dt) {
+        age <- NULL
         resdt <- data.table::rbindlist(result)
         colnames(resdt)[1:3] <- c("age", "year", "trajectory")
         resdt[, `:=`(age = all.ages(pop.pred$annual, observed = observed)[as.integer(age)], year = as.integer(year))]
@@ -1337,6 +1341,7 @@ get.pop.observed.from.expression.multiple.age <- function(expression, pop.pred, 
 	    dimnames(result)[[2]] <- years[(end.time-dim(result)[2]+1):end.time]
 	}
 	if(as.dt) {
+	    age <- NULL
 	    result <- data.table::as.data.table(result, keep.rownames = TRUE, sorted = FALSE)
 	    result <- data.table::melt(result, id.vars = "rn", value.name = "indicator", 
 	                               variable.name = "year", variable.factor = FALSE)
@@ -1392,6 +1397,7 @@ get.pop.observed.from.expression.multiple.age.all.countries <- function(expressi
     result <- collect.all.countries.observed(expression, pop.pred, time.index = time.index, as.dt = as.dt, ...)
     
     if(as.dt){
+        rn <- NULL
         resdt <- data.table::rbindlist(result)
         resdt <- data.table::melt(resdt, id.vars = c("country_code", "rn"), value.name = "indicator", variable.name = "year",
                       variable.factor = FALSE)

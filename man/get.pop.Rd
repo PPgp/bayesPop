@@ -90,15 +90,19 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
-# observed female of Netherlands by age; 1x21x14x1 array
+# observed female of Netherlands by age; 1x21x15x1 array
 popFNL <- get.pop("PNL_F{}", pred, observed=TRUE)
 
-# observed migration for all countries in the prediction object,
-# here 2 countries; 2x1x14x1 array
-migAll <- get.pop("GXXX", pred, observed=TRUE)
+# observed population for all countries in the prediction object,
+# here 2 countries; 2x1x15x1 array
+popAll <- get.pop("PXXX", pred, observed=TRUE)
+
+# future migration for all countries in the prediction object,
+# here 2 countries; 2x17 array
+migAll <- get.pop.ex("GXXX", pred)
 
 # projection population for Ecuador with 3 trajectories; 
-# 1x1x18x3 array
+# 1x1x17x3 array
 popEcu <- get.pop("P218", pred, observed=FALSE)
 
 # the above is equivalent to 

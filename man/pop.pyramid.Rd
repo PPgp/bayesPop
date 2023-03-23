@@ -42,8 +42,9 @@ pop.pyramidAll(pop.pred, year = NULL,
     proportion = FALSE, age = NULL, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", lwd = 2, ann = par("ann"), 
-    axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 0.9, cex = 0.8, cex.axis = 0.8, \dots)
+    show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", omit.page.pars = FALSE, 
+    lwd = 2, ann = par("ann"), axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 0.9, cex = 0.8, 
+    cex.axis = 0.8, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), "pop.traj.pyramid"),
@@ -92,6 +93,7 @@ pop.trajectories.pyramidAll(pop.pred, year = NULL,
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{col}{Colors generating function. It is called with an argument giving the number of pyramids to be plotted. Each color is then used for one pyramid, including its confidence intervals.}
   \item{col.traj}{Color used for trajectories. If more than one pyramid is drawn with its trajectories, this can be a vector of the size of number of pyramids.}
+  \item{omit.page.pars}{Logical. If \code{TRUE}, no page parameters are set. Can be used if multiple pyramids are to be put on one page.}
   \item{lwd}{Line width for the pyramids.}
   \item{sort.pi}{Logical controlling if the probability intervals are sorted in decreasing order. This has an effect on the order in which they are plotted and thus on overlapping of pyramid boxes. By default the largest intervals are plotted first.}
   \item{main.label}{Optional argument for the main title.}
