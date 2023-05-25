@@ -68,7 +68,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double b, bm, bf, srb_ratio;
     int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
 
-    int debug = 0; /* for testing*/
+    int debug = 1; /* for testing*/
     
     adim = *nages;         /* number of age groups */
     adim1 = adim - 1;      /* Number of age groups minus one */
@@ -81,7 +81,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double trmigstart, trmigmid, trmigend, tmigstart, tmigmid, tmigend, tpop;
+    double trmigstart, trmigmid, trmigend, tmigstart, tmigmid, tmigend, tpop, trmig;
+    double mmigage_schedule[101], fmigage_schedule[101];
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -101,6 +102,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                                           0.00116, 0.00108, 0.001, 0.00093, 0.00087, 0.00082, 0.00076, 0.00071, 0.00067, 0.00063, 
                                           6e-04, 0.00056, 0.00053, 0.00051, 0.00048, 0.00046, 0.00044, 0.00041, 4e-04, 0.00038, 
                                           0.00037, 3e-05, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    
     nrow = *migr;
     ncol = *migc;
     n = *npred;
@@ -146,7 +148,19 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             break;
         }
     }
-
+    if(*MIGratecode > 0 && *MIGratecode < 4){
+        if(*abridged == 1) { /* 5-year Rogers Castro */ 
+            for(i=0; i < adim; ++i) {
+                mmigage_schedule[i] = 0.5 * migrc_schedule[i];
+                fmigage_schedule[i] = 0.5 * migrc_schedule[i];
+            }
+        } else {              /* annual Rogers Castro */ 
+            for(i=0; i < adim; ++i) {
+                mmigage_schedule[i] = 0.5 * migrc_schedule1y[i];
+                fmigage_schedule[i] = 0.5 * migrc_schedule1y[i];
+            }
+        }
+    }
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
         jve = j-1;
@@ -162,40 +176,38 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         
         /* If migration is a rate, compute the migration counts */
         if(*MIGratecode > 0){
-            if(*MIGratecode == 3) { /* migration rates are disaggregated totals */
+            if(*MIGratecode >= 3) { /* migration rates are disaggregated totals */
                 trmigstart = 0;
                 trmigmid = 0;
                 trmigend = 0;
+                trmig = 0;
                 tpop = 0;
                 for(i=0; i < adim; ++i) { /* first sum together */
                     trmigstart = trmigstart + migstartm[i][jve] + migstartf[i][jve];
                     trmigmid = trmigmid + migmidm[i][jve] + migmidf[i][jve];
                     trmigend = trmigend + migendm[i][jve] + migendf[i][jve];
+                    trmig = trmig + migm[i][jve] + migf[i][jve];
                     tpop = tpop + popm[i + t1] + popf[i + t1];
                 }
                 tmigstart = trmigstart*tpop;
                 tmigmid = trmigmid*tpop;
                 tmigend = trmigend*tpop;
-                if(*abridged == 1) {
-                    for(i=0; i < adim; ++i) { /* distribute into ages using 5-year Rogers Castro */
-                        migstartm[i][jve] = 0.5*tmigstart*migrc_schedule[i];
-                        migstartf[i][jve] = 0.5*tmigstart*migrc_schedule[i];
-                        migmidm[i][jve] = 0.5*tmigmid*migrc_schedule[i];
-                        migmidf[i][jve] = 0.5*tmigmid*migrc_schedule[i];
-                        migendm[i][jve] = 0.5*tmigend*migrc_schedule[i];
-                        migendf[i][jve] = 0.5*tmigend*migrc_schedule[i];
-                    }
-                } else {
-                    for(i=0; i < adim; ++i) { /* distribute into ages using annual Rogers Castro */
-                        migstartm[i][jve] = 0.5*tmigstart*migrc_schedule1y[i];
-                        migstartf[i][jve] = 0.5*tmigstart*migrc_schedule1y[i];
-                        migmidm[i][jve] = 0.5*tmigmid*migrc_schedule1y[i];
-                        migmidf[i][jve] = 0.5*tmigmid*migrc_schedule1y[i];
-                        migendm[i][jve] = 0.5*tmigend*migrc_schedule1y[i];
-                        migendf[i][jve] = 0.5*tmigend*migrc_schedule1y[i];
+                if(*MIGratecode == 4) { /* use migration schedule passed in the mig objects */
+                    for(i=0; i < adim; ++i) {
+                        mmigage_schedule[i] = migm[i][jve]/trmig;
+                        fmigage_schedule[i] = migf[i][jve]/trmig;
                     }
                 }
+                for(i=0; i < adim; ++i) { /* distribute into ages using either Rogers Castro or passed schedule */
+                    migstartm[i][jve] = tmigstart*mmigage_schedule[i];
+                    migstartf[i][jve] = tmigstart*fmigage_schedule[i];
+                    migmidm[i][jve] = tmigmid*mmigage_schedule[i];
+                    migmidf[i][jve] = tmigmid*fmigage_schedule[i];
+                    migendm[i][jve] = tmigend*mmigage_schedule[i];
+                    migendf[i][jve] = tmigend*fmigage_schedule[i];
+                }
                 if(debug>=1){
+                    Rprintf("\ntrmig = %f, trmigend = %f",  trmig, trmigend);
                     Rprintf("\ntmigend = %f, tpop = %f, migendm[5] = %f, migendm[10] = %f",  tmigend, tpop, migendm[5][jve], migendm[10][jve]);
                 }
             }
