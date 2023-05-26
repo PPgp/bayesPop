@@ -68,7 +68,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double b, bm, bf, srb_ratio;
     int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
 
-    int debug = 1; /* for testing*/
+    int debug = 0; /* for testing*/
     
     adim = *nages;         /* number of age groups */
     adim1 = adim - 1;      /* Number of age groups minus one */

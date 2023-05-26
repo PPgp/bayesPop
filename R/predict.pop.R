@@ -784,7 +784,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, method = "auto", #gcc.schedule = "un", 
-                                 sex = "M", id.col = "country_code", country_code = NULL, ..., debug = FALSE) {
+                                 sex = "M", id.col = "country_code", country_code = NULL, mig.is.rate = FALSE, 
+                                 ..., debug = FALSE) {
     mig <- totmig <- rc <- prop <- age <- i.prop <- prop.neg <- sprop <- NULL
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
@@ -823,12 +824,15 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     if(method != "rc") { # load schedules from sysdata.rda
         mig.sched.name <- if(annual) "mig1.schedule" else "mig5.schedule"
         mig.neg.sched.name <- if(annual) "mig1.neg.schedule" else "mig5.neg.schedule"
+        mig.totals.name <- if(annual) "mig1.totals" else "mig5.totals"
         sex.code <- if(sex == "M") 1 else 2
         mig.schedule <- get(mig.sched.name)
-        mig.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
+        #mig.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
         mig.schedule <- mig.schedule[sex == sex.code]
+        mig.totals <- get(mig.totals.name)
+        mig.schedule[mig.totals, total.orig := i.mig, on = c("country_code", "year")]
         mig.neg.schedule <- get(mig.neg.sched.name)
-        mig.neg.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
+        #mig.neg.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
         mig.neg.schedule <- mig.neg.schedule[sex == sex.code]
         if(!annual) {
             if(length(grep("-", time.periods)) > 0) {
@@ -842,7 +846,6 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             mig.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
             mig.neg.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
-
         }
         cntries <- country_code
         if(id.col == "country_code")
@@ -855,19 +858,38 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             if(annual) migtmp[, year := as.integer(year)]
             if(!"country_code" %in% colnames(migtmp)) migtmp[, country_code := cntries] # this will be true only if migtmp corresponds to one country
             # join with positive and negative schedules
-            migtmp[mig.schedule, prop := i.prop, on = c("country_code", "year", "age")]
+            migtmp[mig.schedule, `:=`(prop = i.prop, total.orig = i.total.orig), on = c("country_code", "year", "age")]
             migtmp[mig.neg.schedule, prop.neg := i.prop, on = c("country_code", "year", "age")]
             # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
             # so that we don't loose the schedule
-            if(debug) stop("")
-            migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := if(annual) 0.001 else 0.005] #totmigl[abs(totmig) > 0, min(abs(totmig))]
+            migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := sign(total.orig) * (if(annual) 0.001 else 0.005)] #totmigl[abs(totmig) > 0, min(abs(totmig))]
             # use the negative schedule if total migration is negative and there is a different schedule for such cases
             migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
+            migtmp[!is.na(prop), `:=`(is_pos_neg = sum(prop > 0) > 0 & sum(prop < 0) > 0), by = c("country_code", "year")] # prop can be NA if observed years are included
+            if(!mig.is.rate && migtmp[!is.na(prop), sum(is_pos_neg)] > 0){ 
+                # For schedules that are both, negative and positive, add the difference between the original total mig
+                # to either the positive part (if the desired total is positive) 
+                # or the negative part (if the desired total is negative)
+                migspecial <- migtmp[!is.na(prop) & is_pos_neg == TRUE]
+                migspecial[, mig.orig := abs(total.orig) * prop]
+                migspecial[, `:=`(sumprop = sum(prop), summig.orig = sum(mig.orig)), by = c("country_code", "year")]
+                # It will be added to the positive part for all because the negative schedules are flipped.
+                # Thus, increasing the positive part is equivalent to increasing the negative part.
+                ms <- migspecial[prop > 0, sum(mig.orig), by = c("country_code", "year")]
+                migspecial[ms, summigpos := i.V1, on = c("country_code", "year")]
+                migspecial[prop > 0, distr := mig.orig/summigpos]
+                migspecial[, sex.ratio := abs(summig.orig / total.orig)]
+                migspecial[, migf := mig.orig]
+                migspecial[!is.na(distr), migf := migf + sign(totmig) * distr*(totmig - total.orig)*sex.ratio]
+                migspecial[, new.prop := migf/abs(totmig)] # do not flip it
+                if(debug) stop("")
+                migtmp[migspecial, prop := i.new.prop, on = c("country_code", "year", "age")]
+            }
             if(scale == 1){
                 # need to rescale it to sum to 1 over one sex as the default datasets sum to 1 over both sexes
-                migtmp[, sprop := sum(prop), by = c(id.col, "year")]
-                migtmp[sprop != 0, prop := prop/sprop]
-                migtmp[sprop = 0, prop := 0]
+                migtmp[!is.na(prop), sprop := sum(prop), by = c(id.col, "year")]
+                migtmp[!is.na(sprop) & sprop != 0, prop := prop/sprop]
+                migtmp[!is.na(sprop) & sprop == 0, prop := 0]
             }
             if(!"country_code" %in% colnames(df)) migtmp[, country_code := NULL] # remove this column if it was added above
         }
@@ -883,7 +905,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     }
     migtmp <- merge(migtmp, agedf, by = "age", sort = FALSE)
     migtmp[, mig := totmig * prop]
-
+    #stop('')
     #if(!is.null(country_code) && country_code == 634) stop("")
     # gcc.cntries <- c(784, 634, 512, 48) # UAE, Qatar, Oman, Bahrain
     # if(gcc.schedule == "un" && ((!cntry.missing && any(gcc.cntries %in% totmigl[[id.col]])) || (!is.null(country_code) && country_code %in% gcc.cntries))){
