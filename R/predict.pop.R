@@ -973,6 +973,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             if(mig.age.method != "rc") migcode <- 4 # TODO: this would be wrong if migcode is 2.
             migcols <- intersect(colnames(totmig), periods)
+            # TODO: if migration is given as total rate, create a mock-up age-specific dataset
+            # and store the total rates into a separate object that will be passed to the C-code.
+            #stop("")
+            #if(inputs$mig.is.rate){
+            #}
             # disaggregate into ages
             miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
                                                                  annual = annual, time.periods = migcols, 
@@ -982,7 +987,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                                                  template = migtempl), check.names = FALSE)
             next
         }
-        # if migration is not given load default datasets
+        # If we get here, no user-specific migration was passed in the inputs.
+        # If migration is not given load default datasets
         if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation.")
         migdsname <- paste0('migration', sex)
         if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
@@ -990,7 +996,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
             next
         }
-        if(all.countries) { # split total migration into ages for all countries
+        if(all.countries) { # split default total migration into ages for all countries
             if(annual || mig.age.method == "rc" || (mig.age.method %in% c("auto", "un") && !annual && wpp.year == 2022)) {
                 # use Rogers-Castro or the UN schedules
                 miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration", wpp.year, 
@@ -1243,10 +1249,16 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		utrajs <- sort(unique(migdf$trajectory))
 		ntrajs <- length(utrajs)
 		if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
+		    # TODO: if migration is given as total rate, create a mock-up age-specific dataset
+		    # and store the total rates into a separate object that will be passed to the C-code.
+		    #stop("")
+		    #if(pred$inputs$mig.is.rate){
+		        
+		    #}
 		    dfw <- dcast(data.table(migdf), trajectory ~ year)
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
-		                                ..., debug = TRUE)
+		                                ..., debug = FALSE)
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
 		}
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
