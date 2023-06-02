@@ -78,33 +78,17 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     int adimfert_start = *fstart - 1; /* Start index of reproductive age (from R to C) */
     
     double cdeathsm[adim], cdeathsf[adim], bt[adimfert];
-    double migm[adim][*migc], migf[adim][*migc], migrm[*migc], migrf[*migc]; /*migration counts and rates */
+    double migm[adim][*migc], migf[adim][*migc]; /*migration counts */
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double trmigstart, trmigmid, trmigend, tmigstart, tmigmid, tmigend, tpop, tpopm, tpopf, trmig, trmigpos, trmigneg;
-    double mmigage_schedule[101], fmigage_schedule[101];
+    double trmigstart, tmigend, tpop, tpopm, tpopf, trmig, trmigpos, trmigneg;
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
     const double minpop = 0.0005; /* minimum accepted population */
     const double max_out_rate = -0.8; /* the maximum portion of population that can leave when using migration rates */ 
-    /* Rogers-Castro schedule in case migration is given as total rate */
-    const double migrc_schedule[27] = {0.06133, 0.02667, 0.02067, 0.10467, 0.188, 
-                                        0.18067, 0.13733, 0.09533, 0.064, 0.04267, 
-                                        0.028, 0.01867, 0.012, 0.008, 0.00533, 
-                                        0.00333, 0.00333, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    const double migrc_schedule1y[101] = {0.01604, 0.01362, 0.01157, 0.00983, 0.00837, 0.00712, 0.00606, 0.00517, 0.00442, 0.00382, 
-                                          0.00346, 0.00349, 0.00418, 0.00582, 0.00856, 0.01236, 0.01695, 0.02192, 0.02681, 0.03121, 
-                                          0.03485, 0.03757, 0.03933, 0.0402, 0.04027, 0.03968, 0.03858, 0.03709, 0.03534, 0.03341, 
-                                          0.0314, 0.02936, 0.02734, 0.02538, 0.02349, 0.02169, 0.01999, 0.01841, 0.01692, 0.01555, 
-                                          0.01427, 0.01309, 0.012, 0.01101, 0.01008, 0.00924, 0.00847, 0.00776, 0.00711, 0.00652, 
-                                          0.00598, 0.00548, 0.00502, 0.00461, 0.00423, 0.00388, 0.00356, 0.00327, 0.00301, 0.00277, 
-                                          0.00255, 0.00235, 0.00216, 0.00199, 0.00184, 0.0017, 0.00157, 0.00145, 0.00135, 0.00125, 
-                                          0.00116, 0.00108, 0.001, 0.00093, 0.00087, 0.00082, 0.00076, 0.00071, 0.00067, 0.00063, 
-                                          6e-04, 0.00056, 0.00053, 0.00051, 0.00048, 0.00046, 0.00044, 0.00041, 4e-04, 0.00038, 
-                                          0.00037, 3e-05, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    
+
     nrow = *migr;
     ncol = *migc;
     n = *npred;
@@ -157,6 +141,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
      *              while MIGm and MIGf contains the age schedules.
      *      1: the age schedules are proportions
      *      2: the age schedules are totals
+     *      3: the age schedules are the actual final age-specific rates (i.e. rate * schedule)
      *      obsolete:
      *          3: use Rogers-Castro age-schedule
      *          4: use the UN age schedule

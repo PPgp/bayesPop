@@ -2117,7 +2117,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigM <- as.numeric(migM)
 	finmigF <- as.numeric(migF)
 	observed <- 0
-	if(!all(c(migratecodeF, migratecodeM) == migratecodeM[1])) stop('mismatch in rate codes')
+	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
     #stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
