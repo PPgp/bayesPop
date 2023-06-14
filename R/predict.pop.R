@@ -884,8 +884,14 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             mig.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
             mig.neg.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
         } else {
-            mig.schedule[, age := ifelse(age == 100, "100+", as.character(age))]
-            mig.neg.schedule[, age := ifelse(age == 100, "100+", as.character(age))]
+            if(is.character(migtmp[, age])) {
+                mig.schedule[, age := as.character(age)]
+                mig.neg.schedule[, age := as.character(age)]
+                if(any(migtmp[, age] == "100+")) {
+                    mig.schedule[, age := ifelse(age == 100, "100+", age)]
+                    mig.neg.schedule[, age := ifelse(age == 100, "100+", age)]
+                }
+            }
         }
         cntries <- country_code
         if(id.col == "country_code")
