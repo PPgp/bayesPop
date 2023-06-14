@@ -842,12 +842,12 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     migtempl <- .get.mig.template(unique(df[[id.col]]), ages, time.periods, id.col = id.col, ...) 
     if(length(ages) != length(unique(migtempl$age))) stop("Argument ages does not correspond to age in template.") 
     
-    totmigl <- melt(df[, c(id.col, time.periods), with = FALSE], id.vars = id.col,
+    totmigl <- data.table::melt(df[, c(id.col, time.periods), with = FALSE], id.vars = id.col,
                     variable.name = "year", value.name = "totmig", variable.factor = FALSE)
-    migtempll <- melt(migtempl[, c(id.col, "age", time.periods), with = FALSE], 
+    migtempll <- data.table::melt(migtempl[, c(id.col, "age", time.periods), with = FALSE], 
                       id.vars = c(id.col, "age"), variable.name = "year", value.name = "mig", variable.factor = FALSE)
     age.idx <- 1:length(ages)
-    agedf <- data.table(age = migtempl[["age"]][age.idx],
+    agedf <- data.table::data.table(age = migtempl[["age"]][age.idx],
                         age.idx = age.idx)
     migtmp <- merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE)[, prop := NA][, prop := as.numeric(prop)]
     if(method != "rc") { # load schedules from sysdata.rda
@@ -883,6 +883,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             mig.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
             mig.neg.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
+        } else {
+            mig.schedule[, age := ifelse(age == 100, "100+", as.character(age))]
+            mig.neg.schedule[, age := ifelse(age == 100, "100+", as.character(age))]
         }
         cntries <- country_code
         if(id.col == "country_code")
@@ -1257,13 +1260,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         # comma separated trajectories file
         if(verbose) cat('\nLoading ', file.name)
         
-        migpred.raw <- read.csv(file=file.name, comment.char='#', check.names=FALSE)
-        if("Mig" %in% colnames(migpred.raw) && !"Migration" %in% colnames(migpred.raw)) # Both Mig and Migration are OK
+        migpred.raw <- data.table::fread(file=file.name, check.names=FALSE, blank.lines.skip = TRUE)
+        if("Mig" %in% colnames(migpred.raw) && !"Migration" %in% colnames(migpred.raw)) # Both Mig and Migration are OK as column names
             colnames(migpred.raw)[colnames(migpred.raw) == "Mig"] <- "Migration"
         cols.to.keep <- intersect(names(migtrajcols), colnames(migpred.raw))
         if(length((miss <- setdiff(setdiff(names(migtrajcols), "Age"), cols.to.keep)))>0)
             stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
-        migpred <- migpred.raw[, cols.to.keep]
+        migpred <- as.data.frame(migpred.raw[, cols.to.keep, with = FALSE])
         colnames(migpred) <- unlist(migtrajcols[cols.to.keep])
         if(sex == '') { # total for both sexes in one file; split it into two objects
             if(is.null(migMpred) || is.null(migFpred)) {
