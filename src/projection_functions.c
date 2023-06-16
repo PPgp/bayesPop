@@ -89,6 +89,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     const double minpop = 0.0005; /* minimum accepted population */
     const double max_out_rate = -0.8; /* the maximum portion of population that can leave when using migration rates */ 
 
+    /* TODO: apply migration rates after applying births and deaths! */ 
+    
     nrow = *migr;
     ncol = *migc;
     n = *npred;
