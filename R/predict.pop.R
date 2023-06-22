@@ -814,8 +814,11 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, method = "auto", 
                                  sex = "M", id.col = "country_code", country_code = NULL, 
-                                 mig.is.rate = FALSE, alt.schedule.file = NULL, ..., debug = FALSE) {
-    mig <- totmig <- rc <- prop <- age <- i.prop <- prop.neg <- sprop <- NULL
+                                 mig.is.rate = FALSE, alt.schedule.file = NULL, ...#, debug = FALSE
+                                 ) {
+    mig <- i.mig <- mig.orig <- i.V1 <- distr <- migf <- totmig <- total.orig <- i.total.orig <- rc <- prop <- i.prop <- new.prop <- i.new.prop <- prop.neg <- sprop <- NULL
+    age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- NULL
+    debug <- FALSE
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
     if(is.null(time.periods)) {
@@ -1029,8 +1032,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                            method = mig.age.method,
                                            sex = sex, template = migtempl, 
                                            mig.is.rate = mig.is.rate[1], 
-                                           alt.schedule.file = inputs$mig.alt.age.schedule,
-                                           debug = TRUE)
+                                           alt.schedule.file = inputs$mig.alt.age.schedule#,
+                                           #debug = TRUE
+                                           )
             miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
             if(!is.null((rates <- attr(migmtx, "rate")))){
                 attr(miginp[[inpname]], "rate") <- rates
@@ -1306,7 +1310,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
-		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, ..., debug = TRUE)
+		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, ...#, debug = TRUE
+		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
 		    if("rate" %in% names(attributes(adf))) { # extract rates if available
 		        migrate <- attr(adf, "rate")
@@ -1494,6 +1499,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    if('age' %in% colnames(res)) rownames(res2) <- res[, 'age']
 	}
 	# preserve and slice attributes if needed
+	country_code <- NULL
 	for(attrname in c("rate", "code")){
 	    if(!is.null((attrval <- attr(inputs[[par]], attrname))))
 	        attr(res2, attrname) <- unlist(attrval[which(attrval[["country_code"]] == country)][,country_code := NULL])
@@ -2202,12 +2208,6 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 		vital.events$mdeaths <- res$deathsm
 		vital.events$fdeaths <- res$deathsf
 	}
-	#stop("")
-	# mm <- matrix(res$finmigm, nrow = 101)
-	# mf <- matrix(res$finmigf, nrow = 101)
-	# smig <- colSums(mm) + colSums(mf)
-	# rt <- smig/(res$totp[-1] - smig)
-	# if(any(smig > 2)) stop("")
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmig = res$finmigm, fmig = res$finmigf), vital.events))
 }
 

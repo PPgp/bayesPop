@@ -313,7 +313,7 @@ test.life.table <- function(parallel = FALSE){
 	sx2 <- as.double(sx2[,ncol(sx2)])
 	sxpred <- get.pop.exba("SEC_M{1:27}", pred, observed=FALSE)
 	sx3 <- as.double(sxpred[,1,1])
-	stopifnot(all.equal(sx1[1:19], sx2[1:19], sx3[1:19]))
+	stopifnot(all.equal(sx1[1:19], sx2[1:19]) && all.equal(sx2[1:19], sx3[1:19]))
 	sx4 <- as.double(LifeTableMxCol(pop.byage.table(pred, expression="MEC_M{age.index01(27)}", year=2053)[,1], 'sx', age05=c(FALSE, FALSE, TRUE)))
 	sx5 <- as.double(sxpred[,"2053",1])
 	stopifnot(all.equal(sx4, sx5))

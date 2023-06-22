@@ -42,9 +42,9 @@ pop.pyramidAll(pop.pred, year = NULL,
     proportion = FALSE, age = NULL, plot = TRUE, pop.max = NULL, \dots)
     
 \method{pop.trajectories.pyramid}{bayesPop.pyramid}(pop.object, main = NULL, show.legend = TRUE, 
-    show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", omit.page.pars = FALSE, 
-    lwd = 2, ann = par("ann"), axes = TRUE, grid = TRUE, cex.main = 0.9, cex.sub = 0.9, cex = 0.8, 
-    cex.axis = 0.8, \dots)
+    show.birth.year = FALSE, col = rainbow, col.traj = "#00000020", 
+    omit.page.pars = FALSE, lwd = 2, ann = par("ann"), axes = TRUE, grid = TRUE, 
+    cex.main = 0.9, cex.sub = 0.9, cex = 0.8, cex.axis = 0.8, \dots)
     
 pop.trajectories.pyramidAll(pop.pred, year = NULL,
     output.dir = file.path(getwd(), "pop.traj.pyramid"),
