@@ -990,6 +990,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         inpname <- paste0('mig', sex) 
         if(!is.null(inputs[[inpname]])) { # migration given by sex and age
             miginp[[inpname]] <- read.pop.file(inputs[[inpname]])
+            if(mig.is.rate[1]) { # it is assumed that the migration file contains rates multiplied by an age schedule
+                attr(miginp[[inpname]], "rate") <- rep(1, length(periods)) # this won't be used but it needs to be there
+                attr(miginp[[inpname]], "code") <- rep(3, length(periods)) # assigning code 3
+            }
             next
         }
         # create a template  to be filled with derived migration
@@ -2168,7 +2172,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
-    #stop("")
+
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
@@ -2198,6 +2202,12 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 		vital.events$mdeaths <- res$deathsm
 		vital.events$fdeaths <- res$deathsf
 	}
+	#stop("")
+	# mm <- matrix(res$finmigm, nrow = 101)
+	# mf <- matrix(res$finmigf, nrow = 101)
+	# smig <- colSums(mm) + colSums(mf)
+	# rt <- smig/(res$totp[-1] - smig)
+	# if(any(smig > 2)) stop("")
 	return(c(list(totpop=res$totp, mpop=res$popm, fpop=res$popf, mmig = res$finmigm, fmig = res$finmigf), vital.events))
 }
 

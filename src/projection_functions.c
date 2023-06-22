@@ -82,14 +82,12 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double trmigstart, tmigend, tpop, tpopm, tpopf, trmig, trmigpos, trmigneg;
+    double totmigcount, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp;
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
     const double minpop = 0.0005; /* minimum accepted population */
     const double max_out_rate = -0.8; /* the maximum portion of population that can leave when using migration rates */ 
-
-    /* TODO: apply migration rates after applying births and deaths! */ 
     
     nrow = *migr;
     ncol = *migc;
@@ -98,6 +96,18 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     if(debug>=2)
         Rprintf("\nadim = %i adimfert = %i adimfert_start = %i migc = %i npred = %i adimdif = %i", 
                 adim, adimfert, adimfert_start, *migc, n, adimdif);
+    
+    /* If migration is given as rates in MIGratem and MIGratef, then migm and migf
+     * are assumed to contain the age-schedules.
+     * 
+     * MIGratecode:
+     *      0: migration given as counts in MIGm and MIGf
+     *      > 0: migration given as total rates in MIGratem and MIGratef,
+     *              while MIGm and MIGf contains the age schedules.
+     *      1: the age schedules are proportions
+     *      2: the age schedules are totals (used for schedules that have positive as well as negative parts)
+     *      3: the age schedules are the actual final age-specific rates (i.e. rate * schedule)
+     */
     
     for(j=0; j<ncol; ++j) {
         /* If migration has less age groups then population, fill-in the remaining age groups with 0 */
@@ -111,44 +121,44 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         }
         /* Migration is going to be added to population at the start (for computing deaths), 
          * middle (for computing births) and at the end of the interval.
-         * Migration type determines what is added when.
+         * Migration type (MIGtype) determines what is added when.
+         * If migration is given as rates, counts are computed and added at the end of the interval.
          */
-        switch (*MIGtype) { 
-        case 0: /* migration evenly distributed over each interval (MigCode=0) */
-            for(i=0; i<nrow+adimdif; ++i) { /* half at the start, half in the middle, nothing at the end*/
-                migstartm[i][j] = 0.5 * migm[i][j];
-                migstartf[i][j] = 0.5 * migf[i][j];
-                migmidm[i][j] = migstartm[i][j];
-                migmidf[i][j] = migstartf[i][j];
-                migendm[i][j] = 0;
-                migendf[i][j] = 0;
+        if(MIGratecode[j] == 0){ /* migration is given as counts */
+            switch (*MIGtype) { 
+            case 0: /* migration evenly distributed over each interval (MigCode=0) */
+                for(i=0; i<nrow+adimdif; ++i) { /* half at the start, half in the middle, nothing at the end*/
+                    migstartm[i][j] = 0.5 * migm[i][j];
+                    migstartf[i][j] = 0.5 * migf[i][j];
+                    migmidm[i][j] = migstartm[i][j];
+                    migmidf[i][j] = migstartf[i][j];
+                    migendm[i][j] = 0;
+                    migendf[i][j] = 0;
+                }
+                break;
+            default: /* migration at the end of each interval (MigCode=9)*/
+                for(i=0; i<nrow+adimdif; ++i) { /* everything is added at the end */
+                    migstartm[i][j] = 0;
+                    migstartf[i][j] = 0;
+                    migmidm[i][j] = 0;
+                    migmidf[i][j] = 0;
+                    migendm[i][j] = migm[i][j];
+                    migendf[i][j] = migf[i][j];
+                }
+                break;
             }
-            break;
-        default: /* migration at the end of each interval (MigCode=9)*/
-            for(i=0; i<nrow+adimdif; ++i) { /* everything is added at the end */
+        } else { /* migration is given as rates */
+            for(i=0; i<nrow+adimdif; ++i) { 
                 migstartm[i][j] = 0;
                 migstartf[i][j] = 0;
                 migmidm[i][j] = 0;
                 migmidf[i][j] = 0;
-                migendm[i][j] = migm[i][j];
+                migendm[i][j] = migm[i][j]; /* these are now age schedules, depending on MIGratecode */
                 migendf[i][j] = migf[i][j];
             }
-            break;
         }
     }
-    /* If migration is given as rate in MIGratem and MIGratef, get the age-schedule from migm and migf.
-     * MIGratecode:
-     *      0: migration given as counts in MIGm and MIGf
-     *      > 0: migration given as total rates in MIGratem and MIGratef,
-     *              while MIGm and MIGf contains the age schedules.
-     *      1: the age schedules are proportions
-     *      2: the age schedules are totals
-     *      3: the age schedules are the actual final age-specific rates (i.e. rate * schedule)
-     *      obsolete:
-     *          3: use Rogers-Castro age-schedule
-     *          4: use the UN age schedule
-     *          TODO: merge the two as the age schedule should be passed in MIGm and MIGf
-     */
+
  
 
     /* Population projection for one trajectory */
@@ -164,70 +174,6 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
          * Thus, j and t for pop vs. and jve and t_offset for vital rates/events refer to the same time period.
          */
         
-        /* If migration is a rate, compute the migration counts */
-        if(MIGratecode[jve] > 0){
-                trmig = 0;
-                trmigpos = 0;
-                trmigneg = 0;
-                if(MIGratecode[jve] == 2){ /* for schedules that have positive and negative parts get the sum of these */
-                    for(i=0; i < adim; ++i) {  
-                        trmig = trmig + migm[i][jve] + migf[i][jve];
-                        if(migm[i][jve] > 0) {
-                            trmigpos = trmigpos + migm[i][jve];
-                        } else {
-                            trmigneg = trmigneg + migm[i][jve];
-                        }
-                        if(migf[i][jve] > 0) {
-                            trmigpos = trmigpos + migf[i][jve];
-                        } else {
-                            trmigneg = trmigneg + migf[i][jve];
-                        }
-                    }
-                }
-                tpopm = 0;
-                tpopf = 0;
-                for(i=0; i < adim; ++i) { /* sum population together */
-                    tpopm = tpopm + popm[i + t1];
-                    tpopf = tpopf + popf[i + t1];
-                }
-                tpop = tpopm + tpopf;
-                
-                /* total migration count; not more than 80% of total population can leave */ 
-                tmigend = fmax(MIGratem[jve], max_out_rate) * tpopm + fmax(MIGratef[jve], max_out_rate) * tpopf; 
-                
-                  trmigstart = 0; /* for debugging purposes */
-                for(i=0; i < adim; ++i) { /* distribute into ages */
-                    migstartm[i][jve] = 0; 
-                    migstartf[i][jve] = 0;  
-                    migmidm[i][jve] = 0;   
-                    migmidf[i][jve] = 0;   
-                    if(MIGratecode[jve] == 1){
-                        migendm[i][jve] = fmax(popm[i+t1]*max_out_rate, tmigend*migm[i][jve]); /* assures there is no depopulation */
-                        migendf[i][jve] = fmax(popf[i+t1]*max_out_rate, tmigend*migf[i][jve]);
-                    }
-                    if(MIGratecode[jve] == 2){ /* these schedules are actual counts, so we shift them up and down, relative to the sum */
-                        migendm[i][jve] = migm[i][jve];
-                        migendf[i][jve] = migf[i][jve];
-                        if(MIGratem[jve] > 0){
-                            if(migm[i][jve] > 0) /* distribute the difference across the positive part of the schedule */
-                                migendm[i][jve] = migendm[i][jve] + (tmigend - trmig)*migm[i][jve]/trmigpos;
-                            if(migf[i][jve] > 0) 
-                                migendf[i][jve] = migendf[i][jve] + (tmigend - trmig)*migf[i][jve]/trmigpos;
-                        } else { /* rate is negative */
-                            if(migm[i][jve] < 0) /* distribute the difference across the negative part of the schedule */
-                                migendm[i][jve] = migendm[i][jve] + (tmigend - trmig)*migm[i][jve]/trmigneg;
-                            if(migf[i][jve] < 0) 
-                                migendf[i][jve] = migendf[i][jve] + (tmigend - trmig)*migf[i][jve]/trmigneg;   
-                        }
-                    }
-                    trmigstart = trmigstart + migendm[i][jve] + migendf[i][jve];
-                }
-                if(debug>=1){
-                    Rprintf("\ntmigend (should) = %f, tmigend (is) = %f, tpop = %f, migendm[5] = %f, migendf[5] = %f, migendm[10] = %f, migendf[10] = %f",  
-                            tmigend, trmigstart, tpop, migendm[5][jve], migendf[5][jve], migendm[10][jve], migendf[10][jve]);
-                }
-           /* }*/
-        }
         /* Adjust population by migrants at the start of time interval*/
         for(i=0; i < adim; ++i) {
             popadjm[i][j] = popm[i + t1] + migstartm[i][jve];
@@ -284,6 +230,62 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             popm[t] = bm - cdeathsm[0] + migmidm[0][jve];
             popf[t] = bf - cdeathsf[0] + migmidf[0][jve];
 
+            /* If migration is a rate, compute the migration counts */
+            if(MIGratecode[jve] > 0){
+                trmig = 0;
+                trmigpos = 0;
+                trmigneg = 0;
+                if(MIGratecode[jve] == 2){ /* for schedules that have positive and negative parts get the sum of these */
+                    for(i=0; i < adim; ++i) {  
+                        trmig = trmig + migendm[i][jve] + migendf[i][jve];
+                        trmigpos = trmigpos + fmax(0, migendm[i][jve]) + fmax(0, migendf[i][jve]);
+                        trmigneg = trmigneg + fmin(0, migendm[i][jve]) + fmin(0, migendf[i][jve]);
+                    }
+                }
+                
+                if(MIGratecode[jve] < 3){ /* need to disaggregate into ages */
+                    /* sum population together */
+                    tpopm = 0; tpopf = 0;
+                    for(i=0; i < adim; ++i) {
+                        tpopm = tpopm + popm[i + t];
+                        tpopf = tpopf + popf[i + t];
+                    }
+                    /* total migration count; not more than 80% of total population can leave */ 
+                    totmigcount = fmax(MIGratem[jve], max_out_rate) * tpopm + fmax(MIGratef[jve], max_out_rate) * tpopf; 
+                    tmp = 0;
+                    /* distribute into ages */
+                    for(i=0; i < adim; ++i) { 
+                        if(MIGratecode[jve] == 1){ /* multiply the total rate with age schedule */
+                            migendm[i][jve] = fmax(fmax(0, popm[i+t])*max_out_rate, totmigcount*migendm[i][jve]); /* assures there is no depopulation */
+                            migendf[i][jve] = fmax(fmax(0, popf[i+t])*max_out_rate, totmigcount*migendf[i][jve]);
+                            tmp = tmp + migendm[i][jve];
+                        }
+                        if(MIGratecode[jve] == 2){ /* these schedules are actual counts, so we shift them up and down, relative to the sum */
+                            if(totmigcount > 0){
+                                if(migendm[i][jve] > 0) /* distribute the difference across the positive part of the schedule */
+                                    migendm[i][jve] = migendm[i][jve] + (totmigcount - trmig)*migendm[i][jve]/trmigpos;
+                                if(migendf[i][jve] > 0) 
+                                    migendf[i][jve] = migendf[i][jve] + (totmigcount - trmig)*migendf[i][jve]/trmigpos;
+                            } else { /* rate is negative */
+                                if(migendm[i][jve] < 0) /* distribute the difference across the negative part of the schedule */
+                                    migendm[i][jve] = migendm[i][jve] + (totmigcount - trmig)*migendm[i][jve]/trmigneg;
+                                if(migendf[i][jve] < 0) 
+                                    migendf[i][jve] = migendf[i][jve] + (totmigcount - trmig)*migendf[i][jve]/trmigneg;   
+                            }
+                        }
+                    }
+                    if(debug>=1 && jve > 9 && totmigcount > 0){
+                        Rprintf("\ntotmigcount = %f, tpopm = %f, tpopf = %f, sum(migendm) = %f, migendm[5] = %f, migendm[10] = %f, migendf[10] = %f",  
+                                totmigcount, tpopm, tpopf, tmp, migendm[5][jve], migendm[10][jve], migendf[10][jve]);
+                    }
+                } else { /* MIGratecode[jve] == 3; the schedules are the final age-specific rates */
+                    for(i=0; i < adim; ++i) { 
+                        migendm[i][jve] = fmax(fmax(0,popm[i+t])*max_out_rate, migendm[i][jve]);
+                        migendf[i][jve] = fmax(fmax(0,popf[i+t])*max_out_rate, migendf[i][jve]);
+                    }
+                }
+            }
+            
             /* add migration at the end of the interval, adjust negative population and compute total pop */
             totp[j] = 0;
             for(i=0; i < adim; ++i) {
