@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- TRUE
+CRAN <- TRUE 
 
 test.expressions()
 
