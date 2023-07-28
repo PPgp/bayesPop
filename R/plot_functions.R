@@ -1206,6 +1206,10 @@ bdem.map.gvis.bayesPop.prediction <- function(pred,  ...) {
 	bayesTFR:::.do.gvis.bdem.map('pop', 'Population', pred, ...)
 }
 
+pop.ggmap <- function(pred, sex=c('both', 'male', 'female'), age='all', expression=NULL, ...) {
+    return(bayesTFR::tfr.ggmap(pred, par.name=expression, data.args=list(sex=sex, age=age, expression=expression), ...))
+}
+
 pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NULL, cohort.data=NULL, pi=c(80, 95), 
 								dev.ncol=5, show.legend=TRUE, legend.pos="bottomleft", ann=par('ann'), add=FALSE, 
 								xlab="", ylab="", main=NULL, xlim=NULL, ylim=NULL, col='red', ...) {

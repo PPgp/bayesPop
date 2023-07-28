@@ -6,7 +6,7 @@
 Writing Projection Summary and Trajectory Files
 }
 \description{
-The function creates ASCII files containing projection summaries, such as the median, the lower and upper bound of the 80 and 95\% probability intervals, respectively. 
+Functions for creating ASCII files containing projection summaries, such as the median, the lower and upper bound of the 80 and 95\% probability intervals, respectively, as well as containing individual trajectories.
 }
 \usage{
 write.pop.projection.summary(pop.pred, what = NULL, expression = NULL, 
@@ -31,19 +31,29 @@ write.pop.trajectories(pop.pred, expression = "PXXX",
   \item{include.name}{Logical indicating if country names should be included in the dataset.}
   \item{sep}{The field separator string.}
   \item{na.rm}{Logical indicating if records with \code{NA} values should be included in the dataset.}
-  \item{\dots}{For \code{write.pop.projection.summary}, these are arguments used if \code{expression} is given: \code{file.suffix} defines the file suffix; \code{expression.label} (defaults to the expression) is put as the first line in the resulting file; logical \code{include.observed} determines if observed data should be included; integer \code{digits} defines the number of decimal places in the resulting file. For \code{write.pop.trajectories}, these are arguments passed to \code{\link{get.pop.ex}} (if \code{byage} is \code{FALSE}) or \code{\link{get.pop.exba}} (if \code{byage} is \code{TRUE}). }
+  \item{\dots}{For \code{write.pop.projection.summary}, these are:
+  \itemize{
+  \item if \code{expression} is given, then one can use here \code{file.suffix} (defines the file suffix) and/or \code{expression.label} which defaults to the actual expression and is put as the first line in the resulting file;
+  \item logical \code{include.observed} determines if observed data should be included;
+  \item integer \code{digits} defines the number of decimal places in the resulting file;
+  \item for 5-year projections, logical \code{end.time.only} determines if the time columns should be in form of time periods (as XXXX-YYYY) or just the end years (YYYY);
+  \item logical \code{adjust} determines if the numbers should be adjusted; in such a case, \code{adj.to.file} and \code{allow.negative.adj} give the file name to which to adjust and a switch if negatives are allowed for the adjustments, respectively.
+ }
+  For \code{write.pop.trajectories}, these are arguments passed to \code{\link{get.pop.ex}} (if \code{byage} is \code{FALSE}) or \code{\link{get.pop.exba}} (if \code{byage} is \code{TRUE}). }
 }
 \details{
-There is one file created per value of \code{what}, or \code{expression}, called \file{projection_summary_}\emph{suffix}\file{.csv}, where \emph{suffix} is either \code{what} or, if an expression is given, the value of \code{file.suffix}. It is a comma-separated table with the following columns:
+The \code{write.pop.projection.summary} function creates one file per value of \code{what}, or \code{expression}, called \file{projection_summary_}\emph{suffix}\file{.csv}, where \emph{suffix} is either \code{what} or, if an expression is given, the value of \code{file.suffix}. It is a comma-separated table with the following columns:
 \itemize{
-	\item 	\dQuote{country_name}: country name 
+	\item \dQuote{country_name}: country name 
 	\item \dQuote{country_code}: country code 
 	\item \dQuote{variant}: name of the variant, such as \dQuote{median}, \dQuote{lower 80}, \dQuote{upper 80}, \dQuote{lower 95}, \dQuote{upper 95}
-	\item period1: e.g. \dQuote{2005-2010}: Given population measure for the first time period
-	\item period2: e.g. \dQuote{2010-2015}: Given population measure for the second time period
+	\item period1: e.g. \dQuote{2005-2010}, or \dQuote{2010}: Given population measure for the first time period
+	\item period2: e.g. \dQuote{2010-2015}, or \dQuote{2015}: Given population measure for the second time period
 	\item \dots further time period columns	
 }
 If  \code{expression} is given, \code{expression.label} (by default the full expression) is written as the first line of the file starting with #. The file contains one line per country, and possibly sex and age.
+
+Function \code{write.pop.trajectories} writes out all trajectories, either in long format (default) or, if \code{wide = TRUE} in wide format (years become columns).
 }
 
 \note{

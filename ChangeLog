@@ -1,5 +1,5 @@
-9.0-1.9018 (03/22/2023)
--------
+10.0-0 (07/28/2023)
+------
 Making default datasets from wpp2022 work with pop.predict.
 
 pop.pyramid and pop.trajectories.pyramid got an argument for showing birth years, called show.birth.year.
@@ -8,7 +8,10 @@ pop.trajectories.plot: default for sum.over.ages changed to TRUE
 
 Added argument xshift to  pop.trajectories.plot and pop.trajectories.table.
 
-Added adjustment argument for not letting adjustments to be negative. 
+New mapping function, pop.ggmap().
+
+Argument allow.negative.adj can be passed to write.pop.projection.summary() controlling 
+if adjustments can yield negative results. 
 
 Option of giving migration inputs as rates.
 

@@ -151,7 +151,10 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1990)
 	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', split.along='traj')")
 	pop.trajectories.plot(pred, expression="pop.combine(G218, P218, '/', split.along='traj')")
-	if(map) pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
+	if(map) {
+	    pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
+	    pop.ggmap(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=2050)
+	}
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
