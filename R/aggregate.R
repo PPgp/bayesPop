@@ -286,8 +286,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	max.lage <- dim(pop.pred$quantilesMage)[2]
-	max.lage.fert <- fert.age.length(pop.pred$annual)
-	fert.age.start <- fert.age.index(pop.pred$annual)[1]
+	max.lage.fert <- age.length.fert(pop.pred$annual)
+	fert.age.start <- age.index.fert(pop.pred$annual)[1]
 	#mort.ages <- lt.ages(pop.pred$annual)
 	if(pop.pred$annual) {
 	    time.step <- 1

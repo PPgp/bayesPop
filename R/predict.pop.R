@@ -25,7 +25,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
-	ages <- all.ages(annual, observed = FALSE)
+	ages <- ages.all(annual, observed = FALSE)
 	unblock.gtk.if.needed('reading inputs')
 	mig.age.method <- match.arg(mig.age.method)
 
@@ -171,9 +171,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		npred <- min(nrow(inpc$TFRpred), nr_project)
 		npredplus1 <- npred+1
 		nmortcat <- length(mx.ages)
-		nfertcat <- fert.age.length(inp$annual)
-		nmigcat <- all.age.length(inp$annual, observed = TRUE)
-		fages <- fert.ages(inp$annual)
+		nfertcat <- age.length.fert(inp$annual)
+		nmigcat <- age.length.all(inp$annual, observed = TRUE)
+		fages <- ages.fert(inp$annual)
 		totp <- matrix(NA, nrow=npredplus1, ncol=nr.traj, 
 					dimnames=list(present.and.proj.years.pop, NULL))
 		totpm <- totpf <- array(NA, dim=c(nages, npredplus1, nr.traj), 
@@ -833,7 +833,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         time.periods <- intersect(colnames(df), as.character(time.periods))
     
     if(is.null(ages))
-        ages <- get.age.labels(all.age.index(annual, observed = TRUE), 
+        ages <- get.age.labels(age.index.all(annual, observed = TRUE), 
                                age.is.index=TRUE, single.year = annual, last.open = TRUE)
         
     if(length(time.periods) == 0) stop("No time periods detected.")
@@ -1007,7 +1007,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             } else {
                 # Here create only a dataframe filled with NAs 
                 migtempl <- .get.mig.template(unique(pop0$country_code), 
-                                                  ages = pop0$age[all.age.index(annual, observed = TRUE)],
+                                                  ages = pop0$age[age.index.all(annual, observed = TRUE)],
                                                   time.periods = periods)
                 migtempl[,which(!colnames(migtempl) %in% c("country", "country_code", "age"))] <- NA
             }
@@ -1026,7 +1026,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             if(mig.age.method != "rc") migcode <- 4 # TODO: this would be wrong if migcode is 2.
             migcols <- intersect(colnames(totmig), periods)
             # disaggregate into ages
-            migmtx <- migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+            migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                            annual = annual, time.periods = migcols, 
                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                            method = mig.age.method,
@@ -1056,7 +1056,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 # use Rogers-Castro or the UN schedules
                 miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration", wpp.year, 
                                                                                    annual = annual),
-                                                          ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+                                                          ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                                           annual = annual, time.periods = periods,
                                                           scale = if(is.null(inputs[[fname]])) 0.5 else 1,
                                                           method = mig.age.method,
@@ -1322,9 +1322,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    }
 		}
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
-		lage <- all.age.length(pred$inputs$annual, observed = TRUE)
+		lage <- age.length.all(pred$inputs$annual, observed = TRUE)
 		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
-									age = get.age.labels(all.ages(pred$inputs$annual, observed = TRUE), last.open=TRUE, single.year = pred$inputs$annual))
+									age = get.age.labels(ages.all(pred$inputs$annual, observed = TRUE), last.open=TRUE, single.year = pred$inputs$annual))
 		# this is to get rows of the data frame in a particular order
 		migdf <- merge(sorted.df, migdf, sort=FALSE)
 		res <- array(migdf$value, dim=c(lage, ntrajs, lyears))
@@ -1351,7 +1351,7 @@ compute.pasfr.global.norms <- function(inputs) {
 		ccounter <- rep(0, )
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
-			pasfr <- .fill.pasfr.ages(pasfr, fert.ages(inputs$annual), check.length.only = !inputs$annual)
+			pasfr <- .fill.pasfr.ages(pasfr, ages.fert(inputs$annual), check.length.only = !inputs$annual)
 			if(is.null(ccounter)) ccounter <- rep(0, ncol(pasfr)) # deals with missing years for some countries
             is.not.observed <- apply(pasfr, 2, function(x) any(is.na(x)))
             if(any(is.not.observed))  # fill NA with 0 
@@ -1368,7 +1368,7 @@ compute.pasfr.global.norms <- function(inputs) {
 kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
-	fac.mac.start <- fert.ages(annual)[1]
+	fac.mac.start <- ages.fert(annual)[1]
 	if(annual) {
 	    fac.mac.start <- fac.mac.start + 0.5
 	    by <- 1
@@ -1535,7 +1535,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		inpc[[par]] <- .get.par.from.inputs(par, inputs, country)
 		obs[[par]] <- .get.par.from.inputs(par, inputs$observed, country)
 	}
-	repr.ages <- fert.ages(inputs$annual)
+	repr.ages <- ages.fert(inputs$annual)
 	inpc[['PASFR']] <- .fill.pasfr.ages(inpc[['PASFR']], repr.ages, check.length.only = !inputs$annual)
 	obs[['PASFR']] <- .fill.pasfr.ages(obs[['PASFR']], repr.ages, check.length.only = !inputs$annual)
     if(inputs$fixed.pasfr && is.null(inpc[['PASFR']])) {
@@ -1787,14 +1787,14 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	for(par in c("GQm", "GQf")) {
 	    if(is.null(inpc[[par]])) next
 	    # match ages
-	    age.labels <- get.age.labels(all.ages(inputs$annual, observed = TRUE))
+	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = TRUE))
 	    if(!all(rownames(inpc[[par]]) %in% age.labels))
 	        stop("Mismatch in age labels for ", par, "\nAllowed labels: ", paste(age.labels, collapse = ", "))
 	    gq <- rep(0, length(age.labels))
 	    names(gq) <- age.labels
 	    gq[rownames(inpc[[par]])] <- inpc[[par]]
 	    # expand from 100+ to 130+
-	    gq <- c(gq, rep(0, all.age.length(inputs$annual, observed = FALSE) - length(gq)))
+	    gq <- c(gq, rep(0, age.length.all(inputs$annual, observed = FALSE) - length(gq)))
 	    inpc[[par]] <- gq
 	}
 	    
@@ -1942,7 +1942,7 @@ rotateLC <- function(e0, bx, bux, axM, axF, e0u=102, p=0.5) {
 
 project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, annual = FALSE, verbose=FALSE, debug=FALSE) {
     args <- if(is.null(mortcast.args)) .prepare.for.mortality.projection(..., annual = annual) else mortcast.args
-    nage <- all.age.length(annual, observed = FALSE)
+    nage <- age.length.all(annual, observed = FALSE)
     min.age.groups <- lt.age.length(annual, observed = FALSE)
     kann.proj.ages <- if(annual) 100:130 else seq(100, 130, by = 5)
     kann.est.ages <- if(annual) 90:99 else seq(80, 95, by = 5)
@@ -1983,7 +1983,7 @@ project.mortality <- function (eopm, eopf, npred, ..., mortcast.args = NULL, ann
 
 survival.fromLT <- function (npred, mxKan, annual = FALSE, observed = FALSE, 
                              include01 = annual, verbose=FALSE, debug=FALSE) {
-    nage <- all.age.length(annual, observed = observed)
+    nage <- age.length.all(annual, observed = observed)
     nagemx <- lt.age.length(annual, observed = observed)
     sr <- LLm <- lx <- list(matrix(0, nrow=nage, ncol=npred), matrix(0, nrow=nage, ncol=npred))
     Mx <- list(matrix(0, nrow=nagemx, ncol=npred), matrix(0, nrow=nagemx, ncol=npred))
@@ -2043,7 +2043,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	if(!compute.AxBx) return(result)
 	#Get Lee-Cater Ax and Bx
 	ne <- ncol(Mxe.m)
-	old.age <- all.age.length(annual, observed = TRUE)
+	old.age <- age.length.all(annual, observed = TRUE)
 	nmx <- lt.age.length(annual, observed = FALSE)
 	years <- as.integer(substr(colnames(male.mx),1,4))
 	year.step <- if(annual) 1 else 5
@@ -2057,7 +2057,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	ns <- which(years == start.year)
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables" && !annual # we don't have model bx available for 1x1
-    lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, NULL)))
+    lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, 0)))
     avg.ax <- length(lpat) == 1  && lpat == 0
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
     smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, 0)
@@ -2148,8 +2148,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
     change.by.gq <- function(gq, pop, factor = -1){
         pop <- pop + factor * gq
     }
-    nagecat <- all.age.length(annual, observed = FALSE)
-    nbagecat <- fert.age.length(annual)
+    nagecat <- age.length.all(annual, observed = FALSE)
+    nbagecat <- age.length.fert(annual)
 	popm <- popf <- matrix(0, nrow=nagecat, ncol=npred+1)
 	popm[,1] <- c(inputs$POPm0, rep(0, nagecat - nrow(inputs$POPm0)))
 	popf[,1] <- c(inputs$POPf0, rep(0, nagecat - nrow(inputs$POPf0)))
@@ -2186,7 +2186,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
 		        nages = as.integer(nagecat), nfages = as.integer(nbagecat), 
-		        fstart = as.integer(fert.age.index(annual)[1]),
+		        fstart = as.integer(age.index.fert(annual)[1]),
 		        popm=popm, popf=popf, totp=totp,
 		        btagem=as.numeric(btageM), btagef=as.numeric(btageF), 
 		        deathsm=as.numeric(deathsM), deathsf=as.numeric(deathsF),
@@ -2235,9 +2235,9 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	asfr <- pasfr/100.
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
-	maxage <- all.age.length(annual = annual, observed = TRUE)
-	reprod.age <- fert.age.index(annual)
-	nfertages <- fert.age.length(annual)
+	maxage <- age.length.all(annual = annual, observed = TRUE)
+	reprod.age <- age.index.fert(annual)
+	nfertages <- age.length.fert(annual)
 	pop <- D10 <- list()
 	nmx <- ncol(inputs$MXm)
 	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
@@ -2280,8 +2280,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
     births[[1]] <- matrix(ccmres$btagem, ncol = nest)
     births[[2]] <- matrix(ccmres$btagef, ncol = nest)
     colnames(deaths[[1]]) <- colnames(deaths[[2]]) <- colnames(births[[1]]) <- colnames(births[[2]]) <- estim.years
-    rownames(deaths[[1]]) <- rownames(deaths[[2]]) <-  all.ages(annual = annual, observed = TRUE)
-    rownames(births[[1]]) <- rownames(births[[2]]) <- rownames(asfr) <- fert.ages(annual = annual)
+    rownames(deaths[[1]]) <- rownames(deaths[[2]]) <-  ages.all(annual = annual, observed = TRUE)
+    rownames(births[[1]]) <- rownames(births[[2]]) <- rownames(asfr) <- ages.fert(annual = annual)
     mig.data[[1]][] <- matrix(ccmres$finmigm, ncol = nest)
     mig.data[[2]][] <- matrix(ccmres$finmigf, ncol = nest)
 	colnames(asfr) <- estim.years

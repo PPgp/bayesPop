@@ -82,3 +82,5 @@ S3method(get.bPop.pyramid, list)
 S3method(get.data.for.worldmap, bayesPop.prediction)
 S3method(.map.main.default, bayesPop.prediction)
 S3method(bdem.map.gvis, bayesPop.prediction)
+S3method(as.environment, bayesPop.prediction)
+

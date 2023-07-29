@@ -18,7 +18,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
     #prediction.exist <- FALSE
-    ages <- all.ages(annual, observed = FALSE)
+    ages <- ages.all(annual, observed = FALSE)
 
     if(is.null(locations)) 
         stop("Argument locations must be given.")
@@ -433,7 +433,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     if(is.null(migtempl)) {
         # Here create only a dataframe filled with NAs 
         migtempl <- .get.mig.template(unique(pop0[[sex]]$country_code), 
-                                        ages = pop0[[sex]]$age[all.age.index(annual, observed = TRUE)],
+                                        ages = pop0[[sex]]$age[age.index.all(annual, observed = TRUE)],
                                         time.periods = periods)
         migtempl[,which(!colnames(migtempl) %in% c("country", "country_code", "age"))] <- NA
         migtempl <- data.table(migtempl)
@@ -449,7 +449,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         migcode <- 3
       }
       migcols <- intersect(colnames(totmig), periods)
-      miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+      miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                            template = migtempl), check.names = FALSE)

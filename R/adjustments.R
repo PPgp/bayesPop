@@ -17,7 +17,7 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.neg
 		dif <- if(length(dim(adj.env[[dif.name]]))>2) adj.env[[dif.name]][country.char,,] else adj.env[[dif.name]][country.char,,drop=FALSE]
 		res <- env[[traj.name]]		
 		if(length(dim(res))>2) { # includes age
-		    age.idx <- all.age.index(annual = annual, observed = TRUE)
+		    age.idx <- age.index.all(annual = annual, observed = TRUE)
 			res21 <- aaply(res[age.idx,,], 3, '-', dif)
             if(!allow.negatives) res21 <- pmax(0, res21)
 			res21 <- aperm(res21, c(2,3,1))
@@ -39,8 +39,8 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 		if(!is.null(env[[paste0('AdjQpop', what)]])) return(env[[paste0('AdjQpop', what)]])
 		if(!is.null(env[[paste0('AdjDpop', what)]])) dif <- env[[paste0('AdjDpop', what)]]
 	}
-	age.idx <- all.age.index(annual = annual, observed = TRUE)
-	age.idx.all <- all.age.index(annual = annual, observed = FALSE)
+	age.idx <- age.index.all(annual = annual, observed = TRUE)
+	age.idx.all <- age.index.all(annual = annual, observed = FALSE)
 	age.idx.old <- age.idx.all[age.idx.all > max(age.idx)]
 	if(is.null(dif)) {
 		if(is.null(env)) env <- new.env()
@@ -136,11 +136,11 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 		dataset <- paste0('pop', sex)
 		if.not.exists.load(dataset, e, ...)
 		#do.call('data', list(dataset, package='wpp2012', envir=e))
-		pop.obs <- if(sum.over.ages) sum.by.country(dataset) else sum.by.country.and.age(dataset)
+		pop.obs <- if(sum.over.ages) .sum.by.country(dataset) else .sum.by.country.and.age(dataset)
 	}
 	dataset <- paste0('pop', sex, 'projMed')
 	if.not.exists.load(dataset, e, ...)
-	popp <- if(sum.over.ages) sum.by.country(e[[dataset]]) else sum.by.country.and.age(e[[dataset]])
+	popp <- if(sum.over.ages) .sum.by.country(e[[dataset]]) else .sum.by.country.and.age(e[[dataset]])
 	if(!prediction.only)  popp <- merge(pop.obs, popp, by='country_code')
 	if(sum.over.ages) return(.reduce.to.countries(popp, countries))
 	.reduce.to.countries.and.ages(popp, countries, ages, annual = annual)
@@ -180,19 +180,19 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	res
 }
 
-sum.by.country <- function(dataset) {
+.sum.by.country <- function(dataset) {
 	year.cols <- grep('^[0-9]{4}', colnames(dataset), value = TRUE)
 	dataset[, c("country_code", year.cols), with = FALSE][, lapply(.SD, sum, na.rm = TRUE), by = "country_code"]
 }
 
-sum.by.country.and.age <- function(dataset) {
+.sum.by.country.and.age <- function(dataset) {
 	year.cols <- grep('^[0-9]{4}', colnames(dataset), value = TRUE)
 	dataset[, c("country_code", "age", year.cols), with = FALSE][, lapply(.SD, sum, na.rm = TRUE), by = c("country_code", "age")]
 }
 
 sumMFbycountry <- function(datasetM, datasetF, e) {
-	tpopM <- sum.by.country(e[[datasetM]])
-	tpopF <- sum.by.country(e[[datasetF]])
+	tpopM <- .sum.by.country(e[[datasetM]])
+	tpopF <- .sum.by.country(e[[datasetF]])
 	tpopM[, 2:ncol(tpopM)] <- tpopM[,2:ncol(tpopM)] + tpopF[,2:ncol(tpopF)]
     tpopM
 }

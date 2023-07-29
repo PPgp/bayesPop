@@ -4,10 +4,10 @@ get.expression.indicators <- function() {
 		            G='migration', R='pasfr', E='ex', A='ax'))
 }
 
-all.age.index <- function(...) 
-    return(1:all.age.length(...))
+age.index.all <- function(...) 
+    return(1:age.length.all(...))
 
-all.age.length <- function(annual = FALSE, observed = FALSE){
+age.length.all <- function(annual = FALSE, observed = FALSE){
     if(annual) {
         if(observed) return(101) 
         return(131)
@@ -17,26 +17,26 @@ all.age.length <- function(annual = FALSE, observed = FALSE){
 }
 
 
-all.ages <- function(annual = FALSE, observed = FALSE) {
-    l <- all.age.length(annual, observed)
+ages.all <- function(annual = FALSE, observed = FALSE) {
+    l <- age.length.all(annual, observed)
     if(annual) 
         return(seq(0, length = l))
     return(seq(0, by = 5, length = l))
 }
 
-fert.age.index <- function(annual = FALSE) {
+age.index.fert <- function(annual = FALSE) {
     if(annual) return(11:55)
     return(4:10)
 }
 
-fert.age.length <- function(...)
-    return(length(fert.age.index(...)))
+age.length.fert <- function(...)
+    return(length(age.index.fert(...)))
 
-fert.ages <- function(...)
-    return(all.ages(...)[fert.age.index(...)])
+ages.fert <- function(...)
+    return(ages.all(...)[age.index.fert(...)])
 
 lt.age.length <- function(annual = FALSE, ...) {
-    l <- all.age.length(annual = annual, ...)
+    l <- age.length.all(annual = annual, ...)
     if(!annual) l <- l + 1
     return(l)
 }
@@ -298,7 +298,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
 	age.idx <- if(age[1]=='all') 1:max.age else age
 	annual <- pop.pred$annual
-	max.age.allowed <- all.age.length(annual)
+	max.age.allowed <- age.length.all(annual)
 	if(max(age.idx) > max.age.allowed || min(age.idx) < 1) {
 	    if(annual) stop(paste('Age index must be between 0 and ', max.age.allowed - 1, '.')) 
 	    stop(paste('Age index must be between 1 and ', max.age.allowed, '(age 130+).'))
@@ -508,7 +508,7 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 mid.period3d <- function(dat)
     (dat[,-1, ,drop = FALSE] + dat[,-dim(dat)[2],, drop = FALSE])/2.
 
-aggregate.mx <- function(mx, pop, abridged = TRUE) {
+mx.aggregate <- function(mx, pop, abridged = TRUE) {
     # Aggregate mx over sexes
     # mx and pop are lists with elements for male and female
     abr.deaths <- abr.pop <- list()
@@ -536,7 +536,7 @@ aggregate.mx <- function(mx, pop, abridged = TRUE) {
 
 get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE, pop = NULL) {
     if(sex == "T")  # mx for both sexes
-        mxm <- aggregate.mx(mxm, pop, abridged = abridged)
+        mxm <- mx.aggregate(mxm, pop, abridged = abridged)
     if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
     if(age05[3]) {
         res1 <- LifeTableMxCol(mxm[,, 1], colname='mx', sex=sex, age05=age05, abridged = abridged)
@@ -568,7 +568,7 @@ get.mx <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE, pop =
 
 .get.lt.col <- function(ltcol, mxm, sex, age05=c(FALSE, FALSE, TRUE), 
                         abridged = TRUE, replace.na = TRUE, pop = NULL) {
-    if(sex == "T") mxm <- aggregate.mx(mxm, pop, abridged = abridged) # aggregate over sexes
+    if(sex == "T") mxm <- mx.aggregate(mxm, pop, abridged = abridged) # aggregate over sexes
     if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
     if(abridged && replace.na && any(is.na(mxm)) && any(!is.na(mxm)))
         mxm <- .mx.replace.na.for.old.ages(mxm)
@@ -598,7 +598,7 @@ get.ax <- function(...) {
 
 get.survival <- function(mxm, sex, age05=c(FALSE, FALSE, TRUE), abridged = TRUE,
                          replace.na = TRUE, pop = NULL) {
-    if(sex == "T") mxm <- aggregate.mx(mxm, pop, abridged = abridged) # aggregate over sexes
+    if(sex == "T") mxm <- mx.aggregate(mxm, pop, abridged = abridged) # aggregate over sexes
 	if(length(dim(mxm))<3) mxm <- abind(mxm, along=3)
 	# sx21 <- dim(mxm)[1] < 27
 	# for (itraj in 1:dim(mxm)[3]) {
@@ -651,11 +651,11 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if (file.exists(traj.file)) load(traj.file, envir=myenv)
 		if(is.observed) myenv <- myenv$observed
 	#}
-	max.age.index.allowed <- all.age.length(pop.pred$annual)
+	max.age.index.allowed <- age.length.all(pop.pred$annual)
 	min.age.index.allowed <- 1
 	if(is.observed) {
 		nperiods <- length(get.pop.observed.periods(pop.pred))
-		if(!allow.higher.ages) max.age.index.allowed <- all.age.length(pop.pred$annual, observed = TRUE)
+		if(!allow.higher.ages) max.age.index.allowed <- age.length.all(pop.pred$annual, observed = TRUE)
 	}
 	age.normal <- TRUE
 	subtract.max.age <- 0
@@ -736,8 +736,8 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	if(is.null(max.age)) # no trajectories available
 	    return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch, event=event))
 	max.age.shift <- 0 # shift for fertility indicators
-	age.obs.length <- all.age.length(pop.pred$annual, observed = TRUE)
-	first.fert.idx <- fert.age.index(pop.pred$annual)[1]
+	age.obs.length <- age.length.all(pop.pred$annual, observed = TRUE)
+	first.fert.idx <- age.index.fert(pop.pred$annual)[1]
 	if(max.age < age.obs.length) max.age.shift <- first.fert.idx - 1
 	
 	age.idx <- age.idx.raw  <- if(age[1]=='all') 1:max.age else age[age <= (max.age + max.age.shift)] 
@@ -748,7 +748,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			age.idx <- age.idx - max.age.shift # translate age index into mother's child-bearing age index
 			if(length(age.idx)==0 || max(age.idx) > max.age || min(age.idx) < 1){
 			    if(pop.pred$annual) stop('Age index for ', event, ' must be between ', max.age.shift, ' and ', max.age + max.age.shift - 1, '.')
-			    allowed.ages <- fert.ages(pop.pred$annual)
+			    allowed.ages <- ages.fert(pop.pred$annual)
 			    stop('Age index for ', event, ' must be between ', max.age.shift + 1, ' (age ', allowed.ages[1], '-', allowed.ages[1]+4, ') and ', 
 				     max.age + max.age.shift, ' (age ', allowed.ages[length(allowed.ages)], '-', allowed.ages[length(allowed.ages)]+4, ').')
 			}
@@ -831,7 +831,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 
 
 get.age.labels <- function(ages, collapsed=FALSE, age.is.index=FALSE, last.open=FALSE, single.year = FALSE) {
-	all.age <- all.ages(annual = single.year, observed = FALSE)
+	all.age <- ages.all(annual = single.year, observed = FALSE)
 	ages.idx <- if(age.is.index) ages else which(is.element(all.age, ages))
 	if(is.element(0, ages.idx) && !single.year) { # age 1-4 is included
 		all.age <- c(-1, all.age)
@@ -1051,7 +1051,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			data <- traj$data
 			if(!sum.over.ages) {
 				if(age[1]=='all') { # extend to 27 age categories
-				    lages <- all.age.length(pop.pred$annual)
+				    lages <- age.length.all(pop.pred$annual)
 					traj$age.idx <- c(traj$age.idx, (dim(data)[[2]]+1):lages)
 					data <- abind(data, array(0, c(dim(data)[[1]], lages-dim(data)[[2]], dim(data)[[3]])), along=2)
 				}
@@ -1139,7 +1139,7 @@ get.pop.exba <- function(expression, pop.pred, observed = FALSE, as.dt = FALSE, 
 	    age <- NULL
 	    res <- data.table::as.data.table(result$trajectories[,,result$index, drop = FALSE], keep.rownames = TRUE, sorted = FALSE)
 	    colnames(res) <- c("age", "year", "trajectory", "indicator")
-        res <- res[, `:=`(age = all.ages(pop.pred$annual, observed = observed)[as.integer(age)], 
+        res <- res[, `:=`(age = ages.all(pop.pred$annual, observed = observed)[as.integer(age)], 
                           year = as.integer(year))]
         data.table::setcolorder(res, "year", "age")
 	}
@@ -1217,7 +1217,7 @@ get.pop.exba.all <- function(expression, pop.pred, observed=FALSE, as.dt = TRUE,
         age <- NULL
         resdt <- data.table::rbindlist(result)
         colnames(resdt)[1:3] <- c("age", "year", "trajectory")
-        resdt[, `:=`(age = all.ages(pop.pred$annual, observed = observed)[as.integer(age)], year = as.integer(year))]
+        resdt[, `:=`(age = ages.all(pop.pred$annual, observed = observed)[as.integer(age)], year = as.integer(year))]
         data.table::setcolorder(resdt, c("country_code", "year"))
     } else resdt <- drop(do.call("abind", c(result, list(along = 0))))
     return(resdt)
@@ -1346,7 +1346,7 @@ get.pop.observed.from.expression.multiple.age <- function(expression, pop.pred, 
 	    result <- data.table::melt(result, id.vars = "rn", value.name = "indicator", 
 	                               variable.name = "year", variable.factor = FALSE)
 	    data.table::setnames(result, "rn", "age")
-	    result[, `:=`(age = all.ages(pop.pred$annual, observed = TRUE)[as.integer(age)], year = as.integer(year))]
+	    result[, `:=`(age = ages.all(pop.pred$annual, observed = TRUE)[as.integer(age)], year = as.integer(year))]
 	    data.table::setcolorder(result, "year")
 	}
 	return(result) 
@@ -1401,7 +1401,7 @@ get.pop.observed.from.expression.multiple.age.all.countries <- function(expressi
         resdt <- data.table::rbindlist(result)
         resdt <- data.table::melt(resdt, id.vars = c("country_code", "rn"), value.name = "indicator", variable.name = "year",
                       variable.factor = FALSE)
-        resdt[, `:=`(age = all.ages(pop.pred$annual, observed = TRUE)[as.integer(rn)],
+        resdt[, `:=`(age = ages.all(pop.pred$annual, observed = TRUE)[as.integer(rn)],
                      year = as.integer(year))][, rn := NULL]
         data.table::setcolorder(resdt, c("country_code", "year", "age"))
     } else {
@@ -1576,12 +1576,12 @@ gmean1 <- function(f, cats=NULL) {
 age.func <- function(data, fun="*") {
 	# data is expected to be 4-d array where the second dimension is age
 	# It applies the given function to data and the corresponding age (middle of the age category)
-    return(.do.age.func(data, fun, mid.ages = all.ages(annual = FALSE) + 2.5))
+    return(.do.age.func(data, fun, mid.ages = ages.all(annual = FALSE) + 2.5))
 }
 
 age.func1 <- function(data, fun="*") {
     # like age.func but for single-year age groups
-    return(.do.age.func(data, fun, mid.ages = all.ages(annual = TRUE) + 0.5))
+    return(.do.age.func(data, fun, mid.ages = ages.all(annual = TRUE) + 0.5))
 }
 
 drop.age <- function(data) {
@@ -1593,15 +1593,15 @@ age.index01 <- function(end) return (c(-1,0,2:end))
 age.index05 <- function(end) return (1:end)
 
 mac.expression1 <- function(country) {
-    factors <- fert.ages(annual = TRUE) + 0.5
-    return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = TRUE)-1, "]", collapse=" + "), ")/100"))
+    factors <- ages.fert(annual = TRUE) + 0.5
+    return(paste0("(", paste0(factors, "*R", country, "[", age.index.fert(annual = TRUE)-1, "]", collapse=" + "), ")/100"))
 }
 
 mac.expression5 <- function(country) mac.expression(country)
 
 mac.expression <- function(country) {
-	factors <- fert.ages(annual = FALSE) + 2.5
-	return(paste0("(", paste0(factors, "*R", country, "[", fert.age.index(annual = FALSE), "]", collapse=" + "), ")/100"))
+	factors <- ages.fert(annual = FALSE) + 2.5
+	return(paste0("(", paste0(factors, "*R", country, "[", age.index.fert(annual = FALSE), "]", collapse=" + "), ")/100"))
 }
 
 	
@@ -1734,9 +1734,9 @@ litem <- function(i, x, default=NULL) {
 	x[[i]]
 }
 
-as.environment.bayesPop.prediction <- function(pop.pred){
-	epred <- list2env(pop.pred)
-	class(epred) <- c(class(pop.pred), class(epred))
+as.environment.bayesPop.prediction <- function(x){
+	epred <- list2env(x)
+	class(epred) <- c(class(x), class(epred))
 	return(epred)
 }
 
