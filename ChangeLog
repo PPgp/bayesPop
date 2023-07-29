@@ -8,7 +8,7 @@ pop.trajectories.plot: default for sum.over.ages changed to TRUE
 
 Added argument xshift to  pop.trajectories.plot and pop.trajectories.table.
 
-New mapping function, pop.ggmap().
+New mapping function, pop.ggmap(). 
 
 Argument allow.negative.adj can be passed to write.pop.projection.summary() controlling 
 if adjustments can yield negative results. 
