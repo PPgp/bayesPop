@@ -1,11 +1,11 @@
 Package: bayesPop
 Type: Package
 Title: Probabilistic Population Projection
-Version: 9.0-1
-Date: 2021-11-28
+Version: 10.0-0
+Date: 2023-07-28
 Author: Hana Sevcikova, Adrian Raftery, Thomas Buettner
 Maintainer: Hana Sevcikova <hanas@uw.edu>
-Depends: R (>= 2.14.2), bayesTFR (>= 7.1-0), bayesLife (>= 5.0-0), MortCast (>= 2.6-1)
+Depends: R (>= 3.5.0), bayesTFR (>= 7.1-0), bayesLife (>= 5.0-0), MortCast (>= 2.6-1)
 Suggests: wpp2017, wpp2015, wpp2010
 Imports: parallel, abind, data.table, wpp2019, wpp2012, graphics, grDevices, stats, utils, rworldmap, fields, googleVis, reshape2, plyr
 Description: Generating population projections for all countries of the world using several probabilistic components, such as total fertility rate and life expectancy (Raftery et al., 2012 <doi:10.1073/pnas.1211452109>).

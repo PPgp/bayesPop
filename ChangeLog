@@ -1,3 +1,30 @@
+10.0-0 (07/28/2023)
+------
+Making default datasets from wpp2022 work with pop.predict.
+
+pop.pyramid and pop.trajectories.pyramid got an argument for showing birth years, called show.birth.year.
+
+pop.trajectories.plot: default for sum.over.ages changed to TRUE
+
+Added argument xshift to  pop.trajectories.plot and pop.trajectories.table.
+
+New mapping function, pop.ggmap(). 
+
+Argument allow.negative.adj can be passed to write.pop.projection.summary() controlling 
+if adjustments can yield negative results. 
+
+Option of giving migration inputs as rates.
+
+Fixed bug related to extracting observed migration which did not work for aggregations 
+(thanks to Crystal Yu).
+
+Options for additional settings in the mortality pattern file (vwBaseYear):
+    SmoothDFLatestAgeMortalityPattern (degree of freedom for smoothing)
+    LatestAgeMortalityPattern can have 2 values (a negative for exclusion of latest time points and a positive for inclusion)
+    AgeMortProjMethod1/2 can have value modPMD which uses a modified version of PMD (modPMD in MortCast) 
+    
+Added support for UN-based disaggregation into migration schedules (argument mig.age.method = "un" in pop.predict)
+
 9.0-0/1 (11/28/2021)
 -------
 Support for 1x1 projections (1 year age x 1 year time); still an experimental feature!

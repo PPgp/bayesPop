@@ -20,7 +20,8 @@ A \bold{basic component} is a character string constituted of four parts, two of
 		\item \sQuote{M} - mortality rate, 
 		\item \sQuote{Q} - probability of dying,
 		\item \sQuote{E} - life expectancy,
-		\item \sQuote{G} - net migration.
+		\item \sQuote{G} - net migration,
+		\item \sQuote{A} - a_x column of the life table.
 		}
 	All but the \sQuote{P} and \sQuote{G} indicators are available only if the {\code{\link{pop.predict}}} function was run with \code{keep.vital.events=TRUE}.
 \item Country part. One of the following:
@@ -36,7 +37,7 @@ A \bold{basic component} is a character string constituted of four parts, two of
   		\item For 1x1 predictions, the age index starts with 0 for all indicators and matches exactly the age. I.e., indices 0,1,2,\dots correspond to ages 0,1,2,\dots.
   	}
 }
-Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10 in 5x5, or 11 to 55 in 1x1). Or, there is no point in summing the life table based indicators (M, Q, E, S) over sexes, i.e. using it without the sex part, or over multiple age groups, i.e. using brackets.
+Not all combinations of the four parts above make sense. For example, \sQuote{F} and \sQuote{R} can be only combined with female sex, \sQuote{B}, \sQuote{F} and \sQuote{R} can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10 in 5x5, or 11 to 55 in 1x1). Or, there is no point in summing the life table based indicators (M, Q, E, S, A) over multiple age groups, i.e. using brackets, or over sexes. Thus, if the sex part is omitted for the life table indicators, the life table is correctly aggregated over sexes, instead of a simple summation.
 
 Examples of basic components are \dQuote{P276}, \dQuote{D50_F[4:10]}, \dQuote{PXXX\{14:27\}}, \dQuote{SCZE_M\{\}}, \dQuote{QIE_M[-1]}.
 

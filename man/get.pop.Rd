@@ -19,9 +19,9 @@ pop.trajectories(pop.pred, country, sex = c("both", "male", "female"),
 
 get.pop(object, pop.pred, aggregation = NULL, observed = FALSE, ...)
 
-get.pop.ex(expression, pop.pred, observed = FALSE, ...)
+get.pop.ex(expression, pop.pred, observed = FALSE, as.dt = FALSE, ...)
 
-get.pop.exba(expression, pop.pred, observed = FALSE, ...)
+get.pop.exba(expression, pop.pred, observed = FALSE, as.dt = FALSE, ...)
 
 get.trajectory.indices(pop.pred, country, 
     what = c("TFR", "e0M", "e0F", "migM", "migF"))
@@ -44,6 +44,7 @@ extract.trajectories.le(pop.pred, country = NULL, expression = NULL,
   \item{aggregation}{If the basic component is to be evaluated on an aggregated prediction object, this argument gives the name of the aggregation (corresponds argument \code{name} in \code{\link{pop.aggregate}}). By default, the function searches for available aggregations and gives priority to the one called \dQuote{country}.}
   \item{observed}{Logical. Determines if the evaluation uses observed data (\code{TRUE}) or predictions (\code{FALSE}).}
   \item{expression}{Expression defining the trajectories measure. For syntax see \code{\link{pop.expressions}}. It must be define by age (i.e. contain curly braces) if used in \code{get.pop.exba}, and the opposite applies to \code{get.pop.ex}.}
+  \item{as.dt}{Logical indicating if the result should be returned as a \code{data.table} object in long format. This can be useful especially if results for all countries are requested.}
   \item{what}{A character string that defines to which component should the indices link to. Allowable options are \dQuote{TFR}, \dQuote{e0M} (male life expectancy), \dQuote{e0F} (female life expectancy), \dQuote{migM} (male migration), \dQuote{migF} (female migration).}
   \item{quant}{Quantile used to select the closest trajectories to.}
   \item{values}{Vector of values used to select the closest trajectories to. If it is not of length 1, it has to be of the same length as the number of projected time periods. If it is not given, \code{quant} is used.}
@@ -55,9 +56,9 @@ extract.trajectories.le(pop.pred, country = NULL, expression = NULL,
 \details{
 	Function \code{pop.trajectories} returns an array of population trajectories for given sex and age. 
 	
-	Function \code{get.pop} evaluates a basic component of an expression and results in a four-dimensional array. Internally, this function is used for evaluation after an expression is decomposed into basic components. It can be useful for example for debugging purposes, to obtain results from parts of an expression. In addition, while  \code{pop.trajectories} works only for population counts, \code{get.pop} can be used for obtaining trajectories of vital events and rates. Note that if \code{object} contains the wildcard \dQuote{XXX}, the function only works on observed data, i.e. \code{observed} must be \code{TRUE}.
+	Function \code{get.pop} evaluates a basic component of an expression and results in a four-dimensional array. Internally, this function is used for evaluation after an expression is decomposed into basic components. It can be useful for example for debugging purposes, to obtain results from parts of an expression. In addition, while  \code{pop.trajectories} works only for population counts, \code{get.pop} can be used for obtaining trajectories of vital events and rates. Note that the wildcard \dQuote{XXX} in the expression cannot be used in \code{get.pop}; use \code{get.pop.ex} or \code{get.pop.exba} instead.
 	
-	Functions \code{get.pop.ex} and \code{get.pop.exba} evaluate a whole expression and the dimensions of the resulting array is collapsed depending on the specific expression. Use \code{get.pop.ex} if the expected result of the expression does not contain the age dimension, i.e. it uses no brackets or square brackets. If it is not the case, i.e. the expression is defined using curly braces in order to include the age dimension, the  \code{get.pop.exba} function is to be used. Argument \code{nr.traj} can be used to restrict the number of trajectories returned.
+	Functions \code{get.pop.ex} and \code{get.pop.exba} evaluate a whole expression and the dimensions of the resulting array is collapsed depending on the specific expression. Use \code{get.pop.ex} if the expected result of the expression does not contain the age dimension, i.e. it uses no brackets or square brackets. If it is not the case, i.e. the expression is defined using curly braces in order to include the age dimension, the  \code{get.pop.exba} function is to be used. Argument \code{nr.traj} can be used to restrict the number of trajectories returned. Use one of those functions if results for all countries (i.e. if using \dQuote{XXX}) is desired. 
 	
 	Function \code{get.trajectory.indices} returns an array of indices that link back to the given probabilistic component. It is of the same length as number of trajectories in the prediction object. For example, an array of \code{c(10, 15, 20)} (for a prediction with three trajectories) obtained with \code{what="TFR"} means that the 1st, 2nd and 3rd population trajectory, respectively, were generated with the 10th, 15th and 20th TFR trajectory, respectively. If the input TFR and e0 were generated using \code{\link[bayesTFR:bayesTFR-package]{bayesTFR}} and \code{\link[bayesLife:bayesLife-package]{bayesLife}}, functions \code{\link[bayesTFR]{get.tfr.trajectories}} and \code{\link[bayesLife]{get.e0.trajectories}} can be used to extract the corresponding TFR and e0 trajectories.
 	
@@ -71,7 +72,7 @@ extract.trajectories.le(pop.pred, country = NULL, expression = NULL,
 	
 	Function \code{get.pop} returns an array of four dimensions (country x age x time x trajectory). See \link{pop.expressions} for more details.
 	
-	Functions \code{get.pop.ex} and \code{get.pop.exba} return an array of trajectories. Its dimensions depend on the expression and whether it is evaluated on observed data or projections.
+	Functions \code{get.pop.ex} and \code{get.pop.exba} return an array of trajectories. Its dimensions depend on the expression and whether it is evaluated on observed data or projections. If \code{as.dt} is \code{TRUE} these functions return \code{data.table} objects in long format.
 	
 	Function \code{get.trajectory.indices} returns a 1-d array of indices. If the given component is deterministic, it returns \code{NULL}. 
 	
@@ -89,15 +90,19 @@ Hana Sevcikova
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir, write.to.cache=FALSE)
 
-# observed female of Netherlands by age; 1x21x14x1 array
+# observed female of Netherlands by age; 1x21x15x1 array
 popFNL <- get.pop("PNL_F{}", pred, observed=TRUE)
 
-# observed migration for all countries in the prediction object,
-# here 2 countries; 2x1x14x1 array
-migAll <- get.pop("GXXX", pred, observed=TRUE)
+# observed population for all countries in the prediction object,
+# here 2 countries; 2x1x15x1 array
+popAll <- get.pop("PXXX", pred, observed=TRUE)
+
+# future migration for all countries in the prediction object,
+# here 2 countries; 2x17 array
+migAll <- get.pop.ex("GXXX", pred)
 
 # projection population for Ecuador with 3 trajectories; 
-# 1x1x18x3 array
+# 1x1x17x3 array
 popEcu <- get.pop("P218", pred, observed=FALSE)
 
 # the above is equivalent to 

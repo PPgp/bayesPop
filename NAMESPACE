@@ -7,7 +7,7 @@ import(
 
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
-importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "approx", "median", "quantile", 
+importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "splinefun", "approx", "median", "quantile", 
            "sd", "aggregate")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 importFrom("reshape2", "melt")
@@ -40,7 +40,9 @@ get.bPop.pyramid,
 pop.map,
 get.pop.map.parameters,
 pop.map.gvis,
+pop.ggmap,
 write.pop.projection.summary,
+write.pop.trajectories,
 pop.cleanup.cache,
 LifeTableMx,
 LifeTableMxCol,
@@ -56,6 +58,7 @@ cohorts,
 pop.cohorts.plot,
 mac.expression,
 mac.expression1,
+mac.expression5,
 age.specific.migration,
 project.pasfr,
 project.pasfr.traj,
@@ -79,3 +82,5 @@ S3method(get.bPop.pyramid, list)
 S3method(get.data.for.worldmap, bayesPop.prediction)
 S3method(.map.main.default, bayesPop.prediction)
 S3method(bdem.map.gvis, bayesPop.prediction)
+S3method(as.environment, bayesPop.prediction)
+

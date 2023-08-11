@@ -223,6 +223,27 @@ split.pop05 <- function(dat) {
     # using the sprague formula for P_0
     res[1,,] <- apply(dat[1,,, drop = FALSE]*0.3616 + dat[2,,, drop = FALSE]*-0.2768 + dat[3,,, drop = FALSE]*0.1488 + dat[4,,, drop = FALSE]*-0.0336, c(2,3), sum)
     res[2,,] <- dat[1,,] - res[1,,]
+    if(any(res[1:2,,] < 0)) { # negative values, use spline method
+        age5 <- seq(0, length = 7, by = 5)
+        age1 <- seq(0, max(age5)+10, 1)
+        for(time in 1:dim(res)[2]){
+            if(any(res[1:2,time,] < 0)) {
+                idx <- which(res[1,time,] < 0 | res[2,time,] < 0)
+                for(i in idx){
+                    pop5cum <- cumsum(c(0, dat[1:length(age5),time,i])) 
+                    ## compute a monotone Hermite spline according to the method of Fritsch and Carlson implemented in splinefun {stats} in method "monoH.FC" 
+                    yinterpol.fun <- splinefun(c(age5, max(age5)+10), pop5cum, method = "monoH.FC")
+                    ## predict interpolated values by single age on cumulative function
+                    pop1cum <- yinterpol.fun(age1)
+                    ## decumulate
+                    pop1 <- diff(pop1cum) 
+                    res[1,time,i] <- pop1[1]
+                }
+                #res[1,time,idx] <- dat[1,time,idx]/5.
+                res[2,time,idx] <- dat[1,time,idx] - res[1,time,idx]
+            }
+        }
+    }
     return(res)
 }
 
@@ -265,8 +286,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	btm <- btf <- deathsm <- deathsf <- migm <- migf <- btm.hch <- btf.hch <- deathsm.hch <- deathsf.hch <- NULL
 	aggr.quantities.all <- aggr.quantities
 	max.lage <- dim(pop.pred$quantilesMage)[2]
-	max.lage.fert <- fert.age.length(pop.pred$annual)
-	fert.age.start <- fert.age.index(pop.pred$annual)[1]
+	max.lage.fert <- age.length.fert(pop.pred$annual)
+	fert.age.start <- age.index.fert(pop.pred$annual)[1]
 	#mort.ages <- lt.ages(pop.pred$annual)
 	if(pop.pred$annual) {
 	    time.step <- 1

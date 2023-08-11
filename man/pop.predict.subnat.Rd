@@ -24,7 +24,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
         ), 
         nr.traj = 1000, keep.vital.events = FALSE, 
         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
-        replace.output = FALSE, verbose = TRUE)
+         mig.is.rate = FALSE, replace.output = FALSE, verbose = TRUE)
 }
 
 \arguments{
@@ -55,7 +55,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
   			\item{average.annual}{Character string with values \dQuote{TFR}, \dQuote{e0M}, \dQuote{e0F}. If this is a 5-year simulation, but the inputs of TFR or/and e0 comes from an annual simulation, including the corresponding string here will cause that the TFR or/and e0 trajectories are converted into 5-year averages.}
   		}
 }
-  \item{nr.traj, keep.vital.events, fixed.mx, fixed.pasfr, lc.for.all, replace.output, verbose}{These arguments have the same meaning as in \code{\link{pop.predict}}.}
+  \item{nr.traj, keep.vital.events, fixed.mx, fixed.pasfr, lc.for.all, mig.is.rate, replace.output, verbose}{These arguments have the same meaning as in \code{\link{pop.predict}}.}
 }
 
 \details{

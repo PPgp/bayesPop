@@ -14,9 +14,7 @@ if(!CRAN) {
 	test.prediction(parallel = TRUE)
 	test.prediction.with.prob.migration()
 	test.prediction.with.prob.migration(parallel = TRUE)
-	#test.expressions.with.VE(map=TRUE)
 	test.expressions.with.VE(map=FALSE)
-	test.expressions.with.VE(map=FALSE, parallel = TRUE)
 	test.regional.aggregation()
 	test.regional.aggregation(parallel = TRUE)
 	test.life.table()
@@ -25,4 +23,6 @@ if(!CRAN) {
 	test.subnat()
 	options(warn=warn$warn)
 	test.subnat.with.subnat.tfr.e0()
+	test.prediction.with.patterns()
+	test.expressions.with.VE(map=TRUE, parallel = TRUE) # generates warnings
 }

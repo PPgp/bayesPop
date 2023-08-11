@@ -8,10 +8,10 @@
 /* .C calls */
 extern void CCM(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, 
                 void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, 
-                void *, void *, void *, void *, void *);
+                void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 
 static const R_CMethodDef CEntries[] = {
-    {"CCM",    (DL_FUNC) & CCM ,    26},
+    {"CCM",    (DL_FUNC) & CCM ,    31},
     {NULL, NULL, 0}
 };
 

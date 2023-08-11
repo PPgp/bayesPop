@@ -151,7 +151,10 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	pop.byage.plot(pred, expression="pop.combine(M218_F{age.index05(27)}, P218, '/')", year=1990)
 	pop.trajectories.plot(pred, expression="pop.combine(B218 - D218, G218, '+', split.along='traj')")
 	pop.trajectories.plot(pred, expression="pop.combine(G218, P218, '/', split.along='traj')")
-	if(map) pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
+	if(map) {
+	    pop.map(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=1980)
+	    pop.ggmap(pred, expression="pop.combine(PXXX_M, P528, '/', split.along='country')", year=2050)
+	}
 	dev.off()
 	size <- file.info(filename)['size']
 	unlink(filename)
@@ -313,7 +316,7 @@ test.life.table <- function(parallel = FALSE){
 	sx2 <- as.double(sx2[,ncol(sx2)])
 	sxpred <- get.pop.exba("SEC_M{1:27}", pred, observed=FALSE)
 	sx3 <- as.double(sxpred[,1,1])
-	stopifnot(all.equal(sx1[1:19], sx2[1:19], sx3[1:19]))
+	stopifnot(all.equal(sx1[1:19], sx2[1:19]) && all.equal(sx2[1:19], sx3[1:19]))
 	sx4 <- as.double(LifeTableMxCol(pop.byage.table(pred, expression="MEC_M{age.index01(27)}", year=2053)[,1], 'sx', age05=c(FALSE, FALSE, TRUE)))
 	sx5 <- as.double(sxpred[,"2053",1])
 	stopifnot(all.equal(sx4, sx5))
@@ -402,7 +405,42 @@ test.subnat.with.subnat.tfr.e0 <- function() {
   unlink(sim.dir, recursive = TRUE)
   unlink(tfr.reg.dir, recursive = TRUE)
   unlink(e0.reg.dir, recursive = TRUE)
+  test.ok(test.name)
 }
 
+test.prediction.with.patterns <- function() {
+    test.name <- paste('Running prediction with different patterns')
+    start.test(test.name)
+    data("vwBaseYear2019")
+    patterns <- vwBaseYear2019
+    cntries <- c(528,218,450)
+    patterns <- subset(patterns, country_code %in% cntries)
+    #patterns$AgeMortProjMethod1[] <- "LC"
+    patterns$AgeMortProjMethod1[] <- "modPMD"
+    patterns$AgeMortProjMethod2[] <- ""
+    patterns$SmoothDFLatestAgeMortalityPattern <- c(4, 0, 19)
+    patterns$SmoothLatestAgeMortalityPattern[] <- 1
+    patterns$LatestAgeMortalityPattern <- c("c(-2, 3)", -2, "c(1, 1)") # the last one should give a warning
+    pattern.file <- tempfile()
+    write.table(patterns, file = pattern.file, sep = "\t", row.names = FALSE)
+    set.seed(1)
+    sim.dir <- tempfile()	
+    pred <- pop.predict(countries = cntries, 
+                        nr.traj = 3, verbose=TRUE, output.dir=sim.dir,
+                        inputs = list(patterns = pattern.file),
+                        keep.vital.events = TRUE, lc.for.all = FALSE, replace.output = TRUE
+                        )
+    # there isn't really a way to test that the patterns were used, 
+    # apart from exploring the resulting mx, e.g.
+    # pop.byage.plot(pred, expression = "log(M218_M{age.index01(27)})", year = 2023)
+    # pop.byage.plot(pred, expression = "log(M218_M{age.index01(27)})", add = TRUE)
+    s <- summary(pred)
+    stopifnot(s$nr.traj == 3)
+    stopifnot(s$nr.countries == 3)
+    stopifnot(length(s$projection.years) == 16)
+    unlink(sim.dir, recursive = TRUE)
+    unlink(pattern.file)
+    test.ok(test.name)
+}    
 
 #TODO: test project.pasfr function

@@ -2,15 +2,18 @@
 \alias{pop.map}
 \alias{get.pop.map.parameters}
 \alias{pop.map.gvis}
+\alias{pop.ggmap}
 
 \title{
 World Map of Population Measures
 }
 \description{
-Generates a world map of various population measures for a given quantile and a projection or observed period.
+Generates a world map of various population measures for a given quantile and a projection or observed period, using different techniques: \code{pop.map} use \pkg{rworldmap}, \code{pop.ggmap} uses \pkg{ggplot2}, and \code{pop.map.gvis} creates an interactive map via \pkg{GoogleVis}.
 }
 \usage{
 pop.map(pred, sex = c("both", "male", "female"), age = "all", expression = NULL, \dots)
+
+pop.ggmap(pred, sex=c('both', 'male', 'female'), age='all', expression=NULL, \dots)
 
 get.pop.map.parameters(pred, expression = NULL, sex = c("both", "male", "female"), 
     age = "all", range = NULL, nr.cats = 50, same.scale = TRUE, quantile = 0.5, \dots)
@@ -26,14 +29,15 @@ pop.map.gvis(pred, \dots)
   \item{nr.cats}{Number of color categories.}
   \item{same.scale}{Logical controlling if maps for all years of this prediction object should be on the same color scale.}
    \item{quantile}{Quantile for which the map should be generated. It must be equal to one of the values in \code{dimnames(pred$quantiles[[2]])}, i.e. 0, 0.025, 0.05, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 0.95, 0.975, 1. Value 0.5 corresponds to the median.}
-  \item{\dots}{Additional arguments passed to the underlying functions. In \code{pop.map}, these are \code{quantile}, \code{year}, \code{projection.index}, \code{device}, \code{main}, and \code{device.args} (see \code{\link[bayesTFR]{tfr.map}}). In \code{pop.map.gvis}, these are all arguments that can be passed to \code{\link[bayesTFR]{tfr.map.gvis}}. In addition, the first two functions accept
-arguments passed to the \code{\link[rworldmap]{mapCountryData}} function of the \pkg{rworldmap} package.
+  \item{\dots}{Additional arguments passed to the underlying functions. In \code{pop.map}, these are \code{quantile}, \code{year}, \code{projection.index}, \code{device}, \code{main}, and \code{device.args} (see \code{\link[bayesTFR]{tfr.map}}). For \code{pop.ggmap}, these are arguments that can be passed to \code{\link[bayesTFR]{tfr.ggmap}}. For \code{pop.map.gvis}, these are all arguments that can be passed to \code{\link[bayesTFR]{tfr.map.gvis}}. In addition, \code{pop.map} and \code{get.pop.map.parameters} accept arguments passed to the \code{\link[rworldmap]{mapCountryData}} function of the \pkg{rworldmap} package.
 }
 }
 \details{
 \code{pop.map} creates a single map for the given time period and quantile. If the package \pkg{fields} is installed, a color bar legend at the botom of the map is created.
 
 Function \code{get.pop.map.parameters} can be used in combination with \code{pop.map}. It sets breakpoints for the color scheme.
+
+Function \code{pop.ggmap} is similar to \code{pop.map}, but uses the \pkg{ggplot2} package in combination with the \code{geom_sf} function.
 
 Function \code{pop.map.gvis} creates an interactive map using the \pkg{googleVis} package and opens it in an internet browser. It also generates a table of the mapped values that can be sorted by columns interactively in the browser. 
 }
@@ -72,6 +76,12 @@ Hana Sevcikova
 ##########################
 sim.dir <- file.path(find.package("bayesPop"), "ex-data", "Pop")
 pred <- get.pop.prediction(sim.dir=sim.dir, write.to.cache=FALSE)
+
+# Using ggplot2
+pop.ggmap(pred)
+pop.ggmap(pred, year = 2100)
+
+# Using rworldmap
 # Uses heat colors with seven categories by default
 pop.map(pred, sex="female", age=4:10)
 # Female population in child-bearing age as a proportion of totals
@@ -81,7 +91,8 @@ params <- get.pop.map.parameters(pred, expression="PXXX_F[4:10] / PXXX")
 do.call("pop.map", params)
 # Another projection year on the same color scale
 do.call("pop.map", c(list(year=2043), params))
-# Potential support ratio using googleVis
+
+# Interactive map of potential support ratio (requires Flash)
 pop.map.gvis(pred, expression="PXXX[5:13] / PXXX[14:27]")}	
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

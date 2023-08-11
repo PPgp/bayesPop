@@ -15,10 +15,10 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
-                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
+                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
     #prediction.exist <- FALSE
-    ages <- all.ages(annual, observed = FALSE)
+    ages <- ages.all(annual, observed = FALSE)
 
     if(is.null(locations)) 
         stop("Argument locations must be given.")
@@ -41,7 +41,8 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
     inp <- load.subnat.inputs(inputs, start.year, present.year, end.year, wpp.year, 
                               default.country = default.country,
                               fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, 
-                              lc.for.all = lc.for.all, annual = annual, verbose = verbose)
+                              lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
+                              annual = annual, verbose = verbose)
 
     reg.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
     
@@ -175,7 +176,8 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
 
 load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, 
                                default.country = NULL, fixed.mx = FALSE, 
-                        fixed.pasfr = FALSE, lc.for.all = TRUE, annual = FALSE, verbose = FALSE) {
+                        fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
+                        annual = FALSE, verbose = FALSE) {
     observed <- list()
     # check inputs
     for(item in c('popM', 'popF')) {
@@ -327,6 +329,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     migMpred <- migpr$M
     migFpred <- migpr$F
     
+    if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
+    mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1], migpr[["migcode"]]*mig.is.rate[2])
+    
     # Get life expectancy
     e0F.wpp.median.loaded <- FALSE
     e0Fpred <- e0Mpred <- NULL
@@ -398,7 +403,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
-                 'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 'lc.for.all', 'observed'))
+                 'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
+                 'lc.for.all', 'mig.rate.code', 'observed'))
         assign(par, get(par), envir=inp)
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
     env <- new.env()
@@ -416,6 +422,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
   recon.mig <- NULL
   miginp <- list()
   migtempl <- NULL
+  migcode <- 0
   for(sex in c("M", "F")) {
     inpname <- paste0('mig', sex) 
     if(!is.null(inputs[[inpname]])) { # migration given by sex and age
@@ -426,7 +433,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     if(is.null(migtempl)) {
         # Here create only a dataframe filled with NAs 
         migtempl <- .get.mig.template(unique(pop0[[sex]]$country_code), 
-                                        ages = pop0[[sex]]$age[all.age.index(annual, observed = TRUE)],
+                                        ages = pop0[[sex]]$age[age.index.all(annual, observed = TRUE)],
                                         time.periods = periods)
         migtempl[,which(!colnames(migtempl) %in% c("country", "country_code", "age"))] <- NA
         migtempl <- data.table(migtempl)
@@ -434,12 +441,15 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     fname <- paste0(inpname, 't')
     fnametot <- paste0("mig")
     if(!is.null(inputs[[fname]]) || !is.null(inputs[[fnametot]])) { # migration given as totals or totals by sex
-      if(!is.null(inputs[[fname]]))
+      if(!is.null(inputs[[fname]])) {
         totmig <- data.table(swap.reg.code(read.pop.file(inputs[[fname]])), table.name = fname)
-      else
+        migcode <- 2
+      } else {
         totmig <- data.table(swap.reg.code(read.pop.file(inputs[[fnametot]])), table.name = fnametot)
+        migcode <- 3
+      }
       migcols <- intersect(colnames(totmig), periods)
-      miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[all.age.index(annual, observed = TRUE)],
+      miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                            template = migtempl), check.names = FALSE)
@@ -490,6 +500,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     miginp[["migF"]] <- MIGf
     break # no need to go to the next iteration as we have everything we need
   }
+  miginp[["migcode"]] <- migcode
   return(miginp)
 }
 
