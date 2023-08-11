@@ -443,4 +443,28 @@ test.prediction.with.patterns <- function() {
     test.ok(test.name)
 }    
 
+test.age.specific.migration <- function(){
+    test.name <- paste('Generating age-specific migration')
+    start.test(test.name)
+    
+    # Taken from Examples which are "dontrun"
+    asmig <- age.specific.migration()
+    stopifnot(all(dim(asmig$male) == c(4221, 33)))
+    stopifnot(all(dim(asmig$female) == c(4221, 33)))
+    
+    # disaggregate WPP 2019 migration for all countries, one sex
+    data(migration, package = "wpp2019")
+    # assuming equal sex migration ratio
+    asmig.all <- migration.totals2age(migration, scale = 0.5, method = "rc") 
+    # result for the US in 2095-2100
+    mig1sex.us <- subset(asmig.all, country_code == 840)[["2095-2100"]]
+    stopifnot(length(mig1sex.us) == 21) 
+    stopifnot(mig1sex.us[1] > 2*mig1sex.us[3] && 8*mig1sex.us[3] < mig1sex.us[5] && mig1sex.us[21] == 0)
+    # check that the sum is half of the original total
+    stopifnot(sum(mig1sex.us) == subset(migration, country_code == 840)[["2095-2100"]]/2)
+    
+    test.ok(test.name)
+}
+
+
 #TODO: test project.pasfr function

@@ -25,4 +25,5 @@ if(!CRAN) {
 	test.subnat.with.subnat.tfr.e0()
 	test.prediction.with.patterns()
 	test.expressions.with.VE(map=TRUE, parallel = TRUE) # generates warnings
+	test.age.specific.migration()
 }
