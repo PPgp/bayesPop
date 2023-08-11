@@ -97,6 +97,7 @@ names(totmig) <- 2018:2020
 asmig.simple <- migration.totals2age(totmig, annual = TRUE, method = "rc")
 head(asmig.simple)
 
+\dontrun{
 # disaggregate WPP 2019 migration for all countries, one sex
 data(migration, package = "wpp2019")
 # assuming equal sex migration ratio
@@ -105,7 +106,7 @@ asmig.all <- migration.totals2age(migration, scale = 0.5, method = "rc")
 mig1sex.us <- subset(asmig.all, country_code == 840)[["2095-2100"]]
 plot(ts(mig1sex.us))
 # check that the sum is half of the original total
-sum(mig1sex.us) == subset(migration, country_code == 840)[["2095-2100"]]/2
+sum(mig1sex.us) == subset(migration, country_code == 840)[["2095-2100"]]/2}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
