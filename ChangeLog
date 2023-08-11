@@ -15,6 +15,10 @@ if adjustments can yield negative results.
 
 Option of giving migration inputs as rates.
 
+Various functions now accept expressions that include "XXX", such as get.pop.ex() or get.pop.exba().
+
+New function write.pop.trajectories() that exports trajectories for any expression, including by age and time.
+
 Fixed bug related to extracting observed migration which did not work for aggregations 
 (thanks to Crystal Yu).
 
@@ -23,7 +27,8 @@ Options for additional settings in the mortality pattern file (vwBaseYear):
     LatestAgeMortalityPattern can have 2 values (a negative for exclusion of latest time points and a positive for inclusion)
     AgeMortProjMethod1/2 can have value modPMD which uses a modified version of PMD (modPMD in MortCast) 
     
-Added support for UN-based disaggregation into migration schedules (argument mig.age.method = "un" in pop.predict)
+Added support for UN-based disaggregation into migration schedules (argument mig.age.method = "un" in pop.predict).
+User-defined schedules are also possible (mig.age.method = "user").
 
 9.0-0/1 (11/28/2021)
 -------
@@ -35,7 +40,7 @@ Support for 1x1 projections (1 year age x 1 year time); still an experimental fe
     
 The cohort component method modified so that it exactly reproduces the UN-implemented CCM (thanks to Sara Hertog for help).
 
-A 5x5 projection can be generated using annual TFR and e0 inputs. They are hen averaged.
+A 5x5 projection can be generated using annual TFR and e0 inputs. They are then averaged.
 
 Fixed bug in write.pop.projection.summary for "tpopage" (reported by Budi Setiawan).
 
