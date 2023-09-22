@@ -947,6 +947,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             if(!"country_code" %in% colnames(df)) migtmp[, country_code := NULL] # remove this column if it was added above
         }
+    } else {
+        if(mig.is.rate)
+            migtmp[, `:=`(migrate = totmig, is_pos_neg = FALSE)]
     }
     na.records <- migtmp[, list(is.na = all(is.na(prop))), by = c(id.col, "year")][is.na == TRUE][, is.na := NULL]
     if(nrow(na.records) > 0){
@@ -956,7 +959,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         rcmig <- merge(na.records, migtmp, by = c(id.col, "year"), sort = FALSE)
         rcmig[rcdf, prop := i.prop, on = "age"]
         migtmp[rcmig, prop := i.prop, on = c(id.col, "year", "age")]
-    }
+    } 
     migtmp <- merge(migtmp, agedf, by = "age", sort = FALSE)
     if(mig.is.rate){
         # the schedules are all turned into the positive direction
@@ -1044,7 +1047,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         }
         # If we get here, no user-specific migration was passed in the inputs.
         # If migration is not given load default datasets
-        if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation.")
+        if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation and wpp.year < 2022.")
         migdsname <- paste0('migration', sex)
         if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
         if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012)
@@ -1441,7 +1444,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
-	
+	#stop("")
 	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr

@@ -92,7 +92,7 @@ create.dataset.from.wpp <- function(country_code, region.codes, ...) {
 }
 
 load.wpp.dataset.for.country <- function(cntry_id, ...) {
-    ds <- load.wpp.dataset(...)
+    ds <- bayesTFR:::load.from.wpp(...)
     return(ds[ds$country_code == cntry_id, ])
 }
 
@@ -107,12 +107,12 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
 }
 
 .get.tfr.data.subnat <- function(inputs,  wpp.year, default.country, region.codes, 
-                                 verbose = FALSE) {
+                                 annual = FALSE, verbose = FALSE) {
     if(!is.null(inputs$tfr.file)) {
         if(inputs$tfr.file == 'median_')
             TFRpred <- create.trajs.from.wpp(default.country, 
                                              region.codes, 'tfr', wpp.year, 
-                                             median.only = TRUE)
+                                             median.only = TRUE, annual = annual)
         else {
             file.name <- inputs$tfr.file
             if(!file.exists(file.name))
@@ -127,7 +127,8 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
         if(!is.null(inputs$tfr.sim.dir)) 
             TFRpred <- get.tfr.prediction(inputs$tfr.sim.dir, mcmc.dir=NA)
         else TFRpred <- create.trajs.from.wpp(default.country, 
-                                              region.codes, 'tfr', wpp.year)
+                                              region.codes, 'tfr', wpp.year, 
+                                              annual = annual)
     }
     return(TFRpred)
 }
@@ -177,7 +178,7 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
 load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, 
                                default.country = NULL, fixed.mx = FALSE, 
                         fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
-                        annual = FALSE, verbose = FALSE) {
+                        annual = FALSE, mig.age.method = "rc", verbose = FALSE) {
     observed <- list()
     # check inputs
     for(item in c('popM', 'popF')) {
@@ -222,7 +223,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     MXm.pred <- MXf.pred <- NULL
     if(is.null(inputs$mxM)) {
         if(!is.null(default.country))
-            MXm <- create.dataset.from.wpp(default.country, region.codes, 'mxM', wpp.year)
+            MXm <- create.dataset.from.wpp(default.country, region.codes, 'mxM', wpp.year, annual = annual)
         else stop("mxM must be given if there is no default.country.")
     } else MXm <- swap.reg.code(read.pop.file(inputs$mxM), table.name = "mxM")
     names.MXm.data <- names(MXm)
@@ -257,7 +258,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     MXm <- MXm[,c('country_code', 'age', estim.periods)]
     if(is.null(inputs$mxF)) {
       if(!is.null(default.country))
-          MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year)
+          MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year, annual = annual)
       else stop("mxF must be given if there is no default.country.")
     } else MXf <- swap.reg.code(read.pop.file(inputs$mxF), table.name = "mxF")
     if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
@@ -269,7 +270,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     # Get sex ratio at birth
     srb.data <- inputs$srb
     if(is.null(srb.data)) 
-        srb.data <- create.dataset.from.wpp(default.country, region.codes, 'sexRatio', wpp.year)
+        srb.data <- create.dataset.from.wpp(default.country, region.codes, 'sexRatio', wpp.year, annual = annual)
     else srb.data <- swap.reg.code(read.pop.file(srb.data), table.name = "srb")
     srblist <- .get.srb.data.and.time.periods(srb.data, present.year, end.year, wpp.year, annual = annual)
     SRB <- srblist$srb
@@ -281,10 +282,11 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     # Get percentage age-specific fertility rate
     pasfr.data <- inputs$pasfr
     if(is.null(pasfr.data)) 
-        pasfr.data <- create.dataset.from.wpp(default.country, region.codes, 'percentASFR', wpp.year)
+        pasfr.data <- create.dataset.from.wpp(default.country, region.codes, 'percentASFR', wpp.year, annual = annual)
     else pasfr.data <- swap.reg.code(read.pop.file(inputs$pasfr), table.name = "pasfr")
+
     pasfrlist <- .get.pasfr.data(pasfr.data, wpp.year, obs.periods, proj.periods, 
-                                 include.projection = fixed.pasfr)
+                                 include.projection = fixed.pasfr, annual = annual)
     PASFR <- pasfrlist$pasfr
     observed$PASFR <- pasfrlist$obs.pasfr
     
@@ -301,7 +303,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                 pattern.data <- merge(pattern.data, pattern.data.def[, c("country_code", col)], by = "country_code")
         }
     } else pattern.data <- pattern.data.def
-    patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, pattern.data = pattern.data)
+    patterns <- .get.mig.mx.pasfr.patterns(inputs, wpp.year, pattern.data = pattern.data,
+                                           annual = annual)
     MIGtype <- patterns$mig.type
     MXpattern <- patterns$mx.pattern
     PASFRpattern <- patterns$pasfr.pattern
@@ -312,6 +315,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     miginp <- .get.mig.data.subnat(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
+                            mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -322,15 +326,36 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         observed$MIGm <- MIGm[,c('country_code', 'age', obs.periods[avail.obs.periods])]
         observed$MIGf <- MIGf[,c('country_code', 'age', obs.periods[avail.obs.periods])]
     }
-    MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
-    MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
+    MIGm <- MIGm[,c('country_code', 'age', proj.periods[proj.periods %in% colnames(MIGm)])]
+    MIGf <- MIGf[,c('country_code', 'age', proj.periods[proj.periods %in% colnames(MIGf)])]
+
+    # assign some migrate-specific attributes, since they get lost by slicing above
+    if(!is.null((rates <- attr(miginp[["migM"]], "rate")))){
+      attr(MIGm, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
+      attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', proj.periods), with = FALSE]
+      if(!is.null(obs.periods)) {
+        attr(observed$MIGm, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+        attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+      }
+    }
+    if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
+      attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
+      attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
+      if(!is.null(obs.periods)) {
+        attr(observed$MIGf, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+        attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+      }
+    }
+    
     # Get migration trajectories if available
-    migpr <- .load.mig.traj(inputs, verbose = verbose)
+    migpr <- .load.mig.traj(inputs, mig.age.method = mig.age.method, verbose = verbose)
     migMpred <- migpr$M
     migFpred <- migpr$F
-    
+    migBpred <- migpr$B
+    has.mig.traj <- !is.null(migMpred) || !is.null(migFpred) || !is.null(migBpred)
     if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
-    mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1], migpr[["migcode"]]*mig.is.rate[2])
+    mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1],  
+                       (if(has.mig.traj) migpr[["migcode"]] else miginp[["migcode"]])*mig.is.rate[2])
     
     # Get life expectancy
     e0F.wpp.median.loaded <- FALSE
@@ -340,7 +365,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
             if(inputs$e0F.file == 'median_') {
                 e0Fpred <- create.trajs.from.wpp(default.country, 
                                                  region.codes, 'e0F', wpp.year, 
-                                                 median.only = TRUE)
+                                                 median.only = TRUE, annual = annual)
                 e0F.wpp.median.loaded <- TRUE
             } else {
                 file.name <-  inputs$e0F.file
@@ -357,19 +382,19 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                 if(inputs$e0F.sim.dir == 'median_') {
                     e0Fpred <- create.trajs.from.wpp(default.country, 
                                                      region.codes, 'e0F', wpp.year, 
-                                                     median.only = TRUE)
+                                                     median.only = TRUE, annual = annual)
                     e0F.wpp.median.loaded <- TRUE
                 } else 
                     e0Fpred <- get.e0.prediction(inputs$e0F.sim.dir, mcmc.dir=NA)
             } else e0Fpred <- create.trajs.from.wpp(default.country, 
-                                                    region.codes, 'e0F', wpp.year)			
+                                                    region.codes, 'e0F', wpp.year, annual = annual)			
         }
         
         if(!is.null(inputs$e0M.file)) { # male
             if(inputs$e0M.file == 'median_')
                 e0Mpred <- create.trajs.from.wpp(default.country, 
                                                  region.codes, 'e0M', wpp.year, 
-                                                 median.only = TRUE)
+                                                 median.only = TRUE, annual = annual)
             else {
                 file.name <-  inputs$e0M.file
                 if(!file.exists(file.name)) 
@@ -384,7 +409,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                 if(inputs$e0M.sim.dir == 'joint_') {
                     if(e0F.wpp.median.loaded) 
                         e0Mpred <- create.trajs.from.wpp(default.country, region.codes, 
-                                                         'e0M', wpp.year)
+                                                         'e0M', wpp.year, annual = annual)
                     else {
                         if(!has.e0.jmale.prediction(e0Fpred))
                             stop('No joint prediction for female and male available. Correct the e0M.sim.dir argument.' )
@@ -393,30 +418,41 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                 } else e0Mpred <- get.e0.prediction(inputs$e0M.sim.dir, mcmc.dir=NA) # independent from female
             } else
                 e0Mpred <- create.trajs.from.wpp(default.country, 
-                                                 region.codes, 'e0M', wpp.year)
+                                                 region.codes, 'e0M', wpp.year, annual = annual)
         }
     } # end if(!fixed.mx)
     
     # Get TFR
-    TFRpred <- .get.tfr.data.subnat(inputs, wpp.year, default.country, region.codes, verbose=verbose)
+    TFRpred <- .get.tfr.data.subnat(inputs, wpp.year, default.country, region.codes, 
+                                    annual = annual, verbose=verbose)
     inp <- new.env()
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
-                 'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'estim.years', 'proj.years', 'wpp.year', 
+                 'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-                 'lc.for.all', 'mig.rate.code', 'observed'))
+                 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'observed'))
         assign(par, get(par), envir=inp)
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
     env <- new.env()
     do.call("data", list("pasfr_global_norms", envir = env))
-    inp$PASFRnorms <- env$pasfr.glob.norms
+    inp$PASFRnorms <- if(annual) env$pasfr.glob.norms1 else env$pasfr.glob.norms5
+    if(!is.null(obs.periods)) { 
+      # if any of the observed years are missing in the global norm, use the latest norm for those time periods
+      missing.years <- obs.periods[! obs.periods %in% colnames(inp$PASFRnorms$PasfrGlobalNorm)]
+      if(length(missing.years) > 0) {
+        last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years))]
+        colnames(last.norm) <- missing.years
+        inp$PASFRnorms$PasfrGlobalNorm <- cbind(inp$PASFRnorms$PasfrGlobalNorm, last.norm)
+      }
+    }
     inp$lc.for.hiv <- TRUE
     inp$average.annual <- inputs$average.annual
     return(inp)
 }
 
 .get.mig.data.subnat <- function(inputs, wpp.year, annual, periods, default.country, region.codes, 
-                                 pop0 = NULL, MIGshare = NULL, verbose = FALSE) {
+                                 pop0 = NULL, mig.age.method = "rc",
+                                 MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
   recon.mig <- NULL
@@ -449,15 +485,25 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         migcode <- 3
       }
       migcols <- intersect(colnames(totmig), periods)
-      miginp[[inpname]] <- data.frame(migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
+      # disaggregate into ages
+      migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
-                                                           template = migtempl), check.names = FALSE)
+                                                            method = mig.age.method, mig.is.rate = mig.is.rate[1], 
+                                                           template = migtempl)
+      miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
+      if(!is.null((rates <- attr(migmtx, "rate")))){
+        attr(miginp[[inpname]], "rate") <- rates
+        attr(miginp[[inpname]], "code") <- attr(migmtx, "code")
+      }
       next
     }
     # If we get here, migration is not given. Thus, get it from the national values and given shares
-    if(annual) stop("Migration must be given.")
-    mignat <- load.wpp.dataset.for.country(default.country, 'migration', wpp.year) # TODO: Allow input of annual national values 
+    if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation and wpp.year < 2022.")
+    migdsname <- 'migration'
+    if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
+    
+    mignat <- load.wpp.dataset.for.country(default.country, migdsname, wpp.year, annual = annual)
     migdistr <- migration.totals2age(mignat, annual = annual)
     migages <- migdistr$age
     mignat <- mignat[,-which(colnames(mignat) %in% c("country", "name", "country_code"))]
@@ -476,6 +522,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         scaleF[, iy] <- MIGshare[[which.mig.share[iy]]]$F
       }
     }
+    if(annual && "100+" %in% migages && ! "100+" %in% pop0[["M"]]$age) # make the name of the open age group consistent between migration and population
+      for (sx in c("M", "F")) pop0[[sx]]$age[pop0[[sx]]$age == 100] <- "100+"
     for(iage in seq_along(migages)) {
       popidx <- which(pop0[["M"]]$age == migages[iage])
       if(is.null(MIGshare)) { # migration shares not given, take population
