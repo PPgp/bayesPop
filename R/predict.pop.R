@@ -1254,9 +1254,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		ncols <- ncol(pred)
 		nonnum.idx <- which(colnames(pred)=='country_code')
 		cnames <- colnames(pred)[-nonnum.idx]
-		colnames(pred)[-nonnum.idx] <- paste(type, cnames, sep='')
+		colnames(pred)[-nonnum.idx] <- paste0(type, cnames)
 		pred.long <- reshape(pred, direction='long', varying=(1:ncols)[-nonnum.idx], v.names=type, times=cnames)
-		pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3, trajectory=itraj)
+		pred.long <- cbind(pred.long, 
+		                   year=as.integer(substr(pred.long$time,1,4))+ if(annual) 0 else 3, 
+		                   trajectory=itraj)
 		pred.long <- pred.long[,c('country_code', 'year', 'trajectory', type)]
 		pred.all <- rbind(pred.all, pred.long)
 		itraj <- itraj + 1
@@ -1665,7 +1667,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc$migMmedian <- medians$migMpred
 	inpc$migFmedian <- medians$migFpred
-	
+
 	if(is.null(inpc$TFRpred)) {
 		inpc$TFRpred <- get.tfr.trajectories(inputs$TFRpred, country)
 		if(is.null(inpc$TFRpred)) {
