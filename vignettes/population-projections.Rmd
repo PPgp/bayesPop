@@ -1,5 +1,7 @@
 ---
-title: "population-projections"
+title: "Subnational Probabilistic Population Projections"
+author: Hana Sevcikova
+date: 2023-10-19
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -14,6 +16,16 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+In this vignette we will show how **bayesPop** can be used in subnational settings, using annual 1x1 data. We will use example data for the US states to demonstrate the various functionalities. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
+
+# Downloading example data
+
+# Setup
+
+```{r setup, include=FALSE}
 library(bayesPop)
 ```
+
+# References
+
+Ševčíková, H. and Raftery, A.E. (2016). [bayesPop: Probabilistic Population Projections](https://www.jstatsoft.org/article/view/v075i05). Journal of Statistical Software, Vol. 75(5).
