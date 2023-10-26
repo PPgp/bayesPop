@@ -14,17 +14,29 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+library(bayesPop)
 ```
 
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual 1x1 data. We will use example data for the US states to demonstrate the various functionalities. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
 
 # Downloading example data
 
+```{r eval = FALSE, include = FALSE}
+data_dir <- tempdir()
+if(!dir.exists(data_dir))
+  dir.create(data_dir)
+repo_file <- file.path(data_dir, "main.zip")
+download.file("https://github.com/PPgp/bayesPopUSdata/archive/refs/heads/main.zip", repo_file)
+unzip(repo_file, data_dir)
+```
+
+```{r eval = TRUE, include = TRUE}
+data_dir <- "~/bayespop/R/Pop/subnat/data/USA"
+```
+
 # Setup
 
-```{r setup, include=FALSE}
-library(bayesPop)
-```
+
 
 # References
 
