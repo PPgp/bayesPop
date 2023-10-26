@@ -15,26 +15,73 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 library(bayesPop)
+download_data <- FALSE
 ```
 
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual 1x1 data. We will use example data for the US states to demonstrate the various functionalities. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
 
-# Downloading example data
+# Downloading Data
 
-```{r eval = FALSE, include = FALSE}
+First, set a directory to hold the data and create it if it does not exist:
+
+```{r eval = FALSE, include = TRUE}
+data_dir <- "bayesPopInputs"
+```
+
+```{r eval = !download_data, include = FALSE}
+data_dir <- "~/bayespop/R/Pop/subnat/data/bayesPopInputs"
+```
+
+```{r eval = download_data, include = FALSE}
 data_dir <- tempdir()
-if(!dir.exists(data_dir))
-  dir.create(data_dir)
-repo_file <- file.path(data_dir, "main.zip")
-download.file("https://github.com/PPgp/bayesPopUSdata/archive/refs/heads/main.zip", repo_file)
-unzip(repo_file, data_dir)
 ```
 
 ```{r eval = TRUE, include = TRUE}
-data_dir <- "~/bayespop/R/Pop/subnat/data/USA"
+if(!dir.exists(data_dir))
+    dir.create(data_dir)
 ```
 
-# Setup
+## Subnational example data
+
+The subnational data needed to follow examples in this vignette are in the GitHub repository ["PPgp/bayesPopUSdata"](https://github.com/PPgp/bayesPopUSdata) and can be downloaded as follows:
+
+```{r eval = download_data, include = TRUE}
+# This will work after the repo is made public
+repo_file <- file.path(data_dir, "main.zip")
+download.file("https://github.com/PPgp/bayesPopUSdata/archive/refs/heads/main.zip", repo_file)
+unzip(repo_file, exdir = data_dir)
+```
+
+It creates a directory "bayesPopUSdata-main" which contains text files with total fertility rates ("US_states_tfr.txt") and sex-specific life expectancy at birth ("US_states_e0F.txt", "US_states_e0M.txt").
+
+## National projections
+
+To project subnational total fertility rate (TFR) and life expectancy at birth (e0) we will need probabilistic national projections of the corresponding country. Such projections, generated using the **bayesTFR** and **bayesLife** R packages, and which align well with the United Nations projections published in the World Population Prospects can be downloaded from [our website](https://bayespop.csss.washington.edu/download) as follows:
+
+```{r eval = download_data, include = TRUE}
+tfr_nat_file <- file.path(data_dir, "TFR1simWPP2022.tgz")
+download.file("https://bayespop.csss.washington.edu/data/bayesTFR/TFR1simWPP2022.tgz", tfr_nat_file)
+untar(tfr_nat_file, exdir = data_dir)
+
+e0_nat_file <- file.path(data_dir, "e01simWPP2022.tgz")
+download.file("https://bayespop.csss.washington.edu/data/bayesLife/e01simWPP2022.tgz", e0_nat_file)
+untar(e0_nat_file, exdir = data_dir)
+```
+
+
+# Outline
+
+To generate probabilistic population projections for all US states, we will proceed in the following steps:
+
+1. Generate future trajectories of total fertility rates
+2. Generate future trajectories of life expectancy at birth for female and male
+3. Generate future trajectories of net migration rates
+4. Generate future trajectories of age and sex-specific population
+
+
+# Subnational Probabilistic Projection of Total Fertility Rate
+
+
 
 
 
