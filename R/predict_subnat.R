@@ -490,7 +490,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl)
+                                                           template = migtempl,
+                                                          wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       if(!is.null((rates <- attr(migmtx, "rate")))){
         attr(miginp[[inpname]], "rate") <- rates
@@ -504,7 +505,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
     
     mignat <- load.wpp.dataset.for.country(default.country, migdsname, wpp.year, annual = annual)
-    migdistr <- migration.totals2age(mignat, annual = annual)
+    migdistr <- migration.totals2age(mignat, annual = annual, wpp.year = wpp.year)
     migages <- migdistr$age
     mignat <- mignat[,-which(colnames(mignat) %in% c("country", "name", "country_code"))]
     migdistr <- as.matrix(migdistr[,! colnames(migdistr) %in% c("country", "name", "country_code", "age"), with = FALSE])

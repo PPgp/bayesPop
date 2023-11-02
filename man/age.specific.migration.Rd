@@ -19,7 +19,7 @@ age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5),
 migration.totals2age(df, ages = NULL, annual = FALSE, time.periods = NULL, 
     schedule = NULL, scale = 1, method = "auto", sex = "M",
     id.col = "country_code", country_code = NULL, mig.is.rate = FALSE, 
-    alt.schedule.file = NULL, \dots)
+    alt.schedule.file = NULL, wpp.year = 2019, \dots)
     
 rcastro.schedule(annual = FALSE)
 }

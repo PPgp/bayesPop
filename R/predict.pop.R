@@ -814,7 +814,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, method = "auto", 
                                  sex = "M", id.col = "country_code", country_code = NULL, 
-                                 mig.is.rate = FALSE, alt.schedule.file = NULL, ...#, debug = FALSE
+                                 mig.is.rate = FALSE, alt.schedule.file = NULL, wpp.year = 2019,
+                                 ...#, debug = FALSE
                                  ) {
     mig <- i.mig <- mig.orig <- i.V1 <- distr <- migf <- totmig <- total.orig <- i.total.orig <- rc <- prop <- i.prop <- new.prop <- i.new.prop <- prop.neg <- sprop <- NULL
     age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- NULL
@@ -900,7 +901,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         if(id.col == "country_code")
             cntries <- unique(unlist(migtempll[, "country_code", with = FALSE]))
         # load UN codes (do not rely on the function UNcountries() as the UNlocations object can contain user-specified locations)
-        bayesTFR:::load.bdem.dataset('UNlocations', 2022, envir=locs.env, verbose=FALSE)
+        bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=locs.env, verbose=FALSE)
         uncodes <- intersect(cntries, locs.env$UNlocations$country_code[locs.env$UNlocations$location_type==4])
         if(length(uncodes) > length(cntries)/2) { # here guessing if these are UN codes
             if(annual) migtmp[, year := as.integer(year)]
@@ -1035,7 +1036,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                            method = mig.age.method,
                                            sex = sex, template = migtempl, 
                                            mig.is.rate = mig.is.rate[1], 
-                                           alt.schedule.file = inputs$mig.alt.age.schedule#,
+                                           alt.schedule.file = inputs$mig.alt.age.schedule,
+                                           wpp.year = wpp.year,
                                            #debug = TRUE
                                            )
             miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
@@ -1064,7 +1066,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                                           scale = if(is.null(inputs[[fname]])) 0.5 else 1,
                                                           method = mig.age.method,
                                                           sex = sex, template = migtempl,
-                                                          alt.schedule.file = inputs$mig.alt.age.schedule), 
+                                                          alt.schedule.file = inputs$mig.alt.age.schedule,
+                                                          wpp.year = wpp.year), 
                                                 check.names = FALSE)
             } else { # residual method (only for 5-year data)
                 if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
@@ -1315,7 +1318,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
-		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, ...#, debug = TRUE
+		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, 
+		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
 		    if("rate" %in% names(attributes(adf))) { # extract rates if available
@@ -1575,7 +1579,8 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	                                 sex = "M", #country_code = country,
 	                                 scale = 0.5,
 	                                 mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                 alt.schedule.file = inputs$mig.alt.age.schedule), 
+	                                 alt.schedule.file = inputs$mig.alt.age.schedule,
+	                                 wpp.year = inputs$wpp.year), 
 	            check.names = FALSE)
 	        if(inputs$mig.age.method != "rc"){ # need to run the function again because un female schedules are different than the male ones
 	            mig.recon[["female"]] <- data.frame(
@@ -1586,7 +1591,8 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	                                     sex = "F", #country_code = country,
 	                                     scale = 0.5,
 	                                     mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                     alt.schedule.file = inputs$mig.alt.age.schedule), 
+	                                     alt.schedule.file = inputs$mig.alt.age.schedule,
+	                                     wpp.year = inputs$wpp.year), 
 	                check.names = FALSE)
 	        }
 	    } else {
