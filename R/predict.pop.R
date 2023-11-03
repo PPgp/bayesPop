@@ -506,9 +506,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	# Get initial population counts
 	for(sex in c('M', 'F')) {
 		dataset.name <- paste0('pop', sex)
-		if(is.null(inputs[[dataset.name]])) 
-			POP0 <- bayesTFR:::load.from.wpp(dataset.name, wpp.year = wpp.year, annual = annual)	
-		else POP0 <- read.pop.file(inputs[[dataset.name]])
+		if(is.null(inputs[[dataset.name]])) {
+			POP0 <- bayesTFR:::load.from.wpp(dataset.name, wpp.year = wpp.year, annual = annual)
+			if(! present.year %in% colnames(POP0)) {
+			    # if present year is not found in observed years, load WPP projections
+			    POP0proj <- bayesTFR:::load.from.wpp(paste0(dataset.name, "projMed"), wpp.year = wpp.year, annual = annual)
+			    POP0 <- merge(POP0, POP0proj, by = c("country_code", "name", "age"), sort = FALSE)
+			}
+		} else POP0 <- read.pop.file(inputs[[dataset.name]])
 		num.columns <- grep('^[0-9]{4}$', colnames(POP0), value=TRUE) # values of year-columns
 		if(!is.element(as.character(present.year), colnames(POP0))) {
 			stop('Wrong present.year. ', present.year, ' not available in the ', dataset.name, ' file.\nAvailable years: ',
