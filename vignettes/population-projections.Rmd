@@ -5,8 +5,10 @@ date: 2023-11-02
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -20,20 +22,26 @@ download_data <- FALSE
 
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual 1x1 data. We will use example data for the US states to demonstrate the various functionalities. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
 
-# Downloading Data
-
-First, set a directory to hold the data and create it if it does not exist:
+To organize our work, let's set up a working directory for all inputs and outputs:
 
 ```{r eval = FALSE, include = TRUE}
-data_dir <- "bayesPopInputs"
+wrk_dir <- "bayesPopSubnatProj"
 ```
 
 ```{r eval = !download_data, include = FALSE}
-data_dir <- "/Users/hana/bayespop/R/Pop/subnat/data/bayesPopInputs"
+wrk_dir <- "/Users/hana/bayespop/R/Pop/subnat/bayesPopSubnatProj"
 ```
 
 ```{r eval = download_data, include = FALSE}
-data_dir <- tempdir()
+wrk_dir <- tempdir()
+```
+
+# Downloading Data
+
+Next, set a directory to hold the input data and create it if it does not exist:
+
+```{r eval = TRUE, include = TRUE}
+data_dir <- file.path(wrk_dir, "inputs")
 ```
 
 ```{r eval = TRUE, include = TRUE}
@@ -57,7 +65,7 @@ It creates a directory "bayesPopUSdata-main" which contains text files with tota
 
 ## National projections
 
-To project subnational total fertility rate (TFR) and life expectancy at birth (e0) we will need probabilistic national projections of the corresponding country. Such projections, generated using the **bayesTFR** and **bayesLife** R packages, which align well with the United Nations projections published in the World Population Prospects can be downloaded from [our website](https://bayespop.csss.washington.edu/download) as follows:
+To project subnational total fertility rate (TFR) and life expectancy at birth ($e_0$) we will need probabilistic national projections of the corresponding country. Such projections, generated using the **bayesTFR** and **bayesLife** R packages, which align well with the United Nations projections published in the World Population Prospects can be downloaded from [our website](https://bayespop.csss.washington.edu/download) as follows:
 
 ```{r eval = download_data, include = TRUE}
 options(timeout = 600)
@@ -82,10 +90,12 @@ To generate probabilistic population projections for all US states, we will proc
 3. Generate future trajectories of net migration rates
 4. Generate future trajectories of age and sex-specific population
 
+Results of each of the steps will be stored in its own directory in the parent working directory `wrk_dir`.
+
 
 # Subnational Probabilistic Projection of Total Fertility Rate
 
-The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** R package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
+The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** R package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
 
 The directory pointing to these national projections is 
 
@@ -95,20 +105,134 @@ nat_dir_tfr <- file.path(data_dir, "TFR1unc", "sim20221027")
 
 One can explore the US projections with various functions from the **bayesTFR** package. For example as a graph:
 
-```{r eval = TRUE, include = TRUE}
+```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
 tfr_nat_pred <- get.tfr.prediction(nat_dir_tfr)
 tfr.trajectories.plot(tfr_nat_pred, country = "USA", nr.traj = 50, half.child.variant = FALSE,
                       uncertainty = TRUE)
 
 ```
-Here, for the `country` argument the ISO-3 code is used. An ISO-2 or a numerical UN code (which is 840 for the US) is also accepted. In addition to the predictive distribution (shown as grey trajectories) with its probability intervals (shown as red lines), the graph also shows uncertainty around the observed data (controlled by the argument `uncertainy`), which is in the case of the US very narrow. Numerical values from this graph can be seen using the function `tfr.trajectories.table()`. For more information on how to explore such national projections see [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08).
 
-To generate subnational projections for the US states, we will use observed data in 
+Here, for the `country` argument the ISO-3 code is used. An ISO-2 or a numerical UN code (which is 840 for the US) is also accepted. In addition to the predictive distribution (shown as grey trajectories) with its probability intervals (shown as red lines), the graph also shows uncertainty around the observed data (controlled by the argument `uncertainty`), which is in the case of the US very narrow. Numerical values from this graph can be seen using the function `tfr.trajectories.table()`. For more information on how to explore such national projections see [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08).
+
+To generate subnational projections for the US states, we will use observed data in "US_states_tfr.txt" that we downloaded above.
+
+```{r eval=TRUE, include=TRUE}
+tfr_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_tfr.txt")
+read.table(tfr_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
+```
+
+It contains TFR for all US states and territories, from 2008 to 2021. A unique identifier of the regions is given by the column "reg_code". The column "country_code" defines the corresponding country, here 840 for the US. The column "include_code" specifies if the region should be included in the prediction (value 2) or not (value 0). Note that the data can contain missing values at the beginning or the end of the time series, as shown here for American Samoa from 2018 to 2021.
+
+The subnational TFR predictions will be stored in the sub-directory "tfr" of our working directory:
+```{r eval=TRUE, include=TRUE}
+dir_tfr <- file.path(wrk_dir, "tfr")
+```
+
+We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_nat_pred)`.
+
+```{r}
+nr.traj <- 50
+```
+
+To launch the predictions, we use the function `tfr.predict.subnat()`:
+
+```{r eval=TRUE, include=TRUE, results = FALSE}
+tfr_pred <- tfr.predict.subnat(countries = 840, sim.dir = nat_dir_tfr, output.dir = dir_tfr,
+                               annual = TRUE, end.year = 2050, nr.traj = nr.traj, 
+                               verbose = TRUE, my.tfr.file = tfr_subnat_file
+                               )
+```
+
+Here, we are directing the function to generate `r nr.traj`  trajectories of future annual TFR until 2050 for all regions found in the file given by argument `my.tfr.dir` that belong to country 840 (i.e. the US), expecting annual subnational data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are stored.
+
+Since the `tfr.predict.subnat()` function allows to run predictions for multiple countries at once (given by the vector `countries`), the return value is a list with names corresponding to the country codes. Thus, to extract the list item for the US, we do:
+
+```{r}
+tfr_pred_us <- tfr_pred[["840"]]
+```
+
+Alternatively, if the predictions are accessed at a later time point, one can obtain the same object by pointing to the simulation directory: 
+
+```{r}
+tfr_pred_us <- get.regtfr.prediction(dir_tfr, country = 840)
+```
+
+Now various **bayesTFR** functions for analyzing results can be used. For example, to view the projected TFR for four different regions, do:
+
+
+```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 7, fig.align='center'}
+par(mfrow = c(2,2))
+for (loc in c("Vermont", "California", "South Dakota", "American Samoa")){
+  tfr.trajectories.plot(tfr_pred_us, loc, half.child = FALSE, nr.traj = 30, pi = 95) 
+  abline(h = 2.1, col = "grey")
+}
+```
+
+In each graph, we have also drawn a gray line at the replacement level of 2.1. One can see that while Vermont and California have a small probability that TFR will reach the replacement level before 2050, for South Dakota and American Samoa there is a very high probability that TFR will not get far below the replacement level. 
+
+If the observed data contain missing values at the end of the time series, these data points are automatically imputed by jumping off the prediction from the latest non-missing time point and using the median of the projection as imputed values. This is the case of American Samoa, where prediction jumped off from 2017. Then the time period from 2018 to 2021 was imputed by using the median of the predictive distribution. These imputed points are shown as green dots in the figure.
+
+Tabular results can be viewed using either the `summary()` function which returns among others the mean and standard deviation, or the `tfr.trajectories.table()` function which can return any quantile of interest:
+
+```{r}
+tfr.trajectories.table(tfr_pred_us, "Washington") |> tail()
+```
+
+Note that since the **bayesTFR** package was originally designed to work on the national level, many functions accept an argument `country` or have "country/ies" in its name. When using in the subnational context, country means a region. For example, to view all regions included in the projection, including their codes, one can use:
+
+```{r}
+get.countries.table(tfr_pred_us) |> head()
+```
+
+Or, to obtain the code or index of a specific region:
+
+```{r}
+get.country.object("Nebraska", country.table = get.countries.table(tfr_pred_us))
+```
+Similarly, searching by code or index:
+
+```{r results = FALSE}
+get.country.object(43, country.table = get.countries.table(tfr_pred_us))
+get.country.object(46, country.table = get.countries.table(tfr_pred_us), index = TRUE)
+```
+
+The working directory now should contain a sub-directory "tfr" that contains a directory "subnat/c840" which holds the prediction info and trajectories for each region. 
+
+# Subnational Probabilistic Projection of Life Expectancy at Birth
+
+The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** R package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the UN WPP2022 and which we downloaded previously.
+
+As in the national case, we first project female $e_0$. Then the male $e_0$ is projected using the gap model as described in [Raftery et al. (2014)](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf).
+
+The directory pointing to the national $e_0$ projections is 
+
+```{r eval = TRUE, include = TRUE}
+nat_dir_e0 <- file.path(data_dir, "e01", "sim20230204")
+```
+
+To explore the US projections one can use various functions from the **bayesLife** package. For example:
+
+```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
+e0_nat_pred <- get.e0.prediction(nat_dir_e0)
+e0.trajectories.plot(e0_nat_pred, country = "USA", nr.traj = 50, both.sexes = TRUE)
+```
+
+For subnational observed data we will use the two files we downloaded earlier, one for female and one for male.
+
+```{r eval=TRUE, include=TRUE}
+e0F_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_e0F.txt")
+e0M_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_e0M.txt")
+read.table(e0F_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
+```
 
 # References
 
 Liu, P.R., Ševčíková, H., and Raftery, A.E. (2023) [Probabilistic Estimation and Projection of the Annual Total Fertility Rate Accounting for Past Uncertainty](https://doi.org/10.18637/jss.v106.i08). Journal of Statistical Software, Vol. 106(8).
 
+Raftery, A.E., Lalic, N. and Gerland, P. (2014). [Joint Probabilistic Projection of Female and Male Life Expectancy](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf). Demographic Research, 30:795-822.
+
 Ševčíková, H. and Raftery, A.E. (2016). [bayesPop: Probabilistic Population Projections](https://www.jstatsoft.org/article/view/v075i05). Journal of Statistical Software, Vol. 75(5).
+
+Ševčíková, H. and Raftery, A.E. (2021). [Probabilistic Projection of Subnational Life Expectancy](https://sciendo.com/article/10.2478/jos-2021-0027). Journal of Official Statistics, Vol. 37, no. 3, 591-610.
 
 Ševčíková, H., Raftery, A.E. and Gerland, P. (2018). [Probabilistic projection of subnational total fertility rates](https://www.demographic-research.org/volumes/vol38/60/default.htm). Demographic Research, Vol. 38(60): 1843-1884.
