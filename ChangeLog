@@ -1,6 +1,8 @@
-10.0-1.900x (09/22/2023)
+10.0-1.900x (12/22/2023)
 ------
 pop.predict.subnat can handle 1x1 subnational projections. 
+
+Fix in 1x1 GQs.
 
 10.0-0/1 (08/09/2023)
 ------

@@ -1803,7 +1803,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	for(par in c("GQm", "GQf")) {
 	    if(is.null(inpc[[par]])) next
 	    # match ages
-	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = TRUE))
+	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = TRUE), single.year = inputs$annual)
 	    if(!all(rownames(inpc[[par]]) %in% age.labels))
 	        stop("Mismatch in age labels for ", par, "\nAllowed labels: ", paste(age.labels, collapse = ", "))
 	    gq <- rep(0, length(age.labels))
