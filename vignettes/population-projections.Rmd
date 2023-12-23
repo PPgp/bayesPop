@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova
-date: 2023-11-02
+date: 2023-12-22
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -95,7 +95,7 @@ Results of each of the steps will be stored in its own directory in the parent w
 
 # Subnational Probabilistic Projection of Total Fertility Rate
 
-The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** R package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
+The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** R package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP 2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
 
 The directory pointing to these national projections is 
 
@@ -128,22 +128,22 @@ The subnational TFR predictions will be stored in the sub-directory "tfr" of our
 dir_tfr <- file.path(wrk_dir, "tfr")
 ```
 
-We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_nat_pred)`.
+We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_nat_pred)`. To keep the processing time low, for this example we choose 50 trajectories. However, this would not be sufficient in a real world simulation.
 
 ```{r}
-nr.traj <- 50
+nr_traj <- 50
 ```
 
 To launch the predictions, we use the function `tfr.predict.subnat()`:
 
 ```{r eval=TRUE, include=TRUE, results = FALSE}
 tfr_pred <- tfr.predict.subnat(countries = 840, sim.dir = nat_dir_tfr, output.dir = dir_tfr,
-                               annual = TRUE, end.year = 2050, nr.traj = nr.traj, 
+                               annual = TRUE, end.year = 2050, nr.traj = nr_traj, 
                                verbose = TRUE, my.tfr.file = tfr_subnat_file
                                )
 ```
 
-Here, we are directing the function to generate `r nr.traj`  trajectories of future annual TFR until 2050 for all regions found in the file given by argument `my.tfr.dir` that belong to country 840 (i.e. the US), expecting annual subnational data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are stored.
+Here, we are directing the function to generate `r nr_traj`  trajectories of future annual TFR until 2050 for regions found in the file given by argument `my.tfr.dir`, that is for regions that belong to country 840 (i.e. the US). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are stored.
 
 Since the `tfr.predict.subnat()` function allows to run predictions for multiple countries at once (given by the vector `countries`), the return value is a list with names corresponding to the country codes. Thus, to extract the list item for the US, we do:
 
@@ -178,7 +178,7 @@ Tabular results can be viewed using either the `summary()` function which return
 tfr.trajectories.table(tfr_pred_us, "Washington") |> tail()
 ```
 
-Note that since the **bayesTFR** package was originally designed to work on the national level, many functions accept an argument `country` or have "country/ies" in its name. When using in the subnational context, country means a region. For example, to view all regions included in the projection, including their codes, one can use:
+Note that since the **bayesTFR** package was originally designed to work on the national level, many functions accept the argument `country` or have "country/ies" in its name. When using in the subnational context, country means a region. For example, to view all regions included in the projection, including their codes, one can use:
 
 ```{r}
 get.countries.table(tfr_pred_us) |> head()
@@ -200,7 +200,7 @@ The working directory now should contain a sub-directory "tfr" that contains a d
 
 # Subnational Probabilistic Projection of Life Expectancy at Birth
 
-The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** R package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the UN WPP2022 and which we downloaded previously.
+The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** R package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the [UN WPP 2022](https://population.un.org/wpp) and which we downloaded previously.
 
 As in the national case, we first project female $e_0$. Then the male $e_0$ is projected using the gap model as described in [Raftery et al. (2014)](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf).
 
@@ -224,6 +224,97 @@ e0F_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_e0F.txt
 e0M_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_e0M.txt")
 read.table(e0F_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
 ```
+
+For each state and territory, the files contain $e_0$ from 2018 through 2020. The meaning of the remaining columns (`reg_code`, `country_code`, `include_code`) is the same as in the case of TFR. Here we don't have any missing values per se, however, since the last observed year for TFR as well as for the national $e_0$ simulation is 2021, we will treat the year 2021 as missing $e_0$ for all states and let the simulation to automatically impute it. This will be handled the same way as for TFR, namely by jumping into the simulation from 2020 and replacing the missing 2021 values with the projected medians for that year.
+
+We set the directory for storing the subnational prediction of $e_0$ to "e0", located inside the main working directory:
+
+```{r eval=TRUE, include=TRUE}
+dir_e0 <- file.path(wrk_dir, "e0")
+```
+
+Now we can launch the $e_0$ predictions:
+
+```{r eval=TRUE, include=TRUE, results = FALSE}
+e0_pred <- e0.predict.subnat(countries = 840, sim.dir= nat_dir_e0, output.dir = dir_e0,
+                             annual = TRUE, end.year = 2050, nr.traj = nr_traj,
+                             my.e0.file = e0F_subnat_file, 
+                             predict.jmale = TRUE, my.e0M.file = e0M_subnat_file
+                             )
+```
+
+Here, we are generating `r nr_traj` trajectories of annual future $e_0$ until 2050 using data found in the file given by the `my.e0.file` argument, which in our case is female $e_0$. However, setting the argument `predict.jmale` to `TRUE`, we are directing the function to also predict male $e_0$ by applying the female-male gap using the male $e_0$ found in the file given by the `my.e0M.file` argument. 
+
+As in the TFR case, the resulting object from the above call is a list and we can extract the US results by
+
+```{r}
+e0_pred_us <- e0_pred[["840"]]
+```
+
+Or, if the predictions are accessed at a later time point: 
+
+```{r}
+e0_pred_us <- get.rege0.prediction(dir_e0, country = 840)
+```
+
+For analyzing results, various **bayesLife** functions can be used. Here for two states, we view the projected marginal $e_0$ for both sexes, using the national female projections as a background for a comparison:
+
+
+```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
+par(mfrow = c(1,2))
+for (loc in c("Washington", "Mississippi")){
+  # plot the national female projections in grey
+  e0.trajectories.plot(e0_nat_pred, country = "USA", nr.traj = 0, 
+                       xlim = c(1970, 2050), ylim = c(65, 92), pi = 80, 
+                       show.legend = FALSE, main = loc, col = rep("grey", 4))
+  # add sub-national projections
+  e0.trajectories.plot(e0_pred_us, loc, nr.traj = 0, pi = 95, 
+                       both.sexes = TRUE, add = TRUE, show.legend = FALSE)
+  legend("topleft", legend = c("female", "male", "US female", "median", "80% PI", "imputed"),
+         bty = "n", col = c("pink", "darkgreen", "grey", "black", "black", "green"),
+                    lty = c(1, 1, 1, 1, 2, 1), lwd = 2, cex = 0.7)
+}
+```
+
+One can see that there is one imputed value for both, the female and male projections, namely for 2021. 
+
+This marginal distribution may suggest that crossovers between female and male $e_0$ are possible. However, when viewing the joint distribution between male and female, here for three different years, it is obvious that it is not the case:
+
+```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
+par(mfrow = c(1,2))
+for (loc in c("Washington", "Mississippi"))
+  e0.joint.plot(e0_pred_us, loc, years = c(2022, 2035, 2050), 
+                xlim = c(65, 95), ylim = c(65, 95))
+```
+
+Functions `e0.trajectories.table()` and `summary()` can be used to explore tabular results. When passing the `e0_pred_us` object to them, the operation is performed on the female prediction object. To retrieve the male prediction object, do one of the following:
+
+```{r eval=TRUE}
+e0M_pred_us <- get.e0.prediction(dir_e0, joint.male = TRUE)  # or
+e0M_pred_us <- get.e0.jmale.prediction(e0_pred_us)
+```
+
+To retrieve the values of all male trajectories, for example for Mississippi, do
+
+```{r eval=TRUE}
+trajMiss <- get.e0.trajectories(e0M_pred_us, "Mississippi")
+```
+
+It is an array of time x trajectories. These can be used to create other summaries, or for computing various probabilities. For example, what is the probability that Mississippi's male $e_0$ by 2050 reaches the 2021 national value of 74.3?
+
+```{r eval=TRUE}
+sum(trajMiss["2050", ] >= 74.3)/ncol(trajMiss) * 100
+```
+
+Note that the 2021 male national $e_0$ was retrieved via
+```{r eval=TRUE}
+e0M_nat_pred <- get.e0.jmale.prediction(e0_nat_pred)
+e0.trajectories.table(e0M_nat_pred, "USA")["2021", "median"]
+```
+
+
+# Subnational Probabilistic Projection of Migration
+
 
 # References
 
