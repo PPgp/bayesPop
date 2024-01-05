@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova
-date: 2023-12-22
+date: 2024-01-04
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-library(bayesPop)
 download_data <- FALSE
 ```
 
@@ -61,7 +60,7 @@ unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
 ```
 
-It creates a directory "bayesPopUSdata-main" which contains text files with total fertility rates ("US_states_tfr.txt") and sex-specific life expectancy at birth ("US_states_e0F.txt", "US_states_e0M.txt").
+It creates a directory "bayesPopUSdata-main" which contains text files with total fertility rates ("US_states_tfr.txt"), sex-specific life expectancy at birth ("US_states_e0F.txt", "US_states_e0M.txt") and net migration rates ("US_states_migrate.txt").
 
 ## National projections
 
@@ -69,15 +68,15 @@ To project subnational total fertility rate (TFR) and life expectancy at birth (
 
 ```{r eval = download_data, include = TRUE}
 options(timeout = 600)
-tfr_nat_file <- file.path(data_dir, "TFR1simWPP2022.tgz")
-download.file("https://bayespop.csss.washington.edu/data/bayesTFR/TFR1simWPP2022.tgz", tfr_nat_file)
-err <- untar(tfr_nat_file, exdir = data_dir)
-if(err == 0) unlink(tfr_nat_file)
+tfr_world_file <- file.path(data_dir, "TFR1simWPP2022.tgz")
+download.file("https://bayespop.csss.washington.edu/data/bayesTFR/TFR1simWPP2022.tgz", tfr_world_file)
+err <- untar(tfr_world_file, exdir = data_dir)
+if(err == 0) unlink(tfr_world_file)
 
-e0_nat_file <- file.path(data_dir, "e01simWPP2022.tgz")
-download.file("https://bayespop.csss.washington.edu/data/bayesLife/e01simWPP2022.tgz", e0_nat_file)
-err <- untar(e0_nat_file, exdir = data_dir)
-if(err == 0) unlink(e0_nat_file)
+e0_world_file <- file.path(data_dir, "e01simWPP2022.tgz")
+download.file("https://bayespop.csss.washington.edu/data/bayesLife/e01simWPP2022.tgz", e0_world_file)
+err <- untar(e0_world_file, exdir = data_dir)
+if(err == 0) unlink(e0_world_file)
 ```
 Note that if you are on a slow network and get a timeout error, you might want to increase the `timeout` option.
 
@@ -92,22 +91,28 @@ To generate probabilistic population projections for all US states, we will proc
 
 Results of each of the steps will be stored in its own directory in the parent working directory `wrk_dir`.
 
+We will work with four R packages, namely **bayesTFR**, **bayesLife**, **bayesMig**, and **bayesPop**. Loading **bayesPop** pulls also the first two packages into the namespace. Thus, loading the last two packages will be sufficient.
+
+```{r eval = TRUE, results = FALSE}
+library(bayesPop)
+library(bayesMig)
+```
 
 # Subnational Probabilistic Projection of Total Fertility Rate
 
-The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** R package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP 2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
+The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP 2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
 
-The directory pointing to these national projections is 
+The directory pointing to these national projections for all countries of the world is 
 
 ```{r eval = TRUE, include = TRUE}
-nat_dir_tfr <- file.path(data_dir, "TFR1unc", "sim20221027")
+world_dir_tfr <- file.path(data_dir, "TFR1unc", "sim20221027")
 ```
 
 One can explore the US projections with various functions from the **bayesTFR** package. For example as a graph:
 
 ```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
-tfr_nat_pred <- get.tfr.prediction(nat_dir_tfr)
-tfr.trajectories.plot(tfr_nat_pred, country = "USA", nr.traj = 50, half.child.variant = FALSE,
+tfr_world_pred <- get.tfr.prediction(world_dir_tfr)
+tfr.trajectories.plot(tfr_world_pred, country = "USA", nr.traj = 50, half.child.variant = FALSE,
                       uncertainty = TRUE)
 
 ```
@@ -128,7 +133,7 @@ The subnational TFR predictions will be stored in the sub-directory "tfr" of our
 dir_tfr <- file.path(wrk_dir, "tfr")
 ```
 
-We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_nat_pred)`. To keep the processing time low, for this example we choose 50 trajectories. However, this would not be sufficient in a real world simulation.
+We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_world_pred)`. To keep the processing time low, for this example we choose 50 trajectories. However, this would not be sufficient in a real world simulation.
 
 ```{r}
 nr_traj <- 50
@@ -137,7 +142,7 @@ nr_traj <- 50
 To launch the predictions, we use the function `tfr.predict.subnat()`:
 
 ```{r eval=TRUE, include=TRUE, results = FALSE}
-tfr_pred <- tfr.predict.subnat(countries = 840, sim.dir = nat_dir_tfr, output.dir = dir_tfr,
+tfr_pred <- tfr.predict.subnat(countries = 840, sim.dir = world_dir_tfr, output.dir = dir_tfr,
                                annual = TRUE, end.year = 2050, nr.traj = nr_traj, 
                                verbose = TRUE, my.tfr.file = tfr_subnat_file
                                )
@@ -200,21 +205,21 @@ The working directory now should contain a sub-directory "tfr" that contains a d
 
 # Subnational Probabilistic Projection of Life Expectancy at Birth
 
-The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** R package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the [UN WPP 2022](https://population.un.org/wpp) and which we downloaded previously.
+The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the [UN WPP 2022](https://population.un.org/wpp) and which we downloaded previously. They were produced using the methodology of [Raftery et al. (2013)](http://link.springer.com/content/pdf/10.1007%2Fs13524-012-0193-x.pdf).
 
 As in the national case, we first project female $e_0$. Then the male $e_0$ is projected using the gap model as described in [Raftery et al. (2014)](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf).
 
-The directory pointing to the national $e_0$ projections is 
+The directory pointing to the national $e_0$ projections for all countries is 
 
 ```{r eval = TRUE, include = TRUE}
-nat_dir_e0 <- file.path(data_dir, "e01", "sim20230204")
+world_dir_e0 <- file.path(data_dir, "e01", "sim20230204")
 ```
 
 To explore the US projections one can use various functions from the **bayesLife** package. For example:
 
 ```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
-e0_nat_pred <- get.e0.prediction(nat_dir_e0)
-e0.trajectories.plot(e0_nat_pred, country = "USA", nr.traj = 50, both.sexes = TRUE)
+e0_world_pred <- get.e0.prediction(world_dir_e0)
+e0.trajectories.plot(e0_world_pred, country = "USA", nr.traj = 50, both.sexes = TRUE)
 ```
 
 For subnational observed data we will use the two files we downloaded earlier, one for female and one for male.
@@ -236,7 +241,7 @@ dir_e0 <- file.path(wrk_dir, "e0")
 Now we can launch the $e_0$ predictions:
 
 ```{r eval=TRUE, include=TRUE, results = FALSE}
-e0_pred <- e0.predict.subnat(countries = 840, sim.dir= nat_dir_e0, output.dir = dir_e0,
+e0_pred <- e0.predict.subnat(countries = 840, sim.dir= world_dir_e0, output.dir = dir_e0,
                              annual = TRUE, end.year = 2050, nr.traj = nr_traj,
                              my.e0.file = e0F_subnat_file, 
                              predict.jmale = TRUE, my.e0M.file = e0M_subnat_file
@@ -264,7 +269,7 @@ For analyzing results, various **bayesLife** functions can be used. Here for two
 par(mfrow = c(1,2))
 for (loc in c("Washington", "Mississippi")){
   # plot the national female projections in grey
-  e0.trajectories.plot(e0_nat_pred, country = "USA", nr.traj = 0, 
+  e0.trajectories.plot(e0_world_pred, country = "USA", nr.traj = 0, 
                        xlim = c(1970, 2050), ylim = c(65, 92), pi = 80, 
                        show.legend = FALSE, main = loc, col = rep("grey", 4))
   # add sub-national projections
@@ -308,17 +313,52 @@ sum(trajMiss["2050", ] >= 74.3)/ncol(trajMiss) * 100
 
 Note that the 2021 male national $e_0$ was retrieved via
 ```{r eval=TRUE}
-e0M_nat_pred <- get.e0.jmale.prediction(e0_nat_pred)
-e0.trajectories.table(e0M_nat_pred, "USA")["2021", "median"]
+e0M_world_pred <- get.e0.jmale.prediction(e0_world_pred)
+e0.trajectories.table(e0M_world_pred, "USA")["2021", "median"]
 ```
 
 
 # Subnational Probabilistic Projection of Migration
 
+In this step, we will generate probabilistic projection of net migration rates for all states, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical model by  [Azose and Raftery (2015)](http://link.springer.com/article/10.1007/s13524-015-0415-0), where states are treated as countries and the US as the world. 
+
+The units in our historical estimates are the number of migrants per 1000 people. 
+
+```{r eval=TRUE}
+mig_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_migrate.txt")
+read.table(mig_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
+```
+
+To estimate the model to derive state-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain and the numer of chains:
+
+```{r eval=TRUE}
+mig_iter <- 250
+mig_nr_chains <- 2
+```
+
+Normally in a real-world example, about 3 x 50,000 iterations would be needed. For our toy example, we will only iterate `r mig_nr_chains` x `r mig_iter` times. The simulation results will be stored in the sub-directory "mig" of our working directory:
+
+```{r eval=TRUE, include=TRUE}
+dir_mig <- file.path(wrk_dir, "mig")
+```
+
+To launch the MCMCs, we use the function `run.mig.mcmc()` as follows:
+
+```{r eval=TRUE}
+mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter, annual = TRUE,
+                         output.dir = dir_mig, my.mig.file = mig_subnat_file,
+                         pop.denom = 1000, replace.output = TRUE)
+```
+
+
 
 # References
 
+Azose, J.J. and Raftery, A.E. (2015). [Bayesian Probabilistic Projection of International Migration Rates](http://link.springer.com/article/10.1007/s13524-015-0415-0). Demography 52:1627-1650.
+
 Liu, P.R., Ševčíková, H., and Raftery, A.E. (2023) [Probabilistic Estimation and Projection of the Annual Total Fertility Rate Accounting for Past Uncertainty](https://doi.org/10.18637/jss.v106.i08). Journal of Statistical Software, Vol. 106(8).
+
+Raftery, A.E., Chunn, J.L., Gerland, P. and Ševčíková , H. (2013). [Bayesian Probabilistic Projections of Life Expectancy for All Countries](http://link.springer.com/content/pdf/10.1007%2Fs13524-012-0193-x.pdf). Demography, 50:777-801.
 
 Raftery, A.E., Lalic, N. and Gerland, P. (2014). [Joint Probabilistic Projection of Female and Male Life Expectancy](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf). Demographic Research, 30:795-822.
 
