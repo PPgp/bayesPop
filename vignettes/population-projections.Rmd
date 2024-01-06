@@ -60,7 +60,7 @@ unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
 ```
 
-It creates a directory "bayesPopUSdata-main" which contains text files with total fertility rates ("US_states_tfr.txt"), sex-specific life expectancy at birth ("US_states_e0F.txt", "US_states_e0M.txt") and net migration rates ("US_states_migrate.txt").
+It creates a directory "bayesPopUSdata-main" which contains text files with total fertility rates ("US_states_tfr.txt"), sex-specific life expectancy at birth ("US_states_e0F.txt", "US_states_e0M.txt"), net migration rates ("US_states_migrate.txt"), and percent age-specific fertility ("US_states_pasfr.txt").
 
 ## National projections
 
@@ -98,7 +98,7 @@ library(bayesPop)
 library(bayesMig)
 ```
 
-# Subnational Probabilistic Projection of Total Fertility Rate
+# Total Fertility Rate
 
 The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2022](https://population.un.org/wpp) (UN WPP 2022). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
 
@@ -203,7 +203,7 @@ get.country.object(46, country.table = get.countries.table(tfr_pred_us), index =
 
 The working directory now should contain a sub-directory "tfr" that contains a directory "subnat/c840" which holds the prediction info and trajectories for each region. 
 
-# Subnational Probabilistic Projection of Life Expectancy at Birth
+# Life Expectancy at Birth
 
 The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the US $e_0$ which we generated to approximate the [UN WPP 2022](https://population.un.org/wpp) and which we downloaded previously. They were produced using the methodology of [Raftery et al. (2013)](http://link.springer.com/content/pdf/10.1007%2Fs13524-012-0193-x.pdf).
 
@@ -318,18 +318,25 @@ e0.trajectories.table(e0M_world_pred, "USA")["2021", "median"]
 ```
 
 
-# Subnational Probabilistic Projection of Migration
+# Migration
 
-In this step, we will generate probabilistic projection of net migration rates for all states, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical model by  [Azose and Raftery (2015)](http://link.springer.com/article/10.1007/s13524-015-0415-0), where states are treated as countries and the US as the world. 
+In this step, we will generate probabilistic projection of net migration rates (NMR) for all states, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical (BHM) model by  [Azose and Raftery (2015)](http://link.springer.com/article/10.1007/s13524-015-0415-0).
 
-The units in our historical estimates are the number of migrants per 1000 people. 
+The units in our historical estimates are the number of migrants per 1000 people. Here are the first few lines in that dataset:
 
 ```{r eval=TRUE}
 mig_subnat_file <- file.path(data_dir, "bayesPopUSdata-main", "US_states_migrate.txt")
-read.table(mig_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
+mig_data <- read.table(mig_subnat_file, sep= "\t", header = TRUE, check.names = FALSE)
+head(mig_data)
 ```
 
-To estimate the model to derive state-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain and the numer of chains:
+The methodology and the **bayesMig** package itself have been designed for a model hierarchy of countries -> world. However, we found that the model also works well when applied to sub-national units, in our case using the hierarchy US states -> US. Thus, when using within **bayesMig** we are pretending that the US states are countries and call the unique identifier `country_code`. The `include_code` column specifies if the corresponding location should be included in the BHM and its data should influence the global parameters (value 2), or if only location-specific parameters will be estimated using the global experience without back-influencing it (value 1), or not be included at all (value 0). The second case (value 1) is to be used for locations with unusual patterns, or simply for very small locations without a representative historical experience. In our dataset we set `include_code` to 2 for all sates and to 1 for all territories. 
+
+```{r eval=TRUE}
+subset(mig_data, include_code == 1)[, 1:2]
+```
+
+To estimate the model to derive state-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain and the number of chains:
 
 ```{r eval=TRUE}
 mig_iter <- 250
@@ -342,13 +349,68 @@ Normally in a real-world example, about 3 x 50,000 iterations would be needed. F
 dir_mig <- file.path(wrk_dir, "mig")
 ```
 
-To launch the MCMCs, we use the function `run.mig.mcmc()` as follows:
+```{r eval=TRUE, include = FALSE}
+if(dir.exists(dir_mig)) unlink(dir_mig, recursive = TRUE)
+```
+
+To launch the MCMCs with these settings, we use the function `run.mig.mcmc()` as follows:
+
+```{r eval=TRUE, results = FALSE}
+mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter, 
+                         output.dir = dir_mig, my.mig.file = mig_subnat_file,
+                         annual = TRUE, pop.denom = 1000)
+```
+
+The `pop.denom` argument tells the model that the denominator in our historical dataset is 1000. If the units were migrants per person, we would use the default of `pop.denom = 1`. 
+
+The function also accepts an argument `exclude.from.world`. This can be used in addition to the `include_code` column to explicitly specify additional locations to be excluded from influencing the global parameters. For example, to exclude all territories and Rhode Island, one could use `exclude.from.world = 43`. The function `get.countries.table(mig_mcmc)` can help to see the location codes. States excluded from influencing the global parameters are sorted at the end of that list. In [Yu et al. (2023)](https://doi.org/10.1215/00703370-10772782) which generates population projections for all counties in the Washington State, all counties below population of 25,000 were passed to the `exclude.from.world` argument.
+
+An optional argument `start.year` could be used to limit the time span of the observed data used for the estimation. Here we use all available data from 2010 to 2021.
+
+Now various **bayesMig** functions can be used to explore the results of the estimation. For example, `mig.partraces.plot(mig_mcmc, burnin = 100)` for plotting the traces of global parameters, or `mig.partraces.cs.plot` for traces of the state-specific parameters. See `?bayesMig` for more info.
+
+We will now use the MCMC results which are stored in `dir_mig` to generate future trajectories of NMR for each state from 2022 to 2050:
+
+```{r eval=TRUE, results = FALSE}
+mig_pred <- mig.predict(sim.dir = dir_mig, end.year = 2050, 
+                        nr.traj = nr_traj, burnin = 100,
+                        save.as.ascii = nr_traj)
+```
+
+We are using the same number of trajectories as for TFR and $e_0$, namely `r nr_traj` while discarding first 100 iterations from each chain as burnin. Note that after applying the burnin, our toy MCMCs will contain `r mig_nr_chains` x (`r mig_iter` - 100) = `r mig_nr_chains*(mig_iter - 100)` iterations. These will be then collapsed and thinned by `r mig_nr_chains*(mig_iter - 100)/nr_traj` to yield `r nr_traj` trajectories. In a real-world simulation with 3 x 50,000 iterations, we would recommend to use about 20,000 burnin.
+
+The last option, `save.as.ascii`, causes that the projection directory "{dir_mig}/predictions" contains a file called "ascii_trajectories.csv" which will be used as input to the population projection in the next section.
+
+To retrieve the MCMC object and the prediction from disk, for example at later time, one can use:
 
 ```{r eval=TRUE}
-mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter, annual = TRUE,
-                         output.dir = dir_mig, my.mig.file = mig_subnat_file,
-                         pop.denom = 1000, replace.output = TRUE)
+mig_mcmc <- get.mig.mcmc(dir_mig)
+mig_pred <- get.mig.prediction(dir_mig)
 ```
+
+As in the case of TFR and $e_0$, various functions can be used to analyze the prediction, for example as plots:
+
+```{r eval=TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+mig.trajectories.plot(mig_pred, "Washington", nr.traj = 20)
+```
+
+One can see that for Washington, the NMR is projected likely to be positive, which is in line with the historical experience. However, the results of this toy example do not exclude the possibility of having negative net migration in Washington. 
+
+
+# Population
+
+The inputs for probabilistic population projections consist of the three **probabilistic components** we just generated, namely future 
+
+* TFR
+* male and female $e_0$  
+* net migration
+
+In addition, the following **deterministic datasets** are needed, most of which we downloaded in the first section:
+
+* initial population estimates
+* historical estimates of sex- and age-specific mortality rates
+* historical estimates of percent age-specific fertility (file "US_states_pasfr.txt")
+* historical estimates of sex-ratio at birth
 
 
 
@@ -367,3 +429,5 @@ Raftery, A.E., Lalic, N. and Gerland, P. (2014). [Joint Probabilistic Projection
 Ševčíková, H. and Raftery, A.E. (2021). [Probabilistic Projection of Subnational Life Expectancy](https://sciendo.com/article/10.2478/jos-2021-0027). Journal of Official Statistics, Vol. 37, no. 3, 591-610.
 
 Ševčíková, H., Raftery, A.E. and Gerland, P. (2018). [Probabilistic projection of subnational total fertility rates](https://www.demographic-research.org/volumes/vol38/60/default.htm). Demographic Research, Vol. 38(60): 1843-1884.
+
+Yu, C., Ševčíková, H., Raftery, A.E., and Curran, S.R. (2023). [Probabilistic County-Level Population Projections](https://doi.org/10.1215/00703370-10772782). Demography, Vol. 60(3): 915-937.
