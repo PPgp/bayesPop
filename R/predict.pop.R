@@ -12,7 +12,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							pasfr=NULL,
 							patterns=NULL,
 							migM=NULL, migF=NULL,
-							migMt = NULL, migFt = NULL, mig = NULL,
+							migMt = NULL, migFt = NULL, mig = NULL, mig.io = NULL,
 							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
@@ -21,7 +21,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
-						mig.is.rate = FALSE, mig.age.method = c("auto", "un", "rc", "user"), 
+						mig.is.rate = FALSE, mig.age.method = c("auto", "un", "rc", "io", "user"), 
 						my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
@@ -819,8 +819,8 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
                                  schedule = NULL, scale = 1, method = "auto", 
                                  sex = "M", id.col = "country_code", country_code = NULL, 
-                                 mig.is.rate = FALSE, alt.schedule.file = NULL, wpp.year = 2019,
-                                 ...#, debug = FALSE
+                                 mig.is.rate = FALSE, alt.schedule.file = NULL, mig.io = NULL, pop = NULL,
+                                 wpp.year = 2019, ...#, debug = FALSE
                                  ) {
     mig <- i.mig <- mig.orig <- i.V1 <- distr <- migf <- totmig <- total.orig <- i.total.orig <- rc <- prop <- i.prop <- new.prop <- i.new.prop <- prop.neg <- sprop <- NULL
     age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- NULL
@@ -859,7 +859,16 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     agedf <- data.table::data.table(age = migtempl[["age"]][age.idx],
                         age.idx = age.idx)
     migtmp <- merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE)[, prop := NA][, prop := as.numeric(prop)]
-    if(method != "rc") { # load schedules from sysdata.rda
+    if(method == "io") {
+        migiotmp <- merge(merge(migtmp, pop, all.x = TRUE, by = c("country_code", "year")),
+                                mig.io, all.x = TRUE, by = c("country_code", "age"))
+        if(! "m" %in% colnames(migiotmp)) migiotmp[, m := if(annual) 0.05 else 0.01]
+        if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
+        migiotmp[, IM := pmax(pop * m + totmig/2, totmig * pop * m_min, pop * m_min)][, OM := IM - totmig]
+        migtmp[migiotmp, mig := i.in * i.IM - i.out * i.OM, on = c("country_code", "age", "year")]
+        migtmp[, prop := totmig / mig]
+    }
+    if(! method %in% c("rc", "io")) { # load schedules from sysdata.rda
         mig.sched.name <- if(annual) "mig1.schedule" else "mig5.schedule"
         mig.neg.sched.name <- if(annual) "mig1.neg.schedule" else "mig5.neg.schedule"
         mig.totals.name <- if(annual) "mig1.totals" else "mig5.totals" 
@@ -994,6 +1003,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                           mig.is.rate = c(FALSE, FALSE), verbose = FALSE) {
     # Get age-specific migration
     wppds <- data(package=paste0('wpp', wpp.year))
+    inouts <- NULL
+    if(mig.age.method == "io")
+        inouts <- data.table(read.pop.file(inputs[["mig.io"]]))
     recon.mig <- NULL
     miginp <- list()
     migtempl <- NULL
@@ -1032,16 +1044,20 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 totmig <- data.table(read.pop.file(inputs[[fnametot]])) # totals 
                 migcode <- 3
             }
-            if(mig.age.method != "rc") migcode <- 4 # TODO: this would be wrong if migcode is 2.
+            if(!mig.age.method %in% c("rc", "io")) migcode <- 4 # TODO: this would be wrong if migcode is 2.
             migcols <- intersect(colnames(totmig), periods)
             # disaggregate into ages
-            migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
+            #if(mig.age.method == "io"){
+            #    migmtx <- migration.totals2age.io(totmig, iouts)
+            #} else
+                migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                            annual = annual, time.periods = migcols, 
                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                            method = mig.age.method,
                                            sex = sex, template = migtempl, 
                                            mig.is.rate = mig.is.rate[1], 
                                            alt.schedule.file = inputs$mig.alt.age.schedule,
+                                           mig.io = inouts,
                                            wpp.year = wpp.year,
                                            #debug = TRUE
                                            )

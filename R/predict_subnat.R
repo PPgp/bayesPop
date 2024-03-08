@@ -8,14 +8,15 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             mxM = NULL, mxF = NULL, srb = NULL,
                             pasfr = NULL, patterns = NULL,
                             migM = NULL, migF = NULL,	
-                            migMt = NULL, migFt = NULL, mig = NULL,
+                            migMt = NULL, migFt = NULL, mig = NULL, mig.io = NULL,
                             e0F.file = NULL, e0M.file = NULL, tfr.file = NULL, 
                             e0F.sim.dir = NULL, e0M.sim.dir = NULL, 
                             tfr.sim.dir = NULL,
                             migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
-                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
+                        fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
+                        mig.is.rate = FALSE, mig.age.method = c("rc", "io"),
                         replace.output = FALSE, verbose = TRUE) {
     #prediction.exist <- FALSE
     ages <- ages.all(annual, observed = FALSE)
@@ -42,7 +43,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                               default.country = default.country,
                               fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, 
                               lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-                              annual = annual, verbose = verbose)
+                              mig.age.method = mig.age.method, annual = annual, verbose = verbose)
 
     reg.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
     
@@ -316,6 +317,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
+                            pop = if(mig.age.method == "io") pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -452,9 +454,18 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
 
 .get.mig.data.subnat <- function(inputs, wpp.year, annual, periods, default.country, region.codes, 
                                  pop0 = NULL, mig.age.method = "rc",
-                                 MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), verbose = FALSE) {
+                                 MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), pop = NULL, verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
+  inouts <- totpop <- NULL
+  if(mig.age.method == "io"){ # need also population 
+    inouts <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
+    totpop <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1]))),
+                    data.table(pop))
+    totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop")
+    totpop <- totpop[, .(pop = sum(pop)), by = c("country_code", "year")]
+    #inouts <- merge(inouts, totpop, by = "country_code")
+  }
   recon.mig <- NULL
   miginp <- list()
   migtempl <- NULL
@@ -490,7 +501,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl,
+                                                           template = migtempl, mig.io = inouts, pop = totpop,
                                                           wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       if(!is.null((rates <- attr(migmtx, "rate")))){
