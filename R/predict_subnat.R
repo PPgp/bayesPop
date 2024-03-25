@@ -312,12 +312,14 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     MIGshare <- .get.mig.shares(pattern.data, region.codes)
     
     # Get age-specific migration
-    
+    mig.rc.inout <- NULL
+    if(mig.age.method == "io")
+      mig.rc.inout <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
     miginp <- .get.mig.data.subnat(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
-                            pop = if(mig.age.method == "io") pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
+                            rc.inout = mig.rc.inout, pop = if(mig.age.method == "io") pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -432,7 +434,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-                 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'observed'))
+                 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.inout', 'observed'))
         assign(par, get(par), envir=inp)
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
     env <- new.env()
@@ -454,12 +456,12 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
 
 .get.mig.data.subnat <- function(inputs, wpp.year, annual, periods, default.country, region.codes, 
                                  pop0 = NULL, mig.age.method = "rc",
-                                 MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), pop = NULL, verbose = FALSE) {
+                                 MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), 
+                                 rc.inout = NULL, pop = NULL, verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
   inouts <- totpop <- NULL
   if(mig.age.method == "io"){ # need also population 
-    inouts <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
     totpop <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1]))),
                     data.table(pop))
     totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop")
@@ -501,7 +503,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl, mig.io = inouts, pop = totpop,
+                                                           template = migtempl, mig.io = rc.inout, pop = totpop,
                                                           wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       if(!is.null((rates <- attr(migmtx, "rate")))){
