@@ -236,16 +236,19 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
 				# if rates are attached slice and keep them 
-				rates <- rate.codes <- NULL
+				rates <- rate.codes <- rcout <- NULL
 				if(!is.null(inpc[[par]]) && "rate" %in% names(attributes(inpc[[par]]))) {
 				    rates <- attr(inpc[[par]], "rate")[itraj,]
 				    rate.codes <- attr(inpc[[par]], "code")[itraj,]
 				}
+				if(!is.null(inpc[[par]]) && "rc.out" %in% names(attributes(inpc[[par]])))
+				    rcout <- attr(inpc[[par]], "rc.out")
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 				if(!is.null(rates)) {
 				    attr(migpred[[sex]], "rate") <- rates
 				    attr(migpred[[sex]], "code") <- rate.codes
 				}
+				if(!is.null(rcout)) attr(migpred[[sex]], "rc.out") <- rcout
 			}
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.rate.code = inp$mig.rate.code[2],
 			                     country.name=UNlocations[country.idx,'name'],
@@ -641,6 +644,11 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
 	}
+	if(!is.null((rcout <- attr(miginp[["migM"]], "rc.out")))){
+	    attr(MIGm, "rcout") <- rcout[, c('country_code', proj.periods), with = FALSE]
+	    if(!is.null(obs.periods) && is.null(existing.mig))
+	        attr(observed$MIGm, "rc.out") <- rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+	}
 	if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
 	    attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
 	    attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
@@ -648,6 +656,11 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        attr(observed$MIGf, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	        attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
+	}
+	if(!is.null((rcout <- attr(miginp[["migF"]], "rc.out")))){
+	    attr(MIGf, "rcout") <- rcout[, c('country_code', proj.periods), with = FALSE]
+	    if(!is.null(obs.periods) && is.null(existing.mig))
+	        attr(observed$MIGf, "rc.out") <- rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	}
 	# Get migration trajectories if available
 	migpr <- .load.mig.traj(inputs, mig.age.method = mig.age.method, verbose = verbose)
@@ -872,7 +885,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year"))
             if(! "m" %in% colnames(migiotmp)) migiotmp[, m := if(annual) 0.05 else 0.01]
             if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
-            migiotmp[, IM := pmax(pop * m + totmig/2, totmig * pop * m_min, pop * m_min)][, OM := IM - totmig]
+            migiotmp[, IM := pmax(pop * m + totmig/2, totmig + pop * m_min, pop * m_min)][, OM := IM - totmig]
             migtmp[migiotmp, mig := i.in * i.IM - i.out * i.OM, on = c(byio, "age", "year")]
             migtmp[, prop := scale * mig / totmig][totmig == 0, prop := 0]
         } else {
@@ -994,23 +1007,26 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     } else migtmp[, mig := totmig * prop]
     frm <- paste(id.col, "+ age.idx + age ~ year")
     res <- dcast(migtmp, frm, value.var = "mig")
+    
     if(mig.is.rate) {
+        migtmp[, rate_code := (!is_pos_neg) + 2*is_pos_neg]
         if(method == "io"){
             iotmp <- migtmp[year == min(year)]
             iocol <- id.col
-            if(cntry.missing){
+            if(length(country_code) == 1){ # Select values only for 1 trajectory as they are the same
                 iotmp <- iotmp[iotmp[[id.col]] == min(iotmp[[id.col]])]
                 iotmp[[id.col]] <- NULL
                 iocol <- c()
             }
             res.io <- iotmp[, c(iocol, "age", "prop.out"), with = FALSE]
-            attr(res, "rc.out") <- res2
+            attr(res, "rc.out") <- res.io
+            migtmp[, rate_code := 4]
         }
         frm <- paste(id.col, "~ year")
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
         attr(res, "rate") <- res2
         #if(debug) stop("")
-        migtmp[, rate_code := (!is_pos_neg) + 2*is_pos_neg]
+        
         rate.code <- dcast(migtmp, frm, value.var = "rate_code", fun.aggregate = mean)
         attr(res, "code") <- rate.code
     }
@@ -1090,9 +1106,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                            #debug = TRUE
                                            )
             miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
-            if(!is.null((rates <- attr(migmtx, "rate")))){
-                attr(miginp[[inpname]], "rate") <- rates
-                attr(miginp[[inpname]], "code") <- attr(migmtx, "code")
+            for(attrib in c("rate", "code", "rc.out")){
+                if(!is.null((attval <- attr(migmtx, attrib)))){
+                    attr(miginp[[inpname]], attrib) <- attval
+                }
             }
             next
         }
@@ -1367,7 +1384,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    if(is.null(mig.io)) stop("Dataset with in- and out-migration schedules is missing (input mig.io)")
 		    mig.io <- mig.io[country_code == country][, country_code := NULL]
 		} else mig.io <- NULL
-		migrate <- migratecode <- NULL
+		migrate <- migratecode <- migio <- NULL
 		if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
 		    dfw <- dcast(data.table(migdf), trajectory ~ year)
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
@@ -1385,6 +1402,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		        migratecode <- attr(adf, "code")
 		        migratecode <- as.matrix(migratecode[, colnames(migratecode)[! colnames(migratecode) == "trajectory"], with = FALSE]) # remove the trajectory column
 		    }
+		    if("rc.out" %in% names(attributes(adf))) {
+		        migiodt <- attr(adf, "rc.out")
+		        migio <- migiodt[["prop.out"]]
+		        names(migio) <- migiodt[["age"]]
+		    }
 		}
 		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
 		lage <- age.length.all(pred$inputs$annual, observed = TRUE)
@@ -1398,6 +1420,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    attr(res, "rate") <- migrate
 		    attr(res, "code") <- migratecode
 		}
+		if(!is.null(migio)) 
+		    attr(res, "rc.out") <- migio
 		return(res)	
 }
 
@@ -1565,7 +1589,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	}
 	# preserve and slice attributes if needed
 	country_code <- NULL
-	for(attrname in c("rate", "code")){
+	for(attrname in c("rate", "code", "rc.out")){
 	    if(!is.null((attrval <- attr(inputs[[par]], attrname))))
 	        attr(res2, attrname) <- unlist(attrval[which(attrval[["country_code"]] == country)][,country_code := NULL])
 	}
@@ -1670,9 +1694,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 					rownames(obs[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
 				}
-				if(!is.null((rates <- attr(mig.recon[[mig.pair[[what.mig]]]], "rate")))){
-				    attr(inpc[[what.mig]], "rate") <- attr(obs[[what.mig]], "rate") <- rates
-				    attr(inpc[[what.mig]], "code") <- attr(obs[[what.mig]], "code") <- attr(mig.recon[[mig.pair[[what.mig]]]], "code")
+				for(attrib in c("rate", "code", "rc.out")){
+				    if(!is.null((attrval <- attr(mig.recon[[mig.pair[[what.mig]]]], attrib))))
+				        attr(inpc[[what.mig]], attrib) <- attr(obs[[what.mig]], attrib) <- attrval
 				}
 			}
 		}
@@ -1844,11 +1868,13 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		if(is.null(inpc[[par]])) next
 	    rates <- if("rate" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "rate")[indices[[par]], , drop=FALSE] else NULL
 	    ratecodes <- if("code" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "code")[indices[[par]], , drop=FALSE] else NULL
+	    migio <- if("rc.out" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "rc.out") else NULL
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE] # age-specific, thus 3-d arrays
 		if(!is.null(rates)) {
 		    attr(inpc[[par]], "rate") <- rates
 		    attr(inpc[[par]], "code") <- ratecodes
 		}
+		if(!is.null(migio)) attr(inpc[[par]], "rc.out") <- migio
 		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	for(par in c("GQm", "GQf")) {
@@ -2240,15 +2266,18 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	if(is.null((migrateF <- attr(migF, "rate")))) migrateF <- rep(0, npred)
 	if(is.null((migratecodeM <- attr(migM, "code")))) migratecodeM <- rep(0, npred)
 	if(is.null((migratecodeF <- attr(migF, "code")))) migratecodeF <- rep(0, npred)
+	if(is.null((rcoutM <- attr(migM, "rc.out")))) rcoutM <- rep(0, nagecat)
+	if(is.null((rcoutF <- attr(migF, "rc.out")))) rcoutF <- rep(0, nagecat)
 	
 	finmigM <- as.numeric(migM)
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
-
+	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
+	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2291,14 +2320,21 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
 					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
 	migrateM <- migrateF <- matrix(0, ncol = ncol(mig.data[[1]]), nrow = 2) # TODO: migration rates cannot be passed as observed data yet
+	rcoutM <- rcoutF <- rep(0, ncol(mig.data[[1]]))
 	if(!is.null((migrt <- attr(obs$MIGm, "rate")))){
 	    migrateM[1,] <- migrt[colnames(mig.data[[1]])]
 	    migrateM[2,] <- attr(obs$MIGm, "code")[colnames(mig.data[[1]])]
 	}
+	if(!is.null((rcout <- attr(obs$MIGm, "rc.out"))))
+	    rcoutM <- rcout[colnames(mig.data[[1]])]
+	    
 	if(!is.null((migrt <- attr(obs$MIGf, "rate")))){
 	    migrateF[1,] <- migrt[colnames(mig.data[[2]])]
 	    migrateF[2,] <- attr(obs$MIGm, "code")[colnames(mig.data[[2]])]
 	}
+	if(!is.null((rcout <- attr(obs$MIGf, "rc.out"))))
+	    rcoutF <- rcout[colnames(mig.data[[2]])]
+	
 	asfr <- pasfr/100.
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
@@ -2327,11 +2363,12 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
 	finmigM <- as.numeric(mig.data[[1]])
 	finmigF <- as.numeric(mig.data[[2]])
-
+ 
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 
 	              as.numeric(migrateM[1,]), as.numeric(migrateF[1,]), as.integer(migrateM[2,]),
+	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],

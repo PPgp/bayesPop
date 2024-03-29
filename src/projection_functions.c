@@ -58,6 +58,7 @@ void printArray(double *a, int count) {
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
                      int *MIGtype, double *MIGratem, double *MIGratef, int *MIGratecode, 
+                     double *RCoutm, double *RCoutf,
                      double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
@@ -82,7 +83,11 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double totmigcount, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp;
+    double migrcoutm[adim], migrcoutf[adim];
+    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp;
+    double IMm, IMf, OMm, OMf;
+    double mig_io_m = 0.01;
+    double mig_io_m_min = 0.001;
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -158,7 +163,14 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             }
         }
     }
-
+    for(i=0; i<nrow; ++i) {		
+        migrcoutm[i] = RCoutm[i];
+        migrcoutf[i] = RCoutf[i];
+    }
+    for(i=nrow; i<nrow+adimdif; ++i) {
+        migrcoutm[i] = 0;
+        migrcoutf[i] = 0;
+    }
  
 
     /* Population projection for one trajectory */
@@ -235,6 +247,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                 trmig = 0;
                 trmigpos = 0;
                 trmigneg = 0;
+                
                 if(MIGratecode[jve] == 2){ /* for schedules that have positive and negative parts get the sum of these */
                     for(i=0; i < adim; ++i) {  
                         trmig = trmig + migendm[i][jve] + migendf[i][jve];
@@ -243,7 +256,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                     }
                 }
                 
-                if(MIGratecode[jve] < 3){ /* need to disaggregate into ages */
+                if(MIGratecode[jve] < 3 || MIGratecode[jve] == 4){ /* need to disaggregate into ages */
                     /* sum population together */
                     tpopm = 0; tpopf = 0;
                     for(i=0; i < adim; ++i) {
@@ -251,7 +264,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         tpopf = tpopf + popf[i + t];
                     }
                     /* total migration count; not more than 80% of total population can leave */ 
-                    totmigcount = fmax(MIGratem[jve], max_out_rate) * tpopm + fmax(MIGratef[jve], max_out_rate) * tpopf; 
+                    totmigcountm = fmax(MIGratem[jve], max_out_rate) * tpopm;
+                    totmigcountf = fmax(MIGratef[jve], max_out_rate) * tpopf;
+                    totmigcount = totmigcountm + totmigcountf; 
                     tmp = 0;
                     /* distribute into ages */
                     for(i=0; i < adim; ++i) { 
@@ -274,7 +289,36 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             }
                         }
                     }
-                    if(debug>=1 && jve > 9 && totmigcount > 0){
+                    if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-toal migration */
+                        IMm = fmax(fmax(tpopm * mig_io_m + totmigcountm/2, totmigcountm + tpopm * mig_io_m_min), 
+                                  tpopm * mig_io_m_min);
+                        OMm = totmigcountm - IMm;
+          
+                        IMf = fmax(fmax(tpopf * mig_io_m + totmigcountf/2, totmigcountf + tpopf * mig_io_m_min), 
+                                   tpopf * mig_io_m_min);
+                        OMf = totmigcountf - IMf;
+                        if((debug>=1)){
+                            Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f", 
+                                    IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve]);
+                        }
+                        for(i=0; i < adim; ++i) { 
+                            if((debug>=1) && (j==1)){
+                                Rprintf("\ni = %i", i);
+                                Rprintf("\nmigendm[i][jve]= %f, RCoutm[i]= %f, popm[i+t]= %f",
+                                        2*migendm[i][jve], 2*migrcoutm[i], popm[i + t]);
+                            }
+                            migendm[i][jve] = 2*migendm[i][jve] * IMm + 2*migrcoutm[i] * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf + 2*migrcoutf[i] * OMf;
+                            tmp = tmp + migendm[i][jve];
+                            if((debug>=1) && (j==1)){
+                                Rprintf("\nAFTER: migendm[i][jve]= %f", migendm[i][jve]);
+                            }
+                        }
+                        if((debug>=1)){
+                            Rprintf("\nAFTER: sum(migendm)= %f", tmp);
+                        }
+                     }
+                    if(debug>=2 && jve > 9 && totmigcount > 0){
                         Rprintf("\ntotmigcount = %f, tpopm = %f, tpopf = %f, sum(migendm) = %f, migendm[5] = %f, migendm[10] = %f, migendf[10] = %f",  
                                 totmigcount, tpopm, tpopf, tmp, migendm[5][jve], migendm[10][jve], migendf[10][jve]);
                     }

@@ -342,6 +342,11 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
       }
     }
+    if(!is.null((rcout <- attr(miginp[["migM"]], "rc.out")))){
+      attr(MIGm, "rcout") <- rcout[, c('country_code', proj.periods), with = FALSE]
+      if(!is.null(obs.periods) && is.null(existing.mig))
+        attr(observed$MIGm, "rc.out") <- rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+    }
     if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
       attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
       attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
@@ -350,7 +355,11 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
       }
     }
-    
+    if(!is.null((rcout <- attr(miginp[["migF"]], "rc.out")))){
+      attr(MIGf, "rcout") <- rcout[, c('country_code', proj.periods), with = FALSE]
+      if(!is.null(obs.periods) && is.null(existing.mig))
+        attr(observed$MIGf, "rc.out") <- rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+    }
     # Get migration trajectories if available
     migpr <- .load.mig.traj(inputs, mig.age.method = mig.age.method, verbose = verbose)
     migMpred <- migpr$M
@@ -506,9 +515,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            template = migtempl, mig.io = rc.inout, pop = totpop,
                                                           wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
-      if(!is.null((rates <- attr(migmtx, "rate")))){
-        attr(miginp[[inpname]], "rate") <- rates
-        attr(miginp[[inpname]], "code") <- attr(migmtx, "code")
+      for(attrib in c("rate", "code", "rc.out")) {
+        if(!is.null((val <- attr(migmtx, attrib))))
+          attr(miginp[[inpname]], attrib) <- val
       }
       next
     }
