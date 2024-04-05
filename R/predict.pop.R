@@ -1394,7 +1394,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                                mig.io = mig.io,
 		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
-		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
+		    migdf <- melt(adf, value.name = "value", variable.name = "year", 
+		                  id.vars = c("trajectory", "age"), variable.factor = FALSE)
+		    migdf[, year := as.integer(year)]
 		    if("rate" %in% names(attributes(adf))) { # extract rates if available
 		        migrate <- attr(adf, "rate")
 		        migrate <- as.matrix(migrate[, colnames(migrate)[! colnames(migrate) == "trajectory"], with = FALSE]) # remove the trajectory column
@@ -1408,9 +1410,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		        names(migio) <- migiodt[["age"]]
 		    }
 		}
-		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
+		#migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
 		lage <- age.length.all(pred$inputs$annual, observed = TRUE)
-		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
+		sorted.df <- data.table(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
 									age = get.age.labels(ages.all(pred$inputs$annual, observed = TRUE), last.open=TRUE, single.year = pred$inputs$annual))
 		# this is to get rows of the data frame in a particular order
 		migdf <- merge(sorted.df, migdf, sort=FALSE)
@@ -1753,7 +1755,6 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc$migMmedian <- medians$migMpred
 	inpc$migFmedian <- medians$migFpred
-
 	if(is.null(inpc$TFRpred)) {
 		inpc$TFRpred <- get.tfr.trajectories(inputs$TFRpred, country)
 		if(is.null(inpc$TFRpred)) {
@@ -1890,7 +1891,6 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	    gq <- c(gq, rep(0, age.length.all(inputs$annual, observed = FALSE) - length(gq)))
 	    inpc[[par]] <- gq
 	}
-	    
 	inpc$observed <- obs
 	inpc$trajectory.indices <- indices
 	return(inpc)
