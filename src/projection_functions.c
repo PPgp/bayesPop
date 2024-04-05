@@ -58,7 +58,7 @@ void printArray(double *a, int count) {
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
                      int *MIGtype, double *MIGratem, double *MIGratef, int *MIGratecode, 
-                     double *RCoutm, double *RCoutf,
+                     double *RCoutm, double *RCoutf, double *MIGmio,
                      double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
@@ -86,8 +86,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migrcoutm[adim], migrcoutf[adim];
     double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp;
     double IMm, IMf, OMm, OMf;
-    double mig_io_m = 0.01;
-    double mig_io_m_min = 0.001;
+    double mig_io_m = *MIGmio;
+    double mig_io_m_min = mig_io_m/10;
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     

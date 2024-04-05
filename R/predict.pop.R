@@ -1197,7 +1197,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
-    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
+    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode', 'MigIOm'))
     age.mort.pat.col <- "LatestAgeMortalityPattern"
     age.mort.pat.df.col <- "SmoothDFLatestAgeMortalityPattern"
     rename.cols <- list()
@@ -1646,7 +1646,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
+	inpc[['MIG_IOm']] <- if("MigIOm" %in% colnames(inpc[['MIGtype']])) inpc[['MIGtype']][, "MigIOm"] else 0.05
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
+
 	# generate sex and age-specific migration if needed
 	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
 	    if(inputs$annual || inputs$mig.age.method == "rc" || (inputs$mig.age.method %in% c("auto", "un") && !inputs$annual && inputs$wpp.year == 2022)){
@@ -2278,6 +2280,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
 	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
+	            MIGmio = as.double(inputs$MIG_IOm),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2369,6 +2372,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 
 	              as.numeric(migrateM[1,]), as.numeric(migrateF[1,]), as.integer(migrateM[2,]),
 	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
+	              MIGmio = as.double(inputs$MIG_IOm),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
