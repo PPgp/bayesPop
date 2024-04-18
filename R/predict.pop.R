@@ -2153,7 +2153,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables" && !annual # we don't have model bx available for 1x1
     lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, 0)))
-    avg.ax <- length(lpat) == 1  && lpat == 0
+    avg.ax <- length(lpat) == 1  && lpat == 0 # value is 0 -> take an average of all
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
     smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, 0)
     if(smooth.df == 0) smooth.df <- NULL
@@ -2165,17 +2165,19 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.npred <- min((2100-(as.integer(years[ne])+year.step))/year.step, npred)
     }
     if(!avg.ax && !is.null(lpat)) {
-        # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
-        ax.latest.periods <- sort(lpat) # negatives should go first 
-        if(length(ax.latest.periods) > 2 || 
-           (length(ax.latest.periods) == 2 && (ax.latest.periods[1] >= 0 || 
-                                               ax.latest.periods[2] < 0))){
-           warning("Illegal value for LatestAgeMortalityPattern:", 
+        # lpat should not be a single zero because of the !avg.ax condition, 
+        # but it can be negative for removing time periods, or a vector starting with 0
+        ax.latest.periods <- sort(lpat) # negatives or zeros should go first 
+        if(((length(ax.latest.periods) > 2) && (ax.latest.periods[1] != 0)) || 
+           (length(ax.latest.periods) == 2 && (ax.latest.periods[1] > 0 || 
+                                               ax.latest.periods[2] <= 0))){
+           warning("Illegal value for LatestAgeMortalityPattern: ", 
                    paste(ax.latest.periods, collapse = ", "), 
-                   "It should have at most 2 elements, one negative and one positive. Truncated to one value.", 
-                    immediate. = TRUE)
+                   "\nIt should be either a single non-negative number or, if it is a vector, start with a negative or a zero, followed by positive numbers. Truncated to a single value of ", 
+                   ax.latest.periods[1], immediate. = TRUE)
                ax.latest.periods <- ax.latest.periods[1]
-           }
+               if(ax.latest.periods == 0 && !is.aids.country) avg.ax <- TRUE
+        }
     }
     mlt.bx <- NULL
     if(model.bx) {
@@ -2192,11 +2194,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         if(length(ax.latest.periods) > 1 && ax.latest.periods[2] > 0)
              # take the latest time points from the already modified ax.index
             ax.index <- max(length(ax.index) - ax.latest.periods[2] + 1, 1):length(ax.index)
-    } else { # take the ax.latest.periods latest time periods. If we get here, ax.latest.periods has just one element
-        if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx
-        else {
-            ax.ns <- max(length.mx - ax.latest.periods+1, 1)
-            ax.index <- ax.ns:length.mx
+    } else { 
+        if(ax.latest.periods[1] == 0 && length(ax.latest.periods) > 1){ # numbers following 0 are the actual indices starting with the latest year
+            ax.index <- sort((length.mx - ax.latest.periods[-1] + 1))
+        } else {
+            # If we get here, ax.latest.periods has just one element.
+            if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx # take all
+            else { # Take the ax.latest.periods latest time periods. 
+                ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+                ax.index <- ax.ns:length.mx
+            }
         }
     }
     if(estimate.lc){
