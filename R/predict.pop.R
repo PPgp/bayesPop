@@ -837,7 +837,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                  wpp.year = 2019, ...#, debug = FALSE
                                  ) {
     mig <- i.mig <- mig.orig <- i.V1 <- distr <- migf <- totmig <- total.orig <- i.total.orig <- rc <- prop <- i.prop <- new.prop <- i.new.prop <- prop.neg <- sprop <- NULL
-    age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- NULL
+    age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- NULL
     debug <- FALSE
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
@@ -882,12 +882,19 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         }
         migiotmp <- merge(migtmp, mig.io, all.x = TRUE, by = c(byio, "age"))
         if(!is.null(pop) && ! mig.is.rate){
+            if((mx.year <- max(as.integer(pop$year))) < max(as.integer(migiotmp$year))){
+                # for future years use pop for the latest year
+                pop.latest <- pop[year == mx.year]
+                for(yr in setdiff(migiotmp$year, pop$year))
+                    pop <- rbind(pop, pop.latest[, year := yr])
+            }
             migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year"))
             if(! "m" %in% colnames(migiotmp)) migiotmp[, m := if(annual) 0.05 else 0.01]
             if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
             migiotmp[, IM := pmax(pop * m + totmig/2, totmig + pop * m_min, pop * m_min)][, OM := IM - totmig]
             migtmp[migiotmp, mig := i.in * i.IM - i.out * i.OM, on = c(byio, "age", "year")]
             migtmp[, prop := scale * mig / totmig][totmig == 0, prop := 0]
+            #stop("")
         } else {
             migtmp[migiotmp, `:=`(prop = scale * i.in, prop.out = scale * i.out), on = c(id.col, "age", "year")]
         }
@@ -1047,7 +1054,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         # population is also needed
         totpop <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1]))),
                         data.table(pop))
-        totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop")
+        totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop", variable.factor = FALSE)
         totpop <- totpop[, .(pop = sum(pop)), by = c("country_code", "year")]
     }
     recon.mig <- NULL

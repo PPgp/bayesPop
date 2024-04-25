@@ -313,8 +313,13 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     
     # Get age-specific migration
     mig.rc.inout <- NULL
-    if(mig.age.method == "io")
+    if(mig.age.method == "io"){
       mig.rc.inout <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
+      if("MigIOm" %in% colnames(MIGtype)){
+          mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOm")], by = "country_code")
+          setnames(mig.rc.inout, "MigIOm", "m")   
+      }
+    }
     miginp <- .get.mig.data.subnat(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
@@ -473,7 +478,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
   if(mig.age.method == "io"){ # need also population 
     totpop <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1]))),
                     data.table(pop))
-    totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop")
+    totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop", variable.factor = FALSE)
     totpop <- totpop[, .(pop = sum(pop)), by = c("country_code", "year")]
     #inouts <- merge(inouts, totpop, by = "country_code")
   }
