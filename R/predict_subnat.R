@@ -476,10 +476,11 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
   wppds <- data(package=paste0('wpp', wpp.year))
   inouts <- totpop <- NULL
   if(mig.age.method == "io"){ # need also population 
-    totpop <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1]))),
+    popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
+                              age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
                     data.table(pop))
-    totpop <- melt(totpop, id.vars = "country_code", variable.name = "year", value.name = "pop", variable.factor = FALSE)
-    totpop <- totpop[, .(pop = sum(pop)), by = c("country_code", "year")]
+    popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
+    globpop <- popdt[, .(pop = sum(pop)), by = c("year", "age")]
     #inouts <- merge(inouts, totpop, by = "country_code")
   }
   recon.mig <- NULL
@@ -517,7 +518,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl, mig.io = rc.inout, pop = totpop,
+                                                           template = migtempl, mig.io = rc.inout, pop = popdt, pop.glob = globpop,
                                                           wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       for(attrib in c("rate", "code", "rc.out")) {
