@@ -882,18 +882,24 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 mig.io[, age := ifelse(age == "100", "100+", age)]
         }
         migiotmp <- merge(migtmp, mig.io, all.x = TRUE, by = c(byio, "age"))
+        if(!is.null(pop.glob)){
+            if((mx.year <- max(as.integer(pop.glob$year))) < max(as.integer(migiotmp$year))){
+                # for future years use global pop for the latest year
+                globpop.latest <- pop.glob[year == mx.year]
+                for(yr in setdiff(migiotmp$year, pop.glob$year))
+                    pop.glob <- rbind(pop.glob, globpop.latest[, year := yr])
+            }
+            migiotmp[pop.glob, popglob := i.pop, on = c("year", "age")]
+        } else migiotmp[, popglob := 1]
         if(!is.null(pop) && ! mig.is.rate){
             if((mx.year <- max(as.integer(pop$year))) < max(as.integer(migiotmp$year))){
                 # for future years use pop for the latest year
                 pop.latest <- pop[year == mx.year]
-                globpop.latest <- pop.glob[year == mx.year]
                 for(yr in setdiff(migiotmp$year, pop$year)){
                     pop <- rbind(pop, pop.latest[, year := yr])
-                    pop.glob <- rbind(pop.glob, globpop.latest[, year := yr])
                 }
             }
             migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year", "age"))
-            migiotmp[pop.glob, popglob := i.pop, on = c("year", "age")]
             migiotmp[, totpop := sum(pop), by = c(byio, "year")]
             if(! "m" %in% colnames(migiotmp)) migiotmp[, m := if(annual) 0.05 else 0.01]
             if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
@@ -907,8 +913,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migtmp[, prop := scale * mig / totmig][totmig == 0, prop := 0]
             #stop("")
         } else {
-            migtmp[migiotmp, `:=`(prop = scale * i.in, prop.out = scale * i.out), on = c(id.col, "age", "year")]
+            migiotmp[, `:=`(rxstar_in = `in` * popglob)]
+            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in)), by = c(byio, "year")]
+            # here we are passing the in-migration already weighted by population; 
+            # the out-migration will be weighted within the CCM using pop of the predicted year
+            migtmp[migiotmp, `:=`(prop = scale * rxstar_in / i.rxstar_in_denom, prop.out = scale * i.out), on = c(id.col, "age", "year")]
         }
+        #browser()
     }
     if(! method %in% c("rc", "io")) { # load schedules from sysdata.rda
         mig.sched.name <- if(annual) "mig1.schedule" else "mig5.schedule"
@@ -1039,6 +1050,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             res.io <- iotmp[, c(iocol, "age", "prop.out"), with = FALSE]
             attr(res, "rc.out") <- res.io
             migtmp[, rate_code := 4]
+            stop("")
         }
         frm <- paste(id.col, "~ year")
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
@@ -2300,6 +2312,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
+	#browser()
 	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
@@ -2392,6 +2405,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	finmigM <- as.numeric(mig.data[[1]])
 	finmigF <- as.numeric(mig.data[[2]])
     #stop('')
+	#browser()
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 

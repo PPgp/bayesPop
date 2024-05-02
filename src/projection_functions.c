@@ -84,7 +84,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
     double migrcoutm[adim], migrcoutf[adim];
-    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp;
+    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp, trxm, trxf;
     double IMm, IMf, OMm, OMf;
     double mig_io_m = *MIGmio;
     double mig_io_m_min = mig_io_m/10;
@@ -289,7 +289,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             }
                         }
                     }
-                    if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-toal migration */
+                    if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-total migration */
                         IMm = fmax(fmax(tpopm * mig_io_m + totmigcountm/2, totmigcountm + tpopm * mig_io_m_min), 
                                   tpopm * mig_io_m_min);
                         OMm = totmigcountm - IMm;
@@ -301,14 +301,21 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f", 
                                     IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve]);
                         }
+                        trxm = 0; trxf = 0;
+                        for(i=0; i < adim; ++i) {
+                            trxm = trxm + migrcoutm[i] * popm[i + t];
+                            trxf = trxf + migrcoutf[i] * popf[i + t];
+                        }
                         for(i=0; i < adim; ++i) { 
                             if((debug>=1) && (j==1)){
                                 Rprintf("\ni = %i", i);
-                                Rprintf("\nmigendm[i][jve]= %f, RCoutm[i]= %f, popm[i+t]= %f",
-                                        2*migendm[i][jve], 2*migrcoutm[i], popm[i + t]);
+                                Rprintf("\nmigendm[i][jve]= %f, RCstaroutm[i]= %f, popm[i+t]= %f",
+                                        2*migendm[i][jve], migrcoutm[i]* popm[i + t]/trxm, popm[i + t]);
                             }
-                            migendm[i][jve] = 2*migendm[i][jve] * IMm + 2*migrcoutm[i] * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + 2*migrcoutf[i] * OMf;
+                            /* in-migration is already weighted by global pop and scaled to sum to 1 over sexes;
+                             * out-migration needs to be weighted by pop */
+                            migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;
                             tmp = tmp + migendm[i][jve];
                             if((debug>=1) && (j==1)){
                                 Rprintf("\nAFTER: migendm[i][jve]= %f", migendm[i][jve]);
