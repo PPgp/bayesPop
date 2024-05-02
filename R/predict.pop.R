@@ -899,7 +899,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
             
             migiotmp[, IM := pmax(totpop * m + totmig/2, totmig + totpop * m_min, totpop * m_min)][, OM := IM - totmig]
-            migiotmp[, `:=`(rxstar_in = `in` * pop, rxstar_out = out * popglob)]
+            migiotmp[, `:=`(rxstar_in = `in` * popglob, rxstar_out = out * pop)]
             migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(byio, "year")]
 
             migtmp[migiotmp, mig := i.rxstar_in / i.rxstar_in_denom * i.IM - i.rxstar_out / i.rxstar_out_denom * i.OM, 
