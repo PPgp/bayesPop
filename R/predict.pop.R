@@ -889,6 +889,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 for(yr in setdiff(migiotmp$year, pop.glob$year))
                     pop.glob <- rbind(pop.glob, globpop.latest[, year := yr])
             }
+            if(is.character(migiotmp$age)){
+                pop.glob[, age := as.character(age)]
+                if(any(migiotmp[, age] == "100+"))
+                    pop.glob[, age := ifelse(age == "100", "100+", age)]
+            }
             migiotmp[pop.glob, popglob := i.pop, on = c("year", "age")]
         } else migiotmp[, popglob := 1]
         if(!is.null(pop) && ! mig.is.rate){
@@ -906,15 +911,14 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             
             migiotmp[, IM := pmax(totpop * m + totmig/2, totmig + totpop * m_min, totpop * m_min)][, OM := IM - totmig]
             migiotmp[, `:=`(rxstar_in = `in` * popglob, rxstar_out = out * pop)]
-            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(byio, "year")]
+            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(id.col, "year")]
 
             migtmp[migiotmp, mig := i.rxstar_in / i.rxstar_in_denom * i.IM - i.rxstar_out / i.rxstar_out_denom * i.OM, 
-                   on = c(byio, "age", "year")]
+                   on = c(id.col, "age", "year")]
             migtmp[, prop := scale * mig / totmig][totmig == 0, prop := 0]
-            #stop("")
         } else {
             migiotmp[, `:=`(rxstar_in = `in` * popglob)]
-            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in)), by = c(byio, "year")]
+            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in)), by = c(id.col, "year")]
             # here we are passing the in-migration already weighted by population; 
             # the out-migration will be weighted within the CCM using pop of the predicted year
             migtmp[migiotmp, `:=`(prop = scale * rxstar_in / i.rxstar_in_denom, prop.out = scale * i.out), on = c(id.col, "age", "year")]
@@ -1028,6 +1032,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         rcmig[rcdf, prop := i.prop, on = "age"]
         migtmp[rcmig, prop := i.prop, on = c(id.col, "year", "age")]
     } 
+
     migtmp <- merge(migtmp, agedf, by = "age", sort = FALSE)
     if(mig.is.rate){
         # the schedules are all turned into the positive direction
@@ -1050,7 +1055,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             res.io <- iotmp[, c(iocol, "age", "prop.out"), with = FALSE]
             attr(res, "rc.out") <- res.io
             migtmp[, rate_code := 4]
-            stop("")
+            #stop("")
         }
         frm <- paste(id.col, "~ year")
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
@@ -1409,7 +1414,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		utrajs <- sort(unique(migdf$trajectory))
 		ntrajs <- length(utrajs)
 		lyears <- length(pred$inputs$proj.years)
-		if(pred$inputs$mig.age.method == "io"){
+		if(pred$inputs$mig.age.method == "io"){ # need also global population 
+		    pop <- (pred$inputs$pop.matrix$male + pred$inputs$pop.matrix$female)[, as.character(pred$inputs$present.year), drop = FALSE]
+		    popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
+		                              age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
+		                   data.table(pop))
+		    popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
+		    globpop <- popdt[, .(pop = sum(pop)), by = c("year", "age")]
 		    mig.io <- pred$inputs$mig.rc.inout
 		    if(is.null(mig.io)) stop("Dataset with in- and out-migration schedules is missing (input mig.io)")
 		    mig.io <- mig.io[country_code == country][, country_code := NULL]
@@ -1421,7 +1432,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, 
-		                                mig.io = mig.io,
+		                                mig.io = mig.io, pop.glob = globpop,
 		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", 

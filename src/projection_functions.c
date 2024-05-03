@@ -108,7 +108,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
      * MIGratecode:
      *      0: migration given as counts in MIGm and MIGf
      *      > 0: migration given as total rates in MIGratem and MIGratef,
-     *              while MIGm and MIGf contains the age schedules.
+     *              while MIGm and MIGf contain the age schedules.
      *      1: the age schedules are proportions
      *      2: the age schedules are totals (used for schedules that have positive as well as negative parts)
      *      3: the age schedules are the actual final age-specific rates (i.e. rate * schedule)
