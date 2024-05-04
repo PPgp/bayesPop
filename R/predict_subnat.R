@@ -18,9 +18,11 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
                         mig.is.rate = FALSE, mig.age.method = c("rc", "io"),
                         replace.output = FALSE, verbose = TRUE) {
+    
     #prediction.exist <- FALSE
     ages <- ages.all(annual, observed = FALSE)
-
+    mig.age.method <- match.arg(mig.age.method)
+    
     if(is.null(locations)) 
         stop("Argument locations must be given.")
         
