@@ -97,7 +97,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE, 
+							fixed.pasfr=FALSE, function.inputs=NULL, pasfr.ignore.phase2 = FALSE, verbose=FALSE, 
 							parallel = FALSE, nr.nodes = NULL, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
@@ -147,7 +147,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	}
 	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
 	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
-	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "verbose", 
+	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "pasfr.ignore.phase2", "verbose", 
 	                       "nquant", "quantiles.to.keep", "ncountries")
 
 	
@@ -224,7 +224,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual, 
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
@@ -285,7 +286,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual,
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
@@ -1381,7 +1383,8 @@ compute.pasfr.global.norms <- function(inputs) {
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, 
+                            nr.est.points = if(annual) 15 else 3, ignore.phase2 = FALSE) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	fac.mac.start <- ages.fert(annual)[1]
@@ -1423,7 +1426,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	years.long <- c(years, seq(years[lyears]+by, by=by, length=75/by)) # up to 2175
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
+	end.phase2 <- if(ignore.phase2) 0 else bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
 	start.phase3 <- end.phase2 + 1
 	if(start.phase3 > lyears) { # Phase 3 not observed until the end of projection (Case 2)
 		if(tfr[lyears] > 1.8) { # regress the last 20 years to approximate start of Phase 3

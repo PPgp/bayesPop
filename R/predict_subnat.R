@@ -16,6 +16,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
+                        pasfr.ignore.phase2 = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
     #prediction.exist <- FALSE
     ages <- ages.all(annual, observed = FALSE)
@@ -48,7 +49,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
     
     do.pop.predict(reg.codes, inp, outdir, nr.traj, ages, 
                    keep.vital.events = keep.vital.events, fixed.mx = inp$fixed.mx, fixed.pasfr = fixed.pasfr, 
-                   function.inputs = inputs, verbose = verbose)
+                   function.inputs = inputs, pasfr.ignore.phase2 = pasfr.ignore.phase2, verbose = verbose)
     invisible(get.pop.prediction(output.dir))
 }
 

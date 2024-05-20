@@ -24,7 +24,8 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
         ), 
         nr.traj = 1000, keep.vital.events = FALSE, 
         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
-         mig.is.rate = FALSE, replace.output = FALSE, verbose = TRUE)
+         mig.is.rate = FALSE, pasfr.ignore.phase2 = FALSE,
+         replace.output = FALSE, verbose = TRUE)
 }
 
 \arguments{
@@ -56,6 +57,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
   		}
 }
   \item{nr.traj, keep.vital.events, fixed.mx, fixed.pasfr, lc.for.all, mig.is.rate, replace.output, verbose}{These arguments have the same meaning as in \code{\link{pop.predict}}.}
+  \item{pasfr.ignore.phase2}{Logical. If \code{TRUE} the TFR for all locations is considered being in phase III when predicting PASFR.}
 }
 
 \details{
