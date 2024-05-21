@@ -1460,7 +1460,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
-	#stop("")
 	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
@@ -1469,7 +1468,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(gnorm/100.) - logit.pr
-	#stop("")
 	for(t in 1:ncol(asfr1)){
 		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
@@ -1502,9 +1500,32 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	#stop("")
+
+	# update by MAC
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
-	return(res.asfr)
+	
+	if(!annual) return(res.asfr)
+	
+	# for a 1x1 simulation where the child-bearing age has a larger extent, we do 
+	# an extra step to keep constant ASFR at youngest ages if trends increase instead of decrease 
+	# for ages 10-19
+	pasfr <- res.asfr
+	asfr_tfr <- t(t(pasfr) * tfr[(tobs + 1):lyears])
+	for(t in 1:(ncol(asfr_tfr)-1)){
+	    if(length((idx <- which(asfr_tfr[1:10,t+1] > asfr_tfr[1:10,t]))) == 0) next
+	    asfr_tfr[idx,t+1] <- asfr_tfr[idx,t]
+	}
+	# extra step to keep constant ASFR less than 5* starting value at oldest ages if trends increase instead of decrease compared to baseline
+	# 45-54
+	asfr_base <- pasfr.obs[,ncol(pasfr.obs)]/100. * tfr[tobs]
+	asfr_tfr[36:45, ] <- pmin(asfr_tfr[36:45, ], 
+	                          matrix(asfr_base[36:45] * 5, nrow = 10, ncol = ncol(asfr_tfr)))
+	
+	# now we scale back to original TFR by proportionally adjusting asfr in non-constrained age groups
+	diff_tfr <- tfr[(tobs + 1):lyears] - colSums(asfr_tfr)
+	asfr_tfr[11:35,] <- asfr_tfr[11:35,] + t(diff_tfr * t(asfr_tfr[11:35,])/colSums(asfr_tfr[11:35,]))
+	pasfr <- scale(asfr_tfr, center=FALSE, scale=colSums(asfr_tfr))
+	return(pasfr)
 }
 
 .get.par.from.inputs <- function(par, inputs, country, convert.to.matrix = TRUE) {
