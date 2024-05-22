@@ -724,12 +724,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', #'mig.age.gcc', 
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 
 				'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	inp$average.annual <- inputs$average.annual
+	inp$mig.alt.age.schedule <- inputs$mig.alt.age.schedule
 	return(inp)
 }
 
@@ -867,6 +868,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         mig.totals.name <- if(annual) "mig1.totals" else "mig5.totals" 
         sex.code <- if(sex == "M") 1 else 2
         locs.env <- new.env()
+        #browser()
         if(method == "user")
             load(alt.schedule.file, envir = locs.env)
         else {
@@ -981,7 +983,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
         attr(res, "rate") <- res2
         #if(debug) stop("")
-        migtmp[, rate_code := (!is_pos_neg) + 2*is_pos_neg]
+        migtmp[, rate_code := (!is_pos_neg) + 2*is_pos_neg] # TODO: this can yield different codes for male and female 
         rate.code <- dcast(migtmp, frm, value.var = "rate_code", fun.aggregate = mean)
         attr(res, "code") <- rate.code
     }

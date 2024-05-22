@@ -1,7 +1,7 @@
 Package: bayesPop
 Type: Package
 Title: Probabilistic Population Projection
-Version: 10.0-1.9010
+Version: 10.0-1.9011
 Date: 2024-05-21
 Author: Hana Sevcikova, Adrian Raftery, Thomas Buettner
 Maintainer: Hana Sevcikova <hanas@uw.edu>
