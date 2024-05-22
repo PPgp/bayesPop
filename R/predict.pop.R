@@ -921,7 +921,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
             # so that we don't loose the schedule
             migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := sign(total.orig) * (if(annual) 0.001 else 0.005)] #totmigl[abs(totmig) > 0, min(abs(totmig))]
-            #if(debug) stop("")
+            if(debug) stop("")
             # use the negative schedule if total migration is negative and there is a different schedule for such cases
             migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
             migtmp[!is.na(prop), `:=`(is_pos_neg = sum(prop > 0) > 0 & sum(prop < 0) > 0), by = c(id.col, "year")] # prop can be NA if observed years are included

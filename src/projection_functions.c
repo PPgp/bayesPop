@@ -86,7 +86,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
-    const double minpop = 0.0005; /* minimum accepted population */
+    const double minpop = 0; /* 0.0005; minimum accepted population */
     const double max_out_rate = -0.8; /* the maximum portion of population that can leave when using migration rates */ 
     
     nrow = *migr;
