@@ -290,10 +290,10 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             totp[j] = 0;
             for(i=0; i < adim; ++i) {
                 if(migendm[i][jve] < 0)
-                    migendm[i][jve] = fmax(migendm[i][jve], -popm[i+t] + minpop); /* adjust migration if it would yield negative population */
+                    migendm[i][jve] = fmin(0, fmax(migendm[i][jve], -popm[i+t] + minpop)); /* adjust migration if it would yield negative population */
                 popm[i+t] = popm[i + t] + migendm[i][jve];
                 if(migendf[i][jve] < 0)
-                    migendf[i][jve] = fmax(migendf[i][jve], -popf[i+t] + minpop);
+                    migendf[i][jve] = fmin(0, fmax(migendf[i][jve], -popf[i+t] + minpop));
                 popf[i+t] = popf[i + t] + migendf[i][jve];
                 totp[j] += popm[i + t] + popf[i + t]; 
             }
