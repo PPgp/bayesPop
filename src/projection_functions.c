@@ -86,7 +86,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
-    const double minpop = 0; /* 0.0005; minimum accepted population */
+    const double minpop = 0.0005; /* minimum accepted population */
     const double max_out_rate = -0.8; /* the maximum portion of population that can leave when using migration rates */ 
     
     nrow = *migr;
@@ -289,9 +289,11 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             /* add migration at the end of the interval, adjust negative population and compute total pop */
             totp[j] = 0;
             for(i=0; i < adim; ++i) {
-                migendm[i][jve] = fmax(migendm[i][jve], -popm[i+t] + minpop); /* adjust migration if it would yield negative population */
+                if(migendm[i][jve] < 0)
+                    migendm[i][jve] = fmax(migendm[i][jve], -popm[i+t] + minpop); /* adjust migration if it would yield negative population */
                 popm[i+t] = popm[i + t] + migendm[i][jve];
-                migendf[i][jve] = fmax(migendf[i][jve], -popf[i+t] + minpop);
+                if(migendf[i][jve] < 0)
+                    migendf[i][jve] = fmax(migendf[i][jve], -popf[i+t] + minpop);
                 popf[i+t] = popf[i + t] + migendf[i][jve];
                 totp[j] += popm[i + t] + popf[i + t]; 
             }

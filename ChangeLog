@@ -10,7 +10,7 @@ Argument pasfr.ignore.phase2 added to pop.predict.subnat.
 
 Additional steps for very young and very old child-bearing ages in kantorova.pasfr function.
 
-Decreased minimum allowed population in an age group from 0.0005 to 0.
+Minimum allowed population in an age group checked only if migration is negative.
 
 10.0-0/1 (08/09/2023)
 ------
