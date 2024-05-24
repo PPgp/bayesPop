@@ -1839,3 +1839,47 @@ extract.trajectories.le <- function(pop.pred, country=NULL, expression=NULL, qua
 	return(.extract.trajectories('<=', pop.pred, country, expression, quant, values, all, ...))
 }
 
+peak.probability <- function(pop.pred, country=NULL, expression=NULL, year = NULL, prob = 0.5, verbose = TRUE, ...){
+    if(!is.null(country)) {
+        country.object <- get.country.object(country, country.table=pop.pred$countries)
+        trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
+        popargs <- list(...)
+        obs <- get.pop.observed(pop.pred, country, sex = if(is.null(popargs$sex)) "both" else popargs$sex,
+                                age = if(is.null(popargs$age)) "all" else popargs$age)
+    } else {
+        trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+        if(is.null(trajectories)) return(NULL)
+        obs <- get.pop.observed.from.expression(expression, pop.pred)
+        #trajectories <- rbind(trajectories, obs[1,1,,rep(1, ncol(trajectories))])
+    }
+    if(is.null(trajectories)) return(NULL)
+    obs <- abind(obs, along = 2)
+    trajectories <- rbind(trajectories, obs[,rep(1, ncol(trajectories))])
+    maxes <- apply(trajectories, 2, which.max)
+    #prob.max <- sum(maxes < nrow(trajectories))/length(maxes)
+    time.freq <- table(maxes)
+    names(time.freq) <- c(rownames(obs), rownames(trajectories))[as.integer(names(time.freq))]
+    prob.time <- as.data.frame(time.freq, responseName = "probability", stringsAsFactors = FALSE)
+    colnames(prob.time)[1] <- "year"
+    prob.time[["probability"]] <- prob.time[["probability"]]/length(maxes)
+    prob.time[["year"]] <- as.integer(prob.time[["year"]])
+    if(is.null(year)) year <- max(pop.pred$proj.years)
+    prob.less.year <- sum(prob.time$probability[prob.time$year < year])
+    cs <- cumsum(prob.time$probability)
+    prob.time$cumprob <- cs
+    year.prob <- min(prob.time[which(cs >= prob), "year"])
+    if(year.prob == max(pop.pred$proj.years))
+        year.prob <- NA
+    if(verbose){
+        if(!is.null(country)){
+            cat("\nPopulation for", country.object$name) 
+        } else cat("\nIndicator", expression)
+        cat("\n=================================")
+        cat("\nProbability of peak happens before", year, ":", prob.less.year)
+        cat("\nEarliest year a peak happens with probability", prob, ":", if(is.na(year.prob)) "no peak" else year.prob)
+        cat("\n")
+    }
+    invisible(list(prob.peak.less.given.year = prob.less.year, given.year = year, 
+                min.peak.year.given.prob = year.prob, given.prob = prob,
+                all.prob.peak.by.time = prob.time))
+}
