@@ -1839,7 +1839,7 @@ extract.trajectories.le <- function(pop.pred, country=NULL, expression=NULL, qua
 	return(.extract.trajectories('<=', pop.pred, country, expression, quant, values, all, ...))
 }
 
-peak.probability <- function(pop.pred, country=NULL, expression=NULL, year = NULL, prob = 0.5, verbose = TRUE, ...){
+peak.probability <- function(pop.pred, country=NULL, expression=NULL, year = NULL, pi = 95, verbose = TRUE, ...){
     if(!is.null(country)) {
         country.object <- get.country.object(country, country.table=pop.pred$countries)
         trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
@@ -1850,36 +1850,43 @@ peak.probability <- function(pop.pred, country=NULL, expression=NULL, year = NUL
         trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
         if(is.null(trajectories)) return(NULL)
         obs <- get.pop.observed.from.expression(expression, pop.pred)
-        #trajectories <- rbind(trajectories, obs[1,1,,rep(1, ncol(trajectories))])
     }
     if(is.null(trajectories)) return(NULL)
-    obs <- abind(obs, along = 2)
-    trajectories <- rbind(trajectories, obs[,rep(1, ncol(trajectories))])
+    obs <- obs[-length(obs), drop = FALSE] # remove last observed year as it is included in trajectories
+    obs <- abind::abind(obs[!is.na(obs), drop = FALSE], along = 2) # remove NAs and add a dimension
+    trajectories <- rbind(obs[,rep(1, ncol(trajectories))], trajectories)
+    # for each trajectory get the index of the maximum over years 
     maxes <- apply(trajectories, 2, which.max)
-    #prob.max <- sum(maxes < nrow(trajectories))/length(maxes)
+    # get quantiles of the corresponding years
+    al <- (1-pi/100)/2
+    quant <- quantile(as.integer(rownames(trajectories))[maxes], c(al, 0.5, 1-al), type = 3)
+    # compute frequency table
     time.freq <- table(maxes)
-    names(time.freq) <- c(rownames(obs), rownames(trajectories))[as.integer(names(time.freq))]
+    names(time.freq) <- rownames(trajectories)[as.integer(names(time.freq))]
     prob.time <- as.data.frame(time.freq, responseName = "probability", stringsAsFactors = FALSE)
     colnames(prob.time)[1] <- "year"
     prob.time[["probability"]] <- prob.time[["probability"]]/length(maxes)
     prob.time[["year"]] <- as.integer(prob.time[["year"]])
     if(is.null(year)) year <- max(pop.pred$proj.years)
     prob.less.year <- sum(prob.time$probability[prob.time$year < year])
-    cs <- cumsum(prob.time$probability)
-    prob.time$cumprob <- cs
-    year.prob <- min(prob.time[which(cs >= prob), "year"])
-    if(year.prob == max(pop.pred$proj.years))
-        year.prob <- NA
+    prob.time$cumprob <- cumsum(prob.time$probability)
+
     if(verbose){
         if(!is.null(country)){
             cat("\nPopulation for", country.object$name) 
         } else cat("\nIndicator", expression)
         cat("\n=================================")
-        cat("\nProbability of peak happens before", year, ":", prob.less.year)
-        cat("\nEarliest year a peak happens with probability", prob, ":", if(is.na(year.prob)) "no peak" else year.prob)
+        cat("\nProbability that a peak happens before", year, ":", round(prob.less.year*100, 2), "%")
+        if(quant[3] < max(pop.pred$proj.years)){
+            if(quant[1] == quant[3]){ # peak is in the past
+                cat("\nPeak happened in", quant[3])
+            } else cat("\nWith", pi,  "% probability, a peak happens between", 
+                quant[1], "and", quant[3], ", median =", quant[2])
+        } else cat("\nWith", pi,  "% probability, a peak happens after", 
+                   quant[1], "(upper bound unknown), median =", quant[2])
         cat("\n")
     }
     invisible(list(prob.peak.less.given.year = prob.less.year, given.year = year, 
-                min.peak.year.given.prob = year.prob, given.prob = prob,
+                peak.quantiles = quant, 
                 all.prob.peak.by.time = prob.time))
 }
