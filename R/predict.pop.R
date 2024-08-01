@@ -97,7 +97,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE, 
+							fixed.pasfr=FALSE, function.inputs=NULL, pasfr.ignore.phase2 = FALSE, verbose=FALSE, 
 							parallel = FALSE, nr.nodes = NULL, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
@@ -147,7 +147,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	}
 	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
 	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
-	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "verbose", 
+	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "pasfr.ignore.phase2", "verbose", 
 	                       "nquant", "quantiles.to.keep", "ncountries")
 
 	
@@ -224,7 +224,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual, 
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
@@ -288,7 +289,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual,
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
@@ -736,12 +738,13 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
 				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', #'mig.age.gcc', 
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 
 				'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
 	inp$average.annual <- inputs$average.annual
+	inp$mig.alt.age.schedule <- inputs$mig.alt.age.schedule
 	return(inp)
 }
 
@@ -931,6 +934,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         mig.totals.name <- if(annual) "mig1.totals" else "mig5.totals" 
         sex.code <- if(sex == "M") 1 else 2
         locs.env <- new.env()
+        #browser()
         if(method == "user")
             load(alt.schedule.file, envir = locs.env)
         else {
@@ -983,7 +987,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
             # so that we don't loose the schedule
             migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := sign(total.orig) * (if(annual) 0.001 else 0.005)] #totmigl[abs(totmig) > 0, min(abs(totmig))]
-            #if(debug) stop("")
+            if(debug) stop("")
             # use the negative schedule if total migration is negative and there is a different schedule for such cases
             migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
             migtmp[!is.na(prop), `:=`(is_pos_neg = sum(prop > 0) > 0 & sum(prop < 0) > 0), by = c(id.col, "year")] # prop can be NA if observed years are included
@@ -1061,7 +1065,6 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
         attr(res, "rate") <- res2
         #if(debug) stop("")
-        
         rate.code <- dcast(migtmp, frm, value.var = "rate_code", fun.aggregate = mean)
         attr(res, "code") <- rate.code
     }
@@ -1497,7 +1500,8 @@ compute.pasfr.global.norms <- function(inputs) {
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, 
+                            nr.est.points = if(annual) 15 else 3, ignore.phase2 = FALSE) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	fac.mac.start <- ages.fert(annual)[1]
@@ -1539,7 +1543,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	years.long <- c(years, seq(years[lyears]+by, by=by, length=75/by)) # up to 2175
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
+	end.phase2 <- if(ignore.phase2) 0 else bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
 	start.phase3 <- end.phase2 + 1
 	if(start.phase3 > lyears) { # Phase 3 not observed until the end of projection (Case 2)
 		if(tfr[lyears] > 1.8) { # regress the last 20 years to approximate start of Phase 3
@@ -1573,7 +1577,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
-	#stop("")
 	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
@@ -1582,7 +1585,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(gnorm/100.) - logit.pr
-	#stop("")
 	for(t in 1:ncol(asfr1)){
 		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
@@ -1615,9 +1617,32 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	#stop("")
+
+	# update by MAC
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
-	return(res.asfr)
+	
+	if(!annual) return(res.asfr)
+	
+	# for a 1x1 simulation where the child-bearing age has a larger extent, we do 
+	# an extra step to keep constant ASFR at youngest ages if trends increase instead of decrease 
+	# for ages 10-19
+	pasfr <- res.asfr
+	asfr_tfr <- t(t(pasfr) * tfr[(tobs + 1):lyears])
+	for(t in 1:(ncol(asfr_tfr)-1)){
+	    if(length((idx <- which(asfr_tfr[1:10,t+1] > asfr_tfr[1:10,t]))) == 0) next
+	    asfr_tfr[idx,t+1] <- asfr_tfr[idx,t]
+	}
+	# extra step to keep constant ASFR less than 5* starting value at oldest ages if trends increase instead of decrease compared to baseline
+	# 45-54
+	asfr_base <- pasfr.obs[,ncol(pasfr.obs)]/100. * tfr[tobs]
+	asfr_tfr[36:45, ] <- pmin(asfr_tfr[36:45, ], 
+	                          matrix(asfr_base[36:45] * 5, nrow = 10, ncol = ncol(asfr_tfr)))
+	
+	# now we scale back to original TFR by proportionally adjusting asfr in non-constrained age groups
+	diff_tfr <- tfr[(tobs + 1):lyears] - colSums(asfr_tfr)
+	asfr_tfr[11:35,] <- asfr_tfr[11:35,] + t(diff_tfr * t(asfr_tfr[11:35,])/colSums(asfr_tfr[11:35,]))
+	pasfr <- scale(asfr_tfr, center=FALSE, scale=colSums(asfr_tfr))
+	return(pasfr)
 }
 
 .get.par.from.inputs <- function(par, inputs, country, convert.to.matrix = TRUE) {

@@ -95,9 +95,9 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 
 .get.wpp <- function(env, what, countries=NULL, ages=NULL, annual = FALSE, ...) {
 	switch(which(c('', 'M', 'F', 'Mage', 'Fage') == what), 
-				tpop(countries, prediction.only=TRUE, e=env, ...),
-				tpopM(countries, prediction.only=TRUE, e=env, ...),
-				tpopF(countries, prediction.only=TRUE, e=env, ...),
+				tpop(countries, prediction.only=TRUE, e=env, annual = annual, ...),
+				tpopM(countries, prediction.only=TRUE, e=env, annual = annual, ...),
+				tpopF(countries, prediction.only=TRUE, e=env, annual = annual, ...),
 				tpopM(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...),
 				tpopF(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...)
 			)
@@ -110,18 +110,19 @@ if.not.exists.load <- function(name, env, wpp.year=2012) {
 	}
 }
 
-tpop <- function(countries, prediction.only=FALSE, e=NULL, ...) {
+tpop <- function(countries, prediction.only=FALSE, e=NULL, annual = FALSE, ...) {
 	# Create a dataset of total population
 	if(is.null(e)) e <- new.env()
+	suffix <- if(annual) "1" else ""
 	if(!prediction.only) {
-		if.not.exists.load('popM', e, ...)
-		if.not.exists.load('popF', e, ...)
-		tpop.obs <- sumMFbycountry('popM', 'popF', e)
+		if.not.exists.load(paste0('popM', suffix), e, ...)
+		if.not.exists.load(paste0('popF', suffix), e, ...)
+		tpop.obs <- sumMFbycountry(paste0('popM', suffix), paste0('popF', suffix), e)
 	}
 	#projection stored separately from observations
-	if.not.exists.load('popMprojMed', e, ...)
-	if.not.exists.load('popFprojMed', e, ...)
-	tpopp <- sumMFbycountry('popMprojMed', 'popFprojMed', e)
+	if.not.exists.load(paste0('popMprojMed', suffix), e, ...)
+	if.not.exists.load(paste0('popFprojMed', suffix), e, ...)
+	tpopp <- sumMFbycountry(paste0('popMprojMed', suffix), paste0('popFprojMed', suffix), e)
 	if(!prediction.only) tpopp <- merge(tpop.obs, tpopp, by='country_code')
 	return(.reduce.to.countries(tpopp, countries))
 }
@@ -132,13 +133,14 @@ tpopM <- function(...) return(tpop.sex('M', ...))
 tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.only=FALSE, e=NULL, annual = FALSE, ...) {
 	# Create a dataset of total population by sex
 	if(is.null(e)) e <- new.env()
+	suffix <- if(annual) "1" else ""
 	if(!prediction.only) {
-		dataset <- paste0('pop', sex)
+		dataset <- paste0('pop', sex, suffix)
 		if.not.exists.load(dataset, e, ...)
 		#do.call('data', list(dataset, package='wpp2012', envir=e))
 		pop.obs <- if(sum.over.ages) .sum.by.country(dataset) else .sum.by.country.and.age(dataset)
 	}
-	dataset <- paste0('pop', sex, 'projMed')
+	dataset <- paste0('pop', sex, 'projMed', suffix)
 	if.not.exists.load(dataset, e, ...)
 	popp <- if(sum.over.ages) .sum.by.country(e[[dataset]]) else .sum.by.country.and.age(e[[dataset]])
 	if(!prediction.only)  popp <- merge(pop.obs, popp, by='country_code')
