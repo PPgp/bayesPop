@@ -909,10 +909,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year", "age"))
             migiotmp[, totpop := sum(pop), by = c(byio, "year")]
-            if(! "m" %in% colnames(migiotmp)) migiotmp[, m := if(annual) 0.05 else 0.01]
-            if(! "m_min" %in% colnames(migiotmp)) migiotmp[, m_min := m/10]
+            if(! "beta0" %in% colnames(migiotmp)) migiotmp[, beta0 := if(annual) 0.07 else 0.35]
+            if(! "beta1" %in% colnames(migiotmp)) migiotmp[, beta1 := 0.5]
+            if(! "min" %in% colnames(migiotmp)) migiotmp[, min := if(annual) 0.02 else 0.2]
             
-            migiotmp[, IM := pmax(totpop * m + totmig/2, totmig + totpop * m_min, totpop * m_min)][, OM := IM - totmig]
+            migiotmp[, IM := pmax(totpop * beta0 + beta1 * totmig, totpop * min)][, OM := IM - totmig]
             migiotmp[, `:=`(rxstar_in = `in` * popglob, rxstar_out = out * pop)]
             migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(id.col, "year")]
 
@@ -1235,7 +1236,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
-    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode', 'MigIOm'))
+    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode', 'MigIOb0', 'MigIOb1', 'MigIOmin'))
     age.mort.pat.col <- "LatestAgeMortalityPattern"
     age.mort.pat.df.col <- "SmoothDFLatestAgeMortalityPattern"
     rename.cols <- list()
@@ -1712,7 +1713,9 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
-	inpc[['MIG_IOm']] <- if("MigIOm" %in% colnames(inpc[['MIGtype']])) inpc[['MIGtype']][, "MigIOm"] else 0.05
+	inpc[['MIG_IOb0']] <- if("MigIOb0" %in% colnames(inpc[['MIGtype']])) inpc[['MIGtype']][, "MigIOb0"] else 0.07
+	inpc[['MIG_IOb1']] <- if("MigIOb1" %in% colnames(inpc[['MIGtype']])) inpc[['MIGtype']][, "MigIOb1"] else 0.5
+	inpc[['MIG_IOmin']] <- if("MigIOmin" %in% colnames(inpc[['MIGtype']])) inpc[['MIGtype']][, "MigIOmin"] else 0.02
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
 
 	# generate sex and age-specific migration if needed
@@ -2354,7 +2357,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
 	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
-	            MIGmio = as.double(inputs$MIG_IOm),
+	            MIGio = as.double(c(inputs$MIG_IOb0, inputs$MIG_IOb1, inputs$MIG_IOmin)),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2447,7 +2450,7 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 
 	              as.numeric(migrateM[1,]), as.numeric(migrateF[1,]), as.integer(migrateM[2,]),
 	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
-	              MIGmio = as.double(inputs$MIG_IOm),
+	              MIGio = as.double(c(inputs$MIG_IOb0, inputs$MIG_IOb1, inputs$MIG_IOmin)),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],

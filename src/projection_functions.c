@@ -58,7 +58,7 @@ void printArray(double *a, int count) {
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
                      int *MIGtype, double *MIGratem, double *MIGratef, int *MIGratecode, 
-                     double *RCoutm, double *RCoutf, double *MIGmio,
+                     double *RCoutm, double *RCoutf, double *MIGio,
                      double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
@@ -86,8 +86,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migrcoutm[adim], migrcoutf[adim];
     double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp, trxm, trxf;
     double IMm, IMf, OMm, OMf;
-    double mig_io_m = *MIGmio;
-    double mig_io_m_min = mig_io_m/10;
+    double mig_io_b0 = MIGio[0];
+    double mig_io_b1 = MIGio[1];
+    double mig_io_min = MIGio[2];
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -172,7 +173,6 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         migrcoutf[i] = 0;
     }
  
-
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
         jve = j-1;
@@ -290,16 +290,14 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         }
                     }
                     if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-total migration */
-                        IMm = fmax(fmax(tpopm * mig_io_m + totmigcountm/2, totmigcountm + tpopm * mig_io_m_min), 
-                                  tpopm * mig_io_m_min);
+                        IMm = fmax(tpopm * mig_io_b0 + totmigcountm * mig_io_b1, tpopm * mig_io_min);
                         OMm = totmigcountm - IMm;
           
-                        IMf = fmax(fmax(tpopf * mig_io_m + totmigcountf/2, totmigcountf + tpopf * mig_io_m_min), 
-                                   tpopf * mig_io_m_min);
+                        IMf = fmax(tpopf * mig_io_b0 + totmigcountf * mig_io_b1, tpopf * mig_io_min);
                         OMf = totmigcountf - IMf;
                         if((debug>=1)){
-                            Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f", 
-                                    IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve]);
+                            Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f", 
+                                    IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve], mig_io_b0, mig_io_b1, mig_io_min);
                         }
                         trxm = 0; trxf = 0;
                         for(i=0; i < adim; ++i) {

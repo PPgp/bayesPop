@@ -318,9 +318,17 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     mig.rc.inout <- NULL
     if(mig.age.method == "io"){
       mig.rc.inout <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
-      if("MigIOm" %in% colnames(MIGtype)){
-          mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOm")], by = "country_code")
-          setnames(mig.rc.inout, "MigIOm", "m")   
+      if("MigIOb0" %in% colnames(MIGtype)){
+          mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOb0")], by = "country_code")
+          setnames(mig.rc.inout, "MigIOb0", "beta0")   
+      }
+      if("MigIOb1" %in% colnames(MIGtype)){
+        mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOb1")], by = "country_code")
+        setnames(mig.rc.inout, "MigIOb1", "beta1")   
+      }
+      if("MigIOmin" %in% colnames(MIGtype)){
+        mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOmin")], by = "country_code")
+        setnames(mig.rc.inout, "MigIOmin", "min")
       }
     }
     miginp <- .get.mig.data.subnat(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
