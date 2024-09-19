@@ -1,5 +1,7 @@
-10.0-1.900x (12/22/2023)
+10.0-1.900x (09/18/2024)
 ------
+Added vwBaseYear2024 dataset.
+
 pop.predict.subnat can handle 1x1 subnational projections. 
 
 Fix in 1x1 GQs.
