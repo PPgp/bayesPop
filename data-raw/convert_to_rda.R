@@ -4,9 +4,9 @@ library(data.table)
 e <- new.env()
 
 dir <- "."
-datasets <- c("MLTbx", paste0("vwBaseYear", c(2010, 2012, 2015, 2017, 2019, 2022)))
-#datasets <- "vwBaseYear2019"
-datasets <- "MLTbx"
+datasets <- c("MLTbx", paste0("vwBaseYear", c(2010, 2012, 2015, 2017, 2019, 2022, 2024)))
+datasets <- "vwBaseYear2024"
+#datasets <- "MLTbx"
 
 for(f in datasets){
     e[[f]] <- as.data.frame(fread(file.path(dir, paste0(f, ".txt"))))

@@ -6,14 +6,16 @@
 \alias{vwBaseYear2017}
 \alias{vwBaseYear2019}
 \alias{vwBaseYear2022}
+\alias{vwBaseYear2024}
 \docType{data}
 \title{
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017 and 2019 datasets also give information on country's specifics regarding mortality and fertility age patterns.
+Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017, 2019, 2022 and 2024 datasets also give information on country's specifics regarding mortality and fertility age patterns.
 }
 \usage{
+    data(vwBaseYear2024)
     data(vwBaseYear2022)
     data(vwBaseYear2019)
     data(vwBaseYear2017)
