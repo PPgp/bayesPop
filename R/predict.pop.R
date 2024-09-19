@@ -1061,8 +1061,13 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation and wpp.year < 2022.")
         migdsname <- paste0('migration', sex)
         if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
-        if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012)
+        if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012 and for projections in wpp2024)
             miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
+            if(length((missing.years <- setdiff(periods, colnames(miginp[[inpname]])))) > 0){ #for wpp2024 only projected years available, so attach the remaining years
+                miginp[[inpname]] <- data.frame(merge(migtempl[, c("country_code", "age", missing.years), with = FALSE], 
+                                           miginp[[inpname]][, setdiff(colnames(miginp[[inpname]]), "name")],
+                                           by = c("country_code", "age")), check.names = FALSE)
+            }
             next
         }
         if(all.countries) { # split default total migration into ages for all countries
@@ -1598,9 +1603,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
 	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
+
 	# generate sex and age-specific migration if needed
-	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
-	    if(inputs$annual || inputs$mig.age.method == "rc" || (inputs$mig.age.method %in% c("auto", "un") && !inputs$annual && inputs$wpp.year == 2022)){
+	if((!is.null(inpc[['MIGm']]) && any(colSums(is.na(inpc[['MIGm']])) > 0)) || (
+	    !is.null(inpc[['MIGf']]) && any(colSums(is.na(inpc[['MIGf']])) > 0))) {
+	    if(inputs$annual || inputs$mig.age.method == "rc" || (inputs$mig.age.method %in% c("auto", "un") && !inputs$annual && inputs$wpp.year >= 2022)){
 	        migtempl <- if(!is.null(inpc[['MIGm']])) inpc[['MIGm']] else inpc[['MIGf']]
 	        mig.recon <- list()
 	        wppdata <- bayesTFR:::load.from.wpp("migration", inputs$wpp.year, annual = inputs$annual)
@@ -1628,6 +1635,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	                                     wpp.year = inputs$wpp.year), 
 	                check.names = FALSE)
 	        }
+	        rownames(mig.recon[["male"]]) <- rownames(mig.recon[["female"]]) <- rownames(migtempl) # rownames should be the ages
 	    } else {
 		    mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, 
 		                                        #use.rc = inputs$mig.age.method == "rc", 
@@ -1636,14 +1644,14 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	    }
 	    mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
-			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
+			if(!is.null(inpc[[what.mig]]) && any(colSums(is.na(inpc[[what.mig]])) > 0)) {
 				# extract predicted migration
-				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
+				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]][, colSums(is.na(inpc[[what.mig]])) > 0]))
 				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 				rownames(inpc[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
 				# extract observed migration
 				if(!is.null(obs[[what.mig]])) {
-					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]]))
+					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]][, colSums(is.na(obs[[what.mig]])) > 0]))
 					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 					rownames(obs[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
 				}
