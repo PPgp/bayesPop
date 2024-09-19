@@ -529,7 +529,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl, mig.io = rc.inout, pop = popdt, #pop.glob = globpop,
+                                                           template = migtempl, mig.io = rc.inout, pop = popdt, pop.glob = globpop,
                                                           wpp.year = wpp.year)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       for(attrib in c("rate", "code", "rc.out")) {

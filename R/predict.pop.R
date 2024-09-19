@@ -1436,7 +1436,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, 
-		                                mig.io = mig.io, #pop.glob = globpop,
+		                                mig.io = mig.io, pop.glob = globpop,
 		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", 

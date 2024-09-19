@@ -312,10 +312,10 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             }
                             /* in-migration is already weighted by global pop and scaled to sum to 1 over sexes;
                              * out-migration needs to be weighted by pop */
-                            /*migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;*/
-                            migendm[i][jve] = 2*migendm[i][jve] * IMm + 2*migrcoutm[i] * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + 2*migrcoutf[i] * OMf;
+                            migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;
+                            /*migendm[i][jve] = 2*migendm[i][jve] * IMm + 2*migrcoutm[i] * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf + 2*migrcoutf[i] * OMf;*/
                             tmp = tmp + migendm[i][jve];
                             if((debug>=1) && (j==1)){
                                 Rprintf("\nAFTER: migendm[i][jve]= %f", migendm[i][jve]);
