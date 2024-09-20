@@ -290,11 +290,11 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         }
                     }
                     if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-total migration */
-                        IMm = fmax(tpopm * mig_io_b0 + totmigcountm * mig_io_b1, tpopm * mig_io_min);
-                        OMm = totmigcountm - IMm;
+                        IMm = tpopm * mig_io_b0 + totmigcountm * mig_io_b1;
+                        OMm = tpopm * mig_io_b0 - totmigcountm * mig_io_b1;
           
-                        IMf = fmax(tpopf * mig_io_b0 + totmigcountf * mig_io_b1, tpopf * mig_io_min);
-                        OMf = totmigcountf - IMf;
+                        IMf = tpopf * mig_io_b0 + totmigcountf * mig_io_b1;
+                        OMf = tpopf * mig_io_b0 - totmigcountf * mig_io_b1;
                         if((debug>=1)){
                             Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f", 
                                     IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve], mig_io_b0, mig_io_b1, mig_io_min);
@@ -312,10 +312,10 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             }
                             /* in-migration is already weighted by global pop and scaled to sum to 1 over sexes;
                              * out-migration needs to be weighted by pop */
-                            migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;
-                            /*migendm[i][jve] = 2*migendm[i][jve] * IMm + 2*migrcoutm[i] * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + 2*migrcoutf[i] * OMf;*/
+                            /*migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;*/
+                            migendm[i][jve] = 2*migendm[i][jve] * IMm - 2*migrcoutm[i] * OMm;
+                            migendf[i][jve] = 2*migendf[i][jve] * IMf - 2*migrcoutf[i] * OMf;
                             tmp = tmp + migendm[i][jve];
                             if((debug>=1) && (j==1)){
                                 Rprintf("\nAFTER: migendm[i][jve]= %f", migendm[i][jve]);
