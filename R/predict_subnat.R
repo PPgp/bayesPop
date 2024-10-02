@@ -317,7 +317,18 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     # Get age-specific migration
     mig.rc.inout <- NULL
     if(mig.age.method == "io"){
-      mig.rc.inout <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
+      if(is.null(inputs[["mig.io"]])){
+        # create a dataset of model Rogers-Castro 
+        migio <- data.table(age = ages.all(annual, observed = TRUE), 
+                            `in` = rcastro.schedule(annual))[, out := `in`]
+        mig.rc.inout <- migio[rep(migio[, .I], length(region.codes))]
+        mig.rc.inout[, country_code := rep(region.codes, each = nrow(migio))]
+        warning("Item 'mig.io' is missing for the migration IO method. Using model Rogers-Castro for both, in- and out-migration.")
+      } else {
+        mig.rc.inout <- data.table(swap.reg.code(read.pop.file(inputs[["mig.io"]])))
+        if(! "in" %in% colnames(mig.rc.inout) || ! "out" %in% colnames(mig.rc.inout))
+          stop("Column 'in' or 'out' is missing in the mig.io dataset.")
+      }
       if("MigIOb0" %in% colnames(MIGtype)){
           mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", "MigIOb0")], by = "country_code")
           setnames(mig.rc.inout, "MigIOb0", "beta0")   
@@ -485,14 +496,12 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                  rc.inout = NULL, pop = NULL, verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
-  inouts <- totpop <- NULL
   if(mig.age.method == "io"){ # need also population 
     popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
                               age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
                     data.table(pop))
     popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
     globpop <- popdt[, .(pop = sum(pop)), by = c("year", "age")]
-    #inouts <- merge(inouts, totpop, by = "country_code")
   }
   recon.mig <- NULL
   miginp <- list()
