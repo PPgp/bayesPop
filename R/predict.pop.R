@@ -916,6 +916,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 mig.io[, age := ifelse(age == "100", "100+", age)]
         }
         byio <- if(id.col %in% colnames(mig.io)) id.col else c()
+        #browser("")
         migiotmp <- merge(migtmp, mig.io, all.x = TRUE, by = c(byio, "age"))
         byio <- if(id.col %in% colnames(migiotmp)) id.col else c()
         if(!is.null(pop.glob)){
@@ -1428,7 +1429,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         migpred.raw <- data.table::fread(file=file.name, check.names=FALSE, blank.lines.skip = TRUE)
         if("Mig" %in% colnames(migpred.raw) && !"Migration" %in% colnames(migpred.raw)) # Both Mig and Migration are OK as column names
             colnames(migpred.raw)[colnames(migpred.raw) == "Mig"] <- "Migration"
-        cols.to.keep <- intersect(names(migtrajcols), colnames(migpred.raw))
+        cols.to.keep <- intersect(colnames(migpred.raw), names(migtrajcols))
         if(length((miss <- setdiff(setdiff(names(migtrajcols), "Age"), cols.to.keep)))>0)
             stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
         migpred <- as.data.frame(migpred.raw[, cols.to.keep, with = FALSE])
@@ -1444,7 +1445,19 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             assign(var.name, migpred)
         }
     }
-    return(list(M = migMpred, F = migFpred, B = migBpred, migcode = migcode))
+    if(mig.age.method == "io" && !is.null((file.name <- inputs[["migIOtraj"]]))){
+        migtrajcols <- list(LocID = "country_code", Trajectory = "trajectory", Age = "age", Value = "value", Parameter = "par")
+        if(!file.exists(file.name))
+            stop('File ', file.name, ' does not exist.')
+        if(verbose) cat('\nLoading ', file.name)
+        migio <- data.table::fread(file=file.name, check.names=FALSE, blank.lines.skip = TRUE)
+        cols.to.keep <- intersect(colnames(migio), names(migtrajcols))
+        if(length((miss <- setdiff(names(migtrajcols), cols.to.keep)))>0)
+            stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
+        migio <- migio[, cols.to.keep, with = FALSE]
+        colnames(migio) <- unlist(migtrajcols[cols.to.keep])
+    }
+    return(list(M = migMpred, F = migFpred, B = migBpred, migcode = migcode, migio = migio))
 }
 
 .get.migration.traj <- function(pred, par, country, ...) {
@@ -1458,11 +1471,20 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		migrate <- migratecode <- migio <- NULL
 		if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
 		    dfw <- dcast(data.table(migdf), trajectory ~ year)
+		    iotraj <- NULL
+		    if(pred$inputs$mig.age.method == "io" && !is.null(pred$inputs$migIOpred)){
+		        iotraj.traj <- unique(pred$inputs$migIOpred$trajectory)
+		        iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(iotraj.traj, nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
+		        iotraj <- pred$inputs$migIOpred[trajectory %in% iotraj.traj.index & country_code == country][, country_code := NULL]
+		        iotraj <- dcast(iotraj[par %in% c("in", "out")], trajectory + age ~ par, value.var = "value")
+		    }
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, 
-		                                mig.io = pred$ioinputs$mig.io, pop.glob = pred$ioinputs$globpop, # doesn't need pop as weighting by pop happens in CCM
+		                                #mig.io = pred$ioinputs$mig.io, 
+		                                mig.io = iotraj, 
+		                                pop.glob = pred$ioinputs$globpop, # doesn't need pop as weighting by pop happens in CCM
 		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", 

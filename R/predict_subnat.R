@@ -12,7 +12,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             e0F.file = NULL, e0M.file = NULL, tfr.file = NULL, 
                             e0F.sim.dir = NULL, e0M.sim.dir = NULL, 
                             tfr.sim.dir = NULL,
-                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
+                            migMtraj = NULL, migFtraj = NULL, migtraj = NULL, migIOtraj = NULL,
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
@@ -318,8 +318,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     mig.rc.inout <- NULL
     if(mig.age.method == "io"){
       if(is.null(inputs[["mig.io"]])){
-        # create a dataset of model Rogers-Castro 
-        migio <- data.table(age = ages.all(annual, observed = TRUE), 
+        # create a dataset of model Rogers-Castro
+        migio <- data.table(age = ages.all(annual, observed = TRUE),
                             `in` = rcastro.schedule(annual))[, out := `in`]
         mig.rc.inout <- migio[rep(migio[, .I], length(region.codes))]
         mig.rc.inout[, country_code := rep(region.codes, each = nrow(migio))]
@@ -392,6 +392,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     migMpred <- migpr$M
     migFpred <- migpr$F
     migBpred <- migpr$B
+    migIOpred <- migpr$migio
     has.mig.traj <- !is.null(migMpred) || !is.null(migFpred) || !is.null(migBpred)
     if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
     mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1],  
@@ -468,7 +469,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     inp <- new.env()
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
-                 'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
+                 'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'migIOpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
                  'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.inout', 'observed'))
         assign(par, get(par), envir=inp)
