@@ -1718,7 +1718,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
                                   age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
                        data.table(pop))
         res$popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
-        globpop <- res$popdt[, .(pop = sum(pop)), by = c("year", "age")]
+        res$globpop <- res$popdt[, .(pop = sum(pop)), by = c("year", "age")]
         res$mig.io <- mig.rc.inout
         if(is.null(res$mig.io)) stop("Dataset with in- and out-migration schedules is missing (input mig.io)")
         res$mig.io <- res$mig.io[country_code == country][, country_code := NULL]
