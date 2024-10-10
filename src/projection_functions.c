@@ -1,4 +1,6 @@
 #include <R.h>
+#include <Rmath.h>
+#include <R_ext/Random.h>
 #include <math.h>
 #include <float.h>
 #include <stdio.h>
@@ -70,7 +72,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double b, bm, bf, srb_ratio;
     int i, j, jve, adim, adim1, nrow, ncol, n, t, t1, t_offset;
 
-    int debug = 0; /* for testing*/
+    int debug = 0; /* for testing and debuging messages */
     
     adim = *nages;         /* number of age groups */
     adim1 = adim - 1;      /* Number of age groups minus one */
@@ -83,9 +85,10 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double migrcoutm[adim], migrcoutf[adim];
-    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, tmp, trxm, trxf;
-    double IMm, IMf, OMm, OMf;
+    double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f, tmp;
+    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf;
+    double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
+    double sigma_m[adim], sigma_f[adim];
     double mig_io_b0 = MIGio[0];
     double mig_io_b1 = MIGio[1];
     double mig_io_min = MIGio[2];
@@ -164,15 +167,18 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             }
         }
     }
+    migvm = RCoutm[0];
+    migvf = RCoutf[0];
     for(i=0; i<nrow; ++i) {		
-        migrcoutm[i] = RCoutm[i];
-        migrcoutf[i] = RCoutf[i];
+        migrcoutm[i] = RCoutm[i+1];
+        migrcoutf[i] = RCoutf[i+1];
     }
+
     for(i=nrow; i<nrow+adimdif; ++i) {
         migrcoutm[i] = 0;
         migrcoutf[i] = 0;
     }
- 
+    GetRNGstate();
     /* Population projection for one trajectory */
     for(j=1; j<(n+1); ++j) {
         jve = j-1;
@@ -200,7 +206,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                 popm[i + t] = popadjm[i-1][j] - cdeathsm[i] + migmidm[i][jve];
                 popf[i + t] = popadjf[i-1][j] - cdeathsf[i] + migmidf[i][jve];
             }
-            if((debug>=2) && (j==1)){
+            if((debug>=3) && (j==1)){
                 Rprintf("\ni = %i", i);
                 Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
                         popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
@@ -223,7 +229,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             bt[i-adimfert_start] = (popadjf[i][j] + current_popf) * asfr[i-adimfert_start + jve*adimfert] * 0.5;
             btagem[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] * srb_ratio;
             btagef[i-adimfert_start+jve*adimfert] = bt[i-adimfert_start] - btagem[i-adimfert_start+jve*adimfert];
-            if((debug>=2) && (*nobserved > 1)){
+            if((debug>=3) && (*nobserved > 1)){
                 Rprintf("\ni = %i", i);
                 Rprintf("\npopadjm[i-1][j]= %f, srm[i+t_offset]= %f, cdeathsm[i]= %f, migendm[i][jve]= %f, popm[i+t]= %f",
                         popadjm[i-1][j], srm[i + t_offset], cdeathsm[i], migendm[i][jve], popm[i + t]);
@@ -295,37 +301,78 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
           
                         IMf = fmax(tpopf * mig_io_b0 + totmigcountf * mig_io_b1, tpopf * mig_io_min);
                         OMf = totmigcountf - IMf;
+                        
                         if((debug>=1)){
+                            Rprintf("\nj = %i", j);
                             Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f", 
                                     IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve], mig_io_b0, mig_io_b1, mig_io_min);
+                            Rprintf("\nIMf = %f, OMf = %f, migcountf = %f, tpopf = %f, rate = %f", 
+                                    IMf, OMf, totmigcountf, tpopf, MIGratef[jve]);
                         }
+                        /* compute denominator for population weights*/
                         trxm = 0; trxf = 0;
                         for(i=0; i < adim; ++i) {
                             trxm = trxm + migrcoutm[i] * popm[i + t];
                             trxf = trxf + migrcoutf[i] * popf[i + t];
                         }
+                        tsgm = 0; tsgf = 0; ssigma_m = 0; ssigma_f = 0;
                         for(i=0; i < adim; ++i) { 
-                            if((debug>=1) && (j==1)){
+                            if((debug>=2) && (j==1)){
                                 Rprintf("\ni = %i", i);
                                 Rprintf("\nmigendm[i][jve]= %f, RCstaroutm[i]= %f, popm[i+t]= %f",
                                         2*migendm[i][jve], migrcoutm[i]* popm[i + t]/trxm, popm[i + t]);
                             }
                             /* in-migration is already weighted by global pop and scaled to sum to 1 over sexes;
-                             * out-migration needs to be weighted by pop */
-                            migendm[i][jve] = 2*migendm[i][jve] * IMm + migrcoutm[i]* popm[i + t]/trxm * OMm;
-                            migendf[i][jve] = 2*migendf[i][jve] * IMf + migrcoutf[i]* popf[i + t]/trxf * OMf;
-                            tmp = tmp + migendm[i][jve];
-                            if((debug>=1) && (j==1)){
-                                Rprintf("\nAFTER: migendm[i][jve]= %f", migendm[i][jve]);
+                             * out-migration needs to be weighted by pop;
+                             * out-migration is negative */
+                            iota_m = 2*migendm[i][jve] * IMm;
+                            iota_f = 2*migendf[i][jve] * IMf;
+                            o_m = migrcoutm[i]*popm[i + t]/trxm * OMm;
+                            o_f = migrcoutf[i]*popf[i + t]/trxf * OMf;
+                            sigma_m[i] = fmin(sqrt((iota_m - o_m)/migvm), (popm[i + t]+minpop)/2);
+                            sigma_f[i] = fmin(sqrt((iota_f - o_f)/migvf), (popf[i + t]+minpop)/2);
+                            migendm[i][jve] = rnorm(iota_m + o_m, sigma_m[i]);
+                            migendf[i][jve] = rnorm(iota_f + o_f, sigma_f[i]);
+                            tsgm = tsgm + migendm[i][jve];
+                            tsgf = tsgf + migendf[i][jve];
+                            ssigma_m = ssigma_m + sigma_m[i];
+                            ssigma_f = ssigma_f + sigma_f[i];
+                            /*migendm[i][jve] = iota_m + o_m;
+                            migendf[i][jve] = iota_f + o_f;*/
+                            /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])) debug = 1;*/
+                            if((debug>=2) && (j==1)){
+                            /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])){*/
+                                Rprintf("\nRCoutm[i]= %f, RCstaroutm[i]= %f, popm[i+t]= %f",
+                                        migrcoutm[i], migrcoutm[i]* popm[i + t]/trxm, popm[i + t]);
+                                Rprintf("\nRCoutf[i]= %f, RCstaroutf[i]= %f, popf[i+t]= %f",
+                                        migrcoutf[i], migrcoutf[i]* popf[i + t]/trxf, popf[i + t]);
+                                Rprintf("\niota_m = %f, o_m = %f, v = %f, mean = %f, sd = %f", 
+                                        iota_m, o_m, migvm, iota_m + o_m, sigma_m[i]);
+                                Rprintf("\niota_f = %f, o_f = %f, v = %f, mean = %f, sd = %f", 
+                                        iota_f, o_f, migvf, iota_f + o_f, sigma_f[i]);
+                                Rprintf("\nAFTER: migendm[i][jve]= %f, migendf[i][jve]= %f", migendm[i][jve], migendf[i][jve]);
                             }
                         }
                         if((debug>=1)){
-                            Rprintf("\nAFTER: sum(migendm)= %f", tmp);
+                            Rprintf("\nAFTER (no scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
+                        }
+                        Cm = tsgm - (IMm + OMm);
+                        Cf = tsgf - (IMf + OMf);
+                        tsgm = 0; tsgf = 0;
+                        for(i=0; i < adim; ++i) { 
+                            migendm[i][jve] = migendm[i][jve] - sigma_m[i]/ssigma_m * Cm;
+                            migendf[i][jve] = migendf[i][jve] - sigma_f[i]/ssigma_f * Cf;
+                            tsgm = tsgm + migendm[i][jve];
+                            tsgf = tsgf + migendf[i][jve];
+                        }
+                        
+                        if((debug>=1)){
+                            Rprintf("\nAFTER (scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
                         }
                      }
-                    if(debug>=2 && jve > 9 && totmigcount > 0){
+                    if(debug>=3 && jve > 9 && totmigcount > 0){
                         Rprintf("\ntotmigcount = %f, tpopm = %f, tpopf = %f, sum(migendm) = %f, migendm[5] = %f, migendm[10] = %f, migendf[10] = %f",  
-                                totmigcount, tpopm, tpopf, tmp, migendm[5][jve], migendm[10][jve], migendf[10][jve]);
+                                totmigcount, tpopm, tpopf, tsgm, migendm[5][jve], migendm[10][jve], migendf[10][jve]);
                     }
                 } else { /* MIGratecode[jve] == 3; the schedules are the final age-specific rates */
                     for(i=0; i < adim; ++i) { 
@@ -338,21 +385,35 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             /* add migration at the end of the interval, adjust negative population and compute total pop */
             totp[j] = 0;
             for(i=0; i < adim; ++i) {
-                if(migendm[i][jve] < 0)
+                if(migendm[i][jve] < 0){
+                    if(debug == 1)
+                        Rprintf("\nadjusting before: j = %i, i = %i, popm[i+t] = %f, migendm[i][jve] = %f", j, i, popm[i+t], migendm[i][jve]);
                     migendm[i][jve] = fmin(0, fmax(migendm[i][jve], -popm[i+t] + minpop)); /* adjust migration if it would yield negative population */
+                    if(debug == 1)
+                        Rprintf("\nadjusting after: migendm[i][jve] = %f", migendm[i][jve]);
+                }
                 popm[i+t] = popm[i + t] + migendm[i][jve];
-                if(migendf[i][jve] < 0)
+                if(migendf[i][jve] < 0){
+                    if(debug == 1)
+                        Rprintf("\nj = %i, i = %i, popf[i+t] = %f, migendf[i][jve] = %f", j, i, popf[i+t], migendf[i][jve]);
                     migendf[i][jve] = fmin(0, fmax(migendf[i][jve], -popf[i+t] + minpop));
+                    if(debug == 1)
+                        Rprintf("\nadjusting after: migendf[i][jve] = %f", migendf[i][jve]);
+                }
                 popf[i+t] = popf[i + t] + migendf[i][jve];
+
                 totp[j] += popm[i + t] + popf[i + t]; 
             }
         }
-        
+        tmptotmig = 0;
         for(i=0; i < nrow; ++i) {
             finmigm[i + jve*nrow] = migstartm[i][jve] + migmidm[i][jve] + migendm[i][jve];
             finmigf[i + jve*nrow] = migstartf[i][jve] + migmidf[i][jve] + migendf[i][jve];
+            tmptotmig = tmptotmig + finmigm[i + jve*nrow] + finmigf[i + jve*nrow];
         }
-        
+        if((debug>=1)){
+            Rprintf("\nTOTAL MIGRATION = %f", tmptotmig);
+        }
         /**************************************************************************/
         /* period deaths                                                          */
         /* 1. calculated cohort separation factors                                */
@@ -394,4 +455,5 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
         deathsm[adim1 + t_offset] = cdeathsm[adim1] * (1-csfm[adim1-1]); 
         deathsf[adim1 + t_offset] = cdeathsf[adim1] * (1-csff[adim1-1]);
     }
+    PutRNGstate();
 }

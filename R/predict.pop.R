@@ -219,6 +219,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, estim.years=inp$estim.years, 
 															mig.rate.code = inp$mig.rate.code[1], annual = inp$annual)
 		tfr.med <- apply(inpc$TFRpred, 1, median, na.rm = TRUE)[nrow(inpc$TFRpred)]
+		# iterate over trajectories
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			if(!fixed.pasfr) 
@@ -242,8 +243,9 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				    rates <- attr(inpc[[par]], "rate")[itraj,]
 				    rate.codes <- attr(inpc[[par]], "code")[itraj,]
 				}
-				if(!is.null(inpc[[par]]) && "rc.out" %in% names(attributes(inpc[[par]])))
-				    rcout <- attr(inpc[[par]], "rc.out")
+				if(!is.null(inpc[[par]]) && "rc.out" %in% names(attributes(inpc[[par]]))) 
+				    rcout <- attr(inpc[[par]], "rc.out")[trajectory == itraj][, trajectory := NULL]
+				    
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 				if(!is.null(rates)) {
 				    attr(migpred[[sex]], "rate") <- rates
@@ -959,7 +961,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in)), by = c(id.col, "year")]
             # here we are passing the in-migration already weighted by population; 
             # the out-migration will be weighted within the CCM using pop of the predicted year
-            migtmp[migiotmp, `:=`(prop = scale * rxstar_in / i.rxstar_in_denom, prop.out = scale * i.out), on = c(id.col, "age", "year")]
+            migtmp[migiotmp, `:=`(prop = scale * rxstar_in / i.rxstar_in_denom, prop.out = scale * i.out, v = i.v), 
+                   on = c(id.col, "age", "year")]
         }
         #browser()
     }
@@ -1086,12 +1089,12 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         if(method == "io"){
             iotmp <- migtmp[year == min(year)]
             iocol <- id.col
-            if(length(country_code) == 1){ # Select values only for 1 trajectory as they are the same
-                iotmp <- iotmp[iotmp[[id.col]] == min(iotmp[[id.col]])]
-                iotmp[[id.col]] <- NULL
-                iocol <- c()
-            }
-            res.io <- iotmp[, c(iocol, "age", "prop.out"), with = FALSE]
+            #if(length(country_code) == 1){ # Select values only for 1 trajectory as they are the same
+            #    iotmp <- iotmp[iotmp[[id.col]] == min(iotmp[[id.col]])]
+            #    iotmp[[id.col]] <- NULL
+            #    iocol <- c()
+            #}
+            res.io <- iotmp[, c(iocol, "age", "prop.out", "v"), with = FALSE]
             attr(res, "rc.out") <- res.io
             migtmp[, rate_code := 4]
             #stop("")
@@ -1476,14 +1479,21 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		        iotraj.traj <- unique(pred$inputs$migIOpred$trajectory)
 		        iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(iotraj.traj, nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
 		        iotraj <- pred$inputs$migIOpred[trajectory %in% iotraj.traj.index & country_code == country][, country_code := NULL]
-		        iotraj <- dcast(iotraj[par %in% c("in", "out")], trajectory + age ~ par, value.var = "value")
+		        iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index 
+		        iotrajw <- dcast(iotraj[par %in% c("in", "out")], trajectory + age ~ par, value.var = "value")
+		        #iotrajw[, trajectory := as.integer(trajectory)]
+		        if("v" %in% iotraj$par){
+		            iotrajw[iotraj[par == "v"], v := i.value, on = "trajectory"]
+		            #iotrajw <- merge(iotrajw, iotraj[par == "v", c("trajectory", "value")], by = "trajectory")
+		            #setnames(iotrajw, "value", "v")
+		        } else iotrajw[, v := 1]
 		    }
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, 
 		                                #mig.io = pred$ioinputs$mig.io, 
-		                                mig.io = iotraj, 
+		                                mig.io = iotrajw, 
 		                                pop.glob = pred$ioinputs$globpop, # doesn't need pop as weighting by pop happens in CCM
 		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
 		                                )
@@ -1499,8 +1509,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    }
 		    if("rc.out" %in% names(attributes(adf))) {
 		        migiodt <- attr(adf, "rc.out")
-		        migio <- migiodt[["prop.out"]]
-		        names(migio) <- migiodt[["age"]]
+		        ages <- unique(migiodt$age)
+		        migio <- dcast(migiodt, trajectory ~ age, value.var = "prop.out") # columns come out sorted with 9 > 89 etc.
+		        migio <- migio[, c("trajectory", ages), with = FALSE]
+		        migio <- merge(migiodt[, list(v = v[1]), by = "trajectory"], migio, by = "trajectory")
+		        #names(migio) <- migiodt[["age"]]
 		    }
 		}
 		#migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
@@ -2009,7 +2022,11 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		if(is.null(inpc[[par]])) next
 	    rates <- if("rate" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "rate")[indices[[par]], , drop=FALSE] else NULL
 	    ratecodes <- if("code" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "code")[indices[[par]], , drop=FALSE] else NULL
-	    migio <- if("rc.out" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "rc.out") else NULL
+	    migio <- NULL
+	    if("rc.out" %in% names(attributes(inpc[[par]]))) {
+	        migio <- attr(inpc[[par]], "rc.out")[trajectory %in% indices[[par]]]
+	        migio[, trajectory := .GRP, by = "trajectory"]
+	    }
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE] # age-specific, thus 3-d arrays
 		if(!is.null(rates)) {
 		    attr(inpc[[par]], "rate") <- rates
@@ -2387,6 +2404,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
                        keep.vital.events=FALSE, annual = FALSE) {
     change.by.gq <- function(gq, pop, factor = -1){
         pop <- pop + factor * gq
+        if(is.null(dim(pop))) return(pmax(pop, 0))
+        return(apply(pop, 2, pmax, 0))
     }
     nagecat <- age.length.all(annual, observed = FALSE)
     nbagecat <- age.length.fert(annual)
@@ -2413,8 +2432,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	if(is.null((migrateF <- attr(migF, "rate")))) migrateF <- rep(0, npred)
 	if(is.null((migratecodeM <- attr(migM, "code")))) migratecodeM <- rep(0, npred)
 	if(is.null((migratecodeF <- attr(migF, "code")))) migratecodeF <- rep(0, npred)
-	if(is.null((rcoutM <- attr(migM, "rc.out")))) rcoutM <- rep(0, nagecat)
-	if(is.null((rcoutF <- attr(migF, "rc.out")))) rcoutF <- rep(0, nagecat)
+	if(is.null((rcoutM <- attr(migM, "rc.out")))) rcoutM <- c(1, rep(0, nagecat)) # first value is the variance parameter "v"
+	if(is.null((rcoutF <- attr(migF, "rc.out")))) rcoutF <- c(1, rep(0, nagecat))
 	
 	finmigM <- as.numeric(migM)
 	finmigF <- as.numeric(migF)
