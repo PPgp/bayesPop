@@ -397,7 +397,7 @@ is.saved.pi <- function(pop.pred, pi, warning=TRUE) {
 }
 
 get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index, country.code, year.index,
-									trajectories=NULL, pi=80, q=NULL, ...) {
+									trajectories=NULL, pi=80, q=NULL, reload = FALSE, ...) {
 	# quantile.array should be 4d-array (country x age x quantiles x time)
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
@@ -415,12 +415,30 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 		} 
 	}
 	if(!found) { # non-standard quantiles
-		if(is.null(trajectories)) {
+		if(is.null(trajectories) && !reload) {
 			warning('Quantiles not found')
 			return(NULL)	
 		}
-		cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, 
-						quantile, al, na.rm = TRUE)
+	    do.reload <- FALSE
+	    if (is.null(trajectories)) {
+	        if(pop.pred$nr.traj > 0) do.reload <- TRUE
+	    } else { 
+	        if (dim(trajectories)[3] < 2000 && pop.pred$nr.traj > dim(trajectories)[3] && reload) do.reload <- TRUE
+	    }
+	    if(do.reload) {
+	        #load 2000 trajectories maximum (quantiles are computed from all trajectories)
+	        traj.reload <- get.pop.trajectories.multiple.age(pop.pred, country.code, nr.traj=2000, ...)
+	        trajectories <- traj.reload$trajectories
+	    }
+	    if (!is.null(trajectories)) {
+	        if(length(dim(trajectories)) < 3) trajectories <- abind(trajectories, along=3) # only one trajectory
+	        if(length(year.index) == 1){
+		        cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, quantile, al, na.rm = TRUE)
+	        } else cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), quantile, al, na.rm = TRUE)
+	    } else {
+	        warning('Quantiles not found')
+	        return(NULL)
+	    }
 	}
 	return(cqp)
 }
@@ -429,7 +447,7 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL, country.code=NULL, 
 									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
 	# quantile.array should be 3d-array (country x quantiles x time). 
-	# If country.index is NULL or there is just one country in the prediciton object, 
+	# If country.index is NULL or there is just one country in the prediction object, 
     # the country dimension can be omitted 
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE

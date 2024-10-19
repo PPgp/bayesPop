@@ -2512,44 +2512,79 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) age.index <- !age.index
 	ages <- 1:length(pop.pred$ages)
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+	age.lables <- get.age.labels(pop.pred$ages, single.year = pop.pred$annual)
+    sex <- NULL # to make CRAN check happy
+	all.quantiles <- NULL
+	if(byage && bysex && is.null(vital.event)){
+	    # preload the quantiles (saves tons of time)
+	    all.quantiles[["male"]] <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	    all.quantiles[["female"]] <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	}
+	subtract.from.age <- 0
 	observed.data <- NULL
 	for (country in 1:nrow(pop.pred$countries)) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
-		for(sex in c('both', 'male', 'female')[sex.index]) {
+		for(sx in c('both', 'male', 'female')[sex.index]) {
+		    quant.all.ages <- NULL
 			if(!is.null(vital.event)) {
 			 	sum.over.ages <- age.index[1]
 			 	if(include.observed) 
 			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
-										sex=sex, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
+										sex=sx, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
-										sex=sex, age='all', sum.over.ages=sum.over.ages)
+										sex=sx, age='all', sum.over.ages=sum.over.ages)
 				if(is.null(traj.and.quantiles$trajectories)) {
 					warning('Problem with loading ', vital.event, '. Possibly no vital events stored during prediction.')
 					return()
 				}
-				if(!sum.over.ages) { # This is because births have only subset of ages
+				if(!sum.over.ages) { 
+				    quant.all.ages[["50"]] <- traj.and.quantiles$quantiles[,"0.5",]
+				    quant.all.ages[["80"]] <- abind(traj.and.quantiles$quantiles[,"0.1",], 
+				                                    traj.and.quantiles$quantiles[,"0.9",],
+				                                    along = 0)
+				    quant.all.ages[["95"]] <- abind(traj.and.quantiles$quantiles[,"0.025",], 
+				                                    traj.and.quantiles$quantiles[,"0.975",],
+				                                    along = 0)
+				    # This is because births have only subset of ages
 					ages <- traj.and.quantiles$age.idx.raw
 					age.index <- age.index[1:(length(ages)+1)]
 					subtract.from.age <- traj.and.quantiles$age.idx.raw[1]-traj.and.quantiles$age.idx[1]
 				}
-				
-			}
+			} else {
+		        if(sx == "both" && byage){ # if sx is not 'both', then we already have the quantiles pre-computed in all.quantiles
+		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, adjust = adjust)$trajectories
+		            quant.all.ages[["50"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, q=0.5, 
+		                                            trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		            quant.all.ages[["80"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 80, 
+		                                                                    trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		            quant.all.ages[["95"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 95, 
+		                                                                   trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		        }
+		    }
 			for(age in c('all', ages)[age.index]) {
-				this.result <- cbind(
-							country.name=rep(country.obj$name, nr.var), 
-							country.code=rep(country.obj$code, nr.var),
-							variant=variant.names)
-				if(sex != 'both')
-					this.result <- cbind(this.result, sex=rep(sex, nr.var))
-				if(age != 'all') {
-					age <- as.integer(age)
-					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages, single.year = pop.pred$annual)[age], nr.var))
+				this.result <- data.table::data.table(
+							        country.name=country.obj$name, 
+							        country.code=country.obj$code,
+							        variant=variant.names
+							        )
+				if(sx != 'both')
+					this.result <- this.result[ , sex := sx]
+				this.age <- age
+				if(this.age != 'all') {
+					this.age <- as.integer(this.age)
+					this.result <- this.result[, age := age.lables[this.age]]
 				}
 				if(is.null(vital.event)) {
 					if(include.observed) 
-						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
-					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, 
+						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sx, age=this.age)
+					quant <- NULL
+					if(!is.null(all.quantiles))
+					    quant <- all.quantiles[[sx]][,this.age,,]
+				    else {
+				        if(is.null(quant.all.ages)) 
+				            quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sx, age=this.age, 
 					                              adjust=adjust, allow.negative.adj = allow.negative.adj)$quantiles
+				    }
 					traj <- NULL
 					reload <- TRUE
 				} else { # vital event
@@ -2558,26 +2593,34 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					if(include.observed)
 						observed.data <- observed$trajectories[,,1]
 					if(!sum.over.ages) {
-						quant <- quant[age-subtract.from.age,,]
-						traj <- traj[age-subtract.from.age,,]
+						#quant <- quant[this.age-subtract.from.age,,]
+						#traj <- traj[this.age-subtract.from.age,,]
 						if(include.observed) {
-							if (age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
+							if (this.age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
 								observed.data <- rep(0, ncol(observed.data))
 							else
-								observed.data <- observed.data[age-subtract.from.age,]
+								observed.data <- observed.data[this.age-subtract.from.age,]
 						}
 					}
 					reload <- FALSE
-					#stop('')
 				}
-				proj.result <- round(rbind(
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
-											trajectories=traj, reload=reload, sex=sex, age=age), 
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
-											trajectories=traj, reload=reload, sex=sex, age=age),
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
-											trajectories=traj, reload=reload, sex=sex, age=age)),
-					digits)
+				if(is.null(quant.all.ages)){
+				    #browser()
+			        proj.result <- rbind(
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age), 
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age),
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age))
+			     } else { 
+			        proj.result <- rbind(quant.all.ages[["50"]][this.age-subtract.from.age,],
+							            quant.all.ages[["80"]][,this.age-subtract.from.age,],
+							            quant.all.ages[["95"]][,this.age-subtract.from.age,]
+							        )
+			     }
+				 proj.result <- round(proj.result, digits)
+
 				if(!is.null(observed.data)) {
 					# put it into the same shape as proj.result minus the last observed
 					observed.data <- round(rbind(observed.data, NULL), digits)
@@ -2585,17 +2628,15 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					proj.result <- cbind(observed.data, proj.result)
 				}
 				colnames(proj.result) <- col.names
-				#stop('')
-				this.result <- cbind(this.result, proj.result)
+				this.result <- cbind(this.result, data.table::data.table(proj.result))
 				result <- rbind(result, this.result)
 			}
 		}
 	}
-	colnames(result)[colnames(result)==names(header)] <- header
-	suffix <- paste(file.suffix, paste(c('sex', 'age')[c(bysex, byage)], collapse=''), sep='')
-	file <- paste('projection_summary_', suffix, '.csv', sep='')
-	write.table(result, file=file.path(output.dir, file), sep=',', row.names=FALSE, col.names=TRUE, 
-				quote=which(is.element(colnames(result), c('country_name', 'variant', 'sex', 'age'))))
+	colnames(result)[colnames(result)==names(header)] <- unlist(header)
+	suffix <- paste0(file.suffix, paste(c('sex', 'age')[c(bysex, byage)], collapse=''))
+	file <- paste0('projection_summary_', suffix, '.csv')
+	data.table::fwrite(result, file=file.path(output.dir, file), sep=',',  quote=TRUE)
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 

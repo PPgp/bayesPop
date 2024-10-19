@@ -1,6 +1,8 @@
-10.0-1.900x (09/18/2024)
+10.0-1.90xx (10/18/2024)
 ------
 Added vwBaseYear2024 dataset.
+
+Performance improvements in write.pop.projection.summary().
 
 Incorporated use of 2024 migration dataset by age.
 
