@@ -1064,9 +1064,19 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012 and for projections in wpp2024)
             miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
             if(length((missing.years <- setdiff(periods, colnames(miginp[[inpname]])))) > 0){ #for wpp2024 only projected years available, so attach the remaining years
-                miginp[[inpname]] <- data.frame(merge(migtempl[, c("country_code", "age", missing.years), with = FALSE], 
+                missing.mig.data <- bayesTFR:::load.from.wpp("migration", wpp.year, annual = annual)[, c("country_code", as.character(missing.years))]
+                missing.migage.data <- data.frame(migration.totals2age(missing.mig.data,
+                                                                       ages = migtempl$age[age.index.all(annual, observed = TRUE)],
+                                                                       annual = annual, time.periods = missing.years,
+                                                                       scale = if(is.null(inputs[[fname]])) 0.5 else 1,
+                                                                       method = mig.age.method,
+                                                                       sex = sex, template = migtempl,
+                                                                       alt.schedule.file = inputs$mig.alt.age.schedule,
+                                                                       wpp.year = wpp.year), 
+                                                  check.names = FALSE)
+                miginp[[inpname]] <- data.frame(merge(missing.migage.data, 
                                            miginp[[inpname]][, setdiff(colnames(miginp[[inpname]]), "name")],
-                                           by = c("country_code", "age")), check.names = FALSE)
+                                           by = c("country_code", "age"), sort = FALSE), check.names = FALSE)
             }
             next
         }
