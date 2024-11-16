@@ -60,7 +60,7 @@ void printArray(double *a, int count) {
  
 void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, int *migr, int *migc,
                      int *MIGtype, double *MIGratem, double *MIGratef, int *MIGratecode, 
-                     double *RCoutm, double *RCoutf, double *MIGio,
+                     double *RCoutm, double *RCoutf, double *MIGfdm,
                      double *srm, double *srf, double *asfr, double *srb, 
                      double *Lm, double *Lf, double *lxm, double *lxf,
                      int *nages, int *nfages, int *fstart, 
@@ -86,12 +86,15 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
     double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f, tmp;
-    double totmigcount, totmigcountm, totmigcountf, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf;
+    double totmigcount, totmigcountm, totmigcountm_in, totmigcountf, totmigcountf_in
+    double tpop, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf;
     double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
     double sigma_m[adim], sigma_f[adim];
-    double mig_io_b0 = MIGio[0];
-    double mig_io_b1 = MIGio[1];
-    double mig_io_min = MIGio[2];
+    double mig_fdm_b0 = MIGfdm[0];
+    double mig_fdm_b1 = MIGfdm[1];
+    double mig_fdm_min = MIGfdm[2];
+    double mig_fdm_sr_in = MIGfdm[3];
+    double mig_fdm_sr_out = MIGfdm[4];
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -262,13 +265,14 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                     }
                 }
                 
-                if(MIGratecode[jve] < 3 || MIGratecode[jve] == 4){ /* need to disaggregate into ages */
+                if(MIGratecode[jve] < 3 || MIGratecode[jve] == 4 || MIGratecode[jve] == 5){ /* need to disaggregate into ages */
                     /* sum population together */
                     tpopm = 0; tpopf = 0;
                     for(i=0; i < adim; ++i) {
                         tpopm = tpopm + popm[i + t];
                         tpopf = tpopf + popf[i + t];
                     }
+                    tpop = tpopf + tpopm;
                     /* total migration count; not more than 80% of total population can leave */ 
                     totmigcountm = fmax(MIGratem[jve], max_out_rate) * tpopm;
                     totmigcountf = fmax(MIGratef[jve], max_out_rate) * tpopf;
@@ -295,25 +299,35 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             }
                         }
                     }
-                    if(MIGratecode[jve] == 4){ /* I/O method; need to compute In- and Out-total migration */
-                        IMm = fmax(tpopm * mig_io_b0 + totmigcountm * mig_io_b1, tpopm * mig_io_min);
-                        OMm = totmigcountm - IMm;
-          
-                        IMf = fmax(tpopf * mig_io_b0 + totmigcountf * mig_io_b1, tpopf * mig_io_min);
-                        OMf = totmigcountf - IMf;
+                    if(MIGratecode[jve] == 4 || MIGratecode[jve] == 5){ /* FDM method; need to compute In- and Out-total migration */
+                        totmigcountm_in = totmigcount * (1 - mig_fdm_sr_in);
+                        totmigcountf_in = totmigcount * mig_fdm_sr_in;
+                        IM = fmax(tpop * mig_fdm_b0 + totmigcount * mig_fdm_b1, tpop * mig_fdm_min);
+                        OM = totmigcount - IM;
+                        IMm = IM * (1 - mig_fdm_sr_in);
+                        OMm = OM * (1 - mig_fdm_sr_out);
+                        IMf = IM * mig_fdm_sr_in;
+                        OMf = OM * mig_fdm_sr_out;
                         
                         if((debug>=1)){
                             Rprintf("\nj = %i", j);
-                            Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f", 
-                                    IMm, OMm, totmigcountm, tpopm, totmigcount, MIGratem[jve], mig_io_b0, mig_io_b1, mig_io_min);
+                            Rprintf("\nIMm = %f, OMm = %f, migcountm = %f, tpopm = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f, sr = %f", 
+                                    IMm, OMm, totmigcountm_in, tpopm, totmigcount, MIGratem[jve], mig_fdm_b0, mig_fdm_b1, mig_fdm_min, mig_fdm_sr_in);
                             Rprintf("\nIMf = %f, OMf = %f, migcountf = %f, tpopf = %f, rate = %f", 
-                                    IMf, OMf, totmigcountf, tpopf, MIGratef[jve]);
+                                    IMf, OMf, totmigcountf_in, tpopf, MIGratef[jve]);
                         }
                         /* compute denominator for population weights*/
                         trxm = 0; trxf = 0;
-                        for(i=0; i < adim; ++i) {
-                            trxm = trxm + migrcoutm[i] * popm[i + t];
-                            trxf = trxf + migrcoutf[i] * popf[i + t];
+                        if(MIGratecode[jve] == 5){
+                            for(i=0; i < adim; ++i) {
+                                trxm = trxm + migrcoutm[i] * popm[i + t];
+                                trxf = trxf + migrcoutf[i] * popf[i + t];
+                            }
+                        } else { /* no population weighting */
+                            for(i=0; i < adim; ++i) {
+                                trxm = trxm + migrcoutm[i];
+                                trxf = trxf + migrcoutf[i];
+                            }
                         }
                         tsgm = 0; tsgf = 0; ssigma_m = 0; ssigma_f = 0;
                         for(i=0; i < adim; ++i) { 
@@ -322,23 +336,30 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                                 Rprintf("\nmigendm[i][jve]= %f, RCstaroutm[i]= %f, popm[i+t]= %f",
                                         2*migendm[i][jve], migrcoutm[i]* popm[i + t]/trxm, popm[i + t]);
                             }
-                            /* in-migration is already weighted by global pop and scaled to sum to 1 over sexes;
-                             * out-migration needs to be weighted by pop;
+                            /* in-migration is possibly already weighted by global pop and scaled to sum to 1 over sexes;
+                             * out-migration needs to be weighted by pop if needed;
                              * out-migration is negative */
-                            iota_m = 2*migendm[i][jve] * IMm;
-                            iota_f = 2*migendf[i][jve] * IMf;
-                            o_m = migrcoutm[i]*popm[i + t]/trxm * OMm;
-                            o_f = migrcoutf[i]*popf[i + t]/trxf * OMf;
-                            sigma_m[i] = fmin(sqrt((iota_m - o_m)/migvm), (popm[i + t]+minpop)/2);
-                            sigma_f[i] = fmin(sqrt((iota_f - o_f)/migvf), (popf[i + t]+minpop)/2);
-                            migendm[i][jve] = rnorm(iota_m + o_m, sigma_m[i]);
-                            migendf[i][jve] = rnorm(iota_f + o_f, sigma_f[i]);
-                            tsgm = tsgm + migendm[i][jve];
-                            tsgf = tsgf + migendf[i][jve];
-                            ssigma_m = ssigma_m + sigma_m[i];
-                            ssigma_f = ssigma_f + sigma_f[i];
-                            /*migendm[i][jve] = iota_m + o_m;
-                            migendf[i][jve] = iota_f + o_f;*/
+                            iota_m = migendm[i][jve] * IMm;
+                            iota_f = migendf[i][jve] * IMf;
+                            o_m = migrcoutm[i]/trxm * OMm;
+                            o_f = migrcoutf[i]/trxf * OMf;
+                            if(MIGratecode[jve] == 5){
+                                o_m = o_m[i]*popm[i + t];
+                                o_f = o_f[i]*popf[i + t];
+                            }
+                            if(MIGratecode[jve] == 5){
+                                sigma_m[i] = fmin(sqrt((iota_m - o_m)/migvm), (popm[i + t]+minpop)/2);
+                                sigma_f[i] = fmin(sqrt((iota_f - o_f)/migvf), (popf[i + t]+minpop)/2);
+                                migendm[i][jve] = rnorm(iota_m + o_m, sigma_m[i]);
+                                migendf[i][jve] = rnorm(iota_f + o_f, sigma_f[i]);
+                                tsgm = tsgm + migendm[i][jve];
+                                tsgf = tsgf + migendf[i][jve];
+                                ssigma_m = ssigma_m + sigma_m[i];
+                                ssigma_f = ssigma_f + sigma_f[i];
+                            } else {
+                                migendm[i][jve] = iota_m + o_m;
+                                migendf[i][jve] = iota_f + o_f;
+                            }
                             /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])) debug = 1;*/
                             if((debug>=2) && (j==1)){
                             /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])){*/
@@ -356,18 +377,20 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         if((debug>=1)){
                             Rprintf("\nAFTER (no scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
                         }
-                        Cm = tsgm - (IMm + OMm);
-                        Cf = tsgf - (IMf + OMf);
-                        tsgm = 0; tsgf = 0;
-                        for(i=0; i < adim; ++i) { 
-                            migendm[i][jve] = migendm[i][jve] - sigma_m[i]/ssigma_m * Cm;
-                            migendf[i][jve] = migendf[i][jve] - sigma_f[i]/ssigma_f * Cf;
-                            tsgm = tsgm + migendm[i][jve];
-                            tsgf = tsgf + migendf[i][jve];
-                        }
+                        if(MIGratecode[jve] == 5){ /* scale to the orig total migration */
+                            Cm = tsgm - (IMm + OMm);
+                            Cf = tsgf - (IMf + OMf);
+                            tsgm = 0; tsgf = 0;
+                            for(i=0; i < adim; ++i) { 
+                                migendm[i][jve] = migendm[i][jve] - sigma_m[i]/ssigma_m * Cm;
+                                migendf[i][jve] = migendf[i][jve] - sigma_f[i]/ssigma_f * Cf;
+                                tsgm = tsgm + migendm[i][jve];
+                                tsgf = tsgf + migendf[i][jve];
+                            }
                         
-                        if((debug>=1)){
-                            Rprintf("\nAFTER (scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
+                            if((debug>=1)){
+                                Rprintf("\nAFTER (scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
+                            }
                         }
                      }
                     if(debug>=3 && jve > 9 && totmigcount > 0){
