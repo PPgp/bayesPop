@@ -86,9 +86,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
     double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f, tmp;
-    double totmigcount, totmigcountm, totmigcountm_in, totmigcountf, totmigcountf_in
+    double totmigcount, totmigcountm, totmigcountm_in, totmigcountf, totmigcountf_in;
     double tpop, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf;
-    double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
+    double IM, OM, IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
     double sigma_m[adim], sigma_f[adim];
     double mig_fdm_b0 = MIGfdm[0];
     double mig_fdm_b1 = MIGfdm[1];
@@ -119,6 +119,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
      *      1: the age schedules are proportions
      *      2: the age schedules are totals (used for schedules that have positive as well as negative parts)
      *      3: the age schedules are the actual final age-specific rates (i.e. rate * schedule)
+     *      4: use FDM method without weighting by population
+     *      5: use FDM method with population weighting
      */
     
     for(j=0; j<ncol; ++j) {
@@ -302,7 +304,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                     if(MIGratecode[jve] == 4 || MIGratecode[jve] == 5){ /* FDM method; need to compute In- and Out-total migration */
                         totmigcountm_in = totmigcount * (1 - mig_fdm_sr_in);
                         totmigcountf_in = totmigcount * mig_fdm_sr_in;
-                        IM = fmax(tpop * mig_fdm_b0 + totmigcount * mig_fdm_b1, tpop * mig_fdm_min);
+                        IM = fmax(fmax(tpop * mig_fdm_b0 + totmigcount * mig_fdm_b1, tpop * mig_fdm_min), tpop * mig_fdm_min + totmigcount);
                         OM = totmigcount - IM;
                         IMm = IM * (1 - mig_fdm_sr_in);
                         OMm = OM * (1 - mig_fdm_sr_out);
@@ -344,8 +346,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             o_m = migrcoutm[i]/trxm * OMm;
                             o_f = migrcoutf[i]/trxf * OMf;
                             if(MIGratecode[jve] == 5){
-                                o_m = o_m[i]*popm[i + t];
-                                o_f = o_f[i]*popf[i + t];
+                                o_m = o_m*popm[i + t];
+                                o_f = o_f*popf[i + t];
                             }
                             if(MIGratecode[jve] == 5){
                                 sigma_m[i] = fmin(sqrt((iota_m - o_m)/migvm), (popm[i + t]+minpop)/2);
