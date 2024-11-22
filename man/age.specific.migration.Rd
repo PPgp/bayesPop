@@ -17,9 +17,9 @@ age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5),
     depratio = wpp.year == 2015, verbose = TRUE)
     
 migration.totals2age(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-    schedule = NULL, scale = 1, method = "auto", sex = "M",
-    id.col = "country_code", country_code = NULL, mig.is.rate = FALSE, 
-    alt.schedule.file = NULL, wpp.year = 2019, \dots)
+    schedule = NULL, scale = 1, method = "rc", sex = "M",
+    id.col = "country_code", mig.is.rate = FALSE, 
+    rc.fdm = NULL, pop = NULL, pop.glob = NULL, wpp.year = 2019, \dots)
     
 rcastro.schedule(annual = FALSE)
 }
@@ -42,12 +42,12 @@ rcastro.schedule(annual = FALSE)
   \item{time.periods}{Character vector determining which columns should be considered in the \code{df} dataset. It should be a subset of column names in \code{df}. By default, all time columns in \code{df} are considered.}
   \item{schedule}{Numeric vector used for distributing total migration across ages. It should have the same length as \code{ages}. If not given, the argument \code{method} determines how the totals are distributed.}
   \item{scale}{The migration schedule is multiplied by this number. It can be used for example, if total migration needs to be distributed between sexes.}
-  \item{method}{Method to use for the distribution of totals into age groups. The \dQuote{un} method, available only for \pkg{wpp2022} and only for projected migration, uses the UN migration schedules. The \dQuote{rc} method uses a simple Rogers-Castro disaggregation via the function \code{rcastro.schedule}. The \dQuote{user} method allows to provide expernal schedules in a file given in the argument \code{alt.schedule.file}. The \dQuote{auto} method tries to apply the \dQuote{un} method first and for countries or time periods where there is no match, it applies the \dQuote{rc} method.}
-  \item{sex}{\dQuote{M} or \dQuote{F} determining the sex of this schedule. It is used for matching to the UN schedules, i.e. if the \dQuote{auto} or \dQuote{un} method is used.}
+  \item{method}{Method to use for the distribution of totals into age groups. The \dQuote{rc} method uses a simple Rogers-Castro disaggregation via the function \code{rcastro.schedule}. }
+  \item{sex}{\dQuote{M} or \dQuote{F} determining the sex of this schedule. }
   \item{id.col}{Name of the unique identifier of the locations.}
-  \item{country_code}{Code of the country if the data belongs to only country only. It is used for matching to the UN schedules, i.e. if the \dQuote{auto} or \dQuote{un} method is used.}
   \item{mig.is.rate}{Logical indicating if the data in \code{df} should be interpreted as rates. If \code{FALSE}, \code{df} represent counts.}
-  \item{alt.schedule.file}{If \code{method} is \dQuote{user}, alternative migration age schedules can be provided in this binary file. It has the same structure as the internal package objects \code{mig1.schedule} (annual) or \code{mig5.schedule} (5-year). If there are different schedules for positive and negative totals, the negative schedules are in \code{mig1.neg.schedule} or \code{mig5.neg.schedule} objects.}
+  \item{rc.fdm}{Dataset containing various inputs for the FDM method. It has columns contained in the \code{\link{rcFDM}} dataset, as well as columns \dQuote{beta0} (intercept), \dQuote{beta1} (slope), \dQuote{min} (minimum rate), \dQuote{in_sex_factor} (inflow female proportion), and \dQuote{out_sex_factor} (outflow female proportion), used in the FDM method.}
+  \item{pop, pop.glob}{}
   \item{\dots}{Further arguments passed to the underlying functions.}
 }
 \details{

@@ -16,7 +16,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
             mxM = NULL, mxF = NULL, srb = NULL, 
             pasfr = NULL, patterns = NULL, 
             migM = NULL, migF = NULL, 
-            migMt = NULL, migFt = NULL, mig = NULL,
+            migMt = NULL, migFt = NULL, mig = NULL, mig.fdm = NULL,
             e0F.file = NULL, e0M.file = NULL, tfr.file = NULL, 
             e0F.sim.dir = NULL, e0M.sim.dir = NULL, tfr.sim.dir = NULL, 
             migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
@@ -24,8 +24,8 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
         ), 
         nr.traj = 1000, keep.vital.events = FALSE, 
         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
-         mig.is.rate = FALSE, pasfr.ignore.phase2 = FALSE,
-         replace.output = FALSE, verbose = TRUE)
+         mig.is.rate = FALSE, mig.age.method = c("rc", "fdm", "fdmw"),
+         pasfr.ignore.phase2 = FALSE, replace.output = FALSE, verbose = TRUE)
 }
 
 \arguments{

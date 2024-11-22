@@ -16,14 +16,14 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
     inputs = list(popM=NULL, popF=NULL, mxM=NULL, mxF=NULL, srb=NULL,
         pasfr=NULL, patterns=NULL, 
         migM=NULL, migF=NULL, migMt=NULL, migFt=NULL, mig=NULL,
-        e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
+        mig.fdm = NULL, e0F.file=NULL, e0M.file=NULL, tfr.file=NULL,
         e0F.sim.dir=NULL, e0M.sim.dir=NULL, tfr.sim.dir=NULL,
         migMtraj = NULL, migFtraj = NULL, migtraj = NULL,
         GQpopM = NULL, GQpopF = NULL, average.annual = NULL), 
     nr.traj = 1000, keep.vital.events = FALSE, 
     fixed.mx = FALSE, fixed.pasfr = FALSE,
     lc.for.hiv = TRUE, lc.for.all = TRUE, mig.is.rate = FALSE,
-    mig.age.method  = c("auto", "un", "rc", "io", "user"), my.locations.file = NULL, 
+    mig.age.method  = c("auto", "fdm", "rc", "fdmw"), my.locations.file = NULL, 
     replace.output = FALSE, verbose = TRUE, \dots)
 }
 \arguments{
@@ -42,7 +42,7 @@ pop.predict(end.year = 2100, start.year = 1950, present.year = 2020,
   			\item{pasfr}{Historical data and (optionally) projections of percentage age-specific fertility rate [\code{\link[wpp2019]{percentASFR}}] (see also argument \code{fixed.pasfr}).}
   			\item{patterns, mig.type}{Migration type and base year of the migration. In addition, this dataset gives information on country's specifics regarding mortality and fertility age patterns as defined in [\code{\link{vwBaseYear}}]. \code{patterns} and \code{mig.type} have the same meaning and can be used interchangeably.}
   			\item{migM, migF, migMt, migFt, mig}{Projection and (optionally) historical data of net migration on the same scale as the initital population. There are three ways of defining this quantity, here in order of priority: 1. via \code{migM} and \code{migF} which should give male and female age-specific migration [\code{\link[wpp2012]{migrationM}}, \code{\link[wpp2012]{migrationF}}]; 2. via \code{migMt} and \code{migFt} which should give male and female total net migration; 3. via \code{mig} which should give the total net migration. For 2. and 3., the totals are disagregated into age-specific migration by applying a Rogers-Castro schedule. For 3., the totals are equally split between sexes. If all of these input items are missing, the migration schedules are reconstructed from total migration counts derived from \code{\link[wpp2019]{migration}} using the \code{\link{age.specific.migration}} function.}
-  			\item{mig.io}{If \code{mig.age.method} is \dQuote{io}, this file is used to disaggregate total in- and out-migration into ages, giving proportions for each age and type of migration. It should have columns \dQuote{country_code}, \dQuote{age}, \dQuote{in} and \dQuote{out}, where the latter two should each sum to 1 for each location.}
+  			\item{mig.fdm}{If \code{mig.age.method} is \dQuote{fdm} or \dQuote{fdmw}, this file is used to disaggregate total in- and out-migration into ages, giving proportions for each age and type of migration. It should have columns \dQuote{country_code}, \dQuote{age}, \dQuote{in} and \dQuote{out}, where the latter two should each sum to 1 for each location. By default the function uses the \code{\link{rc1FDM}} (annual) or \code{\link{rc5FDM}} (5-year) datasets.}
   			\item{e0F.file}{Comma-delimited CSV file with results of female life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0F.sim.dir} is ignored. If both \code{e0F.file} and \code{e0F.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken, namely the median projections as one trajectory and the low and high variants (if available) as second and third trajectory.}
   			\item{e0M.file}{Comma-delimited CSV file containing results of male life expectancy (generated using \pkg{\link{bayesLife}}, function \code{\link{convert.e0.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{e0}. If this element is not \code{NULL}, the argument \code{e0M.sim.dir} is ignored. As in the female case, if both \code{e0M.file} and \code{e0M.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken.}
   			\item{tfr.file}{Comma-delimited CSV file with results of total fertility rate (generated using \pkg{\link{bayesTFR}}, function \code{\link{convert.tfr.trajectories}}, file \dQuote{ascii_trajectories.csv}). Required columns are \dQuote{LocID}, \dQuote{Year}, \dQuote{Trajectory}, and \dQuote{TF}. If this element is not \code{NULL}, the argument \code{tfr.sim.dir} is ignored. If both \code{tfr.file} and \code{tfr.sim.dir} are \code{NULL}, data from the corresponding \pkg{wpp} package is taken (median and the low and high variants as three trajectories). Alternatively, this argument can be the keyword \dQuote{median_} in which case only the wpp median is taken.}
