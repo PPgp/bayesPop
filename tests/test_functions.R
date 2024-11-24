@@ -470,5 +470,87 @@ test.age.specific.migration <- function(){
     test.ok(test.name)
 }
 
+test.different.migration.methods <- function(wpp.year = 2024, annual = TRUE) {
+    step <- if(annual) 1 else 5
+    test.name <- paste0('Running different migration methods ', 'for a ', step, '-year simulation with wpp', wpp.year)
+    start.test(test.name)
+    set.seed(1)
+    # create migration files with two countries and two trajectories
+    migfile <- tempfile()
+    sim.dir <- tempfile()
+    time <- 5
+    countries <- c(528,218)
+    ncountries <- length(countries)
+    ages <- bayesPop:::ages.all(annual, observed = TRUE)
+    nages <- length(ages)
+    age.labels <- bayesPop:::get.age.labels(ages, single.year = annual, last.open = TRUE)
+    start.years <- if(annual) list("2024" = 2023, "2022" = 2021, "2019" = 2015) else list("2024" = 2020, "2022" = 2020, "2019" = 2015)
+    present.year <- start.years[[as.character(wpp.year)]]
+    midyr <- if(annual) 0 else 3
+    write.migration <- function(nr.traj, rates = FALSE) {
+        nrows.country <- nr.traj*nages*time
+        mig <- data.frame(LocID=rep(c(528,218), each=nrows.country), 
+                          Year=rep(rep(seq(present.year + midyr, by=step, length=time), each=nages), times=nr.traj*ncountries),
+                          Trajectory=rep(rep(1:nr.traj, each=nages*time), times=ncountries), 
+                          Age=age.labels, Migration=0)
+        if(!rates)
+            mig$Migration <- rnorm(nrow(mig), mean=rep(c(3,0), each=nrows.country), sd=rep(c(2, 1), each=nrows.country))
+        else mig$Migration <- rnorm(nrow(mig), mean=rep(c(0.005,0.0005), each=nrows.country), sd=rep(c(0.01, 0.001), each=nrows.country))
+        write.csv(mig, file=migfile, row.names=FALSE)
+    }
+    # Test "fdm" with 1 trajectory
+    nr.traj <- 1
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries=countries, end.year= present.year + (time+1)*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdm")
+    s <- summary(pred)
+    stopifnot(s$nr.traj == nr.traj)
+    stopifnot(s$nr.countries == 2)
+    stopifnot(length(s$projection.years) == time+1)
+    mgr <- get.pop("G528", pred)
+    stopifnot(dim(mgr)[4] == nr.traj) 
+    
+    # Test "auto" with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "auto")
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == if(wpp.year == 2019 & !annual) "residual" else "fdm")
+    
+    # Test "fdmw" counts with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmw")
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "fdmw")
+    
+    # Test "fdmw" rates with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj, rates = TRUE)
+    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmw",
+                        mig.is.rate = c(FALSE, TRUE))
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "fdmw")
+    
+    
+    test.ok(test.name)
+    unlink(sim.dir, recursive=TRUE)
+    unlink(migfile)
+}
+
 
 #TODO: test project.pasfr function

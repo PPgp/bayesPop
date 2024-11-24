@@ -891,8 +891,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                  schedule = NULL, scale = 1, method = "rc", 
                                  sex = "M", id.col = "country_code", 
                                  mig.is.rate = FALSE, rc.fdm = NULL, 
-                                 pop = NULL, pop.glob = NULL,
-                                 wpp.year = 2019, ...#, debug = FALSE
+                                 pop = NULL, pop.glob = NULL,  ...#, debug = FALSE
                                  ) {
     mig <- i.mig <- migf <- totmig <- rc <- prop <- i.prop <- popglob <- i.pop <- in_sex_ratio <- out_sex_ratio <- in_sex_factor <- out_sex_factor <- NULL
     age <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- totpop <- NULL
@@ -945,6 +944,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         byio <- if(id.col %in% colnames(rc.fdm)) id.col else c()
         migiotmp <- merge(migtmp, rc.fdm, all.x = TRUE, by = c(byio, "age"))
         byio <- if(id.col %in% colnames(migiotmp)) id.col else c()
+        if(!annual){ # convert time periods in form 2000-2005 into the end year, i.e. 2005
+            migiotmp$period <- migiotmp$year
+            migiotmp$year <- substr(migiotmp$period, 1, 4)
+        }
         if(!is.null(pop.glob)){
             if((mx.year <- max(as.integer(pop.glob$year))) < max(as.integer(migiotmp$year))){
                 # for future years use global pop for the latest year
@@ -971,6 +974,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 for(yr in setdiff(migiotmp$year, pop$year)){
                     pop <- rbind(pop, pop.latest[, year := yr])
                 }
+            }
+            if(is.character(migiotmp$age) && !is.character(pop$age)){
+                pop[, age := as.character(age)]
+                if(any(migiotmp[, age] == "100+"))
+                    pop[, age := ifelse(age == "100", "100+", age)]
             }
             migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year", "age"))
             migiotmp[, totpop := sum(pop), by = c(byio, "year")]
@@ -1060,8 +1068,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     if(mig.age.method %in% c("fdm", "fdmw")){
         # needs population
         popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
-                                    age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
+                                    age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
                         data.table(pop))
+        if(annual) # if age is in annual form, convert to integers 
+            popdt$age <- as.integer(popdt$age)
         popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", 
                       value.name = "pop", variable.factor = FALSE)
         globpop <- popdt[, list(pop = sum(pop)), by = c("year", "age")]
@@ -1114,8 +1124,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                            method = mig.age.method,
                                            sex = sex, template = migtempl, 
                                            mig.is.rate = mig.is.rate[1], 
-                                           rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop,
-                                           wpp.year = wpp.year#,
+                                           rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop#,
                                            #debug = TRUE
                                            )
             miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
@@ -1141,8 +1150,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                                                        scale = if(is.null(inputs[[fname]])) 0.5 else 1,
                                                                        method = mig.age.method,
                                                                        sex = sex, template = migtempl,
-                                                                       rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop,
-                                                                       wpp.year = wpp.year), 
+                                                                       rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop), 
                                                   check.names = FALSE)
                 miginp[[inpname]] <- data.frame(merge(missing.migage.data, 
                                            miginp[[inpname]][, setdiff(colnames(miginp[[inpname]]), "name")],
@@ -1163,8 +1171,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                                                  scale = if(is.null(inputs[[fname]])) 0.5 else 1,
                                                                  method = mig.age.method,
                                                                  sex = sex, template = migtempl,
-                                                                 rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop,
-                                                                 wpp.year = wpp.year), 
+                                                                 rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop), 
                                             check.names = FALSE)
             }
             next
@@ -1453,7 +1460,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                rc.fdm = iotrajw, 
 		                                pop.glob = pred$fdm.inputs$globpop, # doesn't need pop as weighting by pop happens in CCM
-		                                wpp.year = pred$inputs$wpp.year, ...#, debug = TRUE
+		                                ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", 
 		                  id.vars = c("trajectory", "age"), variable.factor = FALSE)
@@ -1706,13 +1713,17 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 .prepare.pop.for.fdm <- function(mig.age.method, country, pop.matrix, present.year, mig.rc.inout){
     country_code <- NULL # to avoid CRAN Notes
     res <- list()
-    if(mig.age.method %in% c("fdm", "fdmw")){ # need also population 
-        pop <- (pop.matrix$male + pop.matrix$female)[, as.character(present.year), drop = FALSE]
+    if(mig.age.method %in% c("fdm", "fdmw")){ # need also population
+        pop <- (pop.matrix$male + pop.matrix$female)
         popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
-                                  age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
+                                  age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
                        data.table(pop))
-        res$popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
-        res$globpop <- res$popdt[, list(pop = sum(pop)), by = c("year", "age")]
+        if(!grepl("-", popdt$age[1])) # if age is in annual form, convert to integers 
+            popdt$age <- as.integer(popdt$age)
+        popdtl <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", 
+                       variable.factor = FALSE)
+        res$popdt <- popdtl[year == present.year]
+        res$globpop <- popdtl[, list(pop = sum(pop)), by = c("year", "age")]
         res$mig.fdm <- mig.rc.inout
         if(is.null(res$mig.fdm)) stop("Dataset with in- and out-migration schedules is missing (input mig.fdm)")
         res$mig.fdm <- res$mig.fdm[country_code == country][, country_code := NULL]
@@ -1778,8 +1789,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	                                 sex = list(male = "M", female = "F")[[sx]], 
 	                                 scale = 0.5,
 	                                 mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                 rc.fdm = ioinput$rc.fdm, pop = ioinput$popdt, pop.glob = ioinput$globpop,
-	                                 wpp.year = inputs$wpp.year), 
+	                                 rc.fdm = ioinput$mig.fdm, pop = ioinput$popdt, pop.glob = ioinput$globpop), 
 	            check.names = FALSE)
 	        }
 	        rownames(mig.recon[["male"]]) <- rownames(mig.recon[["female"]]) <- rownames(migtempl) # rownames should be the ages

@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- TRUE
+CRAN <- FALSE
 
 test.expressions()
 
@@ -15,15 +15,20 @@ if(!CRAN) {
 	test.prediction.with.prob.migration()
 	test.prediction.with.prob.migration(parallel = TRUE)
 	test.expressions.with.VE(map=FALSE)
-	test.regional.aggregation()
-	test.regional.aggregation(parallel = TRUE)
-	test.life.table()
-	test.life.table(parallel = TRUE)
-	test.adjustment()
-	test.subnat()
-	options(warn=warn$warn)
-	test.subnat.with.subnat.tfr.e0()
-	test.prediction.with.patterns()
+    test.regional.aggregation()
+    test.regional.aggregation(parallel = TRUE)
+    test.life.table()
+    test.life.table(parallel = TRUE)
+    test.adjustment()
+    test.subnat()
+    options(warn=warn$warn)
+    test.subnat.with.subnat.tfr.e0()
+    test.prediction.with.patterns()
 	test.expressions.with.VE(map=TRUE, parallel = TRUE) # generates warnings
 	test.age.specific.migration()
+	test.different.migration.methods(wpp.year = 2024)
+	test.different.migration.methods(wpp.year = 2024, annual = FALSE)
+	test.different.migration.methods(wpp.year = 2022)
+	test.different.migration.methods(wpp.year = 2022, annual = FALSE)
+	test.different.migration.methods(wpp.year = 2019, annual = FALSE)
 }

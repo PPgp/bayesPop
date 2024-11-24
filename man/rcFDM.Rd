@@ -1,6 +1,7 @@
 \name{rcFDM}
 \alias{rc1FDM}
 \alias{rc5FDM}
+\alias{rcFDM}
 \docType{data}
 
 \title{
@@ -17,7 +18,7 @@ data(rc5FDM)
   A data frame where countries and ages are rows. It has four columns:
   \describe{
   \item{\code{country_code}}{Numerical Location Code (3-digit codes following ISO 3166-1 numeric standard) - see \url{https://en.wikipedia.org/wiki/ISO_3166-1_numeric}.}
-  \item{\code{age}}{Either single ages from 0 to 100 (\code{rc1FDM}) or 5-year age groups, such as \dQuote{0-4}, \dQuote{5-9}, \dots, \dQuote{100+} (\code{rc5FDM}).
+  \item{\code{age}}{Either single ages from 0 to 100 (\code{rc1FDM}) or 5-year age groups, such as \dQuote{0-4}, \dQuote{5-9}, \dots, \dQuote{100+} (\code{rc5FDM}).}
   }
 }
 \details{
@@ -29,7 +30,7 @@ Most of the values were provided by the United Nations Population Division.
 }
 
 \references{
-Sevcikova, H., Raymer J. and Raftery, A.E. (2024). Forecasting Net Migration By Age: The Flow-Difference Approach. arXiv:2411.09878. \url{https://arxiv.org/abs/2411.09878}
+H. Sevcikova, J. Raymer J., A. E. Raftery (2024). Forecasting Net Migration By Age: The Flow-Difference Approach. \href{https://arxiv.org/abs/2411.09878}{arXiv:2411.09878}.
 }
 
 
