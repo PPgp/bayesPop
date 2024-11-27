@@ -980,7 +980,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 if(any(migiotmp[, age] == "100+"))
                     pop[, age := ifelse(age == "100", "100+", age)]
             }
-            migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio, "year", "age"))
+            byio.pop <- if(id.col %in% colnames(pop)) id.col else c()
+            migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio.pop, "year", "age"))
             migiotmp[, totpop := sum(pop), by = c(byio, "year")]
             #if(! "beta0" %in% colnames(migiotmp)) migiotmp[, beta0 := if(annual) 0.07 else 0.35]
             #if(! "beta1" %in% colnames(migiotmp)) migiotmp[, beta1 := 0.5]
@@ -1441,25 +1442,38 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		    dfw <- dcast(data.table(migdf), trajectory ~ year)
 		    iotraj <- NULL
 		    if(pred$inputs$mig.age.method %in% c("fdm", "fdmw")){
-		        if(!is.null(pred$inputs$migFDMpred)){
+		        if(!is.null(pred$inputs$migFDMpred)){ # there are trajectories of FDM RC curves
 		            iotraj.traj <- unique(pred$inputs$migFDMpred$trajectory)
-		            iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(iotraj.traj, nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
-		            iotraj <- pred$inputs$migFDMpred[trajectory %in% iotraj.traj.index & country_code == country][, country_code := NULL]
-		            iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index 
+		            iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(
+		                seq_along(iotraj.traj), nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
+		            iotrajall <- pred$inputs$migFDMpred[country_code == country][, country_code := NULL]
+		            if(length(iotraj.traj) >= nrow(dfw)) {
+		                iotraj <- pred$inputs$migFDMpred[trajectory %in% iotraj.traj[iotraj.traj.index]]
+		                iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index
+		            } else { # some trajectories will to be repeated, so construct via rbind
+		                iotraj <- NULL
+		                for(i in 1:length(iotraj.traj.index)){
+		                    iotraj <- rbind(iotraj, iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index[i]]][
+		                        , trajectory := i])
+		                }
+		            }
+		            iotraj[, age := factor(age, levels = unique(pred$inputs$migFDMpred$age))] # change it to factor in order not to re-order the rows
 		            iotrajw <- dcast(iotraj[par %in% c("in", "out")], trajectory + age ~ par, value.var = "value")
-		            #iotrajw[, trajectory := as.integer(trajectory)]
+		            iotrajw[, age := as.character(age)]
 		            if("v" %in% iotraj$par && pred$inputs$mig.age.method == "fdmw"){
 		                iotrajw[iotraj[par == "v"], v := i.value, on = "trajectory"]
-		                #iotrajw <- merge(iotrajw, iotraj[par == "v", c("trajectory", "value")], by = "trajectory")
-		                #setnames(iotrajw, "value", "v")
 		            } else iotrajw[, v := 1]
+		            # attach other parameters
+		            for(par in setdiff(colnames(pred$fdm.inputs$mig.fdm), colnames(iotrajw)))
+		                iotrajw[[par]] <- pred$fdm.inputs$mig.fdm[[par]]
 		        } else iotrajw <- pred$fdm.inputs$mig.fdm
 		    }
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 		                                id.col = "trajectory", method = pred$inputs$mig.age.method,
 		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
 		                                rc.fdm = iotrajw, 
-		                                pop.glob = pred$fdm.inputs$globpop, # doesn't need pop as weighting by pop happens in CCM
+		                                pop = pred$fdm.inputs$popdt[country_code == country][, country_code := NULL],
+		                                pop.glob = pred$fdm.inputs$globpop, 
 		                                ...#, debug = TRUE
 		                                )
 		    migdf <- melt(adf, value.name = "value", variable.name = "year", 

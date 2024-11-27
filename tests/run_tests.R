@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- FALSE
+CRAN <- TRUE
 
 test.expressions()
 
@@ -31,4 +31,6 @@ if(!CRAN) {
 	test.different.migration.methods(wpp.year = 2022)
 	test.different.migration.methods(wpp.year = 2022, annual = FALSE)
 	test.different.migration.methods(wpp.year = 2019, annual = FALSE)
+	test.probabilistic.fdmw()
+	test.probabilistic.fdmw(annual = FALSE)
 }

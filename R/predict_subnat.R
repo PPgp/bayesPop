@@ -503,8 +503,10 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
   wppds <- data(package=paste0('wpp', wpp.year))
   if(mig.age.method %in% c("fdm", "fdmw")){ # need also population 
     popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
-                              age = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[2]))),
+                              age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
                     data.table(pop))
+    if(annual) # if age is in annual form, convert to integers 
+      popdt$age <- as.integer(popdt$age)
     popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
     globpop <- popdt[, list(pop = sum(pop)), by = c("year", "age")]
   }
@@ -537,13 +539,15 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         totmig <- data.table(swap.reg.code(read.pop.file(inputs[[fnametot]])), table.name = fnametot)
         migcode <- 3
       }
+      if(!mig.age.method %in% c("rc")) migcode <- 4 # TODO: this would be wrong if migcode is 2.
+      if(mig.age.method == "fdmw") migcode <- 5 # migcode is only used if migration is given as a rate
       migcols <- intersect(colnames(totmig), periods)
       # disaggregate into ages
       migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl, mig.io = rc.fdm, pop = popdt, pop.glob = globpop)
+                                                           template = migtempl, rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       for(attrib in c("rate", "code", "rc.out")) {
         if(!is.null((val <- attr(migmtx, attrib))))
