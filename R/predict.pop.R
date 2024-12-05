@@ -995,6 +995,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             if(method == "fdmw")
                 migiotmp[, `:=`(rxstar_in = rxstar_in * popglob, rxstar_out = rxstar_out * pop)] # weight by population
             migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(id.col, "year")]
+            migtmp[, totmig := as.double(totmig)]
             migtmp[migiotmp, `:=`(totmig = i.totmig, mig = i.IMs * i.rxstar_in / i.rxstar_in_denom  - i.OMs * i.rxstar_out / i.rxstar_out_denom), 
                    on = c(id.col, "age", "year")]
             migtmp[, prop := mig / totmig][totmig == 0, prop := 0]
@@ -1412,7 +1413,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         }
     }
     migio <- NULL
-    # TODO: get rc.fdm from the default dataset
+
     if(mig.age.method %in% c("fdm", "fdmw") && !is.null((file.name <- inputs[["migFDMtraj"]]))){
         migtrajcols <- list(LocID = "country_code", Trajectory = "trajectory", Age = "age", Value = "value", Parameter = "par")
         if(!file.exists(file.name))
@@ -1448,7 +1449,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                seq_along(iotraj.traj), nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
 		            iotrajall <- pred$inputs$migFDMpred[country_code == country][, country_code := NULL]
 		            if(length(iotraj.traj) >= nrow(dfw)) {
-		                iotraj <- pred$inputs$migFDMpred[trajectory %in% iotraj.traj[iotraj.traj.index]]
+		                iotraj <- iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index]]
 		                iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index
 		            } else { # some trajectories will to be repeated, so construct via rbind
 		                iotraj <- NULL
@@ -1464,8 +1465,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		                iotrajw[iotraj[par == "v"], v := i.value, on = "trajectory"]
 		            } else iotrajw[, v := 1]
 		            # attach other parameters
-		            for(par in setdiff(colnames(pred$fdm.inputs$mig.fdm), colnames(iotrajw)))
-		                iotrajw[[par]] <- pred$fdm.inputs$mig.fdm[[par]]
+		            for(col in setdiff(colnames(pred$fdm.inputs$mig.fdm), colnames(iotrajw)))
+		                iotrajw[[col]] <- pred$fdm.inputs$mig.fdm[[col]]
 		        } else iotrajw <- pred$fdm.inputs$mig.fdm
 		    }
 		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
@@ -2412,7 +2413,6 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
-	#browser()
 	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),

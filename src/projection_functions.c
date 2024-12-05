@@ -367,8 +367,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                             tsgf = tsgf + migendf[i][jve];
 
                             /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])) debug = 1;*/
-                            if((debug>=2) && (j==1)){
+                            if((debug>=1) && (j>=26) && i < 10){
                             /*if(isnan(migendm[i][jve]) || isnan(migendf[i][jve])){*/
+                                Rprintf("\ni = %i", i);
                                 Rprintf("\nRCoutm[i]= %f, RCstaroutm[i]= %f, popm[i+t]= %f",
                                         migrcoutm[i], migrcoutm[i]* popm[i + t]/trxm, popm[i + t]);
                                 Rprintf("\nRCoutf[i]= %f, RCstaroutf[i]= %f, popf[i+t]= %f",
@@ -394,6 +395,11 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                                 migendf[i][jve] = migendf[i][jve] - sigma_f[i]/ssigma_f * Cf;
                                 tsgm = tsgm + migendm[i][jve];
                                 tsgf = tsgf + migendf[i][jve];
+                                if(debug>=1 && j >= 26 && i < 10){
+                                    Rprintf("\ni = %i", i);
+                                    Rprintf("\nmigendm[i][jve]= %f, migendf[i][jve]= %f, popm[i+t]= %f, popf[i+t]= %f",
+                                            migendm[i][jve], migendf[i][jve], popm[i + t], popf[i + t]);
+                                }
                             }
                             if((debug>=1)){
                                 Rprintf("\nAFTER (scaling): sum(migendm)= %f, sum(migendf)= %f", tsgm, tsgf);
@@ -421,22 +427,34 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
             /* adjust negative population */
             tsmigagem = 0; tsmigagef = 0;
             for(i=0; i < adim; ++i) {
-                
                 if(migendm[i][jve] < 0)
                     migendm[i][jve] = fmin(0, fmax(migendm[i][jve], -popm[i+t] + minpop)); /* adjust migration if it would yield negative population */
                 if(migendf[i][jve] < 0)
                     migendf[i][jve] = fmin(0, fmax(migendf[i][jve], -popf[i+t] + minpop));
                 tsmigagem = tsmigagem + migendm[i][jve];
                 tsmigagef = tsmigagef + migendf[i][jve];
+                if(debug>=1 && j >= 26 && i < 10){
+                    Rprintf("\nadjustment to positive pop: i = %i", i);
+                    Rprintf("\nmigendm[i][jve]= %f, migendf[i][jve]= %f, popm[i+t]= %f, popf[i+t]= %f",
+                            migendm[i][jve], migendf[i][jve], popm[i + t], popf[i + t]);
+                }
                 
             }
             if(MIGratecode[jve] > 0 && MIGratecode[jve] != 3){ /* do this only if we needed to disaggregate total migration and know the desired counts */
-                Cm = tsmigagem - totmigcountm;
-                Cf = tsmigagef - totmigcountf;
+                Cm = fmin(tsmigagem - totmigcountm, tsmigposm);
+                Cf = fmin(tsmigagef - totmigcountf, tsmigposf);
+                if(debug>=1 && j >= 26){
+                    Rprintf("\nfinal adjustment: Cm = %f, Cf = %f", Cm, Cf);
+                }
                 if(Cm > 0 || Cf > 0){
                     for(i=0; i < adim; ++i) {
-                        if(migendm[i][jve] > 0) migendm[i][jve] = migendm[i][jve] - Cm * migendm[i][jve]/tsmigposm;
-                        if(migendf[i][jve] > 0) migendf[i][jve] = migendf[i][jve] - Cf * migendf[i][jve]/tsmigposf;
+                        if(migendm[i][jve] > 0 && tsmigposm > 0) migendm[i][jve] = migendm[i][jve] - Cm * migendm[i][jve]/tsmigposm;
+                        if(migendf[i][jve] > 0 && tsmigposf > 0) migendf[i][jve] = migendf[i][jve] - Cf * migendf[i][jve]/tsmigposf;
+                        if(debug>=1 && j >= 26 && i < 10){
+                            Rprintf("\ni = %i", i);
+                            Rprintf("\nmigendm[i][jve]= %f, migendf[i][jve]= %f, final popm[i+t]= %f, final popf[i+t]= %f",
+                                    migendm[i][jve], migendf[i][jve], popm[i + t] + migendm[i][jve], popf[i + t] + migendf[i][jve]);
+                        }
                     }
                 }
             }
