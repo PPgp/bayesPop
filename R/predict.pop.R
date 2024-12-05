@@ -17,7 +17,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
-							migMtraj=NULL, migFtraj=NULL, migtraj = NULL,
+							migMtraj=NULL, migFtraj=NULL, migtraj = NULL, migFDMtraj = NULL,
 							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
