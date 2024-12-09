@@ -2288,8 +2288,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
-	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
-					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
+	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm), drop = FALSE]), 
+					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf), drop = FALSE]))
 	migrateM <- migrateF <- matrix(0, ncol = ncol(mig.data[[1]]), nrow = 2) # TODO: migration rates cannot be passed as observed data yet
 	if(!is.null((migrt <- attr(obs$MIGm, "rate")))){
 	    migrateM[1,] <- migrt[colnames(mig.data[[1]])]

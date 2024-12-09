@@ -304,7 +304,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	obs.cols.ve <- colnames(obs.data[["male"]])
 	if(!pop.pred$annual) obs.cols.ve <- paste(as.integer(colnames(obs.data[["male"]]))-5, obs.cols.ve, sep = "-")
 	prev.year <- as.character(pop.pred$proj.years.pop[1]-time.step)
-	
+	if(! prev.year %in% obs.cols.ve && !no.vital.events){
+	    warning("Year ", prev.year, " needed in observed population to abridge various aggregated quantities. Present year used instead." )
+	    prev.year <- as.character(pop.pred$proj.years.pop[1])
+	}
 	for(reg.idx in 1:length(regions)) {
 		if(getOption('bDem.PopAgpred', default=FALSE)) {
 			# This is to unblock the GUI, if the run is invoked from bayesDem
@@ -353,7 +356,9 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 					    popavg.hch[1:length(country.obs.idx),1,] <- obs.data[[sex]][country.obs.idx, prev.year]
 					    popavg.hch[,-1,] <- e[[ind.names.hch[[sex]]$pop]]
 					    popavg.hch <- (popavg.hch[,-1, ,drop = FALSE] + popavg.hch[,-dim(popavg)[2],, drop = FALSE])/2.
-					    popavgobs <- (obs.data[[sex]][country.obs.idx, -1 , drop=FALSE] + 
+					    if(length(use.obs.cols) == 1) popavgobs <- obs.data[[sex]][country.obs.idx, , drop=FALSE]
+					    else
+					        popavgobs <- (obs.data[[sex]][country.obs.idx, -1 , drop=FALSE] + 
 					                      obs.data[[sex]][country.obs.idx, -dim(obs.data[[sex]])[2] , drop=FALSE])/2.
 					    if(!pop.pred$annual){
 					        # projected abridged pop and deaths
@@ -479,7 +484,9 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			    tmp <- abind(aggrobs[["female"]][fert.age.idx, , drop=FALSE], NULL, along=3)
 				if(dim(tmp)[2] > dim(btf)[2]+1) # if dimension of births doesn't match population
 					tmp <- tmp[,-(1:(dim(tmp)[2]-dim(btf)[2]-1)),, drop=FALSE]
-				asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
+				if(dim(tmp)[2] == 1){
+				    asfert <- (btm + btf)/tmp
+				} else asfert <- 2*(btm + btf)/(tmp[,-dim(tmp)[2],,drop=FALSE] + tmp[,-1,,drop=FALSE])
 				tfr <- apply(asfert, c(2,3), sum)
 				pasfert <- asfert/abind(tfr, NULL, along=0)[rep(1,dim(asfert)[1]),,,drop=FALSE]*100
 				rm(tmp, tfr)

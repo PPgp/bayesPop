@@ -523,8 +523,10 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 	return(res)
 }
 
-mid.period3d <- function(dat)
+mid.period3d <- function(dat){
+    if(dim(dat)[2] == 1) return(dat)
     (dat[,-1, ,drop = FALSE] + dat[,-dim(dat)[2],, drop = FALSE])/2.
+}
 
 mx.aggregate <- function(mx, pop, abridged = TRUE) {
     # Aggregate mx over sexes
@@ -1046,7 +1048,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				else d <- colSums(d)
 				data <- as.matrix(d) # adds trajectory dimension if missing
 				dim(data) <- c(1, dim(data)) # adding age dimension
-				dimnames(data) <- list(NULL, colnames(traj$data), NULL)
+				dimnames(data) <- list(NULL, colnames(traj$trajectories), NULL)
 			} else {# only if it was not summed up, because then the as.matrix command adds a dimension
 				data <- if(is.null(dim(d)) || !is.array(d)) as.matrix(d) else d
 				#data <- as.matrix(d)
