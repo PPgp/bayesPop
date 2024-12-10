@@ -334,7 +334,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     if(!is.null((rates <- attr(miginp[["migM"]], "rate")))){
       if(length(intersect(proj.periods, colnames(rates))) > 0) {
         attr(MIGm, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
-        attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', proj.periods), with = FALSE]
+        attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
       } else {
         attr(MIGm, "rate") <- NULL
         attr(MIGm, "code") <- NULL
@@ -346,8 +346,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     }
     if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
       if(length(intersect(proj.periods, colnames(rates))) > 0) {
-        attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-        attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
+        attr(MIGf, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+        attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
       } else {
         attr(MIGf, "rate") <- NULL
         attr(MIGf, "code") <- NULL
