@@ -16,7 +16,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
-                        mig.is.rate = FALSE, mig.age.method = c("rc", "fdm", "fdmw"),
+                        mig.is.rate = FALSE, mig.age.method = c("fdmp", "rc", "fdmnop"),
                         pasfr.ignore.phase2 = FALSE,
                         replace.output = FALSE, verbose = TRUE) {
     
@@ -317,7 +317,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     
     # Get age-specific migration
     mig.rc.inout <- NULL
-    if(mig.age.method %in% c("fdm", "fdmw")){
+    if(startsWith(mig.age.method, "fdm")){
       if(is.null(inputs[["mig.fdm"]])){
         # create a dataset of model Rogers-Castro
         migio <- data.table(age = ages.all(annual, observed = TRUE),
@@ -350,7 +350,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
                             rc.fdm = mig.rc.inout, 
-                            pop = if(mig.age.method %in% c("fdm", "fdmw")) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
+                            pop = if(startsWith(mig.age.method, "fdm")) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -511,7 +511,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                  rc.fdm = NULL, pop = NULL, verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
-  if(mig.age.method %in% c("fdm", "fdmw")){ # need also population 
+  if(startsWith(mig.age.method, "fdm")){ # need also population 
     popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
                               age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
                     data.table(pop))
@@ -550,7 +550,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         migcode <- 3
       }
       if(!mig.age.method %in% c("rc")) migcode <- 4 # TODO: this would be wrong if migcode is 2.
-      if(mig.age.method == "fdmw") migcode <- 5 # migcode is only used if migration is given as a rate
+      if(mig.age.method == "fdmp") migcode <- 5 # migcode is only used if migration is given as a rate
       migcols <- intersect(colnames(totmig), periods)
       # disaggregate into ages
       migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
