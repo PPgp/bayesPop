@@ -1233,13 +1233,16 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		cohort.data <- cohorts(pop.pred, country=country, expression=expression, pi=pi)
 	all.cohorts <- names(cohort.data)[-which(names(cohort.data) == 'last.observed')]
 	all.cohorts.num.start <- as.integer(substr(all.cohorts, 1, 4))
+	step <- if(pop.pred$annual) 1 else 5
 	if(is.null(cohorts)) 
-		cohorts <- seq(cohort.data[['last.observed']], by=5, 
+		cohorts <- seq(cohort.data[['last.observed']], by=step, 
 							length=min(10, sum(all.cohorts.num.start > cohort.data[['last.observed']])))
-	if(any(is.numeric(cohorts))) {
-		# convert to the from-to format, e.g. 2000-2005
-		from.cohorts <- .round.to.lower5(cohorts)
-		cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	if(any(is.numeric(cohorts))){
+	    if(!pop.pred$annual) {
+		    # convert to the from-to format, e.g. 2000-2005
+		    from.cohorts <- .round.to.lower5(cohorts)
+		    cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	    } else cohorts <- as.character(cohorts)
 	}
 	if(is.null(xlim))
 		xlim <- range(unlist(sapply(cohorts, function(x) range(as.integer(colnames(cohort.data[[x]]))))))

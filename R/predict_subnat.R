@@ -366,8 +366,13 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
 
     # assign some migrate-specific attributes, since they get lost by slicing above
     if(!is.null((rates <- attr(miginp[["migM"]], "rate")))){
-      attr(MIGm, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-      attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', proj.periods), with = FALSE]
+      if(length(intersect(proj.periods, colnames(rates))) > 0) {
+        attr(MIGm, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+        attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
+      } else {
+        attr(MIGm, "rate") <- NULL
+        attr(MIGm, "code") <- NULL
+      }
       if(!is.null(obs.periods)) {
         attr(observed$MIGm, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
         attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
@@ -379,8 +384,13 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         attr(observed$MIGm, "rc.out") <- rcout #[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
     }
     if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
-      attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-      attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
+      if(length(intersect(proj.periods, colnames(rates))) > 0) {
+        attr(MIGf, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+        attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
+      } else {
+        attr(MIGf, "rate") <- NULL
+        attr(MIGf, "code") <- NULL
+      }
       if(!is.null(obs.periods)) {
         attr(observed$MIGf, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
         attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]

@@ -687,14 +687,19 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 			observed$MIGf <- MIGf[,c('country_code', 'age', obs.periods[avail.obs.periods])]
 		}
 	}
-	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
-	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
+	MIGm <- MIGm[,c('country_code', 'age', intersect(proj.periods, colnames(MIGm)))]
+	MIGf <- MIGf[,c('country_code', 'age', intersect(proj.periods, colnames(MIGf)))]
 	
 	# assign some migrate-specific attributes, since they get lost by slicing above
 	if(!is.null((rates <- attr(miginp[["migM"]], "rate")))){
-	    attr(MIGm, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-	    attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', proj.periods), with = FALSE]
-	    if(!is.null(obs.periods) && is.null(existing.mig)) {
+	    if(length(intersect(proj.periods, colnames(rates))) > 0) {
+	        attr(MIGm, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+	        attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
+	    } else {
+	        attr(MIGm, "rate") <- NULL
+	        attr(MIGm, "code") <- NULL
+	    }
+	    if(!is.null(obs.periods) && is.null(existing.mig) && any(avail.obs.periods)) {
 	        attr(observed$MIGm, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	        attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
@@ -705,9 +710,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        attr(observed$MIGm, "rc.out") <- rcout # rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	}
 	if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
-	    attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-	    attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
-	    if(!is.null(obs.periods) && is.null(existing.mig)) {
+	    if(length(intersect(proj.periods, colnames(rates))) > 0) {
+	        attr(MIGf, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+	        attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', intersect(proj.periods, colnames(code))), with = FALSE]
+	    } else {
+	        attr(MIGf, "rate") <- NULL
+	        attr(MIGf, "code") <- NULL
+	    }
+	    if(!is.null(obs.periods) && is.null(existing.mig) && any(avail.obs.periods)) {
 	        attr(observed$MIGf, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	        attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
@@ -797,6 +807,20 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
+	if(is.null(inp$PASFRnorms)){ # if a country is missing in the pasfr data, take the pre-computed global norms
+	    env <- new.env()
+	    do.call("data", list("pasfr_global_norms", envir = env))
+	    inp$PASFRnorms <- if(annual) env$pasfr.glob.norms1 else env$pasfr.glob.norms5
+	    if(!is.null(obs.periods)) { 
+	        # if any of the observed years are missing in the global norm, use the latest norm for those time periods
+	        missing.years <- obs.periods[! obs.periods %in% colnames(inp$PASFRnorms$PasfrGlobalNorm)]
+	        if(length(missing.years) > 0) {
+	            last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years))]
+	            colnames(last.norm) <- missing.years
+	            inp$PASFRnorms$PasfrGlobalNorm <- cbind(inp$PASFRnorms$PasfrGlobalNorm, last.norm)
+	        }
+	    }
+	}
 	inp$average.annual <- inputs$average.annual
 	inp$mig.alt.age.schedule <- inputs$mig.alt.age.schedule
 	return(inp)
@@ -1528,6 +1552,7 @@ compute.pasfr.global.norms <- function(inputs) {
 		ccounter <- rep(0, )
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
+			if(is.null(pasfr)) return(NULL)
 			pasfr <- .fill.pasfr.ages(pasfr, ages.fert(inputs$annual), check.length.only = !inputs$annual)
 			if(is.null(ccounter)) ccounter <- rep(0, ncol(pasfr)) # deals with missing years for some countries
             is.not.observed <- apply(pasfr, 2, function(x) any(is.na(x)))
@@ -2458,8 +2483,8 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
-	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
-					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
+	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm), drop = FALSE]), 
+					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf), drop = FALSE]))
 	migrateM <- migrateF <- matrix(0, ncol = ncol(mig.data[[1]]), nrow = 2) # TODO: migration rates cannot be passed as observed data yet
 	nagecat <- nrow(mig.data[[1]])
 	
