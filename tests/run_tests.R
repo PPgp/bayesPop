@@ -26,11 +26,10 @@ if(!CRAN) {
     test.prediction.with.patterns()
 	test.expressions.with.VE(map=TRUE, parallel = TRUE) # generates warnings
 	test.age.specific.migration()
-	test.different.migration.methods(wpp.year = 2024)
-	test.different.migration.methods(wpp.year = 2024, annual = FALSE)
-	test.different.migration.methods(wpp.year = 2022)
-	test.different.migration.methods(wpp.year = 2022, annual = FALSE)
-	test.different.migration.methods(wpp.year = 2019, annual = FALSE)
-	test.probabilistic.fdmw()
-	test.probabilistic.fdmw(annual = FALSE)
+	for(yr in c(2024, 2022, 2019))
+	    test.different.migration.methods(wpp.year = yr, annual = FALSE)
+	for(yr in c(2024, 2022))
+	    test.different.migration.methods(wpp.year = yr)
+	test.probabilistic.fdmp()
+	test.probabilistic.fdmp(annual = FALSE)
 }

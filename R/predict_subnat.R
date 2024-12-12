@@ -17,10 +17,9 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
                         mig.is.rate = FALSE, mig.age.method = c("fdmp", "rc", "fdmnop"),
-                        pasfr.ignore.phase2 = FALSE,
+                        mig.rc.fam = NULL, pasfr.ignore.phase2 = FALSE, 
                         replace.output = FALSE, verbose = TRUE) {
     
-    #prediction.exist <- FALSE
     ages <- ages.all(annual, observed = FALSE)
     mig.age.method <- match.arg(mig.age.method)
     
@@ -46,7 +45,8 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                               default.country = default.country,
                               fixed.mx = fixed.mx, fixed.pasfr = fixed.pasfr, 
                               lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-                              mig.age.method = mig.age.method, annual = annual, verbose = verbose)
+                              mig.age.method = mig.age.method, mig.rc.fam = mig.rc.fam,
+                              annual = annual, verbose = verbose)
 
     reg.codes <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
     
@@ -182,8 +182,9 @@ load.wpp.traj.for.country <- function(cntry_id, ...) {
 load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, 
                                default.country = NULL, fixed.mx = FALSE, 
                         fixed.pasfr = FALSE, lc.for.all = TRUE, mig.is.rate = FALSE,
-                        annual = FALSE, mig.age.method = "rc", verbose = FALSE) {
-    out <- `in` <- country_code <- existing.mig <- NULL
+                        annual = FALSE, mig.age.method = "rc", mig.rc.fam = NULL, 
+                        verbose = FALSE) {
+    out <- `in` <- country_code <- NULL
     observed <- list()
     # check inputs
     for(item in c('popM', 'popF')) {
@@ -317,7 +318,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     
     # Get age-specific migration
     mig.rc.inout <- NULL
-    if(startsWith(mig.age.method, "fdm")){
+    is.fdm <- startsWith(mig.age.method, "fdm")
+    if(is.fdm){
       if(is.null(inputs[["mig.fdm"]])){
         # create a dataset of model Rogers-Castro
         migio <- data.table(age = ages.all(annual, observed = TRUE),
@@ -349,8 +351,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
-                            rc.fdm = mig.rc.inout, 
-                            pop = if(startsWith(mig.age.method, "fdm")) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
+                            rc.data = if(is.fdm) mig.rc.inout else data.table(mig.rc.fam), 
+                            pop = if(is.fdm) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -380,7 +382,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     }
     if(!is.null((rcout <- attr(miginp[["migM"]], "rc.out")))){
       attr(MIGm, "rc.out") <- rcout #[, c('country_code', proj.periods), with = FALSE]
-      if(!is.null(obs.periods) && is.null(existing.mig))
+      if(!is.null(obs.periods))
         attr(observed$MIGm, "rc.out") <- rcout #[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
     }
     if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
@@ -398,7 +400,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     }
     if(!is.null((rcout <- attr(miginp[["migF"]], "rc.out")))){
       attr(MIGf, "rc.out") <- rcout #[, c('country_code', proj.periods), with = FALSE]
-      if(!is.null(obs.periods) && is.null(existing.mig))
+      if(!is.null(obs.periods))
         attr(observed$MIGf, "rc.out") <- rcout #[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
     }
     # Get migration trajectories if available
@@ -485,7 +487,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'migFDMpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-                 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.inout', 'observed'))
+                 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.fam', 'mig.rc.inout', 'observed'))
         assign(par, get(par), envir=inp)
     inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
     env <- new.env()
@@ -508,7 +510,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
 .get.mig.data.subnat <- function(inputs, wpp.year, annual, periods, default.country, region.codes, 
                                  pop0 = NULL, mig.age.method = "rc",
                                  MIGshare = NULL, mig.is.rate = c(FALSE, FALSE), 
-                                 rc.fdm = NULL, pop = NULL, verbose = FALSE) {
+                                 rc.data = NULL, pop = NULL, verbose = FALSE) {
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
   if(startsWith(mig.age.method, "fdm")){ # need also population 
@@ -557,7 +559,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            annual = annual, time.periods = migcols, 
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
-                                                           template = migtempl, rc.fdm = rc.fdm, pop = popdt, pop.glob = globpop)
+                                                           template = migtempl, rc.data = rc.data, 
+                                     pop = popdt, pop.glob = globpop)
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       for(attrib in c("rate", "code", "rc.out")) {
         if(!is.null((val <- attr(migmtx, attrib))))

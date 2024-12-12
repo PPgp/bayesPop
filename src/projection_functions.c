@@ -85,7 +85,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double popadjm[adim][*npred+1], popadjf[adim][*npred+1], current_popf;
     double migendm[adim][*migc], migendf[adim][*migc], migmidm[adim][*migc], migmidf[adim][*migc];
     double migstartm[adim][*migc], migstartf[adim][*migc];
-    double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f, tmp;
+    double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f;
     double totmigcount, totmigcountm, totmigcountf;
     double tpop, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf, tsmigposm, tsmigposf, tsmigagem, tsmigagef;
     double IM, OM, IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
@@ -279,17 +279,20 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                     /* total migration count; not more than 80% of total population can leave */ 
                     totmigcountm = fmax(MIGratem[jve], max_out_rate) * tpopm;
                     totmigcountf = fmax(MIGratef[jve], max_out_rate) * tpopf;
-                    totmigcount = totmigcountm + totmigcountf; 
-                    tmp = 0; 
+                    totmigcount = totmigcountm + totmigcountf;
+
                     /* distribute into ages */
                     if(MIGratecode[jve] == 1){ /* multiply the total rate with age schedule */
+                        totmigcountm = 0; totmigcountf = 0;
                         for(i=0; i < adim; ++i) { 
                             migendm[i][jve] = fmax(fmax(0, popm[i+t])*max_out_rate, totmigcount*migendm[i][jve]); /* assures there is no depopulation */
                             migendf[i][jve] = fmax(fmax(0, popf[i+t])*max_out_rate, totmigcount*migendf[i][jve]);
-                            tmp = tmp + migendm[i][jve];
+                            totmigcountm = totmigcountm + migendm[i][jve];
+                            totmigcountf = totmigcountf + migendf[i][jve];
                         }
                     }
                     if(MIGratecode[jve] == 2){ /* these schedules are actual counts, so we shift them up and down, relative to the sum */
+                        totmigcountm = 0; totmigcountf = 0;
                         for(i=0; i < adim; ++i) { 
                             if(totmigcount > 0){
                                 if(migendm[i][jve] > 0) /* distribute the difference across the positive part of the schedule */
@@ -302,6 +305,8 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                                 if(migendf[i][jve] < 0) 
                                     migendf[i][jve] = migendf[i][jve] + (totmigcount - trmig)*migendf[i][jve]/trmigneg;   
                             }
+                            totmigcountm = totmigcountm + migendm[i][jve];
+                            totmigcountf = totmigcountf + migendf[i][jve];
                         }
                     }
                     if(MIGratecode[jve] >= 4){ /* FDM methods; need to compute In- and Out-total migration */

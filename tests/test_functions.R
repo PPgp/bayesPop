@@ -483,9 +483,6 @@ test.different.migration.methods <- function(wpp.year = 2024, annual = TRUE) {
     time <- 5
     countries <- c(528,218)
     ncountries <- length(countries)
-    #ages <- bayesPop:::ages.all(annual, observed = TRUE)
-    #nages <- length(ages)
-    #age.labels <- bayesPop:::get.age.labels(ages, single.year = annual, last.open = TRUE)
     start.years <- if(annual) list("2024" = 2023, "2022" = 2021, "2019" = 2015) else list("2024" = 2020, "2022" = 2020, "2019" = 2015)
     present.year <- start.years[[as.character(wpp.year)]]
     midyr <- if(annual) 1 else 3
@@ -506,57 +503,79 @@ test.different.migration.methods <- function(wpp.year = 2024, annual = TRUE) {
     pred <- pop.predict(countries=countries, end.year= present.year + time*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-                        inputs=list(migtraj=migfile), mig.age.method = "fdm")
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmnop")
     s <- summary(pred)
     stopifnot(s$nr.traj == nr.traj)
     stopifnot(s$nr.countries == 2)
     stopifnot(length(s$projection.years) == time)
     mgr <- get.pop("G528", pred)
-    stopifnot(dim(mgr)[4] == nr.traj) 
-    
+    stopifnot(dim(mgr)[4] == nr.traj)
+
     # Test "auto" with 5 trajectories
     nr.traj <- 5
     write.migration(nr.traj = nr.traj)
-    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
                         inputs=list(migtraj=migfile), mig.age.method = "auto")
     stopifnot(pred$nr.traj == nr.traj)
     stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
-    stopifnot(pred$inputs$mig.age.method == if(wpp.year == 2019 & !annual) "residual" else "fdm")
-    
-    # Test "fdmw" counts with 5 trajectories
+    stopifnot(pred$inputs$mig.age.method == if(wpp.year == 2019 & !annual) "residual" else "fdmp")
+
+    # Test "fdmnop" counts with 5 trajectories
     nr.traj <- 5
     write.migration(nr.traj = nr.traj)
-    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-                        inputs=list(migtraj=migfile), mig.age.method = "fdmw")
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmnop")
     stopifnot(pred$nr.traj == nr.traj)
     stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
-    stopifnot(pred$inputs$mig.age.method == "fdmw")
-    
-    # Test "fdmw" rates with 5 trajectories
+    stopifnot(pred$inputs$mig.age.method == "fdmnop")
+
+    # Test "fdmp" rates with 5 trajectories
     nr.traj <- 5
     write.migration(nr.traj = nr.traj, rates = TRUE)
-    pred <- pop.predict(countries = countries, end.year = present.year + (time+1)*step, present.year = present.year,
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-                        inputs=list(migtraj=migfile), mig.age.method = "fdmw",
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmp",
                         mig.is.rate = c(FALSE, TRUE))
     stopifnot(pred$nr.traj == nr.traj)
     stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
-    stopifnot(pred$inputs$mig.age.method == "fdmw")
-    
-    
+    stopifnot(pred$inputs$mig.age.method == "fdmp")
+
+    #options(error=quote(dump.frames("last.dump", TRUE)))
+    #load("last.dump.rda"); debugger()
+    # Test "rc" rates with 1 trajectories with external RC proportions
+    nr.traj <- 1
+    write.migration(nr.traj = nr.traj, rates = TRUE)
+    rc.schedules <- subset(DemoTools::mig_un_families, family == "Male Labor")
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "rc", 
+                        mig.rc.fam = rc.schedules,
+                        mig.is.rate = c(FALSE, TRUE))
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "rc")
+    # check the migration sex ratio, if it is equal to the one we passed via the mig.rc.fam argument
+    sex.ratio.in <- sum(subset(rc.schedules, mig_sign == "Inmigration" & sex == "Male" & age < 101)$prop)/
+        sum(subset(rc.schedules, mig_sign == "Inmigration" & age < 101)$prop)
+    sex.ratio.out <- sum(subset(rc.schedules, mig_sign == "Emigration" & sex == "Male" & age < 101)$prop)/
+        sum(subset(rc.schedules, mig_sign == "Emigration" & age < 101)$prop)
+    should.be.sr <- ifelse(get.pop.ex("G218", pred)[-1] >= 0, sex.ratio.in, sex.ratio.out)
+    stopifnot(all.equal(get.pop.ex("G218_M/G218", pred)[-1], should.be.sr))
+
     test.ok(test.name)
     unlink(sim.dir, recursive=TRUE)
     unlink(migfile)
 }
 
-test.probabilistic.fdmw <- function(wpp.year = 2024, annual = TRUE) {
+test.probabilistic.fdmp <- function(wpp.year = 2024, annual = TRUE) {
     step <- if(annual) 1 else 5
-    test.name <- paste0('Running probabilistic FDMw ', 'for a ', step, '-year simulation with wpp', wpp.year)
+    test.name <- paste0('Running probabilistic FDMp ', 'for a ', step, '-year simulation with wpp', wpp.year)
     start.test(test.name)
     set.seed(1)
     # create migration files with two countries and two trajectories
@@ -593,14 +612,14 @@ test.probabilistic.fdmw <- function(wpp.year = 2024, annual = TRUE) {
         write.csv(mig, file=migfile, row.names=FALSE)
         fwrite(fdmtraj, file=migfdmtraj)
     }
-    # Test "fdmw" with 5 mig trajectories and 4 RC trajectories
+    # Test "fdmp" with 5 mig trajectories and 4 RC-in/out trajectories
     nr.traj <- 5
     nr.traj.fdm <- 4
     write.migration(nr.traj = nr.traj, nr.traj.fdm = nr.traj.fdm, rates = FALSE)
     pred <- pop.predict(countries=country, end.year= present.year + time*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmw")
+                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmp")
 
     s <- summary(pred)
     stopifnot(s$nr.traj == nr.traj)
@@ -615,7 +634,7 @@ test.probabilistic.fdmw <- function(wpp.year = 2024, annual = TRUE) {
     pred <- pop.predict(countries=country, end.year= present.year + (time+1)*step, present.year = present.year,
                         annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
                         verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
-                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmw",
+                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmp",
                         mig.is.rate = c(FALSE, TRUE)
                         )
     mgr <- get.pop("G250", pred)
@@ -628,5 +647,6 @@ test.probabilistic.fdmw <- function(wpp.year = 2024, annual = TRUE) {
     unlink(migfile)
     unlink(migfdmtraj)
 }
+
 
 #TODO: test project.pasfr function

@@ -17,9 +17,9 @@ age.specific.migration(wpp.year = 2019, years = seq(1955, 2100, by = 5),
     depratio = wpp.year == 2015, verbose = TRUE)
     
 migration.totals2age(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-    schedule = NULL, scale = 1, method = "rc", sex = "M",
+    scale = 1, method = "rc", sex = "M",
     id.col = "country_code", mig.is.rate = FALSE, 
-    rc.fdm = NULL, pop = NULL, pop.glob = NULL, \dots)
+    rc.data = NULL, pop = NULL, pop.glob = NULL, \dots)
     
 rcastro.schedule(annual = FALSE)
 }
@@ -40,15 +40,18 @@ rcastro.schedule(annual = FALSE)
   \item{ages}{Labels of age groups into which the total migration is to be disaggregated. If it is missing, default age groups are determined depending on the argument \code{annual}.}
   \item{annual}{Logical determining if the age groups are 5-year age groups (\code{FALSE}) or 1-year ages (\code{TRUE}) on which the choice of the default schedule is dependent, if \code{schedule} is missing. It also determines the expected syntax of the names of time columns in \code{df}.}
   \item{time.periods}{Character vector determining which columns should be considered in the \code{df} dataset. It should be a subset of column names in \code{df}. By default, all time columns in \code{df} are considered.}
-  \item{schedule}{Numeric vector used for distributing total migration across ages. It should have the same length as \code{ages}. If not given, the argument \code{method} determines how the totals are distributed.}
   \item{scale}{The migration schedule is multiplied by this number. It can be used for example, if total migration needs to be distributed between sexes.}
-  \item{method}{Method to use for the distribution of totals into age groups. The \dQuote{rc} method uses a simple Rogers-Castro disaggregation via the function \code{rcastro.schedule}. The \dQuote{fdm} and \dQuote{fdmw} methods use the Flow Difference Method, where \dQuote{fdmw} weights the flows by population.}
+  \item{method}{Method to use for the distribution of totals into age groups. The \dQuote{rc} method uses either a basic Rogers-Castro disaggregation via the function \code{rcastro.schedule}, or a schedule given in the \code{rc.data} argument. The \dQuote{fdmp} and \dQuote{fdmnop} methods use the Flow Difference Method, where \dQuote{fdmp} weights the flows by population.}
   \item{sex}{\dQuote{M} or \dQuote{F} determining the sex of this schedule. It only impacts the FDM methods.}
   \item{id.col}{Name of the unique identifier of the locations.}
   \item{mig.is.rate}{Logical indicating if the data in \code{df} should be interpreted as rates. If \code{FALSE}, \code{df} represent counts.}
-  \item{rc.fdm}{Dataset containing various inputs for the FDM methods. It has columns contained in the \code{\link{rcFDM}} dataset, as well as columns \dQuote{beta0} (intercept), \dQuote{beta1} (slope), \dQuote{min} (minimum rate), \dQuote{in_sex_factor} (inflow female proportion), and \dQuote{out_sex_factor} (outflow female proportion), used in the FDM methods. These columns correspond to columns \dQuote{MigFDMb0}, \dQuote{MigFDMb1}, \dQuote{MigFDMmin}, \dQuote{MigFDMsrin} and \dQuote{MigFDMsrout}, respectively, in the \code{\link{vwBaseYear}} dataset.}
+  \item{rc.data}{data.table containing either a family of Rogers-Castro proportions if \code{method = "rc"}, or various inputs for the FDM methods if \code{method} is either \dQuote{fdmp} or \dQuote{fdmnop}. 
+  
+  For the \dQuote{rc} method, mandatory columns are \dQuote{age} and \dQuote{prop}. Optionally, it can have a column \dQuote{mig_sign} with values \dQuote{Inmigration} and \dQuote{Emigration} (distinguishing schedules to be applied for positive and negative migration, respectively) and a column \dQuote{sex} with values \dQuote{Female} and \dQuote{Male}. The format corresponds to the dataset \code{DemoTools::mig_un_families}, subset to a single family. 
+  
+  For the FDM methods, it has columns contained in the \code{\link{rcFDM}} dataset, as well as columns \dQuote{beta0} (intercept), \dQuote{beta1} (slope), \dQuote{min} (minimum rate), \dQuote{in_sex_factor} (inflow female proportion), and \dQuote{out_sex_factor} (outflow female proportion), used in the FDM methods. These columns correspond to columns \dQuote{MigFDMb0}, \dQuote{MigFDMb1}, \dQuote{MigFDMmin}, \dQuote{MigFDMsrin} and \dQuote{MigFDMsrout}, respectively, in the \code{\link{vwBaseYear}} dataset.}
   \item{pop}{data.table with population counts needed for the FDM methods. It should have a location identifier column of the same name as \code{id.col}, further columns \dQuote{year}, \dQuote{age}, and \dQuote{pop}.}
-  \item{pop.glob}{data.table with global population needed for the weighted FDM method (\dQuote{fdmw}). It should have columns \dQuote{year}, \dQuote{age}, and \dQuote{pop}.}
+  \item{pop.glob}{data.table with global population needed for the weighted FDM method (\dQuote{fdmp}). It should have columns \dQuote{year}, \dQuote{age}, and \dQuote{pop}.}
   \item{\dots}{Further arguments passed to the underlying functions.}
 }
 \details{
@@ -60,7 +63,7 @@ If \code{smooth} is \code{TRUE} a smoothing procedure is performed over ages whe
 This function works only for 5-year data. 
 }
 \subsection{Function \code{migration.totals2age}}{
-This function should be used when working with annual data or data from \href{https://github.com/PPgp/wpp2022}{\pkg{wpp2022}} and \href{https://github.com/PPgp/wpp2024}{\pkg{wpp2024}}. It allows users to disagregate total migration counts or rates (for multiple time periods and multiple locations) into age-specific ones by either a schedule similar to the one used by the UN in WPP2024 (\code{method = "fdm"}), a Rogers-Castro (\code{method = "rc"}), or by FDM weighted by population (\code{method = "fdmw"}) as described in Sevcikova et al (2024). The FDM method needs additional info passed via the arguments \code{rc.fdm}, \code{pop} and \code{pop.glob}. The Rogers-Castro schedule can be accessed via the function \code{rcastro.schedule} where the \code{annual} argument specifies if it is for 1-year or 5-year age groups. 
+This function should be used when working with annual data or data from \href{https://github.com/PPgp/wpp2022}{\pkg{wpp2022}} and \href{https://github.com/PPgp/wpp2024}{\pkg{wpp2024}}. It allows users to disagregate total migration counts or rates (for multiple time periods and multiple locations) into age-specific ones by either a schedule similar to the one used by the UN in WPP2024 (\code{method = "fdmnop"}), a Rogers-Castro (\code{method = "rc"}), or by FDM weighted by population (\code{method = "fdmp"}) as described in Sevcikova et al (2024). The FDM method needs additional info passed via the arguments \code{rc.data}, \code{pop} and \code{pop.glob}. The default Rogers-Castro schedule can be accessed via the function \code{rcastro.schedule} where the \code{annual} argument specifies if it is for 1-year or 5-year age groups. Alternatively, an external schedule can be given via the \code{rc.data} argument, where one can distinguish between schedules for each sex, as well as for positive and negative net migration. It has the same structure as the dataset \code{DemoTools::mig_un_families}, but it should be a subset for a single family and converted to \code{data.table}.
 }
 }
 

@@ -22,7 +22,7 @@ data(rc5FDM)
   }
 }
 \details{
-These datasets are used as the default datasets in \code{\link{pop.predict}} if \code{mig.age.method} is either \dQuote{fdm} or \dQuote{fdmw} and the \code{inputs} item \dQuote{mig.fdm} is not given. Other default parameters of the FDM method are read from the \code{\link{vwBaseYear}} dataset.
+These datasets are used as the default datasets in \code{\link{pop.predict}} if \code{mig.age.method} is either \dQuote{fdmp} or \dQuote{fdmnop} and the \code{inputs} item \dQuote{mig.fdm} is not given. Other default parameters of the FDM method are read from the \code{\link{vwBaseYear}} dataset.
 }
 
 \source{
