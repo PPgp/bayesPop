@@ -668,10 +668,11 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        setnames(mig.rc.inout, fdmvar, fdmMIGtype.names[[fdmvar]])
 	    }
 	} # end FDM settings
+	if(!is.null(mig.rc.fam))  mig.rc.fam <- data.table(mig.rc.fam)
 	miginp <- .get.mig.data(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
 	                        existing.mig = existing.mig, all.countries = all.countries, pop0 = POPm0,
 	                        mig.age.method = mig.age.method, mig.is.rate = mig.is.rate, 
-	                        rc.data = if(is.fdm) mig.rc.inout else data.table(mig.rc.fam), 
+	                        rc.data = if(is.fdm) mig.rc.inout else mig.rc.fam, 
 	                        pop = if(is.fdm) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
 	                        verbose = verbose)
 
@@ -968,16 +969,28 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     sex.ratio.in <- scale
     sex.ratio.out <- scale
     rc.schedule.in <- rc.schedule.out <- NULL
-    
     if(method == "rc" && !is.null(rc.data)){ # externally supplied RC schedules (e.g. DemoTools dataset mig_un_families)
         rc.sched <- copy(rc.data)
         if(! "mig_sign" %in% colnames(rc.sched)) rc.sched[, mig_sign := "B"] else rc.sched[, mig_sign := toupper(substr(mig_sign, 1, 1))]
         rc.sched[, sx := "B"]
         if("sex" %in% colnames(rc.sched)) rc.sched[, sx := toupper(substr(rc.sched$sex, 1, 1))][, sex := NULL]
+        if(!annual & !any(agedf$age[1] %in% age)){
+            # Looks like ages are not in format 0-4, ...; collapse to 5-year age groups
+            rc.sched[age == "100+", age := "100"][, age := as.integer(age)]
+            rc.sched[, age.idx := cut(age, breaks = seq(0, by = 5, length = 28), labels = FALSE, include.lowest = TRUE)]
+            rc.sched <- rc.sched[, list(prop = sum(prop)), by = c("sx", "mig_sign", "age.idx")]
+            rc.sched <- merge(rc.sched, agedf, by = "age.idx", sort = FALSE)
+        } else {
+            rc.sched <- rc.sched[age %in% agedf$age]
+        }
+        # scale to sum to 1 over sexes
+        if(length(unique(rc.sched$sx)) > 2) stop("mig.rc.fam table cannot have more than two sexes")
+        rc.sched[, prop := prop/sum(prop), by = "mig_sign"]
+        
         this.sx <- if(! sex %in% rc.sched[, sx]) "B" else sex
         rc.data.sx <- rc.sched[sx == this.sx]
-        rc.schedule.in <- rc.data.sx[mig_sign %in% c("I", "B"), list(age, prop)][age %in% agedf$age]
-        rc.schedule.out <- rc.data.sx[mig_sign %in% c("E", "B"), list(age, prop)][age %in% agedf$age]
+        rc.schedule.in <- rc.data.sx[mig_sign %in% c("I", "B"), list(age, prop)]
+        rc.schedule.out <- rc.data.sx[mig_sign %in% c("E", "B"), list(age, prop)]
         if(nrow(rc.schedule.out) == 0) rc.schedule.out <- rc.schedule.in
         if(any(duplicated(rc.schedule.in[, age])) || any(duplicated(rc.schedule.out[, age]))) 
             stop("mig.rc.fam dataset contains duplicates. Make sure it contains only one family of schedules.")
@@ -985,8 +998,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         rc.schedule.out <- rc.schedule.out$prop
         if(scale < 1 && this.sx != "B"){ # extract the right sex-ratio
             rc.data.othersx <- rc.sched[!sx %in% c(sex, "B")]
-            rc.schedule.in.other <- rc.data.othersx[mig_sign %in% c("I", "B"), list(age, prop)][age %in% agedf$age]
-            rc.schedule.out.other <- rc.data.othersx[mig_sign %in% c("E", "B"), list(age, prop)][age %in% agedf$age]
+            rc.schedule.in.other <- rc.data.othersx[mig_sign %in% c("I", "B"), list(age, prop)]
+            rc.schedule.out.other <- rc.data.othersx[mig_sign %in% c("E", "B"), list(age, prop)]
             #if(id.col == "trajectory") browser()
             sex.ratio.in <- sum(rc.schedule.in)/sum(c(rc.schedule.in, rc.schedule.in.other$prop))
             sex.ratio.out <- sum(rc.schedule.out)/sum(c(rc.schedule.out, rc.schedule.out.other$prop))
@@ -1531,7 +1544,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
 	                                id.col = "trajectory", method = pred$inputs$mig.age.method,
 	                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
-	                                rc.data = if(is.fdm) iotrajw else data.table(pred$inputs$mig.rc.fam), 
+	                                rc.data = if(is.fdm) iotrajw else pred$inputs$mig.rc.fam, 
 	                                pop = pred$fdm.inputs$popdt[country_code == country][, country_code := NULL],
 	                                pop.glob = pred$fdm.inputs$globpop, 
 	                                ...#, debug = TRUE
@@ -1865,7 +1878,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	                                 sex = list(male = "M", female = "F")[[sx]], 
 	                                 scale = 0.5,
 	                                 mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                 rc.data = if(is.fdm) ioinput$mig.fdm else data.table(inputs$mig.rc.fam), 
+	                                 rc.data = if(is.fdm) ioinput$mig.fdm else inputs$mig.rc.fam, 
 	                                 pop = ioinput$popdt, pop.glob = ioinput$globpop), 
 	            check.names = FALSE)
 	        }

@@ -347,11 +347,12 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         setnames(mig.rc.inout, fdmvar, fdmMIGtype.names[[fdmvar]])
       }
     } # end FDM settings
+    if(!is.null(mig.rc.fam))  mig.rc.fam <- data.table(mig.rc.fam)
     miginp <- .get.mig.data.subnat(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
                             default.country = default.country, region.codes = region.codes,
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
-                            rc.data = if(is.fdm) mig.rc.inout else data.table(mig.rc.fam), 
+                            rc.data = if(is.fdm) mig.rc.inout else mig.rc.fam, 
                             pop = if(is.fdm) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
                             verbose = verbose)
     

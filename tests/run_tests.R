@@ -1,7 +1,7 @@
 library(bayesPop)
 source('test_functions.R')
 
-CRAN <- TRUE
+CRAN <- FALSE
 
 test.expressions()
 
@@ -22,6 +22,7 @@ if(!CRAN) {
     test.adjustment()
     test.subnat()
     options(warn=warn$warn)
+    test.subnat(mig.age.method = NULL) # default is fdmp (will generate a warning)
     test.subnat.with.subnat.tfr.e0()
     test.prediction.with.patterns()
 	test.expressions.with.VE(map=TRUE, parallel = TRUE) # generates warnings

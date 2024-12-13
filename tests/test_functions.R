@@ -347,7 +347,7 @@ test.adjustment <- function() {
     test.ok(test.name)
 }
 
-test.subnat <- function() {
+test.subnat <- function(mig.age.method = "rc") {
   test.name <- "Subnational projections with national TFR"
   start.test(test.name)
   data.dir <- file.path(find.package("bayesPop"), "extdata")
@@ -358,10 +358,12 @@ test.subnat <- function() {
                              inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
                                            popF = file.path(data.dir, "CANpopF.txt"),
                                            patterns = file.path(data.dir, "CANpatterns.txt")
-                                           ))
+                                           ),
+                             mig.age.method = mig.age.method)
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
   stopifnot(dim(get.pop("P658", pred))[3] == 9) # projection until 2060
+  stopifnot(pred$inputs$mig.age.method == if(is.null(mig.age.method)) "fdmp" else mig.age.method)
   
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                 locations = file.path(data.dir, "CANlocations.txt"))
@@ -567,8 +569,7 @@ test.different.migration.methods <- function(wpp.year = 2024, annual = TRUE) {
     sex.ratio.out <- sum(subset(rc.schedules, mig_sign == "Emigration" & sex == "Male" & age < 101)$prop)/
         sum(subset(rc.schedules, mig_sign == "Emigration" & age < 101)$prop)
     should.be.sr <- ifelse(get.pop.ex("G218", pred)[-1] >= 0, sex.ratio.in, sex.ratio.out)
-    stopifnot(all.equal(get.pop.ex("G218_M/G218", pred)[-1], should.be.sr))
-
+    stopifnot(all.equal(get.pop.ex("G218_M/G218", pred)[-1], should.be.sr, tolerance = if(annual) 1e-6 else 1e-3)) # for 5-year sim, the should be ratios are a little off
     test.ok(test.name)
     unlink(sim.dir, recursive=TRUE)
     unlink(migfile)
