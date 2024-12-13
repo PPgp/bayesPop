@@ -960,20 +960,22 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                         age.idx = age.idx)
     migtmp <- merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE)[, prop := NA][, prop := as.numeric(prop)]
 
-    if(is.character(migtmp$age) && !is.null(rc.data)){ # make the OAG in rc.data consistent with migtmp
-        rc.data[, age := as.character(age)]
+    rc.data.wrk <- copy(rc.data)
+    if(is.character(migtmp$age) && !is.null(rc.data.wrk)){ # make the OAG in rc.data consistent with migtmp
+        rc.data.wrk[, age := as.character(age)]
         if(any(migtmp[, age] == "100+")) # TODO: check the range of ages in rc.data
-            rc.data[, age := ifelse(age == "100", "100+", age)]
+            rc.data.wrk[, age := ifelse(age == "100", "100+", age)]
     }
     
     sex.ratio.in <- scale
     sex.ratio.out <- scale
     rc.schedule.in <- rc.schedule.out <- NULL
     if(method == "rc" && !is.null(rc.data)){ # externally supplied RC schedules (e.g. DemoTools dataset mig_un_families)
-        rc.sched <- copy(rc.data)
+        rc.sched <- copy(rc.data.wrk)
         if(! "mig_sign" %in% colnames(rc.sched)) rc.sched[, mig_sign := "B"] else rc.sched[, mig_sign := toupper(substr(mig_sign, 1, 1))]
         rc.sched[, sx := "B"]
         if("sex" %in% colnames(rc.sched)) rc.sched[, sx := toupper(substr(rc.sched$sex, 1, 1))][, sex := NULL]
+        #if(sex == "M" && id.col == "country_code") browser()
         if(!annual & !any(agedf$age[1] %in% age)){
             # Looks like ages are not in format 0-4, ...; collapse to 5-year age groups
             rc.sched[age == "100+", age := "100"][, age := as.integer(age)]
@@ -983,6 +985,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         } else {
             rc.sched <- rc.sched[age %in% agedf$age]
         }
+
         # scale to sum to 1 over sexes
         if(length(unique(rc.sched$sx)) > 2) stop("mig.rc.fam table cannot have more than two sexes")
         rc.sched[, prop := prop/sum(prop), by = "mig_sign"]
@@ -1389,12 +1392,16 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	for(what.mig in c('MIGm', 'MIGf')) {
 		cidx <- which(inputs[[what.mig]]$country_code==country)
 		cols <- intersect(colnames(inputs[[what.mig]]), colnames(inpc[[what.mig]]))
-		if(any(!is.na(inputs[[what.mig]][cidx,cols]))) next
-		inputs[[what.mig]][cidx,cols] <- inpc[[what.mig]][,cols]
+		if(all(is.na(inputs[[what.mig]][cidx,cols]))){
+		    inputs[[what.mig]][cidx,cols] <- inpc[[what.mig]][,cols]
+		    migr.modified <- TRUE
+		}
 		cidx <- which(inputs$observed[[what.mig]]$country_code==country)
 		cols <- intersect(colnames(inputs$observed[[what.mig]]), colnames(inpc$observed[[what.mig]]))
-		inputs$observed[[what.mig]][cidx,cols] <- inpc$observed[[what.mig]][,cols]
-		migr.modified <- TRUE
+		if(all(is.na(inputs$observed[[what.mig]][cidx,cols]))){
+		    inputs$observed[[what.mig]][cidx,cols] <- inpc$observed[[what.mig]][,cols]
+		    migr.modified <- TRUE
+		}
 	}
 	return(migr.modified)
 }
