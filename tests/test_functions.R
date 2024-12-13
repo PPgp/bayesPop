@@ -118,6 +118,7 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	sim.dir <- tempfile()
 	pred <- pop.predict(countries=c(528, 218), nr.traj = 3, verbose=FALSE, output.dir=sim.dir, 
 	                    keep.vital.events=TRUE, parallel = parallel)
+
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='F528_F[10]')

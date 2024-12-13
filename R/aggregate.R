@@ -301,10 +301,11 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 	    kannisto.est.ages <- seq(80, 95, by = 5)
 	}
 	fert.age.idx <- seq(fert.age.start, length = max.lage.fert)
-	obs.cols.ve <- colnames(obs.data[["male"]])
+	obs.cols <- colnames(obs.data[["male"]])
+	obs.cols.ve <- obs.cols
 	if(!pop.pred$annual) obs.cols.ve <- paste(as.integer(colnames(obs.data[["male"]]))-5, obs.cols.ve, sep = "-")
 	prev.year <- as.character(pop.pred$proj.years.pop[1]-time.step)
-	if(! prev.year %in% obs.cols.ve && !no.vital.events){
+	if(! prev.year %in% obs.cols && !no.vital.events){
 	    warning("Year ", prev.year, " needed in observed population to abridge various aggregated quantities. Present year used instead." )
 	    prev.year <- as.character(pop.pred$proj.years.pop[1])
 	}

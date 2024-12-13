@@ -662,6 +662,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	event <- match.arg(event)
  	sex <- match.arg(sex)
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
+ 	if(!pop.pred$annual) time.labels <- as.character(as.integer(time.labels) - 2)
  	
  	#if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
@@ -744,6 +745,11 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		                      fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
 		                      pasfr = list(female=myenv$pasfert, female.hch=myenv$pasfert.hch)
 		                )
+	    if(is.observed) {
+		    for(s in names(alltraj))
+		        if(!is.null(alltraj[[s]]))
+		            dimnames(alltraj[[s]])[[2]] <- time.labels[(length(time.labels)-dim(alltraj[[s]])[2]+1):length(time.labels)]
+		}
 	}
 	has.hch <- !is.observed && (!is.null(alltraj$male.hch) || !is.null(alltraj$female.hch) || !is.null(alltraj$both.hch))
 	max.age <- NULL
@@ -807,9 +813,13 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	if(is.observed) {
 		if(length(dim(traj)) < 3) # age dimension is missing
 			traj <- abind(traj, NULL, along=0)
-		 if(dim(traj)[[2]] < nperiods) {		
-			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
-						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
+		 if(dim(traj)[[2]] < nperiods) { # attach missing time periods
+		    nmiss <- nperiods-dim(traj)[[2]]
+		    step <- if(pop.pred$annual) 1 else 5
+		    first.time <- as.integer(dimnames(traj)[[2]][1])
+		    add.time <- sort(seq(first.time-step, by = -step, length = nmiss))
+			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nmiss, dim(traj)[[3]]), 
+						dimnames=list(NULL, as.character(add.time), NULL)),
 						traj, along=2)
 		}
 	}
@@ -1034,12 +1044,14 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			if(!has.ve) {
 				traj <- get.pop.observed.with.age(pop.pred, country=country.object$code, sex=sex, age=age)
 				d <- traj$data[traj$age.idx,,drop = FALSE]
+				colnms <- colnames(traj$data)
 			} else {
 				traj <- get.popVE.trajectories.and.quantiles(pop.pred, country.object$code, 
 											event=get.expression.indicators()[[what]], sex=sex, age=age, 
 											sum.over.ages=FALSE, is.observed=TRUE, ...)
 				traj$age.idx <- traj$age.idx.raw
 				d <- traj$trajectories
+				colnms <- colnames(traj$trajectories)
 			}
 		    if(is.null(d)) return(NULL)
 			if(sum.over.ages) {
@@ -1048,7 +1060,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				else d <- colSums(d)
 				data <- as.matrix(d) # adds trajectory dimension if missing
 				dim(data) <- c(1, dim(data)) # adding age dimension
-				dimnames(data) <- list(NULL, colnames(traj$trajectories), NULL)
+				dimnames(data) <- list(NULL, colnms, NULL)
 			} else {# only if it was not summed up, because then the as.matrix command adds a dimension
 				data <- if(is.null(dim(d)) || !is.array(d)) as.matrix(d) else d
 				#data <- as.matrix(d)
