@@ -960,7 +960,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                         age.idx = age.idx)
     migtmp <- merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE)[, prop := NA][, prop := as.numeric(prop)]
 
-    rc.data.wrk <- copy(rc.data)
+    rc.data.wrk <- rc.data
+    if(!is.null(rc.data.wrk))
+        rc.data.wrk <- copy(rc.data.wrk)
     if(is.character(migtmp$age) && !is.null(rc.data.wrk)){ # make the OAG in rc.data consistent with migtmp
         rc.data.wrk[, age := as.character(age)]
         if(any(migtmp[, age] == "100+")) # TODO: check the range of ages in rc.data
@@ -970,7 +972,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     sex.ratio.in <- scale
     sex.ratio.out <- scale
     rc.schedule.in <- rc.schedule.out <- NULL
-    if(method == "rc" && !is.null(rc.data)){ # externally supplied RC schedules (e.g. DemoTools dataset mig_un_families)
+    if(method == "rc" && !is.null(rc.data.wrk)){ # externally supplied RC schedules (e.g. DemoTools dataset mig_un_families)
         rc.sched <- copy(rc.data.wrk)
         if(! "mig_sign" %in% colnames(rc.sched)) rc.sched[, mig_sign := "B"] else rc.sched[, mig_sign := toupper(substr(mig_sign, 1, 1))]
         rc.sched[, sx := "B"]
@@ -1010,10 +1012,10 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     }
     
     if(startsWith(method, "fdm")) {
-        if(is.null(rc.data)) 
+        if(is.null(rc.data.wrk)) 
             stop("rc.fdm dataset is missing.")
-        byio <- if(id.col %in% colnames(rc.data)) id.col else c()
-        migiotmp <- merge(migtmp, rc.data, all.x = TRUE, by = c(byio, "age"))
+        byio <- if(id.col %in% colnames(rc.data.wrk)) id.col else c()
+        migiotmp <- merge(migtmp, rc.data.wrk, all.x = TRUE, by = c(byio, "age"))
         byio <- if(id.col %in% colnames(migiotmp)) id.col else c()
         if(!annual){ # convert time periods in form 2000-2005 into the end year, i.e. 2005
             migiotmp$period <- migiotmp$year
