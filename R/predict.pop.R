@@ -536,19 +536,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		dimnames(pop.ini.matrix[[sex]]) <- list(paste(POP0[,'country_code'], POP0[,'age'], sep='_'), 
 									as.character(as.integer(num.columns)))
 		pop.ini[[sex]] <- POP0[,c('country_code', 'age', present.year)]
-		dataset.name <- paste0('GQpop', sex)
-		if(!is.null(inputs[[dataset.name]])) {
-		    GQ[[sex]] <- read.pop.file(inputs[[dataset.name]])
-		    colnames(GQ[[sex]]) <- tolower(colnames(GQ[[sex]]))
-		    if(! 'age' %in% colnames(GQ[[sex]]) || ! 'country_code' %in% colnames(GQ[[sex]]) || ! 'gq' %in% colnames(GQ[[sex]]))
-		        stop('Columns "age", "country_code" and "gq" must be present in the GQpop datasets.')
-		    GQ[[sex]] <- GQ[[sex]][, c("country_code", "age", "gq")]
-		}
 	}
 	POPm0 <- pop.ini[['M']]
 	POPf0 <- pop.ini[['F']]
-	GQm <- GQ[['M']]
-	GQf <- GQ[['F']]
 
 	# Get death rates
 	MXm.pred <- MXf.pred <- NULL
@@ -799,6 +789,18 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	# Get TFR
 	TFRpred <- .get.tfr.data(inputs, wpp.year, annual = annual, verbose=verbose)
 	
+	# Get GQ
+	for(sex in c('M', 'F')) {
+        dataset.name <- paste0('GQpop', sex)
+	    if(is.null(inputs[[dataset.name]])) next
+        GQ[[sex]] <- .format.gq(inputs[[dataset.name]], annual, 
+                                c(estim.years[length(estim.years)], proj.years), # need to include the current year
+                                c(obs.periods[length(obs.periods)], proj.periods), 
+                                what = dataset.name, verbose = verbose)
+	}
+	GQm <- GQ[['M']]
+	GQf <- GQ[['F']]
+	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
@@ -867,6 +869,34 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(srb=SRB, obs.srb=obs.SRB, proj.periods=proj.periods, 
            obs.periods=obs.periods, proj.years=proj.years))
 }
+
+.format.gq <- function(file.name, annual, proj.years, proj.periods, id.col = "country_code", what = "GQ", verbose = FALSE){
+    this.gq <- read.pop.file(file.name)
+    colnames(this.gq) <- tolower(colnames(this.gq))
+    if(! 'age' %in% colnames(this.gq) || ! id.col %in% colnames(this.gq))
+        stop('Columns "age" and ', id.col, ' must be present in the GQpop datasets.')
+    if('gq' %in% colnames(this.gq)){ # propagate for all years
+        timecols <- matrix(this.gq$gq, ncol = length(proj.years), nrow = nrow(this.gq), dimnames = list(NULL, proj.years))
+        if(verbose) cat("\n", what, "to be applied to all projection years.\n")
+    } else { # no gq column given; assume columns are years or periods
+        timecols <- matrix(0, ncol = length(proj.years), nrow = nrow(this.gq), dimnames = list(NULL, proj.years))
+        if(annual){
+            numcols <- intersect(colnames(this.gq), as.character(proj.years))
+            timecolnames <- numcols
+        } else { # 5-years
+            which.numcols <- which(as.character(proj.periods) %in% colnames(this.gq))
+            numcols <- as.character(proj.periods)[which.numcols]
+            timecolnames <- as.character(proj.years)[which.numcols]
+        }
+        if(length(numcols) == 0)
+            stop('Either column "gq" must be present in the GQpop datasets, or time columns ', paste(proj.periods, collapse = ","))
+        timecols[, timecolnames] <- as.matrix(this.gq[, numcols])
+        if(verbose) cat("\n", what, "to be applied to years", paste(timecolnames, collapse = ", "), "\n")
+        if(! proj.years[1] %in% timecolnames) warning("Present year not included in GQ. Nothing will be removed before running the CCM.")
+    }
+    return(cbind(this.gq[, c(id.col, "age")], timecols))
+}
+
 
 .consolidate.pasfr <- function(pasfr){
     # If using wpp2022 with 5-year data, the age column contains age categories 
@@ -2096,14 +2126,12 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	for(par in c("GQm", "GQf")) {
 	    if(is.null(inpc[[par]])) next
 	    # match ages
-	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = TRUE), single.year = inputs$annual)
+	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = FALSE), single.year = inputs$annual)
 	    if(!all(rownames(inpc[[par]]) %in% age.labels))
 	        stop("Mismatch in age labels for ", par, "\nAllowed labels: ", paste(age.labels, collapse = ", "))
-	    gq <- rep(0, length(age.labels))
-	    names(gq) <- age.labels
-	    gq[rownames(inpc[[par]])] <- inpc[[par]]
-	    # expand from 100+ to 130+
-	    gq <- c(gq, rep(0, age.length.all(inputs$annual, observed = FALSE) - length(gq)))
+	    # fill missing ages with 0
+	    gq <- matrix(0, nrow = length(age.labels), ncol = ncol(inpc[[par]]), dimnames = list(age.labels, colnames(inpc[[par]])))
+	    gq[rownames(inpc[[par]]), ] <- inpc[[par]]
 	    inpc[[par]] <- gq
 	}
 	inpc$observed <- obs
@@ -2472,11 +2500,11 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	popf[,1] <- c(inputs$POPf0, rep(0, nagecat - nrow(inputs$POPf0)))
 	use.gq <- FALSE
 	if(!is.null(inputs$GQm)) {
-	    popm[,1] <- change.by.gq(inputs$GQm, popm[,1])
+	    popm[,1] <- change.by.gq(inputs$GQm[, 1], popm[,1])
 	    use.gq <- TRUE
 	}
 	if(!is.null(inputs$GQf)) {
-	    popf[,1] <- change.by.gq(inputs$GQf, popf[,1])
+	    popf[,1] <- change.by.gq(inputs$GQf[, 1], popf[,1])
 	    use.gq <- TRUE
 	}
 	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))

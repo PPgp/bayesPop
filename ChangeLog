@@ -1,5 +1,9 @@
-10.0-1.90xx (10/18/2024)
+10.0-1.90xx (10/20/2024)
 ------
+Implemented new methods for disaggregating net migration into ages (FDM).
+
+New defaults for migration age-disaggregation.
+
 Added vwBaseYear2024 dataset.
 
 Performance improvements in write.pop.projection.summary().
@@ -8,7 +12,7 @@ Incorporated use of 2024 migration dataset by age.
 
 pop.predict.subnat can handle 1x1 subnational projections. 
 
-Fix in 1x1 GQs.
+Fix in 1x1 GQs. GQs can be defined by time.
 
 Change in the syntax of the LatestAgeMortalityPattern column in vwBaseYear dataset.
 

@@ -208,21 +208,9 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                 as.character(as.integer(num.columns)))
         pop.ini[[sex]] <- POP0[ ,c('reg_code', 'age', present.year)]
         colnames(pop.ini[[sex]])[1] <- 'country_code'
-        # Group quarters
-        dataset.name <- paste0('GQpop', sex)
-        if(!is.null(inputs[[dataset.name]])) {
-            GQ[[sex]] <- read.pop.file(inputs[[dataset.name]])
-            colnames(GQ[[sex]]) <- tolower(colnames(GQ[[sex]]))
-            if(! 'age' %in% colnames(GQ[[sex]]) || ! 'reg_code' %in% colnames(GQ[[sex]]) || ! 'gq' %in% colnames(GQ[[sex]]))
-                stop('Columns "age", "reg_code" and "gq" must be present in the GQpop datasets.')
-            GQ[[sex]] <- GQ[[sex]][, c("reg_code", "age", "gq")]
-            colnames(GQ[[sex]])[1] <- 'country_code'
-        }
     }
     POPm0 <- pop.ini[['M']]
     POPf0 <- pop.ini[['F']]
-    GQm <- GQ[['M']]
-    GQf <- GQ[['F']]
     
     region.codes <- unique(POPm0$country_code)
     # Get death rates
@@ -483,6 +471,20 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     # Get TFR
     TFRpred <- .get.tfr.data.subnat(inputs, wpp.year, default.country, region.codes, 
                                     annual = annual, verbose=verbose)
+    
+    # Group quarters
+    for(sex in c('M', 'F')) {
+      dataset.name <- paste0('GQpop', sex)
+      if(is.null(inputs[[dataset.name]])) next
+      GQ[[sex]] <- .format.gq(inputs[[dataset.name]], annual,  
+                              c(estim.years[length(estim.years)], proj.years), # need to include the current year
+                              c(obs.periods[length(obs.periods)], proj.periods), 
+                              "reg_code", what = dataset.name, verbose)
+      colnames(GQ[[sex]])[1] <- 'country_code'
+    }
+    GQm <- GQ[['M']]
+    GQf <- GQ[['F']]
+
     inp <- new.env()
     for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
                  'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
