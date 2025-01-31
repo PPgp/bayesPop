@@ -87,8 +87,9 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migstartm[adim][*migc], migstartf[adim][*migc];
     double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f;
     double totmigcount, totmigcountm, totmigcountf;
-    double tpop, tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf, tsmigposm, tsmigposf, tsmigagem, tsmigagef;
-    double IM, OM, IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
+    double tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf, tsmigposm, tsmigposf, tsmigagem, tsmigagef;
+    double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
+    /*double tpop, IM, OM;*/
     double sigma_m[adim], sigma_f[adim];
     double mig_fdm_b0 = MIGfdm[0];
     double mig_fdm_b1 = MIGfdm[1];
@@ -275,7 +276,7 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         tpopm = tpopm + popm[i + t];
                         tpopf = tpopf + popf[i + t];
                     }
-                    tpop = tpopf + tpopm;
+                    /*tpop = tpopf + tpopm;*/
                     /* total migration count; not more than 80% of total population can leave */ 
                     totmigcountm = fmax(MIGratem[jve], max_out_rate) * tpopm;
                     totmigcountf = fmax(MIGratef[jve], max_out_rate) * tpopf;
@@ -310,19 +311,22 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         }
                     }
                     if(MIGratecode[jve] >= 4){ /* FDM methods; need to compute In- and Out-total migration */
-                        IM = fmax(fmax(tpop * mig_fdm_b0 + totmigcount * mig_fdm_b1, tpop * mig_fdm_min), tpop * mig_fdm_min + totmigcount);
-                        OM = totmigcount - IM;
-                        IMm = IM * (1 - mig_fdm_sr_in);
-                        OMm = OM * (1 - mig_fdm_sr_out);
-                        IMf = IM * mig_fdm_sr_in;
-                        OMf = OM * mig_fdm_sr_out;
-                        totmigcountm = IMm + OMm;
-                        totmigcountf = IMf + OMf;
+                        if(totmigcount > 0) {
+                            totmigcountm = totmigcount * (1 - mig_fdm_sr_in);
+                            totmigcountf = totmigcount * mig_fdm_sr_in;
+                        } else {
+                            totmigcountm = totmigcount * (1 - mig_fdm_sr_out);
+                            totmigcountf = totmigcount * mig_fdm_sr_out;
+                        }
+                        IMm = fmax(fmax(tpopm * mig_fdm_b0 + totmigcountm * mig_fdm_b1, tpopm * mig_fdm_min), tpopm * mig_fdm_min + totmigcountm);
+                        OMm = totmigcountm - IMm;
+                        IMf = fmax(fmax(tpopf * mig_fdm_b0 + totmigcountf * mig_fdm_b1, tpopf * mig_fdm_min), tpopf * mig_fdm_min + totmigcountf);
+                        OMf = totmigcountf - IMf;
                         
                         if((debug>=1)){
                             Rprintf("\nj = %i", j);
-                            Rprintf("\nIM = %f, OM = %f, migcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f, sr = %f", 
-                                    IM, OM, totmigcount, MIGratem[jve], mig_fdm_b0, mig_fdm_b1, mig_fdm_min, mig_fdm_sr_in);
+                            Rprintf("\nmigcount = %f, rate = %f, b0 = %f, b1 = %f, min = %f, sr = %f", 
+                                    totmigcount, MIGratem[jve], mig_fdm_b0, mig_fdm_b1, mig_fdm_min, mig_fdm_sr_in);
                             Rprintf("\nIMm = %f, OMm = %f, tpopm = %f, migcountm = %f, IMf = %f, OMf = %f, tpopf = %f, migcountf = %f", 
                                     IMm, OMm, tpopm, totmigcountm, IMf, OMf, tpopf, totmigcountf);
                         }

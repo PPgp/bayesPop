@@ -341,7 +341,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                             pop0 = list(M = POPm0, F = POPf0), MIGshare = MIGshare,
                             mig.is.rate = mig.is.rate, mig.age.method = mig.age.method,
                             rc.data = if(is.fdm) mig.rc.inout else mig.rc.fam, 
-                            pop = if(is.fdm) pop.ini.matrix[['M']] + pop.ini.matrix[['F']] else NULL,
+                            pop = if(is.fdm) pop.ini.matrix else NULL,
                             verbose = verbose)
     
     MIGm <- miginp[["migM"]]
@@ -517,13 +517,20 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
   # Get age-specific migration
   wppds <- data(package=paste0('wpp', wpp.year))
   if(startsWith(mig.age.method, "fdm")){ # need also population 
-    popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
-                              age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
-                    data.table(pop))
+    popdt <- NULL
+    for(sex in c("M", "F")){
+      popdt <- rbind(popdt, 
+                     cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop[[sex]]), "_"), function(x) x[1])),
+                              age = sapply(strsplit(rownames(pop[[sex]]), "_"), function(x) x[2]))[, sx := sex],
+                            data.table(pop[[sex]]))
+                    )
+    }
     if(annual) # if age is in annual form, convert to integers 
       popdt$age <- as.integer(popdt$age)
-    popdt <- melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
-    globpop <- popdt[, list(pop = sum(pop)), by = c("year", "age")]
+    popdt <- melt(popdt, id.vars = c("country_code", "age", "sx"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
+    popdtt <- popdt[, list(pop = sum(pop)), by = c("country_code", "year", "age")] # sum over sexes
+    globpop <- popdt[, list(pop = sum(pop)), by = c("year", "age", "sx")]
+    globpopt <- globpop[, list(pop = sum(pop)), by = c("year", "age")] # sum over sexes
   }
   recon.mig <- NULL
   miginp <- list()
@@ -563,7 +570,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                                            scale = if(is.null(inputs[[fname]])) 0.5 else 1, # since the totals are sums over sexes
                                                             method = mig.age.method, mig.is.rate = mig.is.rate[1], 
                                                            template = migtempl, rc.data = rc.data, 
-                                     pop = popdt, pop.glob = globpop)
+                                     pop = if(mig.is.rate[1]) popdtt else popdt[sx == sex], 
+                                     pop.glob = if(mig.is.rate[1]) globpopt else globpop[sx == sex])
       miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
       for(attrib in c("rate", "code", "rc.out")) {
         if(!is.null((val <- attr(migmtx, attrib))))
