@@ -451,7 +451,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
       # if any of the observed years are missing in the global norm, use the latest norm for those time periods
       missing.years <- obs.periods[! obs.periods %in% colnames(inp$PASFRnorms$PasfrGlobalNorm)]
       if(length(missing.years) > 0) {
-        last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years))]
+        last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years)), drop = FALSE]
         colnames(last.norm) <- missing.years
         inp$PASFRnorms$PasfrGlobalNorm <- cbind(inp$PASFRnorms$PasfrGlobalNorm, last.norm)
       }
