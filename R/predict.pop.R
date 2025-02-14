@@ -951,8 +951,8 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                  ) {
     mig <- i.mig <- migf <- totmig <- rc <- prop <- i.prop <- popglob <- i.pop <- in_sex_ratio <- out_sex_ratio <- in_sex_factor <- out_sex_factor <- NULL
     age <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- totpop <- NULL
-    IM <- beta0 <- beta1 <- OM <- IMs <- OMs <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
-    i.IMs <- i.OMs <- i.out <- i.v <- i.rxstar_out_denom <- i.totmig <- NULL
+    IM <- beta0 <- beta1 <- OM <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
+    i.IM <- i.OM <- i.out <- i.v <- i.rxstar_out_denom <- i.totmig <- NULL
     mig_sign <- sx <- i.prop_in <- i.prop_out <- NULL
     debug <- FALSE
     if(is.null(dim(df))) df <- t(df)
@@ -1181,6 +1181,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                           mig.is.rate = c(FALSE, FALSE), rc.data = NULL, 
                           pop = NULL, verbose = FALSE) {
     # Get age-specific migration for input entries mig, migM, migF, migMt, migFt
+    sx <- NULL # to satisfy CRAN check
     wppds <- data(package=paste0('wpp', wpp.year))
     inouts <- NULL
     is.fdm <- startsWith(mig.age.method, "fdm")
@@ -1879,7 +1880,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 }
 
 .prepare.pop.for.fdm <- function(mig.age.method, country, pop.matrix, present.year, mig.rc.inout){
-    country_code <- NULL # to avoid CRAN Notes
+    country_code <- sex <- NULL # to avoid CRAN Notes
     res <- list()
     if(startsWith(mig.age.method, "fdm")){ # need also population
         popdtl <- NULL

@@ -25,7 +25,7 @@ pop.predict.subnat(end.year = 2060, start.year = 1950, present.year = 2020,
         ), 
         nr.traj = 1000, keep.vital.events = FALSE, 
         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE,
-         mig.is.rate = FALSE, mig.age.method = c("fdmp", "rc", "fdmnop"),
+         mig.is.rate = FALSE, mig.age.method = c("rc", "fdmp", "fdmnop"),
          mig.rc.fam = NULL, pasfr.ignore.phase2 = FALSE, 
          replace.output = FALSE, verbose = TRUE)
 }

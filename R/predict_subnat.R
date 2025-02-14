@@ -16,7 +16,7 @@ pop.predict.subnat <- function(end.year = 2060, start.year = 1950, present.year 
                             GQpopM = NULL, GQpopF = NULL, average.annual = NULL
                         ), nr.traj = 1000, keep.vital.events = FALSE,
                         fixed.mx = FALSE, fixed.pasfr = FALSE, lc.for.all = TRUE, 
-                        mig.is.rate = FALSE, mig.age.method = c("fdmp", "rc", "fdmnop"),
+                        mig.is.rate = FALSE, mig.age.method = c("rc", "fdmp", "fdmnop"),
                         mig.rc.fam = NULL, pasfr.ignore.phase2 = FALSE, 
                         replace.output = FALSE, verbose = TRUE) {
     
@@ -500,7 +500,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
       # if any of the observed years are missing in the global norm, use the latest norm for those time periods
       missing.years <- obs.periods[! obs.periods %in% colnames(inp$PASFRnorms$PasfrGlobalNorm)]
       if(length(missing.years) > 0) {
-        last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years))]
+        last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years)), drop = FALSE]
         colnames(last.norm) <- missing.years
         inp$PASFRnorms$PasfrGlobalNorm <- cbind(inp$PASFRnorms$PasfrGlobalNorm, last.norm)
       }

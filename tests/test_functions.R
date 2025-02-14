@@ -363,7 +363,7 @@ test.subnat <- function(mig.age.method = "rc") {
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
   stopifnot(dim(get.pop("P658", pred))[3] == 9) # projection until 2060
-  stopifnot(pred$inputs$mig.age.method == if(is.null(mig.age.method)) "fdmp" else mig.age.method)
+  stopifnot(pred$inputs$mig.age.method == if(is.null(mig.age.method)) "rc" else mig.age.method)
   
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                 locations = file.path(data.dir, "CANlocations.txt"))
