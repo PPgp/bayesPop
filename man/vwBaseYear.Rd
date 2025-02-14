@@ -12,7 +12,7 @@
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017, 2019, 2022 and 2024 datasets also give information on country's specifics regarding mortality and fertility age patterns.
+Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017, 2019, 2022 and 2024 datasets also give information on country's specifics regarding mortality, fertility and migration age patterns.
 }
 \usage{
     data(vwBaseYear2024)
@@ -54,16 +54,19 @@ Datasets giving information on the baseyear and type of migration for each count
     \item{\code{SmoothDFLatestAgeMortalityPattern}, \code{SmoothDFLatestAgeMortalityPattern1}}{Degree of freedom for smoothing \eqn{a_x}. By default (value 0) a half of the number of age groups is taken. If the \code{SmoothDFLatestAgeMortalityPattern1} column is present, it should contain values related to a 1x1 simulation while the \code{SmoothDFLatestAgeMortalityPattern} column relates to a 5x5 simulation.}
     \item{\code{PasfrNorm}}{Type of norm for computing age-specific fertility pattern to which the country belongs to. Currently only \dQuote{GlobalNorm} is used.}
     \item{\code{PasfrGlobalNorm, PasfrFarEastAsianNorm, PasfrSouthAsianNorm}}{Dummies indicating which country to include to compute the specific norms.}
+    \item{MigFDMb0, MigFDMb1, MigFDMmin, MigFDMsrin, MigFDMsrout}{Available in the 2024 dataset. These are parameters of the Flow Difference Method to generate age-specific net migration patterns (Sevcikova et. al, 2024). They correspond to the intercept, slope, minimum flow rate, female sex ratio for the in-flow and out-flow, respectively.}
   }
 }
 \details{
-There is one record for each country. See Sevcikova et al (2015) on how information from the various columns is used for projections.
+There is one record for each country. See Sevcikova et al (2016) on how information from the various columns is used for projections.
 }
 \source{
 Data provided by the United Nations Population Division.
 }
 \references{
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{https://arxiv.org/abs/1503.05215}
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version in \href{https://arxiv.org/abs/1503.05215}{arXiv:1503.05215}.
+
+H. Sevcikova, J. Raymer J., A. E. Raftery (2024). Forecasting Net Migration By Age: The Flow-Difference Approach. \href{https://arxiv.org/abs/2411.09878}{arXiv:2411.09878}.
 }
 \examples{
 data(vwBaseYear2019)

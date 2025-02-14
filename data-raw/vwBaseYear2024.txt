@@ -1,238 +1,238 @@
-country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortalityType	AgeMortalityPattern	AgeMortProjMethod1	AgeMortProjMethod2	AgeMortProjPattern	AgeMortProjMethodWeights	AgeMortProjAdjSR	LatestAgeMortalityPattern	SmoothLatestAgeMortalityPattern	SmoothDFLatestAgeMortalityPattern	PasfrNorm	PasfrGlobalNorm	ConstantPasfr	PasfrFarEastAsianNorm	PasfrSouthAsianNorm	MigAgeSchedule	MigAgeZeroNeg	MigAgeEqualMFratio
-4	Afghanistan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-8	Albania	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-12	Algeria	VK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-16	American Samoa	PG	1	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.85)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-20	Andorra	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	0	1	0	65	ConstantPasfr	0	1	0	0	0	0	0
-24	Angola	SESH	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-660	Anguilla	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-28	Antigua and Barbuda	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	388	0	1
-32	Argentina	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-51	Armenia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-533	Aruba	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	388	0	1
-36	Australia	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-40	Austria	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-31	Azerbaijan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-44	Bahamas	JM	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-5,4)"	1	65	Global Norm	0	0	0	0	0	0	0
-48	Bahrain	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-50	Bangladesh	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	1	356	0	1
-52	Barbados	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-112	Belarus	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-56	Belgium	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-84	Belize	SESH	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-204	Benin	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-60	Bermuda	JM	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.85)"	3	1	0	65	ConstantPasfr	0	1	0	0	0	0	0
-64	Bhutan	YK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-68	Bolivia (Plurinational State of)	HC	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	1	0
-535	"Bonaire, Sint Eustatius and Saba"	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-70	Bosnia and Herzegovina	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-72	Botswana	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-76	Brazil	HC	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-92	British Virgin Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-96	Brunei Darussalam	PLIW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-100	Bulgaria	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-854	Burkina Faso	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	"c(1,0.5)"	0	"c(-5,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-108	Burundi	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-132	Cabo Verde	YK	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-116	Cambodia	JM	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-120	Cameroon	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-124	Canada	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-136	Cayman Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-140	Central African Republic	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-148	Chad	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-152	Chile	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-156	China	PG	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,1)"	1	65	Global Norm	0	0	0	0	0	0	0
-344	"China, Hong Kong SAR"	PG	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.9)"	3	"c(-4,5)"	1	65	ConstantPasfr	0	1	1	0	0	0	0
-446	"China, Macao SAR"	PG	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	"c(1,0.75)"	0	"c(-4,5)"	1	65	ConstantPasfr	0	1	1	0	0	0	0
-158	"China, Taiwan Province of China"	PG	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	1	0	156	0	1
-170	Colombia	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-174	Comoros	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-178	Congo	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-184	Cook Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.85)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-188	Costa Rica	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-384	C?te d'Ivoire	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-191	Croatia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-192	Cuba	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-3,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-531	Cura?ao	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	388	0	1
-196	Cyprus	YK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-203	Czechia	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-408	Dem. People's Rep. of Korea	IW	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-180	Dem. Republic of the Congo	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-208	Denmark	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-262	Djibouti	PLIW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-212	Dominica	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-214	Dominican Republic	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-218	Ecuador	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-818	Egypt	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-222	El Salvador	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-226	Equatorial Guinea	PLIW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-232	Eritrea	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-233	Estonia	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-748	Eswatini	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-231	Ethiopia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.75)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-234	Faroe Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-238	Falkland Islands (Malvinas)	PG	1	1950	9	0	Model life tables	CD_West	MLT		CD_West		0	0	0	65	Global Norm	0	0	0	0	0	0	0
-242	Fiji	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-246	Finland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-250	France	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-254	French Guiana	SESH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-258	French Polynesia	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-266	Gabon	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-270	Gambia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-268	Georgia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-276	Germany	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-288	Ghana	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-292	Gibraltar	PG	1	1950	9	0	Model life tables	CD_North	MLT		CD_North		0	0	0	65	Global Norm	0	0	0	0	0	0	0
-300	Greece	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-304	Greenland	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.85)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-308	Grenada	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-312	Guadeloupe	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	1	65	ConstantPasfr	0	1	0	0	0	0	0
-316	Guam	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-320	Guatemala	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-831	Guernsey	PG	1	1950	9	0	Model life tables	CD_West	MLT		CD_West		0	0	0	65	Global Norm	1	0	0	0	0	0	0
-324	Guinea	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-624	Guinea-Bissau	YK	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-328	Guyana	SESH	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-332	Haiti	HC	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-336	Holy See	PG	1	1950	9	0	Model life tables	CD_West	MLT		CD_West		3	0	0	65	Global Norm	0	0	0	0	0	0	0
-340	Honduras	HC	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-348	Hungary	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-352	Iceland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,10)"	1	35	Global Norm	0	0	0	0	0	0	0
-356	India	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	1	0	0	0
-360	Indonesia	SESH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-364	Iran (Islamic Republic of)	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-368	Iraq	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-372	Ireland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,10)"	1	35	ConstantPasfr	0	1	0	0	0	0	0
-833	Isle of Man	PG	1	1950	9	0	Model life tables	CD_North	MLT		CD_North		0	0	0	65	Global Norm	0	0	0	0	0	0	0
-376	Israel	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	LC				3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-380	Italy	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	ConstantPasfr	0	1	0	0	0	0	0
-388	Jamaica	JM	0	1950	9	0	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-392	Japan	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	1	0	0	0	0
-832	Jersey	PG	0	1950	9	0	Model life tables	CD_West	MLT		CD_West		0	0	0	65	Global Norm	1	0	0	0	0	0	0
-400	Jordan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-398	Kazakhstan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-404	Kenya	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-296	Kiribati	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-412	Kosovo (under UNSC res. 1244)	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	ConstantPasfr	0	1	0	0	0	0	0
-414	Kuwait	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-417	Kyrgyzstan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	ConstantPasfr	0	1	0	0	0	0	0
-418	Lao People's Dem. Republic	JM	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-428	Latvia	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-422	Lebanon	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-426	Lesotho	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-430	Liberia	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-434	Libya	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-5,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-438	Liechtenstein	PG	1	1950	9	0	Model life tables	CD_West	MLT		CD_West		0	0	0	65	ConstantPasfr	0	1	0	0	0	0	0
-440	Lithuania	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-442	Luxembourg	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,10)"	1	35	ConstantPasfr	0	1	0	0	0	0	0
-450	Madagascar	SESH	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-454	Malawi	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-458	Malaysia	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-462	Maldives	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-466	Mali	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	"c(1,0.5)"	0	"c(-4,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-470	Malta	MW	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	0	"c(-4,8)"	1	65	Global Norm	0	0	0	0	0	0	0
-584	Marshall Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-474	Martinique	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-478	Mauritania	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-480	Mauritius	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	450	0	1
-175	Mayotte	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	638	0	1
-484	Mexico	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,3)"	1	65	Global Norm	0	0	0	0	0	0	0
-583	Micronesia (Fed. States of)	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-492	Monaco	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-496	Mongolia	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.85)"	0	"c(-4,5)"	0	65	ConstantPasfr	0	1	0	0	0	0	0
-499	Montenegro	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-500	Montserrat	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	92	0	1
-504	Morocco	VK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-508	Mozambique	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-104	Myanmar	PLIW	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-516	Namibia	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-520	Nauru	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.85)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-524	Nepal	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	356	0	1
-528	Netherlands	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-540	New Caledonia	PLIW	0	1950	9	0	Age specific mortality pattern	UN_General	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-554	New Zealand	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	35	Global Norm	0	0	0	0	0	0	0
-558	Nicaragua	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-562	Niger	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-566	Nigeria	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-570	Niue	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-807	North Macedonia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-580	Northern Mariana Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-578	Norway	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-3,5)"	1	65	Global Norm	1	0	0	0	0	0	0
-512	Oman	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-586	Pakistan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-585	Palau	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.85)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-591	Panama	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-598	Papua New Guinea	PLIW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-600	Paraguay	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-604	Peru	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-608	Philippines	SESH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_North	"c(1,0.5)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-616	Poland	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-620	Portugal	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-630	Puerto Rico	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	840	0	1
-634	Qatar	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-410	Republic of Korea	SESH	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	0	"c(-4,5)"	1	65	ConstantPasfr	0	1	1	0	0	0	0
-498	Republic of Moldova	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-638	R?union	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-642	Romania	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-643	Russian Federation	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-646	Rwanda	SESH	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-654	Saint Helena	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-659	Saint Kitts and Nevis	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-662	Saint Lucia	JM	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-666	Saint Pierre and Miquelon	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-670	St. Vincent and the Grenadines	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-652	Saint Barth?lemy	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	312	0	1
-663	Saint Martin (French part)	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	312	0	1
-882	Samoa	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-674	San Marino	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	ConstantPasfr	0	1	0	0	0	0	0
-678	Sao Tome and Principe	YK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	"c(1,0.85)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-682	Saudi Arabia	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-686	Senegal	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	"c(1,0.75)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-688	Serbia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-690	Seychelles	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-694	Sierra Leone	IW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-702	Singapore	SESH	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	"c(1,0.9)"	0	"c(-4,5)"	1	65	ConstantPasfr	0	1	1	0	0	0	0
-534	Sint Maarten (Dutch part)	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-703	Slovakia	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-705	Slovenia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	LC				3	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-90	Solomon Islands	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-706	Somalia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-710	South Africa	PG	0	1950	9	1	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	"c(1,1)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-728	South Sudan	VK	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-724	Spain	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	35	ConstantPasfr	0	1	0	0	0	0	0
-144	Sri Lanka	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-275	State of Palestine	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-1,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-729	Sudan	VK	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	"c(1,0.5)"	0	"c(-4,1)"	0	65	Global Norm	0	0	0	0	0	0	0
-740	Suriname	PLIW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-752	Sweden	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	35	Global Norm	1	0	0	0	0	0	0
-756	Switzerland	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	ConstantPasfr	0	1	0	0	0	0	0
-760	Syrian Arab Republic	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-762	Tajikistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-764	Thailand	JM	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-626	Timor-Leste	YK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-768	Togo	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-772	Tokelau	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.90)"	0	1	0	65	Global Norm	0	0	0	0	882	0	1
-776	Tonga	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.85)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-780	Trinidad and Tobago	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-788	Tunisia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-792	T?rkiye	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	300	0	0
-795	Turkmenistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-796	Turks and Caicos Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-798	Tuvalu	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	"c(1,0.85)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-800	Uganda	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.75)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-804	Ukraine	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	"c(1,0.9)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-784	United Arab Emirates	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.75)"	3	"c(-4,5)"	0	65	Global Norm	0	0	0	0	0	0	0
-826	United Kingdom	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC				0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-834	United Republic of Tanzania	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-840	United States of America	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC				0	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-850	United States Virgin Islands	LZ	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-858	Uruguay	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-860	Uzbekistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-548	Vanuatu	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-862	Venezuela (Bolivarian Republic of)	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	"c(-4,5)"	1	65	Global Norm	0	0	0	0	0	0	0
-704	Viet Nam	JM	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-876	Wallis and Futuna Islands	PG	1	1950	9	0	Model life tables	UN_Far_Eastern	MLT		UN_Far_Eastern		0	0	0	65	Global Norm	0	0	0	0	540	0	1
-732	Western Sahara	VK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	3	1	0	65	Global Norm	0	0	0	0	0	0	0
-887	Yemen	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-894	Zambia	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
-716	Zimbabwe	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	"c(1,0.5)"	0	1	0	65	Global Norm	0	0	0	0	0	0	0
+country_code	country	Initials	isSmall	ProjFirstYear	MigCode	WPPAIDS	AgeMortalityType	AgeMortalityPattern	AgeMortProjMethod1	AgeMortProjMethod2	AgeMortProjPattern	AgeMortProjMethodWeights	AgeMortProjAdjSR	LatestAgeMortalityPattern	SmoothLatestAgeMortalityPattern	SmoothDFLatestAgeMortalityPattern	PasfrNorm	PasfrGlobalNorm	ConstantPasfr	PasfrFarEastAsianNorm	PasfrSouthAsianNorm	MigAgeSchedule	MigAgeZeroNeg	MigAgeEqualMFratio	MigFDMb0	MigFDMb1	MigFDMsrin	MigFDMsrout
+4	Afghanistan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.481377431623572	0.488079186177756
+8	Albania	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.493588976740048	0.503725859274246
+12	Algeria	VK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.480000882867928	0.491916926122872
+16	American Samoa	PG	1	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.85)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.496204674530363	0.490439736909858
+20	Andorra	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.9)	0	1	0	65	ConstantPasfr	0	1	0	0	0	0	0	0.001	0.5	0.478641935015073	0.501241813477712
+24	Angola	SESH	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.495816214450671	0.497902902507649
+28	Antigua and Barbuda	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	388	0	1	0.001	0.5	0.517577357139078	0.518507877709955
+31	Azerbaijan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.486441456525287	0.490122235007189
+32	Argentina	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.50604150967005	0.508952808909044
+36	Australia	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.50198276037174	0.492555130748284
+40	Austria	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.502495552912428	0.507220513646977
+44	Bahamas	JM	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-5,4)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.520831455465561	0.50835428854311
+48	Bahrain	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.09	0.5	0.37387923645186	0.416521702874038
+50	Bangladesh	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	1	356	0	1	0.001	0.5	0.399306021872179	0.41273597170541
+51	Armenia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.508203091011666	0.477094157956182
+52	Barbados	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.521301237916203	0.519532020528801
+56	Belgium	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.497957977040365	0.50628620778532
+60	Bermuda	JM	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.85)	3	1	0	65	ConstantPasfr	0	1	0	0	0	0	0	0.001	0.5	0.502292115632292	0.494882450914449
+64	Bhutan	YK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.395214474374168	0.414015505265822
+68	Bolivia (Plurinational State of)	HC	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	1	0	1e-05	0.5	0.506695288496551	0.507562900590987
+70	Bosnia and Herzegovina	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.506339995585145	0.516456133910113
+72	Botswana	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.439220188694384	0.433117933793261
+76	Brazil	HC	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.495680242285193	0.51040108409527
+84	Belize	SESH	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.493887942179306	0.522019840985358
+90	Solomon Islands	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.457749280330975	0.491395806139105
+92	British Virgin Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.510013709989957	0.496493978366457
+96	Brunei Darussalam	PLIW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.450552738169653	0.456230082258505
+100	Bulgaria	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.513862425649085	0.525709256733657
+104	Myanmar	PLIW	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.445839935092964	0.478246471900961
+108	Burundi	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.496907954652678	0.500626761571575
+112	Belarus	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.532613033579622	0.521341792982075
+116	Cambodia	JM	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.519415040623235	0.488059603386109
+120	Cameroon	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.503238347269056	0.506604851236457
+124	Canada	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.504374995098376	0.516034462427582
+132	Cabo Verde	YK	0	1950	9	0	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.519188664538454	0.515032879895284
+136	Cayman Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.484764820061819	0.501019084417654
+140	Central African Republic	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.49688818122549	0.499784955459773
+144	Sri Lanka	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.461656493592673	0.490344942630278
+148	Chad	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.50487165851889	0.51112548788597
+152	Chile	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.000100854009350256	0.5	0.497734889988537	0.492864367047236
+156	China	PG	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,1)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.510798328333299	0.521794626202017
+158	China, Taiwan Province of China	PG	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	1	0	156	0	1	0.007	0.5	0.5	0.5
+170	Colombia	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	4.65032338911222e-06	0.5	0.502829283551438	0.513873468306764
+174	Comoros	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.503920579251915	0.534645470151564
+175	Mayotte	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	638	0	1	5e-04	0.5	0.577906205839428	0.497330278972854
+178	Congo	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.491639200691988	0.496169943585757
+180	Dem. Republic of the Congo	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.503713070492767	0.509981939361534
+184	Cook Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.85)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.5118276200499	0.489751742187947
+188	Costa Rica	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.49905744802009	0.500401395912909
+191	Croatia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.508698686968784	0.522174884392648
+192	Cuba	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-3,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.514903076768972	0.51250574684485
+196	Cyprus	YK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.506199492525021	0.510139337990907
+203	Czechia	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.489595319229329	0.507883540498899
+204	Benin	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.496714272512646	0.49964352777792
+208	Denmark	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.499327746368607	0.505520197360123
+212	Dominica	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.516408941857949	0.508156438894319
+214	Dominican Republic	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.00109125162621011	0.5	0.508120029639918	0.506085919472316
+218	Ecuador	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.506082009164837	0.51907628061729
+222	El Salvador	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.00113902003508153	0.5	0.503865706189316	0.501781570874154
+226	Equatorial Guinea	PLIW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.432452699983708	0.504830863053677
+231	Ethiopia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.75)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.497630373669377	0.510958047781482
+232	Eritrea	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.487336048842678	0.497070855463848
+233	Estonia	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.001	0.5	0.505967503161466	0.543277240838337
+234	Faroe Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.505856482117314	0.514633718892394
+238	Falkland Islands (Malvinas)	PG	1	1950	9	0	Model life tables	CD_West	MLT	""	CD_West	""	0	0	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.479296733540958	0.492330002096583
+242	Fiji	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.509739897038699	0.482083251509194
+246	Finland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.487916211335772	0.517329325775223
+250	France	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.521052521538242	0.502930275071735
+254	French Guiana	SESH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.496521808176426	0.495950011889873
+258	French Polynesia	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.461299094133208	0.463545365328572
+262	Djibouti	PLIW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.49363330737911	0.492962615606838
+266	Gabon	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.429713853248865	0.432391879544327
+268	Georgia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.502665084620235	0.502906244096468
+270	Gambia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.431387891451669	0.44728611382503
+275	State of Palestine	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	c(-1,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.487795153556775	0.488619586834303
+276	Germany	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.492829762979415	0.486792426971108
+288	Ghana	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.479516347686817	0.487066984434974
+292	Gibraltar	PG	1	1950	9	0	Model life tables	CD_North	MLT	""	CD_North	""	0	0	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.505121368417985	0.502759638550326
+296	Kiribati	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.521637601803709	0.443947777890308
+300	Greece	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.489175517111337	0.512846237068004
+304	Greenland	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.85)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.487619761967909	0.519165545022085
+308	Grenada	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.52609173553719	0.513673196723331
+312	Guadeloupe	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	1	65	ConstantPasfr	0	1	0	0	0	0	0	0.001	0.5	0.549112199001431	0.492348413204238
+316	Guam	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.496487962029363	0.497939094431781
+320	Guatemala	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.503457100952415	0.50381148074381
+324	Guinea	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.469339356286127	0.455926247975713
+328	Guyana	SESH	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.52041051409362	0.505651329667349
+332	Haiti	HC	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.000213860189643957	0.5	0.479411493748387	0.490974020882616
+336	Holy See	PG	1	1950	9	0	Model life tables	CD_West	MLT	""	CD_West	""	3	0	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.5	0.5
+340	Honduras	HC	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.53434784430696	0.529151190189559
+344	China, Hong Kong SAR	PG	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.9)	3	c(-4,5)	1	65	ConstantPasfr	0	1	1	0	0	0	0	0.007	0.5	0.555153214431447	0.551220336503251
+348	Hungary	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.472884908070595	0.492024646246637
+352	Iceland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,10)	1	35	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.456460091298935	0.51339031605606
+356	India	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	1	0	0	0	0.001	0.5	0.449899042558749	0.474649366194063
+360	Indonesia	SESH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.469836978167515	0.491761641532222
+364	Iran (Islamic Republic of)	SH	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.48765276424045	0.486287151797101
+368	Iraq	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.502191889290243	0.506154024849213
+372	Ireland	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,10)	1	35	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.498254839831522	0.496320146429839
+376	Israel	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	LC	""	""	""	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.514123055839764	0.518832978705155
+380	Italy	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.484153789134256	0.494840459546463
+384	C?te d'Ivoire	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.483547487624439	0.487275228769535
+388	Jamaica	JM	0	1950	9	0	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.526467209844544	0.518193908574159
+392	Japan	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	1	0	0	0	0	0.007	0.5	0.524659708665051	0.514770790366059
+398	Kazakhstan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.514354242303249	0.513549363890958
+400	Jordan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.479336891601638	0.470615543545523
+404	Kenya	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.52417995065267	0.487318704938108
+408	Dem. People's Rep. of Korea	IW	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.47665899995018	0.510893979078281
+410	Republic of Korea	SESH	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	0	c(-4,5)	1	65	ConstantPasfr	0	1	1	0	0	0	0	0.007	0.5	0.493871083666662	0.477154975094632
+412	Kosovo (under UNSC res. 1244)	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	ConstantPasfr	0	1	0	0	0	0	0	0.001	0.5	0.5	0.5
+414	Kuwait	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.09	0.5	0.390539419435547	0.451537367266944
+417	Kyrgyzstan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	ConstantPasfr	0	1	0	0	0	0	0	0.001	0.5	0.520617814144099	0.512926311084519
+418	Lao People's Dem. Republic	JM	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.517048345401762	0.513809129746798
+422	Lebanon	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.499462814572646	0.47667334791748
+426	Lesotho	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.517397806174835	0.554642765295893
+428	Latvia	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.001	0.5	0.521719180564999	0.535525951171716
+430	Liberia	IW	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.488654837653525	0.498577050516045
+434	Libya	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-5,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.40754055112394	0.408474119338605
+438	Liechtenstein	PG	1	1950	9	0	Model life tables	CD_West	MLT	""	CD_West	""	0	0	0	65	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.507018623379424	0.500438831056146
+440	Lithuania	MW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.001	0.5	0.488307762522951	0.538658252922638
+442	Luxembourg	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,10)	1	35	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.493307694267153	0.495151072344669
+446	China, Macao SAR	PG	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	c(1,0.75)	0	c(-4,5)	1	65	ConstantPasfr	0	1	1	0	0	0	0	0.007	0.5	0.526281884420273	0.500146701705597
+450	Madagascar	SESH	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.52944724340334	0.560440236606142
+454	Malawi	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.47772428326765	0.490048632447756
+458	Malaysia	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_North	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.472798623514698	0.461769497047445
+462	Maldives	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.406587974816178	0.282572954670591
+466	Mali	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	c(1,0.5)	0	c(-4,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.467115009627318	0.483008011808398
+470	Malta	MW	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.5)	0	c(-4,8)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.456649538724692	0.506601412049875
+474	Martinique	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.540676330906216	0.515063653111166
+478	Mauritania	VK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.46228589662786	0.472497487193381
+480	Mauritius	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	450	0	1	0.001	0.5	0.504359007741243	0.506818606603589
+484	Mexico	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,3)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.484323651734105	0.496183915750867
+492	Monaco	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.504754993698201	0.516243954770497
+496	Mongolia	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.85)	0	c(-4,5)	0	65	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.47389906366224	0.49402310942448
+498	Republic of Moldova	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.512770206676189	0.519387966144973
+499	Montenegro	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.001	0.5	0.535454643434827	0.526087104057044
+500	Montserrat	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	92	0	1	0.001	0.5	0.488616593676885	0.526493556874916
+504	Morocco	VK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.48067670296723	0.524579325015591
+508	Mozambique	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.450150972981172	0.47813969179559
+512	Oman	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.04	0.5	0.360037829070867	0.304969099674977
+516	Namibia	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.478652691711851	0.482103142196152
+520	Nauru	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.85)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.451033115026289	0.467224248522198
+524	Nepal	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	356	0	1	0.001	0.5	0.35	0.35
+528	Netherlands	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.505079151068355	0.50436791827361
+531	Cura?ao	LZ	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	388	0	1	0.007	0.5	0.471056781833371	0.59562313440735
+533	Aruba	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	388	0	1	0.001	0.5	0.517162748798151	0.510380137755264
+534	Sint Maarten (Dutch part)	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.476077567254699	0.52835012032426
+535	Bonaire, Sint Eustatius and Saba	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.5	0.5
+540	New Caledonia	PLIW	0	1950	9	0	Age specific mortality pattern	UN_General	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.48653877907251	0.474940365405981
+548	Vanuatu	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.515134697306054	0.482026333831199
+554	New Zealand	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.495568314922206	0.524889468973437
+558	Nicaragua	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.512485212688599	0.507091398504623
+562	Niger	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.48683500929258	0.492435819667166
+566	Nigeria	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.48457203240883	0.500593739758545
+570	Niue	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.564007483129552	0.487072868512605
+578	Norway	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-3,5)	1	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.500930470844295	0.499939894353843
+580	Northern Mariana Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.52316644411014	0.530456066606452
+583	Micronesia (Fed. States of)	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.498339961368026	0.49987777208172
+584	Marshall Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.465256391175427	0.492739850336781
+585	Palau	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.85)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.500947030204559	0.461814334005625
+586	Pakistan	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.457206968431526	0.426431563583084
+591	Panama	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.481808633505574	0.473485546433404
+598	Papua New Guinea	PLIW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.459510415514618	0.492559260035129
+600	Paraguay	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.523601974162431	0.513793579658675
+604	Peru	HC	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.496438155134293	0.503144499861677
+608	Philippines	SESH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_North	c(1,0.5)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.509990974770905	0.517092469910935
+616	Poland	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.491557243344539	0.494983164571714
+620	Portugal	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.501265778742242	0.468844801448409
+624	Guinea-Bissau	YK	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.482634241720476	0.492645021060033
+626	Timor-Leste	YK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.456401994693062	0.495364468546996
+630	Puerto Rico	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	840	0	1	0.001	0.5	0.509747706078552	0.510187099824885
+634	Qatar	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.1	0.5	0.353775113494418	0.301402151382744
+638	R?union	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.481169401499537	0.483396022307446
+642	Romania	MW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.49230428000974	0.50280421283195
+643	Russian Federation	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.509768979314475	0.519074498364364
+646	Rwanda	SESH	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.502649751766415	0.504353706766619
+652	Saint Barth?lemy	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	312	0	1	0.007	0.5	0.5	0.5
+654	Saint Helena	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.521287128712871	0.438534423388799
+659	Saint Kitts and Nevis	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.509462375922956	0.498787107143356
+660	Anguilla	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.490912952705862	0.491697393104341
+662	Saint Lucia	JM	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.523186129851934	0.524074082753982
+663	Saint Martin (French part)	PG	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	312	0	1	0.001	0.5	0.5	0.5
+666	Saint Pierre and Miquelon	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.461020123384254	0.489611374871519
+670	St. Vincent and the Grenadines	LZ	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.505459814309651	0.509205468739296
+674	San Marino	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.514791664571411	0.510778443113773
+678	Sao Tome and Principe	YK	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	c(1,0.85)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.511814564771116	0.509370551548275
+682	Saudi Arabia	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.09	0.5	0.369369553054277	0.447285541321396
+686	Senegal	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	c(1,0.75)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.463311912529361	0.446829282483062
+688	Serbia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.519758673576853	0.52215852821529
+690	Seychelles	LZ	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.444545924960343	0.499545782214024
+694	Sierra Leone	IW	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.490382246955253	0.502457096245968
+702	Singapore	SESH	0	1950	9	0	Age specific mortality pattern	CD_North	modPMD	MLT	CD_North	c(1,0.9)	0	c(-4,5)	1	65	ConstantPasfr	0	1	1	0	0	0	0	0.007	0.5	0.500308154402086	0.517747981954818
+703	Slovakia	MWVK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.486147023870208	0.50627007896166
+704	Viet Nam	JM	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_North	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.497367212545172	0.510252131830482
+705	Slovenia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	LC	""	""	""	3	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.449456527792263	0.500407751006952
+706	Somalia	IW	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.493903188909376	0.490915159686348
+710	South Africa	PG	0	1950	9	1	Age specific mortality pattern	HIVmortmod	modPMD	MLT	CD_West	c(1,1)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.486393009997505	0.455799010358476
+716	Zimbabwe	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.49466183406398	0.462628466497572
+724	Spain	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	35	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.517539167984962	0.499484720912944
+728	South Sudan	VK	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.518547495824508	0.502399251717018
+729	Sudan	VK	0	1950	9	0	Model life tables	CD_North	modPMD	MLT	CD_West	c(1,0.5)	0	c(-4,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.494984471147407	0.495095465686667
+732	Western Sahara	VK	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.444170272742094	0.489180276730428
+740	Suriname	PLIW	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.511103948149064	0.504301614735646
+748	Eswatini	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_West	c(1,0.5)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.483681592505563	0.562906155402304
+752	Sweden	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	35	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.490359283331307	0.506103244838904
+756	Switzerland	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	ConstantPasfr	0	1	0	0	0	0	0	0.007	0.5	0.504031613737999	0.505719296890254
+760	Syrian Arab Republic	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.482967189812792	0.476963559201803
+762	Tajikistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.485827957266219	0.520510901424834
+764	Thailand	JM	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.523732554805569	0.532542729883173
+768	Togo	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.499143681406438	0.501752854542507
+772	Tokelau	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.90)	0	1	0	65	Global Norm	0	0	0	0	882	0	1	0.007	0.5	0.520684537612466	0.493783502084574
+776	Tonga	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.85)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.503612539799167	0.486546748919247
+780	Trinidad and Tobago	PLIW	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.514729849231163	0.551289091872899
+784	United Arab Emirates	SH	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	0	65	Global Norm	0	0	0	0	0	0	0	0.08	0.5	0.384600691359646	0.376029547742556
+788	Tunisia	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.474892302965125	0.470408651298654
+792	T?rkiye	YK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	300	0	0	0.007	0.5	0.502519886600847	0.503742137861411
+795	Turkmenistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.512901076443724	0.509275031123031
+796	Turks and Caicos Islands	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.499186478910987	0.502940583559026
+798	Tuvalu	PG	1	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.85)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.507231583184772	0.515663024013958
+800	Uganda	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.50839313382796	0.51805937386747
+804	Ukraine	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.9)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.511562975832988	0.529734279807358
+807	North Macedonia	MWVK	0	1950	9	0	Age specific mortality pattern	LogQuad	modPMD	MLT	CD_West	c(1,0.75)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.512665092015322	0.512950803042352
+818	Egypt	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.449476154520313	0.452984762774692
+826	United Kingdom	MW	0	1950	9	0	Age specific mortality pattern	CD_North	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.499161242447626	0.501419252523341
+831	Guernsey	PG	1	1950	9	0	Model life tables	CD_West	MLT	""	CD_West	""	0	0	0	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.5	0.5
+832	Jersey	PG	0	1950	9	0	Model life tables	CD_West	MLT	""	CD_West	""	0	0	0	65	Global Norm	1	0	0	0	0	0	0	0.007	0.5	0.5	0.5
+833	Isle of Man	PG	1	1950	9	0	Model life tables	CD_North	MLT	""	CD_North	""	0	0	0	65	Global Norm	0	0	0	0	0	0	0	5e-04	0.5	0.507172114977219	0.506257166123335
+834	United Republic of Tanzania	JM	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.5	0.5
+840	United States of America	MW	0	1950	9	0	Age specific mortality pattern	CD_West	LC	""	""	""	0	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.007	0.5	0.491784443748022	0.524213922002449
+850	United States Virgin Islands	LZ	1	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.515718716224588	0.52276575987331
+854	Burkina Faso	IW	0	1950	9	0	Model life tables	CD_South	modPMD	MLT	CD_North	c(1,0.5)	0	c(-5,1)	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.489460391742799	0.477011724107773
+858	Uruguay	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	1e-05	0.5	0.504949811736078	0.505749829375061
+860	Uzbekistan	VK	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.506371305505592	0.474797826723051
+862	Venezuela (Bolivarian Republic of)	HC	0	1950	9	0	Age specific mortality pattern	CD_West	modPMD	MLT	CD_West	c(1,0.5)	3	c(-4,5)	1	65	Global Norm	0	0	0	0	0	0	0	0.000123593973416877	0.5	0.517227011185999	0.502356500776532
+876	Wallis and Futuna Islands	PG	1	1950	9	0	Model life tables	UN_Far_Eastern	MLT	""	UN_Far_Eastern	""	0	0	0	65	Global Norm	0	0	0	0	540	0	1	0.001	0.5	0.505713084102679	0.496758173541178
+882	Samoa	LZ	0	1950	9	0	Model life tables	LogQuad	modPMD	MLT	UN_Far_Eastern	c(1,0.75)	3	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.500208442761715	0.490076428408758
+887	Yemen	SH	0	1950	9	0	Model life tables	CD_West	modPMD	MLT	CD_West	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.430235210961971	0.471816165106316
+894	Zambia	PG	0	1950	9	1	Model life tables	HIVmortmod	modPMD	MLT	CD_North	c(1,0.5)	0	1	0	65	Global Norm	0	0	0	0	0	0	0	0.001	0.5	0.459296582852299	0.546309277742286
