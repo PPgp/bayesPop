@@ -1,12 +1,14 @@
-11.0-0.9001 (02/14/2025)
+11.0-1 (02/21/2025)
 ------
-Implemented new methods for disaggregating net migration into ages (FDM).
+Implemented new methods for disaggregating net migration into ages (FDM),
+controlled by the argument mig.age.method in pop.predict and pop.predict.subnat.
 
-New defaults for migration age-disaggregation.
+New defaults for migration age-disaggregation (argument mig.age.method).
 
 GQs can be defined by time.
 
-Different Rogers-Castro schedules can be passed in for migration disaggregation.
+Different Rogers-Castro schedules can be passed in for migration disaggregation
+(argument mig.rc.fam in pop.predict and pop.predict.subnat).
 
 
 10.0-2 (02/14/2025)
