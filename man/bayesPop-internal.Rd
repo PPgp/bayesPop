@@ -20,7 +20,8 @@
 \alias{migdepratio}
 \alias{depratioM}
 \alias{depratioF}
-\alias{pasfr.glob.norms}
+\alias{pasfr.glob.norms1}
+\alias{pasfr.glob.norms5}
 
 \title{
 Internal Functions and datasets of bayesPop

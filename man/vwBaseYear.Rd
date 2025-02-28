@@ -6,14 +6,16 @@
 \alias{vwBaseYear2017}
 \alias{vwBaseYear2019}
 \alias{vwBaseYear2022}
+\alias{vwBaseYear2024}
 \docType{data}
 \title{
 Datasets on Migration Base Year and Type, and Mortality and Fertility Age Patterns
 }
 \description{
-Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017 and 2019 datasets also give information on country's specifics regarding mortality and fertility age patterns.
+Datasets giving information on the baseyear and type of migration for each country. The 2012, 2015, 2017, 2019, 2022 and 2024 datasets also give information on country's specifics regarding mortality, fertility and migration age patterns.
 }
 \usage{
+    data(vwBaseYear2024)
     data(vwBaseYear2022)
     data(vwBaseYear2019)
     data(vwBaseYear2017)
@@ -37,21 +39,34 @@ Datasets giving information on the baseyear and type of migration for each count
     \item{\code{AgeMortProjPattern}}{If one of the \code{AgeMortProjMethodX} colums contains the \dQuote{MLT} method, this column determines the type of the life table (see the argument \code{type} in the \code{\link[MortCast]{mlt}} function).}
     \item{\code{AgeMortProjMethodWeights}}{If the mortality rates are to be projected via a blend of two methods, this column determines the weights in the first and the last year of the projection, respectively. It should be given as an R vector, e.g. \dQuote{c(1, 0.5)} (see the argument \code{weights} in \code{\link[MortCast]{mortcast.blend}}).}
     \item{\code{AgeMortProjAdjSR}}{Code determining how the \dQuote{PMD} method should be adjusted if it's used. 0 means no adjustment, 1 means the argument \code{sexratio.adjust} in \code{\link[MortCast]{copmd}} is set to \code{TRUE}, and code 3 means that the argument \code{adjust.sr.if.needed} in \code{\link[MortCast]{copmd}} is set to \code{TRUE}.}
-    \item{\code{LatestAgeMortalityPattern}, \code{LatestAgeMortalityPattern1}}{Indicator \eqn{n} for how many latest time periods should be used to compute  the \eqn{a_x} Lee-Carter and modPMD parameter. If \eqn{n} is zero, all time periods are used. If \eqn{n} is one, only the latest time period is used. If \eqn{n} is negative, the latest \eqn{n} time periods are excluded. This can have also a form of vector of size 2, where the first element (must be negative) determines how many latest time periods should be excluded, while the second element (must be positive) determines how many latest time periods to include after the exclusion. E.g. \dQuote{c(-2, 3)} would mean exclude 2 time periods and use the following 3 time points. If the \code{LatestAgeMortalityPattern1} column is present, it should contain values related to an annual simulation (1x1) while the \code{LatestAgeMortalityPattern} column relates to a 5x5 simulation.}
-    \item{\code{SmoothLatestAgeMortalityPattern}}{If \code{LatestAgeMortalityPattern} is 1, this column indicates if the \eqn{a_x} should be smoothed.}
+    \item{\code{LatestAgeMortalityPattern}, \code{LatestAgeMortalityPattern1}}{Indicator \eqn{n} for how many latest time periods of historical mortality rates should be averaged to compute  the \eqn{a_x} Lee-Carter and modPMD parameter. If \eqn{n} is zero, all time periods are used. If \eqn{n} is one, only the latest time period is used. If \eqn{n} is negative, the latest \eqn{n} time periods are excluded. This can have also a form of a vector where the first element is either a negative or a zero. If it is negative, the vector must have only two elements. In such a case, the first element (must be negative) determines how many latest time periods should be excluded, while the second element (must be positive) determines how many latest time periods to include after the exclusion. If the vector starts with a zero, the following numbers are interpreted as individual indices to the time periods starting from the latest time point. Here are a few examples, assuming the available mortality rates are on annual scale, from 1950 to 2023:
+    \describe{
+    \item{\dQuote{0}: }{ using all years from 1950 to 2023}
+    \item{\dQuote{3}: }{ using 2023, 2022, 2021} 
+    \item{\dQuote{-3}: }{ using 1950 - 2020}
+    \item{\dQuote{c(-2, 3)}: }{ 2023 and 2022 are excluded; using 2021, 2020, 2019}
+    \item{\dQuote{c(-2, 1, 3)}: }{ invalid specification - must have two elements if it starts with a negative}
+    \item{\dQuote{c(0, 3)}: }{ interpreted as an individual index; thus, using 2021 only}
+    \item{\dQuote{c(0, 1, 3, 4)}: }{ interpreted as individual indices; using 2023, 2021, 2020}
+    }
+    If the \code{LatestAgeMortalityPattern1} column is present, it should contain values related to an annual simulation (1x1) while the \code{LatestAgeMortalityPattern} column relates to a 5x5 simulation.}
+    \item{\code{SmoothLatestAgeMortalityPattern}}{If \code{LatestAgeMortalityPattern} is not zero, this column indicates if the \eqn{a_x} should be smoothed.}
     \item{\code{SmoothDFLatestAgeMortalityPattern}, \code{SmoothDFLatestAgeMortalityPattern1}}{Degree of freedom for smoothing \eqn{a_x}. By default (value 0) a half of the number of age groups is taken. If the \code{SmoothDFLatestAgeMortalityPattern1} column is present, it should contain values related to a 1x1 simulation while the \code{SmoothDFLatestAgeMortalityPattern} column relates to a 5x5 simulation.}
     \item{\code{PasfrNorm}}{Type of norm for computing age-specific fertility pattern to which the country belongs to. Currently only \dQuote{GlobalNorm} is used.}
     \item{\code{PasfrGlobalNorm, PasfrFarEastAsianNorm, PasfrSouthAsianNorm}}{Dummies indicating which country to include to compute the specific norms.}
+    \item{MigFDMb0, MigFDMb1, MigFDMmin, MigFDMsrin, MigFDMsrout}{Available in the 2024 dataset. These are parameters of the Flow Difference Method to generate age-specific net migration patterns (Sevcikova et. al, 2024). They correspond to the intercept, slope, minimum flow rate, female sex ratio for the in-flow and out-flow, respectively.}
   }
 }
 \details{
-There is one record for each country. See Sevcikova et al (2015) on how information from the various columns is used for projections.
+There is one record for each country. See Sevcikova et al (2016) on how information from the various columns is used for projections.
 }
 \source{
 Data provided by the United Nations Population Division.
 }
 \references{
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. \url{https://arxiv.org/abs/1503.05215}
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version in \href{https://arxiv.org/abs/1503.05215}{arXiv:1503.05215}.
+
+H. Sevcikova, J. Raymer J., A. E. Raftery (2024). Forecasting Net Migration By Age: The Flow-Difference Approach. \href{https://arxiv.org/abs/2411.09878}{arXiv:2411.09878}.
 }
 \examples{
 data(vwBaseYear2019)

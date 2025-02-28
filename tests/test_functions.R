@@ -1,4 +1,6 @@
 library(bayesPop)
+library(data.table)
+
 start.test <- function(name) cat('\n<=== Starting test of', name,'====\n')
 test.ok <- function(name) cat('\n==== Test of', name, 'OK.===>\n')
 
@@ -50,10 +52,14 @@ test.prediction <- function(parallel = FALSE) {
 	stopifnot(all(round(tfr[1,1,2:dim(tfr)[3],1],2) == tfr.should.be))
 	
 	# check that writing summary is OK
-	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
+	write.pop.projection.summary(pred, what=c("popsexage", "popage"), output.dir=sim.dir)
 	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
 	s <- summary(pred, country = 528)
 	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2020"]))
+	
+	t <- read.table(file.path(sim.dir, 'projection_summary_tpopage.csv'), sep=',', header=TRUE)
+	s <- pop.byage.table(pred, country = 528, year = 2040)
+	stopifnot(round(s[2,1]) == t[t$variant == "median" & t$age == "5-9", "X2040"])
 	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
@@ -112,6 +118,7 @@ test.expressions.with.VE <- function(map=TRUE, parallel = FALSE) {
 	sim.dir <- tempfile()
 	pred <- pop.predict(countries=c(528, 218), nr.traj = 3, verbose=FALSE, output.dir=sim.dir, 
 	                    keep.vital.events=TRUE, parallel = parallel)
+
 	filename <- tempfile()
 	png(filename=filename)
 	pop.trajectories.plot(pred, expression='F528_F[10]')
@@ -340,7 +347,7 @@ test.adjustment <- function() {
     test.ok(test.name)
 }
 
-test.subnat <- function() {
+test.subnat <- function(mig.age.method = "rc") {
   test.name <- "Subnational projections with national TFR"
   start.test(test.name)
   data.dir <- file.path(find.package("bayesPop"), "extdata")
@@ -351,10 +358,12 @@ test.subnat <- function() {
                              inputs = list(popM = file.path(data.dir, "CANpopM.txt"),
                                            popF = file.path(data.dir, "CANpopF.txt"),
                                            patterns = file.path(data.dir, "CANpatterns.txt")
-                                           ))
+                                           ),
+                             mig.age.method = mig.age.method)
   ct <- get.countries.table(pred)
   stopifnot(nrow(ct) == 13) # 13 sub-regions of Canada
   stopifnot(dim(get.pop("P658", pred))[3] == 9) # projection until 2060
+  stopifnot(pred$inputs$mig.age.method == if(is.null(mig.age.method)) "rc" else mig.age.method)
   
   aggr <- pop.aggregate.subnat(pred, regions = 124, 
                 locations = file.path(data.dir, "CANlocations.txt"))
@@ -464,6 +473,181 @@ test.age.specific.migration <- function(){
     stopifnot(sum(mig1sex.us) == subset(migration, country_code == 840)[["2095-2100"]]/2)
     
     test.ok(test.name)
+}
+
+test.different.migration.methods <- function(wpp.year = 2024, annual = TRUE) {
+    step <- if(annual) 1 else 5
+    test.name <- paste0('Running different migration methods ', 'for a ', step, '-year simulation with wpp', wpp.year)
+    start.test(test.name)
+    set.seed(1)
+    # create migration files with two countries and two trajectories
+    migfile <- tempfile()
+    sim.dir <- tempfile()
+    time <- 5
+    countries <- c(528,218)
+    ncountries <- length(countries)
+    start.years <- if(annual) list("2024" = 2023, "2022" = 2021, "2019" = 2015) else list("2024" = 2020, "2022" = 2020, "2019" = 2015)
+    present.year <- start.years[[as.character(wpp.year)]]
+    midyr <- if(annual) 1 else 3
+    write.migration <- function(nr.traj, rates = FALSE) {
+        nrows.country <- nr.traj*time
+        mig <- data.frame(LocID=rep(c(528,218), each=nrows.country), 
+                          Year=rep(seq(present.year + midyr, by=step, length=time), times=nr.traj*ncountries),
+                          Trajectory=rep(rep(1:nr.traj, each=time), times=ncountries), 
+                          Migration=0)
+        if(!rates)
+            mig$Migration <- rnorm(nrow(mig), mean=rep(c(3,0), each=nrows.country), sd=rep(c(2, 1), each=nrows.country))
+        else mig$Migration <- rnorm(nrow(mig), mean=rep(c(0.005,0.0005), each=nrows.country), sd=rep(c(0.01, 0.001), each=nrows.country))
+        write.csv(mig, file=migfile, row.names=FALSE)
+    }
+    # Test "fdm" with 1 trajectory
+    nr.traj <- 1
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries=countries, end.year= present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmnop")
+    s <- summary(pred)
+    stopifnot(s$nr.traj == nr.traj)
+    stopifnot(s$nr.countries == 2)
+    stopifnot(length(s$projection.years) == time)
+    mgr <- get.pop("G528", pred)
+    stopifnot(dim(mgr)[4] == nr.traj)
+
+    # Test "auto" with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "auto")
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == if(wpp.year == 2019 & !annual) "residual" else "fdmp")
+
+    # Test "fdmnop" counts with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj)
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmnop")
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "fdmnop")
+
+    # Test "fdmp" rates with 5 trajectories
+    nr.traj <- 5
+    write.migration(nr.traj = nr.traj, rates = TRUE)
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "fdmp",
+                        mig.is.rate = c(FALSE, TRUE))
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "fdmp")
+
+    #options(error=quote(dump.frames("last.dump", TRUE)))
+    #load("last.dump.rda"); debugger()
+    # Test "rc" rates with 1 trajectories with external RC proportions
+    nr.traj <- 1
+    write.migration(nr.traj = nr.traj, rates = TRUE)
+    rc.schedules <- subset(DemoTools::mig_un_families, family == "Male Labor")
+    pred <- pop.predict(countries = countries, end.year = present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile), mig.age.method = "rc", 
+                        mig.rc.fam = rc.schedules,
+                        mig.is.rate = c(FALSE, TRUE))
+    stopifnot(pred$nr.traj == nr.traj)
+    stopifnot(dim(get.pop("G218", pred))[4] == nr.traj)
+    stopifnot(pred$inputs$mig.age.method == "rc")
+    # check the migration sex ratio, if it is equal to the one we passed via the mig.rc.fam argument
+    sex.ratio.in <- sum(subset(rc.schedules, mig_sign == "Inmigration" & sex == "Male" & age < 101)$prop)/
+        sum(subset(rc.schedules, mig_sign == "Inmigration" & age < 101)$prop)
+    sex.ratio.out <- sum(subset(rc.schedules, mig_sign == "Emigration" & sex == "Male" & age < 101)$prop)/
+        sum(subset(rc.schedules, mig_sign == "Emigration" & age < 101)$prop)
+    should.be.sr <- ifelse(get.pop.ex("G218", pred)[-1] >= 0, sex.ratio.in, sex.ratio.out)
+    stopifnot(all.equal(get.pop.ex("G218_M/G218", pred)[-1], should.be.sr, tolerance = if(annual) 1e-6 else 1e-3)) # for 5-year sim, the should be ratios are a little off
+    test.ok(test.name)
+    unlink(sim.dir, recursive=TRUE)
+    unlink(migfile)
+}
+
+test.probabilistic.fdmp <- function(wpp.year = 2024, annual = TRUE) {
+    step <- if(annual) 1 else 5
+    test.name <- paste0('Running probabilistic FDMp ', 'for a ', step, '-year simulation with wpp', wpp.year)
+    start.test(test.name)
+    set.seed(1)
+    # create migration files with two countries and two trajectories
+    migfile <- tempfile()
+    migfdmtraj <- tempfile()
+    sim.dir <- tempfile()
+    time <- 5
+    country <- 250
+    ages <- bayesPop:::ages.all(annual, observed = TRUE)
+    nages <- length(ages)
+    age.labels <- bayesPop:::get.age.labels(ages, single.year = annual, last.open = TRUE)
+    start.years <- if(annual) list("2024" = 2023, "2022" = 2021, "2019" = 2015) else list("2024" = 2020, "2022" = 2020, "2019" = 2015)
+    present.year <- start.years[[as.character(wpp.year)]]
+    midyr <- if(annual) 1 else 3
+    write.migration <- function(nr.traj, nr.traj.fdm, rates = TRUE) {
+        # assemble trajectories of total migration
+        nrows.country <- nr.traj*time
+        mig <- data.frame(LocID=rep(country, each=nrows.country), 
+                          Year=rep(seq(present.year + midyr, by=step, length=time), times=nr.traj),
+                          Trajectory=rep(1:nr.traj, each=time), 
+                          Migration=0)
+        if(!rates)
+            mig$Migration <- rnorm(nrow(mig), mean=rep(10, each=nrows.country), sd=rep(5, each=nrows.country))
+        else mig$Migration <- rnorm(nrow(mig), mean=rep(0.01, each=nrows.country), sd=rep(0.01, each=nrows.country))
+        # assemble FDM trajectories of age-specific RC curves
+        nrows.country <- nr.traj.fdm*nages*2
+        fdmtraj <- data.table(LocID=rep(country, each=nrows.country), 
+                            Trajectory=rep(rep(1:nr.traj.fdm, each=nages), times = 2), 
+                            Age=rep(age.labels, times = 2*nr.traj.fdm),
+                            Parameter = rep(c("in", "out"), each = nr.traj.fdm*nages),
+                            Value=rep(rcastro.schedule(annual), 2))
+        fdmtraj$Value <- rnorm(nrow(fdmtraj), mean=fdmtraj$Value, sd=rep(0.001, each=nrows.country))
+        fdmtraj[, Value := Value/sum(Value), by = c("Trajectory", "Parameter")]
+        write.csv(mig, file=migfile, row.names=FALSE)
+        fwrite(fdmtraj, file=migfdmtraj)
+    }
+    # Test "fdmp" with 5 mig trajectories and 4 RC-in/out trajectories
+    nr.traj <- 5
+    nr.traj.fdm <- 4
+    write.migration(nr.traj = nr.traj, nr.traj.fdm = nr.traj.fdm, rates = FALSE)
+    pred <- pop.predict(countries=country, end.year= present.year + time*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmp")
+
+    s <- summary(pred)
+    stopifnot(s$nr.traj == nr.traj)
+    stopifnot(s$nr.countries == 1)
+    stopifnot(length(s$projection.years) == time)
+    mgr <- get.pop("G250", pred)
+    stopifnot(dim(mgr)[4] == nr.traj) 
+    stopifnot(nrow(pred$inputs$migFDMpred) == nr.traj.fdm * 2 * nages)
+    
+    nr.traj.fdm <- 6
+    write.migration(nr.traj = nr.traj, nr.traj.fdm = nr.traj.fdm, rates = TRUE)
+    pred <- pop.predict(countries=country, end.year= present.year + (time+1)*step, present.year = present.year,
+                        annual = annual, wpp.year = wpp.year, nr.traj = nr.traj,
+                        verbose=FALSE, output.dir=sim.dir, keep.vital.events=TRUE, replace.output=TRUE,
+                        inputs=list(migtraj=migfile, migFDMtraj = migfdmtraj), mig.age.method = "fdmp",
+                        mig.is.rate = c(FALSE, TRUE)
+                        )
+    mgr <- get.pop("G250", pred)
+    stopifnot(dim(mgr)[4] == nr.traj) 
+    stopifnot(ncol(pred$inputs$migFDMpred) == 5)
+    stopifnot(nrow(pred$inputs$migFDMpred) == nr.traj.fdm * 2 * nages)
+    
+    test.ok(test.name)
+    unlink(sim.dir, recursive=TRUE)
+    unlink(migfile)
+    unlink(migfdmtraj)
 }
 
 

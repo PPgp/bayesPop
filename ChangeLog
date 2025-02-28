@@ -1,3 +1,39 @@
+11.0-1/2 (02/21/2025)
+------
+Implemented new methods for disaggregating net migration into ages (FDM),
+controlled by the argument mig.age.method in pop.predict and pop.predict.subnat.
+
+New defaults for migration age-disaggregation (argument mig.age.method).
+
+GQs can be defined by time.
+
+Different Rogers-Castro schedules can be passed in for migration disaggregation
+(argument mig.rc.fam in pop.predict and pop.predict.subnat).
+
+
+10.0-2 (02/14/2025)
+------
+Added vwBaseYear2024 dataset.
+
+Performance improvements in write.pop.projection.summary().
+
+Incorporated use of 2024 migration dataset by age.
+
+pop.predict.subnat can handle 1x1 subnational projections. 
+
+Fix in 1x1 GQs. 
+
+Change in the syntax of the LatestAgeMortalityPattern column in vwBaseYear dataset.
+
+Argument pasfr.ignore.phase2 added to pop.predict.subnat.
+
+Additional steps for very young and very old child-bearing ages in 
+kantorova.pasfr function.
+
+Minimum allowed population in an age group checked only if migration is negative.
+
+New function peak.probability.
+
 10.0-0/1 (08/09/2023)
 ------
 Making default datasets from wpp2022 work with pop.predict.
@@ -15,6 +51,10 @@ if adjustments can yield negative results.
 
 Option of giving migration inputs as rates.
 
+Various functions now accept expressions that include "XXX", such as get.pop.ex() or get.pop.exba().
+
+New function write.pop.trajectories() that exports trajectories for any expression, including by age and time.
+
 Fixed bug related to extracting observed migration which did not work for aggregations 
 (thanks to Crystal Yu).
 
@@ -23,7 +63,8 @@ Options for additional settings in the mortality pattern file (vwBaseYear):
     LatestAgeMortalityPattern can have 2 values (a negative for exclusion of latest time points and a positive for inclusion)
     AgeMortProjMethod1/2 can have value modPMD which uses a modified version of PMD (modPMD in MortCast) 
     
-Added support for UN-based disaggregation into migration schedules (argument mig.age.method = "un" in pop.predict)
+Added support for UN-based disaggregation into migration schedules (argument mig.age.method = "un" in pop.predict).
+User-defined schedules are also possible (mig.age.method = "user").
 
 9.0-0/1 (11/28/2021)
 -------
@@ -35,7 +76,7 @@ Support for 1x1 projections (1 year age x 1 year time); still an experimental fe
     
 The cohort component method modified so that it exactly reproduces the UN-implemented CCM (thanks to Sara Hertog for help).
 
-A 5x5 projection can be generated using annual TFR and e0 inputs. They are hen averaged.
+A 5x5 projection can be generated using annual TFR and e0 inputs. They are then averaged.
 
 Fixed bug in write.pop.projection.summary for "tpopage" (reported by Budi Setiawan).
 

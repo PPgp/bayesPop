@@ -397,7 +397,7 @@ is.saved.pi <- function(pop.pred, pi, warning=TRUE) {
 }
 
 get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index, country.code, year.index,
-									trajectories=NULL, pi=80, q=NULL, ...) {
+									trajectories=NULL, pi=80, q=NULL, reload = FALSE, ...) {
 	# quantile.array should be 4d-array (country x age x quantiles x time)
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
@@ -415,12 +415,30 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 		} 
 	}
 	if(!found) { # non-standard quantiles
-		if(is.null(trajectories)) {
+		if(is.null(trajectories) && !reload) {
 			warning('Quantiles not found')
 			return(NULL)	
 		}
-		cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, 
-						quantile, al, na.rm = TRUE)
+	    do.reload <- FALSE
+	    if (is.null(trajectories)) {
+	        if(pop.pred$nr.traj > 0) do.reload <- TRUE
+	    } else { 
+	        if (dim(trajectories)[3] < 2000 && pop.pred$nr.traj > dim(trajectories)[3] && reload) do.reload <- TRUE
+	    }
+	    if(do.reload) {
+	        #load 2000 trajectories maximum (quantiles are computed from all trajectories)
+	        traj.reload <- get.pop.trajectories.multiple.age(pop.pred, country.code, nr.traj=2000, ...)
+	        trajectories <- traj.reload$trajectories
+	    }
+	    if (!is.null(trajectories)) {
+	        if(length(dim(trajectories)) < 3) trajectories <- abind(trajectories, along=3) # only one trajectory
+	        if(length(year.index) == 1){
+		        cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, quantile, al, na.rm = TRUE)
+	        } else cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), quantile, al, na.rm = TRUE)
+	    } else {
+	        warning('Quantiles not found')
+	        return(NULL)
+	    }
 	}
 	return(cqp)
 }
@@ -429,7 +447,7 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL, country.code=NULL, 
 									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
 	# quantile.array should be 3d-array (country x quantiles x time). 
-	# If country.index is NULL or there is just one country in the prediciton object, 
+	# If country.index is NULL or there is just one country in the prediction object, 
     # the country dimension can be omitted 
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
@@ -505,8 +523,10 @@ get.migration <- function(pop.pred, country, sex, is.observed=FALSE, VEenv=NULL)
 	return(res)
 }
 
-mid.period3d <- function(dat)
+mid.period3d <- function(dat){
+    if(dim(dat)[2] == 1) return(dat)
     (dat[,-1, ,drop = FALSE] + dat[,-dim(dat)[2],, drop = FALSE])/2.
+}
 
 mx.aggregate <- function(mx, pop, abridged = TRUE) {
     # Aggregate mx over sexes
@@ -642,6 +662,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	event <- match.arg(event)
  	sex <- match.arg(sex)
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
+ 	if(!pop.pred$annual) time.labels <- as.character(as.integer(time.labels) - 2)
  	
  	#if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
@@ -724,6 +745,11 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		                      fertility = list(female=myenv$asfert, female.hch=myenv$asfert.hch),
 		                      pasfr = list(female=myenv$pasfert, female.hch=myenv$pasfert.hch)
 		                )
+	    if(is.observed) {
+		    for(s in names(alltraj))
+		        if(!is.null(alltraj[[s]]))
+		            dimnames(alltraj[[s]])[[2]] <- time.labels[(length(time.labels)-dim(alltraj[[s]])[2]+1):length(time.labels)]
+		}
 	}
 	has.hch <- !is.observed && (!is.null(alltraj$male.hch) || !is.null(alltraj$female.hch) || !is.null(alltraj$both.hch))
 	max.age <- NULL
@@ -787,9 +813,13 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 	if(is.observed) {
 		if(length(dim(traj)) < 3) # age dimension is missing
 			traj <- abind(traj, NULL, along=0)
-		 if(dim(traj)[[2]] < nperiods) {		
-			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nperiods-dim(traj)[[2]], dim(traj)[[3]]), 
-						dimnames=list(NULL, colnames(pop.pred$inputs$pop.matrix$male)[1:(nperiods-dim(traj)[[2]])], NULL)),
+		 if(dim(traj)[[2]] < nperiods) { # attach missing time periods
+		    nmiss <- nperiods-dim(traj)[[2]]
+		    step <- if(pop.pred$annual) 1 else 5
+		    first.time <- as.integer(dimnames(traj)[[2]][1])
+		    add.time <- sort(seq(first.time-step, by = -step, length = nmiss))
+			traj <- abind(array(NA, dim=c(dim(traj)[[1]], nmiss, dim(traj)[[3]]), 
+						dimnames=list(NULL, as.character(add.time), NULL)),
 						traj, along=2)
 		}
 	}
@@ -1014,12 +1044,14 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 			if(!has.ve) {
 				traj <- get.pop.observed.with.age(pop.pred, country=country.object$code, sex=sex, age=age)
 				d <- traj$data[traj$age.idx,,drop = FALSE]
+				colnms <- colnames(traj$data)
 			} else {
 				traj <- get.popVE.trajectories.and.quantiles(pop.pred, country.object$code, 
 											event=get.expression.indicators()[[what]], sex=sex, age=age, 
 											sum.over.ages=FALSE, is.observed=TRUE, ...)
 				traj$age.idx <- traj$age.idx.raw
 				d <- traj$trajectories
+				colnms <- colnames(traj$trajectories)
 			}
 		    if(is.null(d)) return(NULL)
 			if(sum.over.ages) {
@@ -1028,7 +1060,7 @@ get.pop <- function(object, pop.pred, aggregation=NULL, observed=FALSE, ...) {
 				else d <- colSums(d)
 				data <- as.matrix(d) # adds trajectory dimension if missing
 				dim(data) <- c(1, dim(data)) # adding age dimension
-				dimnames(data) <- list(NULL, colnames(traj$data), NULL)
+				dimnames(data) <- list(NULL, colnms, NULL)
 			} else {# only if it was not summed up, because then the as.matrix command adds a dimension
 				data <- if(is.null(dim(d)) || !is.array(d)) as.matrix(d) else d
 				#data <- as.matrix(d)
@@ -1764,19 +1796,22 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 	age.index <- as.integer(dimnames(alldata)[[1]])
 	nage <- dim(alldata)[1]
 	years <- dimnames(alldata)[[2]]
-	last.observed.cohort <- pop.pred$proj.years.pop[1]-age.index[1]*5
-	from.cohorts <- seq(last.observed.cohort, length=nage-1, by=-5)
-	observed.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	step <- if(pop.pred$annual) 1 else 5
+	last.observed.cohort <- pop.pred$proj.years.pop[1]-age.index[1]*step
+	from.cohorts <- seq(last.observed.cohort, length=nage-1, by=-step)
+	observed.cohorts <- if(step == 5) paste(from.cohorts, '-', from.cohorts+step, sep="") else as.character(from.cohorts)
 	for(cohort in length(observed.cohorts):1) {
 		cohort.traj <- apply(alldata[cohort:nage,,,drop=FALSE], 3, 'diag')
+		if(is.null(dim(cohort.traj))) next
 		result[[observed.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)
 		colnames(result[[observed.cohorts[cohort]]]) <- years[1:ncol(result[[observed.cohorts[cohort]]])]
 	}
 	nyears <- length(pop.pred$proj.years.pop)
-	from.cohorts <- seq(last.observed.cohort + 5, length=nyears-2, by=5)
-	projected.cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")	
-	for(cohort in 1:length(projected.cohorts)) {
+	from.cohorts <- seq(last.observed.cohort + step, length=if(step == 5) nyears-2 else nyears, by=step)
+	projected.cohorts <- if(step == 5) paste(from.cohorts, '-', from.cohorts+step, sep="")	else as.character(from.cohorts)
+	for(cohort in 1:(length(projected.cohorts) - 1)) {
 		cohort.traj <- apply(alldata[,(cohort+1):nyears,,drop=FALSE], 3, 'diag')
+		if(is.null(dim(cohort.traj))) next
 		result[[projected.cohorts[cohort]]] <- .get.quantiles.from.cohort.data(cohort.traj)
 		colnames(result[[projected.cohorts[cohort]]]) <- years[(cohort+1):(cohort+ncol(result[[projected.cohorts[cohort]]]))]
 	}
@@ -1839,3 +1874,54 @@ extract.trajectories.le <- function(pop.pred, country=NULL, expression=NULL, qua
 	return(.extract.trajectories('<=', pop.pred, country, expression, quant, values, all, ...))
 }
 
+peak.probability <- function(pop.pred, country=NULL, expression=NULL, year = NULL, pi = 95, verbose = TRUE, ...){
+    if(!is.null(country)) {
+        country.object <- get.country.object(country, country.table=pop.pred$countries)
+        trajectories <- get.pop.trajectories(pop.pred, country.object$code, ...)$trajectories
+        popargs <- list(...)
+        obs <- get.pop.observed(pop.pred, country, sex = if(is.null(popargs$sex)) "both" else popargs$sex,
+                                age = if(is.null(popargs$age)) "all" else popargs$age)
+    } else {
+        trajectories <- get.pop.trajectories.from.expression(expression, pop.pred, ...)$trajectories
+        if(is.null(trajectories)) return(NULL)
+        obs <- get.pop.observed.from.expression(expression, pop.pred)
+    }
+    if(is.null(trajectories)) return(NULL)
+    obs <- obs[-length(obs), drop = FALSE] # remove last observed year as it is included in trajectories
+    obs <- abind::abind(obs[!is.na(obs), drop = FALSE], along = 2) # remove NAs and add a dimension
+    trajectories <- rbind(obs[,rep(1, ncol(trajectories))], trajectories)
+    # for each trajectory get the index of the maximum over years 
+    maxes <- apply(trajectories, 2, which.max)
+    # get quantiles of the corresponding years
+    al <- (1-pi/100)/2
+    quant <- quantile(as.integer(rownames(trajectories))[maxes], c(al, 0.5, 1-al), type = 3)
+    # compute frequency table
+    time.freq <- table(maxes)
+    names(time.freq) <- rownames(trajectories)[as.integer(names(time.freq))]
+    prob.time <- as.data.frame(time.freq, responseName = "probability", stringsAsFactors = FALSE)
+    colnames(prob.time)[1] <- "year"
+    prob.time[["probability"]] <- prob.time[["probability"]]/length(maxes)
+    prob.time[["year"]] <- as.integer(prob.time[["year"]])
+    if(is.null(year)) year <- max(pop.pred$proj.years)
+    prob.less.year <- sum(prob.time$probability[prob.time$year < year])
+    prob.time$cumprob <- cumsum(prob.time$probability)
+
+    if(verbose){
+        if(!is.null(country)){
+            cat("\nPopulation for", country.object$name) 
+        } else cat("\nIndicator", expression)
+        cat("\n=================================")
+        cat("\nProbability that a peak happens before", year, ":", round(prob.less.year*100, 2), "%")
+        if(quant[3] < max(pop.pred$proj.years)){
+            if(quant[1] == quant[3]){ # peak is in the past
+                cat("\nPeak happened in", quant[3])
+            } else cat("\nWith", pi,  "% probability, a peak happens between", 
+                quant[1], "and", quant[3], ", median =", quant[2])
+        } else cat("\nWith", pi,  "% probability, a peak happens after", 
+                   quant[1], "(upper bound unknown), median =", quant[2])
+        cat("\n")
+    }
+    invisible(list(prob.peak.less.given.year = prob.less.year, given.year = year, 
+                peak.quantiles = quant, 
+                all.prob.peak.by.time = prob.time))
+}

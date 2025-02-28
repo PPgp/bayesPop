@@ -192,8 +192,15 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	if (half.child.variant && !is.null(trajectories$half.child)) {
 		lty <- c(lty, max(lty)+1)
 		llty <- length(lty)
-		lines(x2, trajectories$half.child[,1], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
-		lines(x2, trajectories$half.child[,2], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
+		hch <- trajectories$half.child
+		if(adjust && !is.null(trajectories$trajectories)){ # shift half child to be centered around the median
+		    midhch <- hch[,1] + (hch[,2] - hch[,1])/2.
+		    medproj <- apply(trajectories$trajectories, 1, median)
+		    shift <- medproj - midhch
+		    hch <- hch + shift
+		}
+		lines(x2, hch[,1], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
+		lines(x2, hch[,2], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
 		legend <- c(legend, '+/- 0.5 child')
 		cols <- c(cols, col[4])
 		lwds <- c(lwds, lwd[4])
@@ -283,7 +290,14 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 		# load the half child variants from trajectory file
 		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0, adjust=adjust)
 		if(!is.null(traj$half.child)) {
-			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), traj$half.child))
+		    hch <- traj$half.child
+		    if(adjust && !is.null(traj$trajectories)){ # shift half child to be centered around the median
+		        midhch <- hch[,1] + (hch[,2] - hch[,1])/2.
+		        medproj <- apply(traj$trajectories, 1, median)
+		        shift <- medproj - midhch
+		        hch <- hch + shift
+		    }
+			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), hch))
 			colnames(pred.table)[(ncol(pred.table)-1):ncol(pred.table)] <- c('-0.5child', '+0.5child')
 		}
 	}
@@ -1219,13 +1233,16 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		cohort.data <- cohorts(pop.pred, country=country, expression=expression, pi=pi)
 	all.cohorts <- names(cohort.data)[-which(names(cohort.data) == 'last.observed')]
 	all.cohorts.num.start <- as.integer(substr(all.cohorts, 1, 4))
+	step <- if(pop.pred$annual) 1 else 5
 	if(is.null(cohorts)) 
-		cohorts <- seq(cohort.data[['last.observed']], by=5, 
+		cohorts <- seq(cohort.data[['last.observed']], by=step, 
 							length=min(10, sum(all.cohorts.num.start > cohort.data[['last.observed']])))
-	if(any(is.numeric(cohorts))) {
-		# convert to the from-to format, e.g. 2000-2005
-		from.cohorts <- .round.to.lower5(cohorts)
-		cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	if(any(is.numeric(cohorts))){
+	    if(!pop.pred$annual) {
+		    # convert to the from-to format, e.g. 2000-2005
+		    from.cohorts <- .round.to.lower5(cohorts)
+		    cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	    } else cohorts <- as.character(cohorts)
 	}
 	if(is.null(xlim))
 		xlim <- range(unlist(sapply(cohorts, function(x) range(as.integer(colnames(cohort.data[[x]]))))))

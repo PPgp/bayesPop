@@ -12,17 +12,17 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 							pasfr=NULL,
 							patterns=NULL,
 							migM=NULL, migF=NULL,
-							migMt = NULL, migFt = NULL, mig = NULL,
+							migMt = NULL, migFt = NULL, mig = NULL, mig.fdm = NULL,
 							e0F.file=NULL, e0M.file=NULL, 
 							tfr.file=NULL, 
 							e0F.sim.dir=NULL, e0M.sim.dir=NULL, 
 							tfr.sim.dir=NULL,
-							migMtraj=NULL, migFtraj=NULL, migtraj = NULL,
+							migMtraj=NULL, migFtraj=NULL, migtraj = NULL, migFDMtraj = NULL,
 							GQpopM = NULL, GQpopF = NULL, average.annual = NULL
 						), nr.traj = 1000, keep.vital.events=FALSE,
 						fixed.mx=FALSE, fixed.pasfr=FALSE, lc.for.hiv = TRUE, lc.for.all = TRUE,
-						mig.is.rate = FALSE, mig.age.method = c("auto", "un", "rc", "user"), 
-						my.locations.file = NULL, 
+						mig.is.rate = FALSE, mig.age.method = c("auto", "fdmp", "fdmnop", "rc"), 
+						mig.rc.fam = NULL, my.locations.file = NULL, 
 						replace.output=FALSE, verbose=TRUE, ...) {
 	prediction.exist <- FALSE
 	ages <- ages.all(annual, observed = FALSE)
@@ -40,7 +40,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 				' already exists.\nSet replace.output=TRUE if you want to overwrite existing projections.')
 		inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr, 
 		                   lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-		                   annual = annual, mig.age.method = mig.age.method, #mig.age.gcc = mig.age.gcc, 
+		                   annual = annual, mig.age.method = mig.age.method, mig.rc.fam = mig.rc.fam,
 		                   verbose=verbose)
 	}else {
 		if(has.pop.prediction(output.dir) && !replace.output) {
@@ -50,7 +50,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 								existing.mig=list(MIGm=pred$inputs$MIGm, MIGf=pred$inputs$MIGf, 
 												obsMIGm=pred$inputs$observed$MIGm, obsMIGf=pred$inputs$observed$MIGf),
 								lc.for.hiv = pred$inputs$lc.for.hiv, lc.for.all = pred$inputs$lc.for.all,
-								annual = pred$inputs$annual, mig.age.method = mig.age.method, #mig.age.gcc = mig.age.gcc, 
+								annual = pred$inputs$annual, mig.age.method = mig.age.method, mig.rc.fam = mig.rc.fam,
 								verbose=verbose)
 			if(!missing(inputs)) 
 				warning('Projection already exists. Using inputs from existing projection. Use replace.output=TRUE for updating inputs.')
@@ -59,7 +59,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 			prediction.exist <- TRUE
 		} else inp <- load.inputs(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=fixed.mx, fixed.pasfr=fixed.pasfr,
 		                          all.countries=FALSE, lc.for.hiv = lc.for.hiv, lc.for.all = lc.for.all, mig.is.rate = mig.is.rate,
-		                          annual = annual, mig.age.method = mig.age.method, #mig.age.gcc = mig.age.gcc, 
+		                          annual = annual, mig.age.method = mig.age.method, mig.rc.fam = mig.rc.fam,
 		                          verbose=verbose)
 	}
 
@@ -97,7 +97,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 }
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
-							fixed.pasfr=FALSE, function.inputs=NULL, verbose=FALSE, 
+							fixed.pasfr=FALSE, function.inputs=NULL, pasfr.ignore.phase2 = FALSE, verbose=FALSE, 
 							parallel = FALSE, nr.nodes = NULL, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
@@ -147,13 +147,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	}
 	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
 	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
-	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "verbose", 
+	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "pasfr.ignore.phase2", "verbose", 
 	                       "nquant", "quantiles.to.keep", "ncountries")
 
 	
 	# prediction function
     predict.one.country <- function(cidx, nr.traj, nr_project, do.gc = FALSE) {
 		#unblock.gtk.if.needed(paste('finished', cidx, status.for.gui), gui.options)
+        trajectory <- NULL
         if(do.gc) gc()
 		country <- country.codes[cidx]
 		country.idx <- countries.idx[cidx]
@@ -219,12 +220,14 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, estim.years=inp$estim.years, 
 															mig.rate.code = inp$mig.rate.code[1], annual = inp$annual)
 		tfr.med <- apply(inpc$TFRpred, 1, median, na.rm = TRUE)[nrow(inpc$TFRpred)]
+		# iterate over trajectories
 		for(itraj in 1:nr.traj) {
 			if(any(is.na(inpc$TFRpred[,itraj]))) next
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRpred[,itraj]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual, 
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRpred[,itraj] * asfr[i,]
@@ -236,16 +239,20 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			for(sex in c('M', 'F')) {
 				par <- paste0('mig', sex, 'pred')
 				# if rates are attached slice and keep them 
-				rates <- rate.codes <- NULL
+				rates <- rate.codes <- rcout <- NULL
 				if(!is.null(inpc[[par]]) && "rate" %in% names(attributes(inpc[[par]]))) {
 				    rates <- attr(inpc[[par]], "rate")[itraj,]
 				    rate.codes <- attr(inpc[[par]], "code")[itraj,]
 				}
+				if(!is.null(inpc[[par]]) && "rc.out" %in% names(attributes(inpc[[par]]))) 
+				    rcout <- attr(inpc[[par]], "rc.out")[trajectory == itraj][, trajectory := NULL]
+				    
 				migpred[[sex]] <- as.matrix(if(is.null(inpc[[par]])) inpc[[paste0('MIG', tolower(sex))]] else inpc[[par]][,itraj,])
 				if(!is.null(rates)) {
 				    attr(migpred[[sex]], "rate") <- rates
 				    attr(migpred[[sex]], "code") <- rate.codes
 				}
+				if(!is.null(rcout)) attr(migpred[[sex]], "rc.out") <- rcout
 			}
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.rate.code = inp$mig.rate.code[2],
 			                     country.name=UNlocations[country.idx,'name'],
@@ -285,7 +292,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
 										norms=inp$PASFRnorms, proj.years=inp$proj.years, 
-										tfr.med=tfr.med, annual = inp$annual)
+										tfr.med=tfr.med, annual = inp$annual,
+										ignore.phase2 = pasfr.ignore.phase2)
 			else pasfr <- inpc$PASFR/100.
 			asfr <- pasfr
 			for(i in 1:nrow(pasfr)) asfr[i,] <- inpc$TFRhalfchild[variant,] * asfr[i,]
@@ -499,16 +507,22 @@ load.wpp.dataset <- function(...)
 load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fixed.mx=FALSE, 
                         fixed.pasfr=FALSE, all.countries=TRUE, existing.mig=NULL, 
                         lc.for.hiv = TRUE, lc.for.all = FALSE, mig.is.rate = FALSE,
-                        annual = FALSE, mig.age.method = "auto", #mig.age.gcc = "un", 
+                        annual = FALSE, mig.age.method = "auto", mig.rc.fam = NULL,
                         verbose=FALSE) {
+    out <- `in` <- country_code <- NULL
 	observed <- list()
 	pop.ini.matrix <- pop.ini <- GQ <- list(M=NULL, F=NULL)
 	# Get initial population counts
 	for(sex in c('M', 'F')) {
 		dataset.name <- paste0('pop', sex)
-		if(is.null(inputs[[dataset.name]])) 
-			POP0 <- bayesTFR:::load.from.wpp(dataset.name, wpp.year = wpp.year, annual = annual)	
-		else POP0 <- read.pop.file(inputs[[dataset.name]])
+		if(is.null(inputs[[dataset.name]])) {
+			POP0 <- bayesTFR:::load.from.wpp(dataset.name, wpp.year = wpp.year, annual = annual)
+			if(! present.year %in% colnames(POP0)) {
+			    # if present year is not found in observed years, load WPP projections
+			    POP0proj <- bayesTFR:::load.from.wpp(paste0(dataset.name, "projMed"), wpp.year = wpp.year, annual = annual)
+			    POP0 <- merge(POP0, POP0proj, by = c("country_code", "name", "age"), sort = FALSE)
+			}
+		} else POP0 <- read.pop.file(inputs[[dataset.name]])
 		num.columns <- grep('^[0-9]{4}$', colnames(POP0), value=TRUE) # values of year-columns
 		if(!is.element(as.character(present.year), colnames(POP0))) {
 			stop('Wrong present.year. ', present.year, ' not available in the ', dataset.name, ' file.\nAvailable years: ',
@@ -522,19 +536,9 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 		dimnames(pop.ini.matrix[[sex]]) <- list(paste(POP0[,'country_code'], POP0[,'age'], sep='_'), 
 									as.character(as.integer(num.columns)))
 		pop.ini[[sex]] <- POP0[,c('country_code', 'age', present.year)]
-		dataset.name <- paste0('GQpop', sex)
-		if(!is.null(inputs[[dataset.name]])) {
-		    GQ[[sex]] <- read.pop.file(inputs[[dataset.name]])
-		    colnames(GQ[[sex]]) <- tolower(colnames(GQ[[sex]]))
-		    if(! 'age' %in% colnames(GQ[[sex]]) || ! 'country_code' %in% colnames(GQ[[sex]]) || ! 'gq' %in% colnames(GQ[[sex]]))
-		        stop('Columns "age", "country_code" and "gq" must be present in the GQpop datasets.')
-		    GQ[[sex]] <- GQ[[sex]][, c("country_code", "age", "gq")]
-		}
 	}
 	POPm0 <- pop.ini[['M']]
 	POPf0 <- pop.ini[['F']]
-	GQm <- GQ[['M']]
-	GQf <- GQ[['F']]
 
 	# Get death rates
 	MXm.pred <- MXf.pred <- NULL
@@ -605,9 +609,61 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	if(length(mig.is.rate) < 2) mig.is.rate <- rep(mig.is.rate, 2) # one for observed, one for projection
 	
 	# Get age-specific migration
+	mig.rc.inout <- NULL
+	if(!is.null(inputs[["migMt"]]) || !is.null(inputs[["migFt"]])) {
+	    if(!mig.age.method %in% c("auto", "rc")){
+	        warning("Method", mig.age.method, "not implemented for cases where migMt or migFt is given. Changed to 'rc'.")
+	    }
+	    mig.age.method <- "rc"
+	}
+	if(mig.age.method == "auto") {
+	    if(wpp.year < 2022 && wpp.year > 2012 && !annual) mig.age.method <- "residual"
+	    else mig.age.method <- "fdmp"
+	}
+	is.fdm <- startsWith(mig.age.method, "fdm")
+	if(is.fdm){
+	    if(is.null(inputs[["mig.fdm"]])){
+	        mig.rc.inout <- if(annual) data.table(get("rc1FDM")) else data.table(get("rc5FDM"))# get the default dataset
+	        all.country.codes <- unique(POP0[, 'country_code'])
+	        if(any(!all.country.codes %in% mig.rc.inout$country_code)){
+	            # create a dataset of model Rogers-Castro for missing countries
+	            missing <- all.country.codes[!all.country.codes %in% mig.rc.inout$country_code]
+	            migio <- data.table(age = ages.all(annual, observed = TRUE), 
+	                                `in` = rcastro.schedule(annual))[, out := `in`]
+	            mig.rc.miss <- migio[rep(migio[, .I], length(missing))]
+	            mig.rc.miss[, country_code := rep(missing, each = nrow(migio))]
+	            mig.rc.inout <- rbind(mig.rc.inout[country_code %in% all.country.codes],
+	                                  mig.rc.miss)
+	            if(length(missing) > length(all.country.codes)/2) # guessing if mig.fdm needs to be supplied
+	                warning("Item 'mig.fdm' might be missing for the migration FDM method. Using model Rogers-Castro for both, in- and out-migration for locations ",
+	                    paste(missing, collapse = ", "))
+	        }
+	    } else {
+	        mig.rc.inout <- data.table(read.pop.file(inputs[["mig.fdm"]]))
+	        if(! "in" %in% colnames(mig.rc.inout) || ! "out" %in% colnames(mig.rc.inout))
+	            stop("Column 'in' or 'out' is missing in the mig.fdm dataset.")
+	    }
+	    fdmMIGtype.names <- list(MigFDMb0 = "beta0", MigFDMb1 = "beta1", MigFDMmin = "min", 
+	                             MigFDMsrin = "in_sex_ratio", MigFDMsrout = "out_sex_ratio")
+	    fdmMIGtype.defaults <- list(beta0 = if(annual) 0.07 else 0.35, beta1 = 0.5, in_sex_ratio = 0.5, out_sex_ratio = 0.5,
+	                                min = if(annual) 0.02 else 0.2)
+	    for(fdmvar in names(fdmMIGtype.names)){
+	        default.value <- fdmMIGtype.defaults[[fdmMIGtype.names[[fdmvar]]]]
+	        default.values <- if(fdmvar == "min") pmin(default.value, MIGtype[["MigFDMb0"]]/10) else rep(default.value, nrow(MIGtype))
+	        if(fdmvar %in% colnames(MIGtype)){
+	            if(any((fdm.na <- is.na(MIGtype[[fdmvar]]))))  # NAs can appear if running for a different wpp.year than 2024 (due to merging) and there is a mismatch in countries between the two revisions
+	                MIGtype[[fdmvar]][fdm.na] <- default.values[fdm.na]
+	        } else MIGtype[[fdmvar]] <- default.values
+	        mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", fdmvar)], by = "country_code")
+	        setnames(mig.rc.inout, fdmvar, fdmMIGtype.names[[fdmvar]])
+	    }
+	} # end FDM settings
+	if(!is.null(mig.rc.fam))  mig.rc.fam <- data.table(mig.rc.fam)
 	miginp <- .get.mig.data(inputs, wpp.year, annual, periods = c(estim.periods, proj.periods), 
 	                        existing.mig = existing.mig, all.countries = all.countries, pop0 = POPm0,
 	                        mig.age.method = mig.age.method, mig.is.rate = mig.is.rate, 
+	                        rc.data = if(is.fdm) mig.rc.inout else mig.rc.fam, 
+	                        pop = if(is.fdm) pop.ini.matrix else NULL,
 	                        verbose = verbose)
 
 	MIGm <- miginp[["migM"]]
@@ -623,31 +679,52 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 			observed$MIGf <- MIGf[,c('country_code', 'age', obs.periods[avail.obs.periods])]
 		}
 	}
-	MIGm <- MIGm[,c('country_code', 'age', proj.periods)]
-	MIGf <- MIGf[,c('country_code', 'age', proj.periods)]
+	MIGm <- MIGm[,c('country_code', 'age', intersect(proj.periods, colnames(MIGm)))]
+	MIGf <- MIGf[,c('country_code', 'age', intersect(proj.periods, colnames(MIGf)))]
 	
 	# assign some migrate-specific attributes, since they get lost by slicing above
 	if(!is.null((rates <- attr(miginp[["migM"]], "rate")))){
-	    attr(MIGm, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-	    attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', proj.periods), with = FALSE]
-	    if(!is.null(obs.periods) && is.null(existing.mig)) {
+	    if(length(intersect(proj.periods, colnames(rates))) > 0) {
+	        attr(MIGm, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+	        attr(MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', intersect(proj.periods, colnames(attr(miginp[["migM"]], "code")))), with = FALSE]
+	    } else {
+	        attr(MIGm, "rate") <- NULL
+	        attr(MIGm, "code") <- NULL
+	    }
+	    if(!is.null(obs.periods) && is.null(existing.mig) && any(avail.obs.periods)) {
 	        attr(observed$MIGm, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	        attr(observed$MIGm, "code") <- attr(miginp[["migM"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
 	}
+	if(!is.null((rcout <- attr(miginp[["migM"]], "rc.out")))){
+	    attr(MIGm, "rc.out") <- rcout #rcout[, c('country_code', proj.periods), with = FALSE]
+	    if(!is.null(obs.periods) && is.null(existing.mig))
+	        attr(observed$MIGm, "rc.out") <- rcout # rcout[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
+	}
 	if(!is.null((rates <- attr(miginp[["migF"]], "rate")))){
-	    attr(MIGf, "rate") <- rates[, c('country_code', proj.periods), with = FALSE]
-	    attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', proj.periods), with = FALSE]
-	    if(!is.null(obs.periods) && is.null(existing.mig)) {
+	    if(length(intersect(proj.periods, colnames(rates))) > 0) {
+	        attr(MIGf, "rate") <- rates[, c('country_code', intersect(proj.periods, colnames(rates))), with = FALSE]
+	        attr(MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', intersect(proj.periods, colnames(attr(miginp[["migF"]], "code")))), with = FALSE]
+	    } else {
+	        attr(MIGf, "rate") <- NULL
+	        attr(MIGf, "code") <- NULL
+	    }
+	    if(!is.null(obs.periods) && is.null(existing.mig) && any(avail.obs.periods)) {
 	        attr(observed$MIGf, "rate") <- rates[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	        attr(observed$MIGf, "code") <- attr(miginp[["migF"]], "code")[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	    }
+	}
+	if(!is.null((rcout <- attr(miginp[["migF"]], "rc.out")))){
+	    attr(MIGf, "rc.out") <- rcout #[, c('country_code', proj.periods), with = FALSE]
+	    if(!is.null(obs.periods) && is.null(existing.mig))
+	        attr(observed$MIGf, "rc.out") <- rcout #[, c('country_code', obs.periods[avail.obs.periods]), with = FALSE]
 	}
 	# Get migration trajectories if available
 	migpr <- .load.mig.traj(inputs, mig.age.method = mig.age.method, verbose = verbose)
 	migMpred <- migpr$M
 	migFpred <- migpr$F
 	migBpred <- migpr$B
+	migFDMpred <- migpr$FDM
 	has.mig.traj <- !is.null(migMpred) || !is.null(migFpred) || !is.null(migBpred)
 	mig.rate.code <- c(miginp[["migcode"]]*mig.is.rate[1], 
 	               (if(has.mig.traj) migpr[["migcode"]] else miginp[["migcode"]])*mig.is.rate[2])
@@ -712,17 +789,44 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	# Get TFR
 	TFRpred <- .get.tfr.data(inputs, wpp.year, annual = annual, verbose=verbose)
 	
+	# Get GQ
+	for(sex in c('M', 'F')) {
+        dataset.name <- paste0('GQpop', sex)
+	    if(is.null(inputs[[dataset.name]])) next
+        GQ[[sex]] <- .format.gq(inputs[[dataset.name]], annual, 
+                                c(estim.years[length(estim.years)], proj.years), # need to include the current year
+                                c(obs.periods[length(obs.periods)], proj.periods), 
+                                what = dataset.name, verbose = verbose)
+	}
+	GQm <- GQ[['M']]
+	GQf <- GQ[['F']]
+	
 	inp <- new.env()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
 				'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'HIVparams', 'GQm', 'GQf',
-				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'estim.years', 'proj.years', 'wpp.year', 
+				'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'migFDMpred', 'estim.years', 'proj.years', 'wpp.year', 
 				'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
-				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', #'mig.age.gcc', 
+				'lc.for.hiv', 'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.fam', 'mig.rc.inout', 
 				'observed'))
 		assign(par, get(par), envir=inp)
 	inp$pop.matrix <- list(male=pop.ini.matrix[['M']], female=pop.ini.matrix[['F']])
 	inp$PASFRnorms <- compute.pasfr.global.norms(inp)
+	if(is.null(inp$PASFRnorms)){ # if a country is missing in the pasfr data, take the pre-computed global norms
+	    env <- new.env()
+	    do.call("data", list("pasfr_global_norms", envir = env))
+	    inp$PASFRnorms <- if(annual) env$pasfr.glob.norms1 else env$pasfr.glob.norms5
+	    if(!is.null(obs.periods)) { 
+	        # if any of the observed years are missing in the global norm, use the latest norm for those time periods
+	        missing.years <- obs.periods[! obs.periods %in% colnames(inp$PASFRnorms$PasfrGlobalNorm)]
+	        if(length(missing.years) > 0) {
+	            last.norm <- inp$PASFRnorms$PasfrGlobalNorm[, rep(ncol(inp$PASFRnorms$PasfrGlobalNorm), length(missing.years))]
+	            colnames(last.norm) <- missing.years
+	            inp$PASFRnorms$PasfrGlobalNorm <- cbind(inp$PASFRnorms$PasfrGlobalNorm, last.norm)
+	        }
+	    }
+	}
 	inp$average.annual <- inputs$average.annual
+	inp$mig.alt.age.schedule <- inputs$mig.alt.age.schedule
 	return(inp)
 }
 
@@ -765,6 +869,34 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
     return(list(srb=SRB, obs.srb=obs.SRB, proj.periods=proj.periods, 
            obs.periods=obs.periods, proj.years=proj.years))
 }
+
+.format.gq <- function(file.name, annual, proj.years, proj.periods, id.col = "country_code", what = "GQ", verbose = FALSE){
+    this.gq <- read.pop.file(file.name)
+    colnames(this.gq) <- tolower(colnames(this.gq))
+    if(! 'age' %in% colnames(this.gq) || ! id.col %in% colnames(this.gq))
+        stop('Columns "age" and ', id.col, ' must be present in the GQpop datasets.')
+    if('gq' %in% colnames(this.gq)){ # propagate for all years
+        timecols <- matrix(this.gq$gq, ncol = length(proj.years), nrow = nrow(this.gq), dimnames = list(NULL, proj.years))
+        if(verbose) cat("\n", what, "to be applied to all projection years.\n")
+    } else { # no gq column given; assume columns are years or periods
+        timecols <- matrix(0, ncol = length(proj.years), nrow = nrow(this.gq), dimnames = list(NULL, proj.years))
+        if(annual){
+            numcols <- intersect(colnames(this.gq), as.character(proj.years))
+            timecolnames <- numcols
+        } else { # 5-years
+            which.numcols <- which(as.character(proj.periods) %in% colnames(this.gq))
+            numcols <- as.character(proj.periods)[which.numcols]
+            timecolnames <- as.character(proj.years)[which.numcols]
+        }
+        if(length(numcols) == 0)
+            stop('Either column "gq" must be present in the GQpop datasets, or time columns ', paste(proj.periods, collapse = ","))
+        timecols[, timecolnames] <- as.matrix(this.gq[, numcols])
+        if(verbose) cat("\n", what, "to be applied to years", paste(timecolnames, collapse = ", "), "\n")
+        if(! proj.years[1] %in% timecolnames) warning("Present year not included in GQ. Nothing will be removed before running the CCM.")
+    }
+    return(cbind(this.gq[, c(id.col, "age")], timecols))
+}
+
 
 .consolidate.pasfr <- function(pasfr){
     # If using wpp2022 with 5-year data, the age column contains age categories 
@@ -812,12 +944,16 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 }
 
 migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods = NULL, 
-                                 schedule = NULL, scale = 1, method = "auto", 
-                                 sex = "M", id.col = "country_code", country_code = NULL, 
-                                 mig.is.rate = FALSE, alt.schedule.file = NULL, ...#, debug = FALSE
+                                 scale = 1, method = "rc", 
+                                 sex = "M", id.col = "country_code", 
+                                 mig.is.rate = FALSE, rc.data = NULL, 
+                                 pop = NULL, pop.glob = NULL,  ...#, debug = FALSE
                                  ) {
-    mig <- i.mig <- mig.orig <- i.V1 <- distr <- migf <- totmig <- total.orig <- i.total.orig <- rc <- prop <- i.prop <- new.prop <- i.new.prop <- prop.neg <- sprop <- NULL
-    age <- is_pos_neg <- summigpos <- sex.ratio <- summig.orig <- migrate <- rate_code <- NULL
+    mig <- i.mig <- migf <- totmig <- rc <- prop <- i.prop <- popglob <- i.pop <- in_sex_ratio <- out_sex_ratio <- in_sex_factor <- out_sex_factor <- NULL
+    age <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- totpop <- NULL
+    IM <- beta0 <- beta1 <- OM <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
+    i.IM <- i.OM <- i.out <- i.v <- i.rxstar_out_denom <- i.totmig <- NULL
+    mig_sign <- sx <- i.prop_in <- i.prop_out <- NULL
     debug <- FALSE
     if(is.null(dim(df))) df <- t(df)
     if(!is.data.table(df)) df <- data.table(df)
@@ -853,138 +989,219 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     agedf <- data.table::data.table(age = migtempl[["age"]][age.idx],
                         age.idx = age.idx)
     migtmp <- merge(migtempll, totmigl, by = c(id.col, "year"), sort = FALSE)[, prop := NA][, prop := as.numeric(prop)]
-    if(method != "rc") { # load schedules from sysdata.rda
-        mig.sched.name <- if(annual) "mig1.schedule" else "mig5.schedule"
-        mig.neg.sched.name <- if(annual) "mig1.neg.schedule" else "mig5.neg.schedule"
-        mig.totals.name <- if(annual) "mig1.totals" else "mig5.totals" 
-        sex.code <- if(sex == "M") 1 else 2
-        locs.env <- new.env()
-        if(method == "user")
-            load(alt.schedule.file, envir = locs.env)
-        else {
-            assign(mig.sched.name, get(mig.sched.name), envir = locs.env)
-            assign(mig.totals.name, get(mig.totals.name), envir = locs.env)
-            assign(mig.neg.sched.name, get(mig.neg.sched.name), envir = locs.env)
-        }
-        mig.schedule <- get(mig.sched.name, envir = locs.env)
-        #mig.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
-        mig.schedule <- mig.schedule[sex == sex.code]
-        mig.totals <- get(mig.totals.name, envir = locs.env) # only countries included that have both, negatives and positives (i.e. from mig.neg.schedule)
-        mig.schedule[mig.totals, total.orig := i.mig, on = c("country_code", "year")]
-        mig.neg.schedule <- get(mig.neg.sched.name, envir = locs.env)
-        #mig.neg.schedule[, sex.tot := sum(prop), by = .(country_code, year, sex)]
-        mig.neg.schedule <- mig.neg.schedule[sex == sex.code]
-        if(!annual) {
-            if(length(grep("-", time.periods)) > 0) {
-                # time is given as periods
-                mig.schedule[, year := paste(year - 2, year + 3, sep = "-")]
-                mig.neg.schedule[, year := paste(year - 2, year + 3, sep = "-")]
-            } else {
-                # time is given as middle years
-                mig.schedule[, year := as.character(year + 1)] 
-                mig.neg.schedule[, year := as.character(year + 1)]
-            }
-            mig.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
-            mig.neg.schedule[, age := ifelse(age == 100, "100+", paste(age, age + 4, sep = "-"))]
+
+    rc.data.wrk <- rc.data
+    if(!is.null(rc.data.wrk))
+        rc.data.wrk <- copy(rc.data.wrk)
+    if(is.character(migtmp$age) && !is.null(rc.data.wrk)){ # make the OAG in rc.data consistent with migtmp
+        rc.data.wrk[, age := as.character(age)]
+        if(any(migtmp[, age] == "100+")) # TODO: check the range of ages in rc.data
+            rc.data.wrk[, age := ifelse(age == "100", "100+", age)]
+    }
+    
+    sex.ratio.in <- scale
+    sex.ratio.out <- scale
+    rc.schedule.in <- rc.schedule.out <- NULL
+    if(method == "rc" && !is.null(rc.data.wrk)){ # externally supplied RC schedules (e.g. DemoTools dataset mig_un_families)
+        rc.sched <- copy(rc.data.wrk)
+        if(! "mig_sign" %in% colnames(rc.sched)) rc.sched[, mig_sign := "B"] else rc.sched[, mig_sign := toupper(substr(mig_sign, 1, 1))]
+        rc.sched[, sx := "B"]
+        if("sex" %in% colnames(rc.sched)) rc.sched[, sx := toupper(substr(rc.sched$sex, 1, 1))][, sex := NULL]
+        #if(sex == "M" && id.col == "country_code") browser()
+        if(!annual & !any(agedf$age[1] %in% age)){
+            # Looks like ages are not in format 0-4, ...; collapse to 5-year age groups
+            rc.sched[age == "100+", age := "100"][, age := as.integer(age)]
+            rc.sched[, age.idx := cut(age, breaks = seq(0, by = 5, length = 28), labels = FALSE, include.lowest = TRUE)]
+            rc.sched <- rc.sched[, list(prop = sum(prop)), by = c("sx", "mig_sign", "age.idx")]
+            rc.sched <- merge(rc.sched, agedf, by = "age.idx", sort = FALSE)
         } else {
-            if(is.character(migtmp[, age])) {
-                mig.schedule[, age := as.character(age)]
-                mig.neg.schedule[, age := as.character(age)]
-                if(any(migtmp[, age] == "100+")) {
-                    mig.schedule[, age := ifelse(age == 100, "100+", age)]
-                    mig.neg.schedule[, age := ifelse(age == 100, "100+", age)]
-                }
-            }
+            rc.sched <- rc.sched[age %in% agedf$age]
         }
-        cntries <- country_code
-        if(id.col == "country_code")
-            cntries <- unique(unlist(migtempll[, "country_code", with = FALSE]))
-        # load UN codes (do not rely on the function UNcountries() as the UNlocations object can contain user-specified locations)
-        bayesTFR:::load.bdem.dataset('UNlocations', 2022, envir=locs.env, verbose=FALSE)
-        uncodes <- intersect(cntries, locs.env$UNlocations$country_code[locs.env$UNlocations$location_type==4])
-        if(length(uncodes) > length(cntries)/2) { # here guessing if these are UN codes
-            if(annual) migtmp[, year := as.integer(year)]
-            if(!"country_code" %in% colnames(migtmp)) migtmp[, country_code := cntries] # this will be true only if migtmp corresponds to one country
-            # join with positive and negative schedules
-            migtmp[mig.schedule, `:=`(prop = i.prop, total.orig = i.total.orig), on = c("country_code", "year", "age")]
-            migtmp[mig.neg.schedule, prop.neg := i.prop, on = c("country_code", "year", "age")]
-            # for zero total migration where a schedule has positive as well as negative part, shift the total migration by a little bit 
-            # so that we don't loose the schedule
-            migtmp[totmig == 0 & !is.na(prop) & !is.na(prop.neg), totmig := sign(total.orig) * (if(annual) 0.001 else 0.005)] #totmigl[abs(totmig) > 0, min(abs(totmig))]
-            #if(debug) stop("")
-            # use the negative schedule if total migration is negative and there is a different schedule for such cases
-            migtmp[totmig < 0 & !is.na(prop.neg), prop := prop.neg][, prop.neg := NULL]
-            migtmp[!is.na(prop), `:=`(is_pos_neg = sum(prop > 0) > 0 & sum(prop < 0) > 0), by = c(id.col, "year")] # prop can be NA if observed years are included
-            migtmp[is.na(is_pos_neg), is_pos_neg := FALSE]
-            if(mig.is.rate)
-                migtmp[, `:=`(migrate = totmig)]
-            if(migtmp[!is.na(prop), sum(is_pos_neg)] > 0){ 
-                # For schedules that are both, negative and positive, add the difference between the original total mig
-                # to either the positive part (if the desired total is positive) 
-                # or the negative part (if the desired total is negative)
-                if(mig.is.rate)
-                    migtmp[!is.na(prop) & is_pos_neg == TRUE, `:=`(totmig = total.orig)] # if totmig is a rate, switch to the original total count for these records
-                migspecial <- migtmp[!is.na(prop) & is_pos_neg == TRUE]
-                migspecial[, mig.orig := abs(total.orig) * prop]
-                migspecial[, `:=`(sumprop = sum(prop), summig.orig = sum(mig.orig)), by = c(id.col, "year")]
-                # It will be added to the positive part for all because the negative schedules are flipped.
-                # Thus, increasing the positive part is equivalent to increasing the negative part.
-                ms <- migspecial[prop > 0, sum(mig.orig), by = c(id.col, "year")]
-                migspecial[ms, summigpos := i.V1, on = c(id.col, "year")]
-                migspecial[prop > 0, distr := mig.orig/summigpos]
-                migspecial[, sex.ratio := abs(summig.orig / total.orig)]
-                migspecial[, migf := mig.orig]
-                migspecial[!is.na(distr), migf := migf + sign(totmig) * distr*(totmig - total.orig)*sex.ratio]
-                migspecial[, new.prop := migf/abs(totmig)] # do not flip it
-                #if(debug) stop("")
-                migtmp[migspecial, prop := i.new.prop, on = c(id.col, "year", "age")]
-            }
-            if(scale == 1){
-                # need to rescale it to sum to 1 over one sex as the default datasets sum to 1 over both sexes
-                migtmp[!is.na(prop), sprop := sum(prop), by = c(id.col, "year")]
-                migtmp[!is.na(sprop) & sprop != 0, prop := prop/sprop]
-                migtmp[!is.na(sprop) & sprop == 0, prop := 0]
-            }
-            if(!"country_code" %in% colnames(df)) migtmp[, country_code := NULL] # remove this column if it was added above
+
+        # scale to sum to 1 over sexes
+        if(length(unique(rc.sched$sx)) > 2) stop("mig.rc.fam table cannot have more than two sexes")
+        rc.sched[, prop := prop/sum(prop), by = "mig_sign"]
+        
+        this.sx <- if(! sex %in% rc.sched[, sx]) "B" else sex
+        rc.data.sx <- rc.sched[sx == this.sx]
+        rc.schedule.in <- rc.data.sx[mig_sign %in% c("I", "B"), list(age, prop)]
+        rc.schedule.out <- rc.data.sx[mig_sign %in% c("E", "B"), list(age, prop)]
+        if(nrow(rc.schedule.out) == 0) rc.schedule.out <- rc.schedule.in
+        if(any(duplicated(rc.schedule.in[, age])) || any(duplicated(rc.schedule.out[, age]))) 
+            stop("mig.rc.fam dataset contains duplicates. Make sure it contains only one family of schedules.")
+        rc.schedule.in <- rc.schedule.in$prop
+        rc.schedule.out <- rc.schedule.out$prop
+        if(scale < 1 && this.sx != "B"){ # extract the right sex-ratio
+            rc.data.othersx <- rc.sched[!sx %in% c(sex, "B")]
+            rc.schedule.in.other <- rc.data.othersx[mig_sign %in% c("I", "B"), list(age, prop)]
+            rc.schedule.out.other <- rc.data.othersx[mig_sign %in% c("E", "B"), list(age, prop)]
+            #if(id.col == "trajectory") browser()
+            sex.ratio.in <- sum(rc.schedule.in)/sum(c(rc.schedule.in, rc.schedule.in.other$prop))
+            sex.ratio.out <- sum(rc.schedule.out)/sum(c(rc.schedule.out, rc.schedule.out.other$prop))
         }
     }
+    
+    if(startsWith(method, "fdm")) {
+        if(is.null(rc.data.wrk)) 
+            stop("rc.fdm dataset is missing.")
+        byio <- if(id.col %in% colnames(rc.data.wrk)) id.col else c()
+        migiotmp <- merge(migtmp, rc.data.wrk, all.x = TRUE, by = c(byio, "age"))
+        byio <- if(id.col %in% colnames(migiotmp)) id.col else c()
+        if(!annual){ # convert time periods in form 2000-2005 into the end year, i.e. 2005
+            migiotmp$period <- migiotmp$year
+            migiotmp$year <- substr(migiotmp$period, 1, 4)
+        }
+        if(!is.null(pop.glob)){
+            if((mx.year <- max(as.integer(pop.glob$year))) < max(as.integer(migiotmp$year))){
+                # for future years use global pop for the latest year
+                globpop.latest <- pop.glob[year == mx.year]
+                for(yr in setdiff(migiotmp$year, pop.glob$year))
+                    pop.glob <- rbind(pop.glob, globpop.latest[, year := yr])
+            }
+            if(is.character(migiotmp$age)){
+                pop.glob[, age := as.character(age)]
+                if(any(migiotmp[, age] == "100+"))
+                    pop.glob[, age := ifelse(age == "100", "100+", age)]
+            }
+            migiotmp[pop.glob, popglob := i.pop, on = c("year", "age")]
+        } else migiotmp[, popglob := 1]
+
+        if(! "in_sex_ratio" %in% colnames(migiotmp)) migiotmp[, in_sex_ratio := 0.5]
+        if(! "out_sex_ratio" %in% colnames(migiotmp)) migiotmp[, out_sex_ratio := 0.5]
+        migiotmp[is.na(in_sex_ratio), in_sex_ratio := 0.5]
+        migiotmp[is.na(out_sex_ratio), out_sex_ratio := 0.5]
+        
+        if(! mig.is.rate){ # migration given as counts; distribute into ages via the FDM method
+            if(is.null(pop)) stop("Population needs to be passed for the FDM method.")
+            if((mx.year <- max(as.integer(pop$year))) < max(as.integer(migiotmp$year))){
+                # for future years use pop for the latest year
+                pop.latest <- pop[year == mx.year]
+                for(yr in setdiff(migiotmp$year, pop$year)){
+                    pop <- rbind(pop, pop.latest[, year := yr])
+                }
+            }
+            if(is.character(migiotmp$age) && !is.character(pop$age)){
+                pop[, age := as.character(age)]
+                if(any(migiotmp[, age] == "100+"))
+                    pop[, age := ifelse(age == "100", "100+", age)]
+            }
+            byio.pop <- if(id.col %in% colnames(pop)) id.col else c()
+
+            migiotmp <- merge(migiotmp, pop, all.x = TRUE, by = c(byio.pop, "year", "age"))
+            migiotmp[, totpop := sum(pop), by = c(byio, "year")]
+            #if(! "beta0" %in% colnames(migiotmp)) migiotmp[, beta0 := if(annual) 0.07 else 0.35]
+            #if(! "beta1" %in% colnames(migiotmp)) migiotmp[, beta1 := 0.5]
+            #if(! "min" %in% colnames(migiotmp)) migiotmp[, min := pmin(if(annual) 0.02 else 0.2, beta0/10)]
+            migiotmp[, `:=`(in_sex_factor = 1, out_sex_factor = 1)]
+            if(scale < 1) { # if scale is one it is assumed that the provided data is sex-specific; otherwise it's split between sexes
+                migiotmp[, in_sex_factor := if(sex == "M") 1 - in_sex_ratio else in_sex_ratio]
+                migiotmp[, out_sex_factor := if(sex == "M") 1 - out_sex_ratio else out_sex_ratio]
+ 
+            }
+            # To do this for projected trajectories will yield less uncertainty because totpop is deterministic.
+            # Correctly it should happen during the projection.
+            # Make totmig age-specific
+            migiotmp[, totmig := as.double(totmig)]
+            migiotmp[totmig < 0, totmig := totmig *  out_sex_factor]
+            migiotmp[totmig > 0, totmig := totmig *  in_sex_factor]
+            migiotmp[, IM := pmax(totpop * beta0 + beta1 * totmig, totpop * min, totmig + min * pop)][, OM := IM - totmig] # in- and out-migration totals over sexes
+            #migiotmp[, `:=`(IMs = in_sex_factor * IM, OMs = out_sex_factor * OM)][, totmig := IMs - OMs] # in-, out-migration & totmig for this sex
+            migiotmp[, `:=`(rxstar_in = `in`, rxstar_out = out)]
+            if(method == "fdmp")
+                migiotmp[, `:=`(rxstar_in = rxstar_in * popglob, rxstar_out = rxstar_out * pop)] # weight by population
+            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(id.col, "year")]
+            migtmp[, totmig := as.double(totmig)]
+            migtmp[migiotmp, `:=`(totmig = i.totmig, mig = i.IM * i.rxstar_in / i.rxstar_in_denom  - i.OM * i.rxstar_out / i.rxstar_out_denom), 
+                   on = c(id.col, "age", "year")]
+            migtmp[, prop := mig / totmig][totmig == 0, prop := 0]
+        } else { # mig is a rate
+            migiotmp[, `:=`(rxstar_in = `in`)]
+            if(method == "fdmp")
+                migiotmp[, `:=`(rxstar_in = rxstar_in * popglob)] # weight by population
+            if(! "v" %in% colnames(migiotmp)) migiotmp[, `:=`(v = 1)] # put a placeholder for v (unless there are multiple age-spec trajectories, it won't be used)
+            migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in)), by = c(id.col, "year")]
+            # here we will be passing the in-migration possibly weighted by population; 
+            # the out-migration will be weighted within the CCM using pop of the predicted year
+            migtmp[migiotmp, `:=`(prop = rxstar_in / i.rxstar_in_denom, prop.out = i.out, v= i.v), on = c(id.col, "age", "year")]
+        }
+    } # end of FDM
+
+    if(mig.is.rate)
+        migtmp[, `:=`(migrate = totmig)]
+    
     na.records <- migtmp[, list(is.na = all(is.na(prop))), by = c(id.col, "year")][is.na == TRUE][, is.na := NULL]
     if(nrow(na.records) > 0){
         # all non-matched countries & years are filled with Rogers-Castro curves
-        if(is.null(schedule)) schedule <- rcastro.schedule(annual)
-        rcdf <- data.table(age = agedf[, age], prop = scale * schedule[age.idx]/sum(schedule[age.idx]))
+        if(is.null(rc.schedule.in)) rc.schedule.in <- rcastro.schedule(annual)
+        if(is.null(rc.schedule.out)) rc.schedule.out <- rcastro.schedule(annual)
+        rcdf <- data.table(age = agedf[, age], 
+                           prop_in = sex.ratio.in * rc.schedule.in[age.idx]/sum(rc.schedule.in[age.idx]),
+                           prop_out = sex.ratio.out * rc.schedule.out[age.idx]/sum(rc.schedule.out[age.idx]))
         rcmig <- merge(na.records, migtmp, by = c(id.col, "year"), sort = FALSE)
-        rcmig[rcdf, prop := i.prop, on = "age"]
+        rcmig[rcdf, prop := ifelse(totmig >= 0, i.prop_in, i.prop_out), on = "age"]
         migtmp[rcmig, prop := i.prop, on = c(id.col, "year", "age")]
-    }
+    } 
+
     migtmp <- merge(migtmp, agedf, by = "age", sort = FALSE)
     if(mig.is.rate){
         # the schedules are all turned into the positive direction
-        migtmp[is_pos_neg == TRUE, mig := sign(migrate) * abs(totmig) * prop]
-        migtmp[is_pos_neg == FALSE, mig := abs(prop)]
+        migtmp[, mig := abs(prop)]
     } else migtmp[, mig := totmig * prop]
     frm <- paste(id.col, "+ age.idx + age ~ year")
     res <- dcast(migtmp, frm, value.var = "mig")
+    
     if(mig.is.rate) {
+        migtmp[, rate_code := 1]
+        if(startsWith(method, "fdm")){
+            # For the FDM methods, the mig columns contains the in-migration RC schedule
+            # and the rc.out attribute contains a dataset with the out-migration schedules (prop.out)
+            # and the variance parameter v (for fdmp) 
+            # These values are identical for all years.
+            iotmp <- migtmp[year == min(year)]
+            iocol <- id.col
+            res.io <- iotmp[, c(iocol, "age", "prop.out", "v"), with = FALSE]
+            attr(res, "rc.out") <- res.io
+            has.mult.traj <- id.col == "trajectory" && length(unique(res.io[[id.col]])) > 1
+            if(method == "fdmnopop") migtmp[, rate_code := 4] else migtmp[, rate_code := if(has.mult.traj) 6 else 5] # using code 5 & 6 for fdmp (6 samples from age-schedules)
+        }
         frm <- paste(id.col, "~ year")
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
         attr(res, "rate") <- res2
-        #if(debug) stop("")
-        migtmp[, rate_code := (!is_pos_neg) + 2*is_pos_neg]
         rate.code <- dcast(migtmp, frm, value.var = "rate_code", fun.aggregate = mean)
         attr(res, "code") <- rate.code
     }
-    #if(debug) stop('')
+    #if(debug) stop("")
     res[["age.idx"]] <- NULL
     if(cntry.missing) res[[id.col]] <- NULL
     return(res)
 }
 
 .get.mig.data <- function(inputs, wpp.year, annual, periods, existing.mig = NULL, 
-                          all.countries = TRUE, pop0 = NULL, mig.age.method = "auto",  
-                          mig.is.rate = c(FALSE, FALSE), verbose = FALSE) {
-    # Get age-specific migration
+                          all.countries = TRUE, pop0 = NULL, mig.age.method = "fdmp",  
+                          mig.is.rate = c(FALSE, FALSE), rc.data = NULL, 
+                          pop = NULL, verbose = FALSE) {
+    # Get age-specific migration for input entries mig, migM, migF, migMt, migFt
+    sx <- NULL # to satisfy CRAN check
     wppds <- data(package=paste0('wpp', wpp.year))
+    inouts <- NULL
+    is.fdm <- startsWith(mig.age.method, "fdm")
+    if(is.fdm){
+        # needs population
+        popdt <- NULL
+        for(sex in c("M", "F")){
+            popdt <- rbind(popdt, 
+                           cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop[[sex]]), "_"), function(x) x[1])),
+                                            age = sapply(strsplit(rownames(pop[[sex]]), "_"), function(x) x[2]))[, sx := sex],
+                                 data.table(pop[[sex]]))
+            )
+        }
+        if(annual) # if age is in annual form, convert to integers 
+            popdt$age <- as.integer(popdt$age)
+        popdt <- melt(popdt, id.vars = c("country_code", "age", "sx"), variable.name = "year", value.name = "pop", variable.factor = FALSE)
+        popdtt <- popdt[, list(pop = sum(pop)), by = c("country_code", "year", "age")] # sum over sexes
+        globpop <- popdt[, list(pop = sum(pop)), by = c("year", "age", "sx")]
+        globpopt <- globpop[, list(pop = sum(pop)), by = c("year", "age")] # sum over sexes
+    }
     recon.mig <- NULL
     miginp <- list()
     migtempl <- NULL
@@ -1023,7 +1240,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 totmig <- data.table(read.pop.file(inputs[[fnametot]])) # totals 
                 migcode <- 3
             }
-            if(mig.age.method != "rc") migcode <- 4 # TODO: this would be wrong if migcode is 2.
+            # for "rc" the migcode will be 0, 2 or 3
+            if(!mig.age.method %in% c("rc")) migcode <- 4 # TODO: this would be wrong if migcode is 2.
+            if(mig.age.method == "fdmp") migcode <- 5 # migcode is only used if migration is given as a rate
             migcols <- intersect(colnames(totmig), periods)
             # disaggregate into ages
             migmtx <- migration.totals2age(totmig, ages = migtempl$age[age.index.all(annual, observed = TRUE)],
@@ -1032,40 +1251,57 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                            method = mig.age.method,
                                            sex = sex, template = migtempl, 
                                            mig.is.rate = mig.is.rate[1], 
-                                           alt.schedule.file = inputs$mig.alt.age.schedule#,
+                                           rc.data = rc.data, 
+                                           pop = if(mig.is.rate[1]) popdtt else popdt[sx == sex], 
+                                           pop.glob = if(mig.is.rate[1]) globpopt else globpop[sx == sex],
                                            #debug = TRUE
                                            )
             miginp[[inpname]] <- data.frame(migmtx, check.names = FALSE)
-            if(!is.null((rates <- attr(migmtx, "rate")))){
-                attr(miginp[[inpname]], "rate") <- rates
-                attr(miginp[[inpname]], "code") <- attr(migmtx, "code")
+            for(attrib in c("rate", "code", "rc.out")){
+                if(!is.null((attval <- attr(migmtx, attrib)))){
+                    attr(miginp[[inpname]], attrib) <- attval
+                }
             }
             next
         }
         # If we get here, no user-specific migration was passed in the inputs.
         # If migration is not given load default datasets
-        if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation.")
+        if(annual && wpp.year < 2022) stop("Migration must be given for an annual simulation and wpp.year < 2022.")
         migdsname <- paste0('migration', sex)
         if(wpp.year >= 2022) migdsname <- paste0(migdsname, if(annual) 1 else 5)
-        if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012)
+        if(migdsname %in% wppds$results[,'Item']) { # if available in the WPP package (only in wpp2012 and for projections in wpp2024)
             miginp[[inpname]] <- bayesTFR:::load.from.wpp(migdsname, wpp.year, annual = annual)
+            if(length((missing.years <- setdiff(periods, colnames(miginp[[inpname]])))) > 0){ #for wpp2024 only projected years available, so attach the remaining years
+                missing.mig.data <- bayesTFR:::load.from.wpp("migration", wpp.year, annual = annual)[, c("country_code", as.character(missing.years))]
+                missing.migage.data <- data.frame(migration.totals2age(missing.mig.data,
+                                                                       ages = migtempl$age[age.index.all(annual, observed = TRUE)],
+                                                                       annual = annual, time.periods = missing.years,
+                                                                       scale = if(is.null(inputs[[fname]])) 0.5 else 1,
+                                                                       method = mig.age.method,
+                                                                       sex = sex, template = migtempl,
+                                                                       rc.data = rc.data, pop = popdt, pop.glob = globpop), 
+                                                  check.names = FALSE)
+                miginp[[inpname]] <- data.frame(merge(missing.migage.data, 
+                                           miginp[[inpname]][, setdiff(colnames(miginp[[inpname]]), "name")],
+                                           by = c("country_code", "age"), sort = FALSE), check.names = FALSE)
+            }
             next
         }
         if(all.countries) { # split default total migration into ages for all countries
-            if(annual || mig.age.method == "rc" || (mig.age.method %in% c("auto", "un") && !annual && wpp.year == 2022)) {
-                # use Rogers-Castro or the UN schedules
-                miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration", wpp.year, 
-                                                                                   annual = annual),
-                                                          ages = migtempl$age[age.index.all(annual, observed = TRUE)],
-                                                          annual = annual, time.periods = periods,
-                                                          scale = if(is.null(inputs[[fname]])) 0.5 else 1,
-                                                          method = mig.age.method,
-                                                          sex = sex, template = migtempl,
-                                                          alt.schedule.file = inputs$mig.alt.age.schedule), 
-                                                check.names = FALSE)
-            } else { # residual method (only for 5-year data)
+            # we land here only in cases when the wpp package does not contain datasets migrationM(F)1/5
+            if(mig.age.method == "residual"){ # a legacy method
                 if(is.null(recon.mig)) recon.mig <- age.specific.migration(wpp.year = wpp.year, verbose = verbose)
                 miginp[[inpname]] <- recon.mig[[list(M = "male", F = "female")[[sex]]]]
+            } else {
+                miginp[[inpname]] <- data.frame(migration.totals2age(bayesTFR:::load.from.wpp("migration", wpp.year, 
+                                                                                          annual = annual),
+                                                                 ages = migtempl$age[age.index.all(annual, observed = TRUE)],
+                                                                 annual = annual, time.periods = periods,
+                                                                 scale = if(is.null(inputs[[fname]])) 0.5 else 1,
+                                                                 method = mig.age.method,
+                                                                 sex = sex, template = migtempl,
+                                                                 rc.data = rc.data, pop = popdt, pop.glob = globpop), 
+                                            check.names = FALSE)
             }
             next
         }
@@ -1073,7 +1309,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         # will be reconstructed later (in get.country.inputs).
         miginp[[inpname]] <- data.frame(migtempl, check.names = FALSE)
     }
-    miginp[["migcode"]] <- migcode
+    miginp[["migcode"]] <- migcode # migcode is only used if migration is given as a rate; it is passed to the CCM function
     return(miginp)
 }
 
@@ -1124,7 +1360,14 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
-    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode'))
+    fdm.columns <- c('MigFDMb0', 'MigFDMb1', 'MigFDMmin', 'MigFDMsrin', "MigFDMsrout")
+    MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode', fdm.columns))
+    if(wpp.year < 2024 && sum(! fdm.columns %in% colnames(MIGtype)) > 3){
+        # load the columns from 2024 base year
+        basealt <- get('vwBaseYear2024')
+        MIGtypealt <- create.pattern(basealt, fdm.columns)
+        MIGtype <- merge(MIGtype, MIGtypealt, by = "country_code", all.x = TRUE)
+    }
     age.mort.pat.col <- "LatestAgeMortalityPattern"
     age.mort.pat.df.col <- "SmoothDFLatestAgeMortalityPattern"
     rename.cols <- list()
@@ -1202,12 +1445,16 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	for(what.mig in c('MIGm', 'MIGf')) {
 		cidx <- which(inputs[[what.mig]]$country_code==country)
 		cols <- intersect(colnames(inputs[[what.mig]]), colnames(inpc[[what.mig]]))
-		if(any(!is.na(inputs[[what.mig]][cidx,cols]))) next
-		inputs[[what.mig]][cidx,cols] <- inpc[[what.mig]][,cols]
+		if(all(is.na(inputs[[what.mig]][cidx,cols]))){
+		    inputs[[what.mig]][cidx,cols] <- inpc[[what.mig]][,cols]
+		    migr.modified <- TRUE
+		}
 		cidx <- which(inputs$observed[[what.mig]]$country_code==country)
 		cols <- intersect(colnames(inputs$observed[[what.mig]]), colnames(inpc$observed[[what.mig]]))
-		inputs$observed[[what.mig]][cidx,cols] <- inpc$observed[[what.mig]][,cols]
-		migr.modified <- TRUE
+		if(all(is.na(inputs$observed[[what.mig]][cidx,cols]))){
+		    inputs$observed[[what.mig]][cidx,cols] <- inpc$observed[[what.mig]][,cols]
+		    migr.modified <- TRUE
+		}
 	}
 	return(migr.modified)
 }
@@ -1251,9 +1498,11 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 		ncols <- ncol(pred)
 		nonnum.idx <- which(colnames(pred)=='country_code')
 		cnames <- colnames(pred)[-nonnum.idx]
-		colnames(pred)[-nonnum.idx] <- paste(type, cnames, sep='')
+		colnames(pred)[-nonnum.idx] <- paste0(type, cnames)
 		pred.long <- reshape(pred, direction='long', varying=(1:ncols)[-nonnum.idx], v.names=type, times=cnames)
-		pred.long <- cbind(pred.long, year=as.integer(substr(pred.long$time,1,4))+3, trajectory=itraj)
+		pred.long <- cbind(pred.long, 
+		                   year=as.integer(substr(pred.long$time,1,4))+ if(annual) 0 else 3, 
+		                   trajectory=itraj)
 		pred.long <- pred.long[,c('country_code', 'year', 'trajectory', type)]
 		pred.all <- rbind(pred.all, pred.long)
 		itraj <- itraj + 1
@@ -1262,7 +1511,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	return(pred.all)
 }
 
-.load.mig.traj <- function(inputs, mig.age.method = "auto", verbose = FALSE) {
+.load.mig.traj <- function(inputs, mig.age.method = "fdmp", verbose = FALSE) {
     migMpred <- migFpred <- migBpred <- NULL
     migtrajcols <- list(LocID = "country_code", Year = "year", Trajectory = "trajectory", Age = "age", Migration = "value")
     migcode <- 1
@@ -1277,7 +1526,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         migpred.raw <- data.table::fread(file=file.name, check.names=FALSE, blank.lines.skip = TRUE)
         if("Mig" %in% colnames(migpred.raw) && !"Migration" %in% colnames(migpred.raw)) # Both Mig and Migration are OK as column names
             colnames(migpred.raw)[colnames(migpred.raw) == "Mig"] <- "Migration"
-        cols.to.keep <- intersect(names(migtrajcols), colnames(migpred.raw))
+        cols.to.keep <- intersect(colnames(migpred.raw), names(migtrajcols))
         if(length((miss <- setdiff(setdiff(names(migtrajcols), "Age"), cols.to.keep)))>0)
             stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
         migpred <- as.data.frame(migpred.raw[, cols.to.keep, with = FALSE])
@@ -1287,53 +1536,134 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                 migBpred <- migpred
                 migcode <- 3
                 if(mig.age.method != "rc") migcode <- 4
+                if(mig.age.method == "fdmp") migcode <- 5 # these values only matter if migration is given as a rate
             }
         } else {
             var.name <- paste0('mig',sex, 'pred')
             assign(var.name, migpred)
         }
     }
-    return(list(M = migMpred, F = migFpred, B = migBpred, migcode = migcode))
+    migio <- NULL
+
+    if(startsWith(mig.age.method, "fdm") && !is.null((file.name <- inputs[["migFDMtraj"]]))){
+        migtrajcols <- list(LocID = "country_code", Trajectory = "trajectory", Age = "age", Value = "value", Parameter = "par")
+        if(!file.exists(file.name))
+            stop('File ', file.name, ' does not exist.')
+        if(verbose) cat('\nLoading ', file.name)
+        migio <- data.table::fread(file=file.name, check.names=FALSE, blank.lines.skip = TRUE)
+        cols.to.keep <- intersect(colnames(migio), names(migtrajcols))
+        if(length((miss <- setdiff(names(migtrajcols), cols.to.keep)))>0)
+            stop("Columns ", paste(miss, collapse = ", "), " are missing from ", file.name)
+        migio <- migio[, cols.to.keep, with = FALSE]
+        colnames(migio) <- unlist(migtrajcols[cols.to.keep])
+    }
+    return(list(M = migMpred, F = migFpred, B = migBpred, migcode = migcode, FDM = migio))
 }
 
-.get.migration.traj <- function(pred, par, country, ...) {
-		cidx <- pred$inputs[[par]][,'country_code'] == country 
-		idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
-		if(sum(idx) == 0) return(NULL)
-		migdf <- pred$inputs[[par]][idx,-1]
-		utrajs <- sort(unique(migdf$trajectory))
-		ntrajs <- length(utrajs)
-		lyears <- length(pred$inputs$proj.years)
-		migrate <- migratecode <- NULL
-		if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
-		    dfw <- dcast(data.table(migdf), trajectory ~ year)
-		    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
-		                                id.col = "trajectory", country_code = country, method = pred$inputs$mig.age.method,
-		                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
-		                                alt.schedule.file = pred$inputs$mig.alt.age.schedule, ...#, debug = TRUE
-		                                )
-		    migdf <- melt(adf, value.name = "value", variable.name = "year", id.vars = c("trajectory", "age"))
-		    if("rate" %in% names(attributes(adf))) { # extract rates if available
-		        migrate <- attr(adf, "rate")
-		        migrate <- as.matrix(migrate[, colnames(migrate)[! colnames(migrate) == "trajectory"], with = FALSE]) # remove the trajectory column
-		        #migrate <- melt(attr(adf, "rate"), value.name = "migrate", variable.name = "year", id.vars = c("trajectory"))
-		        migratecode <- attr(adf, "code")
-		        migratecode <- as.matrix(migratecode[, colnames(migratecode)[! colnames(migratecode) == "trajectory"], with = FALSE]) # remove the trajectory column
-		    }
-		}
-		migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
-		lage <- age.length.all(pred$inputs$annual, observed = TRUE)
-		sorted.df <- data.frame(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
-									age = get.age.labels(ages.all(pred$inputs$annual, observed = TRUE), last.open=TRUE, single.year = pred$inputs$annual))
-		# this is to get rows of the data frame in a particular order
-		migdf <- merge(sorted.df, migdf, sort=FALSE)
-		res <- array(migdf$value, dim=c(lage, ntrajs, lyears))
-		dimnames(res) <- list(1:lage,  NULL, pred$inputs$proj.years)
-		if(!is.null(migrate)) {
-		    attr(res, "rate") <- migrate
-		    attr(res, "code") <- migratecode
-		}
-		return(res)	
+.get.migration.traj <- function(pred, par, country, sex, scale = 1, ...) {
+    trajectory <- country_code <- v <- i.value <- age <- NULL # to avoid CRAN NOTEs
+	cidx <- pred$inputs[[par]][,'country_code'] == country 
+	idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
+	if(sum(idx) == 0) return(NULL)
+	migdf <- data.table(pred$inputs[[par]][idx,-1])
+	utrajs <- sort(unique(migdf$trajectory))
+	ntrajs <- length(utrajs)
+	lyears <- length(pred$inputs$proj.years)
+	migrate <- migratecode <- migio <- iotrajw <- NULL
+	if(! "age" %in% colnames(migdf)){ # need to disaggregate into age-specific trajectories
+	    dfw <- dcast(migdf, trajectory ~ year)
+	    iotraj <- NULL
+	    is.fdm <- startsWith(pred$inputs$mig.age.method, "fdm")
+	    if(is.fdm){
+	        if(!is.null(pred$inputs$migFDMpred)){ # there are trajectories of FDM RC curves
+	            iotraj.traj <- unique(pred$inputs$migFDMpred$trajectory)
+	            iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(
+	                seq_along(iotraj.traj), nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
+	            iotrajall <- pred$inputs$migFDMpred[country_code == country][, country_code := NULL]
+	            if(length(iotraj.traj) >= nrow(dfw)) {
+	                iotraj <- iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index]]
+	                iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index
+	            } else { # some trajectories will to be repeated, so construct via rbind
+	                iotraj <- NULL
+	                for(i in 1:length(iotraj.traj.index)){
+	                    iotraj <- rbind(iotraj, iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index[i]]][
+	                        , trajectory := i])
+	                }
+	            }
+	            iotraj[, age := factor(age, levels = unique(pred$inputs$migFDMpred$age))] # change it to factor in order not to re-order the rows
+	            iotrajw <- dcast(iotraj[par %in% c("in", "out")], trajectory + age ~ par, value.var = "value")
+	            iotrajw[, age := as.character(age)]
+	            if("v" %in% iotraj$par && pred$inputs$mig.age.method == "fdmp"){
+	                iotrajw[iotraj[par == "v"], v := i.value, on = "trajectory"]
+	            } else iotrajw[, v := 1]
+	            # attach other parameters
+	            for(col in setdiff(colnames(pred$fdm.inputs$mig.fdm), colnames(iotrajw)))
+	                iotrajw[[col]] <- pred$fdm.inputs$mig.fdm[[col]]
+	        } else iotrajw <- pred$fdm.inputs$mig.fdm
+	    }
+	    if(is.fdm){
+	        if(scale == 1 || pred$inputs$mig.rate.code[2] == 0){ # sex-specific trajectories
+	            sx <- list(M = "male", F = "female")[[sex]]
+	            fdmpop <- pred$fdm.inputs$popdt.sex[sex == sx][, `:=`(sex = NULL)]
+	            if("country_code" %in% colnames(pred$fdm.inputs$popdt.sex))
+	                fdmpop <- fdmpop[country_code == country][, `:=`(country_code = NULL)]
+	            fdmglobpop <- pred$fdm.inputs$globpop.sex[sex == sx][, `:=`(sex = NULL)]
+	        } else {
+	            if("country_code" %in% colnames(pred$fdm.inputs$popdt))
+	                fdmpop <- pred$fdm.inputs$popdt[country_code == country][, country_code := NULL]
+	            fdmglobpop <- pred$fdm.inputs$globpop
+	        }
+	    }
+	    adf <- migration.totals2age(dfw, annual = pred$inputs$annual, time.periods = colnames(dfw)[-1],
+	                                id.col = "trajectory", method = pred$inputs$mig.age.method,
+	                                mig.is.rate = pred$inputs$mig.rate.code[2] > 0, 
+	                                sex = sex, scale = scale,
+	                                rc.data = if(is.fdm) iotrajw else pred$inputs$mig.rc.fam, 
+	                                pop = fdmpop, pop.glob = fdmglobpop, 
+	                                ...#, debug = TRUE
+	    )
+	    migdf <- melt(adf, value.name = "value", variable.name = "year", 
+	                  id.vars = c("trajectory", "age"), variable.factor = FALSE)
+	    migdf[, year := as.integer(year)]
+	    if("rate" %in% names(attributes(adf))) { # extract rates if available
+	        migrate <- attr(adf, "rate")
+	        migrate <- as.matrix(migrate[, colnames(migrate)[! colnames(migrate) == "trajectory"], with = FALSE]) # remove the trajectory column
+	        #migrate <- melt(attr(adf, "rate"), value.name = "migrate", variable.name = "year", id.vars = c("trajectory"))
+	        migratecode <- attr(adf, "code")
+	        migratecode <- as.matrix(migratecode[, colnames(migratecode)[! colnames(migratecode) == "trajectory"], with = FALSE]) # remove the trajectory column
+	    }
+	    if("rc.out" %in% names(attributes(adf))) {
+	        migiodt <- attr(adf, "rc.out")
+	        ages <- unique(migiodt$age)
+	        migio <- dcast(migiodt, trajectory ~ age, value.var = "prop.out") # columns come out sorted with 9 > 89 etc.
+	        migio <- migio[, c("trajectory", ages), with = FALSE]
+	        migio <- merge(migiodt[, list(v = v[1]), by = "trajectory"], migio, by = "trajectory")
+	        #names(migio) <- migiodt[["age"]]
+	    }
+	} else {
+	    
+	    migdf[, age := as.character(age)]
+
+	}
+	#migdf$age <- gsub("^\\s+|\\s+$", "", migdf$age) # trim leading and trailing whitespace
+	lage <- age.length.all(pred$inputs$annual, observed = TRUE)
+	sorted.df <- data.table(year=rep(pred$inputs$proj.years, each=ntrajs*lage), trajectory=rep(rep(utrajs, each=lage), times=lyears),
+	                        age = get.age.labels(ages.all(pred$inputs$annual, observed = TRUE), 
+	                                             last.open=TRUE, single.year = pred$inputs$annual))
+	# check the open age group                        
+	if(any(sorted.df[, age] == "100+"))
+	    migdf[, age := ifelse(age == "100", "100+", age)]
+	# this is to get rows of the data frame in a particular order
+	migdf <- merge(sorted.df, migdf, sort=FALSE)
+	res <- array(migdf$value, dim=c(lage, ntrajs, lyears))
+	dimnames(res) <- list(1:lage,  NULL, pred$inputs$proj.years)
+	if(!is.null(migrate)) {
+	    attr(res, "rate") <- migrate
+	    attr(res, "code") <- migratecode
+	}
+	if(!is.null(migio)) 
+	    attr(res, "rc.out") <- migio
+	return(res)	
 }
 
 .pasfr.norm.name <- function(norms)
@@ -1351,6 +1681,7 @@ compute.pasfr.global.norms <- function(inputs) {
 		ccounter <- rep(0, )
 		for(country in countries) {
 			pasfr <- .get.par.from.inputs('PASFR', inputs$observed, country)
+			if(is.null(pasfr)) return(NULL)
 			pasfr <- .fill.pasfr.ages(pasfr, ages.fert(inputs$annual), check.length.only = !inputs$annual)
 			if(is.null(ccounter)) ccounter <- rep(0, ncol(pasfr)) # deals with missing years for some countries
             is.not.observed <- apply(pasfr, 2, function(x) any(is.na(x)))
@@ -1365,7 +1696,8 @@ compute.pasfr.global.norms <- function(inputs) {
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, nr.est.points = if(annual) 15 else 3) {
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, 
+                            nr.est.points = if(annual) 15 else 3, ignore.phase2 = FALSE) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
 	fac.mac.start <- ages.fert(annual)[1]
@@ -1407,7 +1739,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	years.long <- c(years, seq(years[lyears]+by, by=by, length=75/by)) # up to 2175
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
+	end.phase2 <- if(ignore.phase2) 0 else bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
 	start.phase3 <- end.phase2 + 1
 	if(start.phase3 > lyears) { # Phase 3 not observed until the end of projection (Case 2)
 		if(tfr[lyears] > 1.8) { # regress the last 20 years to approximate start of Phase 3
@@ -1441,7 +1773,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	    if(is.null(pattern)) "Global Norm" else pattern[,'PasfrNorm'])]]
 	gnorm <- gnorm[, ncol(gnorm)] # global norm from the last time period 
 	asfr1 <- asfr2 <- res.asfr <- matrix(0, nrow=length(gnorm), ncol=length(proj.years))
-	
 	t.r <- if(startTi == 1) years[1] - by else years[startTi-1]
 	tau.denominator <- endT - t.r
 	p.r <- pasfr.obs[,ncol(pasfr.obs)]/100. # last observed pasfr
@@ -1450,7 +1781,6 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	p.r <- p.r/sum(p.r)
 	logit.pr <- logit(p.r)
 	logit.dif <- logit(gnorm/100.) - logit.pr
-	#stop("")
 	for(t in 1:ncol(asfr1)){
 		asfr1[,t] <- logit.pr + min((years[t+tobs] - t.r)/tau.denominator, 1)*logit.dif
 	}
@@ -1483,9 +1813,32 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	}
 	res.asfr <- inv.logit(res.asfr)
 	res.asfr <- scale(res.asfr, center=FALSE, scale=colSums(res.asfr))
-	#stop("")
+
+	# update by MAC
 	if(start.phase3 <= lyears) res.asfr <- update.by.mac(res.asfr, max(1, start.phase3-tobs))
-	return(res.asfr)
+	
+	if(!annual) return(res.asfr)
+	
+	# for a 1x1 simulation where the child-bearing age has a larger extent, we do 
+	# an extra step to keep constant ASFR at youngest ages if trends increase instead of decrease 
+	# for ages 10-19
+	pasfr <- res.asfr
+	asfr_tfr <- t(t(pasfr) * tfr[(tobs + 1):lyears])
+	for(t in 1:(ncol(asfr_tfr)-1)){
+	    if(length((idx <- which(asfr_tfr[1:10,t+1] > asfr_tfr[1:10,t]))) == 0) next
+	    asfr_tfr[idx,t+1] <- asfr_tfr[idx,t]
+	}
+	# extra step to keep constant ASFR less than 5* starting value at oldest ages if trends increase instead of decrease compared to baseline
+	# 45-54
+	asfr_base <- pasfr.obs[,ncol(pasfr.obs)]/100. * tfr[tobs]
+	asfr_tfr[36:45, ] <- pmin(asfr_tfr[36:45, ], 
+	                          matrix(asfr_base[36:45] * 5, nrow = 10, ncol = ncol(asfr_tfr)))
+	
+	# now we scale back to original TFR by proportionally adjusting asfr in non-constrained age groups
+	diff_tfr <- tfr[(tobs + 1):lyears] - colSums(asfr_tfr)
+	asfr_tfr[11:35,] <- asfr_tfr[11:35,] + t(diff_tfr * t(asfr_tfr[11:35,])/colSums(asfr_tfr[11:35,]))
+	pasfr <- scale(asfr_tfr, center=FALSE, scale=colSums(asfr_tfr))
+	return(pasfr)
 }
 
 .get.par.from.inputs <- function(par, inputs, country, convert.to.matrix = TRUE) {
@@ -1500,7 +1853,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	}
 	# preserve and slice attributes if needed
 	country_code <- NULL
-	for(attrname in c("rate", "code")){
+	for(attrname in c("rate", "code", "rc.out")){
 	    if(!is.null((attrval <- attr(inputs[[par]], attrname))))
 	        attr(res2, attrname) <- unlist(attrval[which(attrval[["country_code"]] == country)][,country_code := NULL])
 	}
@@ -1526,7 +1879,36 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
     return(datf)
 }
 
+.prepare.pop.for.fdm <- function(mig.age.method, country, pop.matrix, present.year, mig.rc.inout){
+    country_code <- sex <- NULL # to avoid CRAN Notes
+    res <- list()
+    if(startsWith(mig.age.method, "fdm")){ # need also population
+        popdtl <- NULL
+        for(sx in c("male", "female")){
+            pop <- pop.matrix[[sx]]
+            popdt <- cbind(data.table(country_code = as.integer(sapply(strsplit(rownames(pop), "_"), function(x) x[1])),
+                                  age = sapply(strsplit(rownames(pop), "_"), function(x) x[2])),
+                       data.table(pop))
+            if(!grepl("-", popdt$age[1])) # if age is in annual form, convert to integers 
+                popdt$age <- as.integer(popdt$age)
+            popdtl <- rbind(popdtl, 
+                            melt(popdt, id.vars = c("country_code", "age"), variable.name = "year", value.name = "pop", 
+                                variable.factor = FALSE)[, sex := sx]
+                            )
+        }
+        res$popdt.sex <- popdtl[year == present.year]
+        res$popdt <- res$popdt.sex[, list(pop = sum(pop)), by = c("year", "age")]
+        res$globpop.sex <- popdtl[, list(pop = sum(pop)), by = c("year", "sex", "age")]
+        res$globpop <- res$globpop.sex[, list(pop = sum(pop)), by = c("year", "age")]
+        res$mig.fdm <- mig.rc.inout
+        if(is.null(res$mig.fdm)) stop("Dataset with in- and out-migration schedules is missing (input mig.fdm)")
+        res$mig.fdm <- res$mig.fdm[country_code == country][, country_code := NULL]
+    }
+    return(res)
+}
+
 get.country.inputs <- function(country, inputs, nr.traj, country.name) {
+    trajectory <- NULL
 	inpc <- list()
 	obs <- list()
 	for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXpattern', 'SRB',
@@ -1555,57 +1937,57 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	    inpc[[par]] <- .get.par.from.inputs(par, inputs, country, convert.to.matrix = FALSE)
 	}
 	inpc[['MIGBaseYear']] <- inpc[['MIGtype']][,'ProjFirstYear']
-	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode']
-	# generate sex and age-specific migration if needed
-	if((!is.null(inpc[['MIGm']]) && all(is.na(inpc[['MIGm']]))) || (!is.null(inpc[['MIGf']]) && all(is.na(inpc[['MIGf']])))) {
-	    if(inputs$annual || inputs$mig.age.method == "rc" || (inputs$mig.age.method %in% c("auto", "un") && !inputs$annual && inputs$wpp.year == 2022)){
+	ioinput <- list(rc.fdm = NULL, popdt = NULL, globpop = NULL)
+	is.fdm <- startsWith(inputs$mig.age.method, "fdm")
+	if(is.fdm){
+	    for(it in c("b0", "b1", "min", "srin", "srout")){
+	        inpc[[paste0('MIG_FDM', it)]] <- inpc[['MIGtype']][, paste0("MigFDM", it)]
+	    }
+	    ioinput <- .prepare.pop.for.fdm(inputs$mig.age.method, country, inputs$pop.matrix, inputs$present.year, inputs$mig.rc.inout)
+	}
+	inpc[['MIGtype']] <- inpc[['MIGtype']][,'MigCode'] # this line has to be last in this segment as it overrides the 'MIGtype' column
+	
+	# generate sex and age-specific migration if needed, i.e. if it wasn't generated before for all countries
+	if((!is.null(inpc[['MIGm']]) && any(colSums(is.na(inpc[['MIGm']])) > 0)) || (
+	    !is.null(inpc[['MIGf']]) && any(colSums(is.na(inpc[['MIGf']])) > 0))) {
+	    if(inputs$mig.age.method == "residual") {
+	        mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, 
+	                                            verbose=FALSE)
+	    } else {
 	        migtempl <- if(!is.null(inpc[['MIGm']])) inpc[['MIGm']] else inpc[['MIGf']]
 	        mig.recon <- list()
 	        wppdata <- bayesTFR:::load.from.wpp("migration", inputs$wpp.year, annual = inputs$annual)
-	        mig.recon[["male"]] <- mig.recon[["female"]] <- data.frame(
-	            migration.totals2age(wppdata[wppdata$country_code == country,], 
+	        for(sx in c("male", "female")){
+	            mig.recon[[sx]] <- data.frame(
+	                migration.totals2age(wppdata[wppdata$country_code == country,], 
 	                                 ages = rownames(migtempl), annual = inputs$annual, 
 	                                 time.periods = setdiff(colnames(wppdata), c("country_code", "name", "country")),
 	                                 method = inputs$mig.age.method,
-	                                 sex = "M", #country_code = country,
+	                                 sex = list(male = "M", female = "F")[[sx]], 
 	                                 scale = 0.5,
 	                                 mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                 alt.schedule.file = inputs$mig.alt.age.schedule), 
+	                                 rc.data = if(is.fdm) ioinput$mig.fdm else inputs$mig.rc.fam, 
+	                                 pop = ioinput$popdt, pop.glob = ioinput$globpop), 
 	            check.names = FALSE)
-	        if(inputs$mig.age.method != "rc"){ # need to run the function again because un female schedules are different than the male ones
-	            mig.recon[["female"]] <- data.frame(
-	                migration.totals2age(wppdata[wppdata$country_code == country,], 
-	                                     ages = rownames(migtempl), annual = inputs$annual, 
-	                                     time.periods = setdiff(colnames(wppdata), c("country_code", "name", "country")),
-	                                     method = inputs$mig.age.method,
-	                                     sex = "F", #country_code = country,
-	                                     scale = 0.5,
-	                                     mig.is.rate = inputs$mig.rate.code[1] > 0, 
-	                                     alt.schedule.file = inputs$mig.alt.age.schedule), 
-	                check.names = FALSE)
 	        }
-	    } else {
-		    mig.recon <- age.specific.migration(wpp.year=inputs$wpp.year, countries=country, 
-		                                        #use.rc = inputs$mig.age.method == "rc", 
-		                                        #gcc.un = inputs$mig.age.gcc == "un", 
-		                                        verbose=FALSE)
+	        rownames(mig.recon[["male"]]) <- rownames(mig.recon[["female"]]) <- rownames(migtempl) # rownames should be the ages
 	    }
 	    mig.pair <- list(MIGm="male", MIGf="female")
 		for(what.mig in names(mig.pair)) {
-			if(!is.null(inpc[[what.mig]]) && all(is.na(inpc[[what.mig]]))) {
+			if(!is.null(inpc[[what.mig]]) && any(colSums(is.na(inpc[[what.mig]])) > 0)) {
 				# extract predicted migration
-				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]]))
+				cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(inpc[[what.mig]][, colSums(is.na(inpc[[what.mig]])) > 0]))
 				inpc[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 				rownames(inpc[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
 				# extract observed migration
 				if(!is.null(obs[[what.mig]])) {
-					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]]))
+					cols <- intersect(colnames(mig.recon[[mig.pair[[what.mig]]]]), colnames(obs[[what.mig]][, colSums(is.na(obs[[what.mig]])) > 0]))
 					obs[[what.mig]][,cols] <- as.matrix(mig.recon[[mig.pair[[what.mig]]]][,cols])
 					rownames(obs[[what.mig]]) <- rownames(mig.recon[[mig.pair[[what.mig]]]])
 				}
-				if(!is.null((rates <- attr(mig.recon[[mig.pair[[what.mig]]]], "rate")))){
-				    attr(inpc[[what.mig]], "rate") <- attr(obs[[what.mig]], "rate") <- rates
-				    attr(inpc[[what.mig]], "code") <- attr(obs[[what.mig]], "code") <- attr(mig.recon[[mig.pair[[what.mig]]]], "code")
+				for(attrib in c("rate", "code", "rc.out")){
+				    if(!is.null((attrval <- attr(mig.recon[[mig.pair[[what.mig]]]], attrib))))
+				        attr(inpc[[what.mig]], attrib) <- attr(obs[[what.mig]], attrib) <- attrval
 				}
 			}
 		}
@@ -1643,6 +2025,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	e <- new.env()
 	e$inputs <- inputs
+	e$fdm.inputs <- ioinput
 	for(sex in c('M', 'F', 'B')) {
 		par <- paste0('mig', sex, 'pred')
 		if(is.null(inputs[[par]])) next
@@ -1653,7 +2036,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		        inpc[[parsx]] <- .get.migration.traj(e, par, country, sex = sx, scale = 0.5)
 		    }
 		} else
-		    inpc[[par]] <- .get.migration.traj(e, par, country, sex = sex)
+		    inpc[[par]] <- .get.migration.traj(e, par, country, sex = sex, scale = 1)
 	}
 	for(sex in c('M', 'F')){
 	    par <- paste0('mig', sex, 'pred')
@@ -1662,7 +2045,6 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	}
 	inpc$migMmedian <- medians$migMpred
 	inpc$migFmedian <- medians$migFpred
-	
 	if(is.null(inpc$TFRpred)) {
 		inpc$TFRpred <- get.tfr.trajectories(inputs$TFRpred, country)
 		if(is.null(inpc$TFRpred)) {
@@ -1777,27 +2159,30 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 		if(is.null(inpc[[par]])) next
 	    rates <- if("rate" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "rate")[indices[[par]], , drop=FALSE] else NULL
 	    ratecodes <- if("code" %in% names(attributes(inpc[[par]]))) attr(inpc[[par]], "code")[indices[[par]], , drop=FALSE] else NULL
+	    migio <- NULL
+	    if("rc.out" %in% names(attributes(inpc[[par]]))) {
+	        migio <- attr(inpc[[par]], "rc.out")[trajectory %in% indices[[par]]]
+	        migio[, trajectory := .GRP, by = "trajectory"]
+	    }
 		inpc[[par]] <- inpc[[par]][,indices[[par]], , drop=FALSE] # age-specific, thus 3-d arrays
 		if(!is.null(rates)) {
 		    attr(inpc[[par]], "rate") <- rates
 		    attr(inpc[[par]], "code") <- ratecodes
 		}
+		if(!is.null(migio)) attr(inpc[[par]], "rc.out") <- migio
 		inpc$mig.nr.traj <- length(indices[[par]])
 	}
 	for(par in c("GQm", "GQf")) {
 	    if(is.null(inpc[[par]])) next
 	    # match ages
-	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = TRUE))
+	    age.labels <- get.age.labels(ages.all(inputs$annual, observed = FALSE), single.year = inputs$annual)
 	    if(!all(rownames(inpc[[par]]) %in% age.labels))
 	        stop("Mismatch in age labels for ", par, "\nAllowed labels: ", paste(age.labels, collapse = ", "))
-	    gq <- rep(0, length(age.labels))
-	    names(gq) <- age.labels
-	    gq[rownames(inpc[[par]])] <- inpc[[par]]
-	    # expand from 100+ to 130+
-	    gq <- c(gq, rep(0, age.length.all(inputs$annual, observed = FALSE) - length(gq)))
+	    # fill missing ages with 0
+	    gq <- matrix(0, nrow = length(age.labels), ncol = ncol(inpc[[par]]), dimnames = list(age.labels, colnames(inpc[[par]])))
+	    gq[rownames(inpc[[par]]), ] <- inpc[[par]]
 	    inpc[[par]] <- gq
 	}
-	    
 	inpc$observed <- obs
 	inpc$trajectory.indices <- indices
 	return(inpc)
@@ -2058,7 +2443,7 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
 	if(length(ns)==0) stop('start.year must be between ', first.year, ' and ', years[ne])
     model.bx <- .pattern.value("AgeMortalityType", mx.pattern, "") == "Model life tables" && !annual # we don't have model bx available for 1x1
     lpat <- eval(parse(text = .pattern.value("LatestAgeMortalityPattern", mx.pattern, 0)))
-    avg.ax <- length(lpat) == 1  && lpat == 0
+    avg.ax <- length(lpat) == 1  && lpat == 0 # value is 0 -> take an average of all
     smooth.ax <-  !avg.ax && .pattern.value("SmoothLatestAgeMortalityPattern", mx.pattern, 0) == 1
     smooth.df <- .pattern.value("SmoothDFLatestAgeMortalityPattern", mx.pattern, 0)
     if(smooth.df == 0) smooth.df <- NULL
@@ -2070,17 +2455,19 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
     	aids.npred <- min((2100-(as.integer(years[ne])+year.step))/year.step, npred)
     }
     if(!avg.ax && !is.null(lpat)) {
-        # lpat should not be zero because of the !avg.ax condition, but it can be negative for removing time periods
-        ax.latest.periods <- sort(lpat) # negatives should go first 
-        if(length(ax.latest.periods) > 2 || 
-           (length(ax.latest.periods) == 2 && (ax.latest.periods[1] >= 0 || 
-                                               ax.latest.periods[2] < 0))){
-           warning("Illegal value for LatestAgeMortalityPattern:", 
+        # lpat should not be a single zero because of the !avg.ax condition, 
+        # but it can be negative for removing time periods, or a vector starting with 0
+        ax.latest.periods <- sort(lpat) # negatives or zeros should go first 
+        if(((length(ax.latest.periods) > 2) && (ax.latest.periods[1] != 0)) || 
+           (length(ax.latest.periods) == 2 && (ax.latest.periods[1] > 0 || 
+                                               ax.latest.periods[2] <= 0))){
+           warning("Illegal value for LatestAgeMortalityPattern: ", 
                    paste(ax.latest.periods, collapse = ", "), 
-                   "It should have at most 2 elements, one negative and one positive. Truncated to one value.", 
-                    immediate. = TRUE)
+                   "\nIt should be either a single non-negative number or, if it is a vector, start with a negative or a zero, followed by positive numbers. Truncated to a single value of ", 
+                   ax.latest.periods[1], immediate. = TRUE)
                ax.latest.periods <- ax.latest.periods[1]
-           }
+               if(ax.latest.periods == 0 && !is.aids.country) avg.ax <- TRUE
+        }
     }
     mlt.bx <- NULL
     if(model.bx) {
@@ -2097,11 +2484,16 @@ KannistoAxBx.joint <- function(male.mx, female.mx, start.year=1950, mx.pattern=N
         if(length(ax.latest.periods) > 1 && ax.latest.periods[2] > 0)
              # take the latest time points from the already modified ax.index
             ax.index <- max(length(ax.index) - ax.latest.periods[2] + 1, 1):length(ax.index)
-    } else { # take the ax.latest.periods latest time periods. If we get here, ax.latest.periods has just one element
-        if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx
-        else {
-            ax.ns <- max(length.mx - ax.latest.periods+1, 1)
-            ax.index <- ax.ns:length.mx
+    } else { 
+        if(ax.latest.periods[1] == 0 && length(ax.latest.periods) > 1){ # numbers following 0 are the actual indices starting with the latest year
+            ax.index <- sort((length.mx - ax.latest.periods[-1] + 1))
+        } else {
+            # If we get here, ax.latest.periods has just one element.
+            if(avg.ax || ax.latest.periods == 0) ax.index <- 1:length.mx # take all
+            else { # Take the ax.latest.periods latest time periods. 
+                ax.ns <- max(length.mx - ax.latest.periods+1, 1)
+                ax.index <- ax.ns:length.mx
+            }
         }
     }
     if(estimate.lc){
@@ -2147,6 +2539,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
                        keep.vital.events=FALSE, annual = FALSE) {
     change.by.gq <- function(gq, pop, factor = -1){
         pop <- pop + factor * gq
+        if(is.null(dim(pop))) return(pmax(pop, 0))
+        return(apply(pop, 2, pmax, 0))
     }
     nagecat <- age.length.all(annual, observed = FALSE)
     nbagecat <- age.length.fert(annual)
@@ -2155,11 +2549,11 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	popf[,1] <- c(inputs$POPf0, rep(0, nagecat - nrow(inputs$POPf0)))
 	use.gq <- FALSE
 	if(!is.null(inputs$GQm)) {
-	    popm[,1] <- change.by.gq(inputs$GQm, popm[,1])
+	    popm[,1] <- change.by.gq(inputs$GQm[, 1], popm[,1])
 	    use.gq <- TRUE
 	}
 	if(!is.null(inputs$GQf)) {
-	    popf[,1] <- change.by.gq(inputs$GQf, popf[,1])
+	    popf[,1] <- change.by.gq(inputs$GQf[, 1], popf[,1])
 	    use.gq <- TRUE
 	}
 	totp <- c(sum(popm[,1]+popf[,1]), rep(0, npred))
@@ -2173,15 +2567,19 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	if(is.null((migrateF <- attr(migF, "rate")))) migrateF <- rep(0, npred)
 	if(is.null((migratecodeM <- attr(migM, "code")))) migratecodeM <- rep(0, npred)
 	if(is.null((migratecodeF <- attr(migF, "code")))) migratecodeF <- rep(0, npred)
+	if(is.null((rcoutM <- attr(migM, "rc.out")))) rcoutM <- c(1, rep(0, nagecat)) # first value is the variance parameter "v"
+	if(is.null((rcoutF <- attr(migF, "rc.out")))) rcoutF <- c(1, rep(0, nagecat))
 	
 	finmigM <- as.numeric(migM)
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
-
+	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
+	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
+	            MIGfdm = as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout)),
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2221,17 +2619,23 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	estim.years <- estim.years[(length(estim.years)-nest+1):length(estim.years)]
 	pasfr <- obs$PASFR[,(ncol(obs$PASFR)-nest+1):ncol(obs$PASFR), drop=FALSE]
 	tfr <- obs$TFRpred[(length(obs$TFRpred)-nest+1):length(obs$TFRpred)]
-	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm)]), 
-					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf)]))
+	mig.data <- list(as.matrix(obs$MIGm[,(ncol(obs$MIGm)-nest+1):ncol(obs$MIGm), drop = FALSE]), 
+					as.matrix(obs$MIGf[,(ncol(obs$MIGf)-nest+1):ncol(obs$MIGf), drop = FALSE]))
 	migrateM <- migrateF <- matrix(0, ncol = ncol(mig.data[[1]]), nrow = 2) # TODO: migration rates cannot be passed as observed data yet
+	nagecat <- nrow(mig.data[[1]])
+	
 	if(!is.null((migrt <- attr(obs$MIGm, "rate")))){
 	    migrateM[1,] <- migrt[colnames(mig.data[[1]])]
 	    migrateM[2,] <- attr(obs$MIGm, "code")[colnames(mig.data[[1]])]
 	}
+	if(is.null((rcoutM <- attr(obs$MIGm, "rc.out")))) rcoutM <- c(1, rep(0, nagecat)) # first value is the variance parameter "v"
+	    
 	if(!is.null((migrt <- attr(obs$MIGf, "rate")))){
 	    migrateF[1,] <- migrt[colnames(mig.data[[2]])]
 	    migrateF[2,] <- attr(obs$MIGm, "code")[colnames(mig.data[[2]])]
 	}
+	if(is.null((rcoutF <- attr(obs$MIGf, "rc.out")))) rcoutF <- c(1, rep(0, nagecat))
+	
 	asfr <- pasfr/100.
 	for(i in 1:npasfr) asfr[i,] <- tfr * asfr[i,]
 	
@@ -2260,11 +2664,14 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
 	finmigM <- as.numeric(mig.data[[1]])
 	finmigF <- as.numeric(mig.data[[2]])
-
+    #stop('')
+	#browser()
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 
 	              as.numeric(migrateM[1,]), as.numeric(migrateF[1,]), as.integer(migrateM[2,]),
+	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
+	              MIGfdm = as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout)),
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2455,44 +2862,79 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(byage) age.index <- !age.index
 	ages <- 1:length(pop.pred$ages)
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+	age.lables <- get.age.labels(pop.pred$ages, single.year = pop.pred$annual)
+    sex <- NULL # to make CRAN check happy
+	all.quantiles <- NULL
+	if(byage && bysex && is.null(vital.event)){
+	    # preload the quantiles (saves tons of time)
+	    all.quantiles[["male"]] <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	    all.quantiles[["female"]] <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	}
+	subtract.from.age <- 0
 	observed.data <- NULL
 	for (country in 1:nrow(pop.pred$countries)) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
-		for(sex in c('both', 'male', 'female')[sex.index]) {
+		for(sx in c('both', 'male', 'female')[sex.index]) {
+		    quant.all.ages <- NULL
 			if(!is.null(vital.event)) {
 			 	sum.over.ages <- age.index[1]
 			 	if(include.observed) 
 			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
-										sex=sex, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
+										sex=sx, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
-										sex=sex, age='all', sum.over.ages=sum.over.ages)
+										sex=sx, age='all', sum.over.ages=sum.over.ages)
 				if(is.null(traj.and.quantiles$trajectories)) {
 					warning('Problem with loading ', vital.event, '. Possibly no vital events stored during prediction.')
 					return()
 				}
-				if(!sum.over.ages) { # This is because births have only subset of ages
+				if(!sum.over.ages) { 
+				    quant.all.ages[["50"]] <- traj.and.quantiles$quantiles[,"0.5",]
+				    quant.all.ages[["80"]] <- abind(traj.and.quantiles$quantiles[,"0.1",], 
+				                                    traj.and.quantiles$quantiles[,"0.9",],
+				                                    along = 0)
+				    quant.all.ages[["95"]] <- abind(traj.and.quantiles$quantiles[,"0.025",], 
+				                                    traj.and.quantiles$quantiles[,"0.975",],
+				                                    along = 0)
+				    # This is because births have only subset of ages
 					ages <- traj.and.quantiles$age.idx.raw
 					age.index <- age.index[1:(length(ages)+1)]
 					subtract.from.age <- traj.and.quantiles$age.idx.raw[1]-traj.and.quantiles$age.idx[1]
 				}
-				
-			}
+			} else {
+		        if(sx == "both" && byage){ # if sx is not 'both', then we already have the quantiles pre-computed in all.quantiles
+		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, adjust = adjust)$trajectories
+		            quant.all.ages[["50"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, q=0.5, 
+		                                            trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		            quant.all.ages[["80"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 80, 
+		                                                                    trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		            quant.all.ages[["95"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 95, 
+		                                                                   trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		        }
+		    }
 			for(age in c('all', ages)[age.index]) {
-				this.result <- cbind(
-							country.name=rep(country.obj$name, nr.var), 
-							country.code=rep(country.obj$code, nr.var),
-							variant=variant.names)
-				if(sex != 'both')
-					this.result <- cbind(this.result, sex=rep(sex, nr.var))
-				if(age != 'all') {
-					age <- as.integer(age)
-					this.result <- cbind(this.result, age=rep(get.age.labels(pop.pred$ages, single.year = pop.pred$annual)[age], nr.var))
+				this.result <- data.table::data.table(
+							        country.name=country.obj$name, 
+							        country.code=country.obj$code,
+							        variant=variant.names
+							        )
+				if(sx != 'both')
+					this.result <- this.result[ , sex := sx]
+				this.age <- age
+				if(this.age != 'all') {
+					this.age <- as.integer(this.age)
+					this.result <- this.result[, age := age.lables[this.age]]
 				}
 				if(is.null(vital.event)) {
 					if(include.observed) 
-						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sex, age=age)
-					quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sex, age=age, 
+						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sx, age=this.age)
+					quant <- NULL
+					if(!is.null(all.quantiles))
+					    quant <- all.quantiles[[sx]][,this.age,,]
+				    else {
+				        if(is.null(quant.all.ages)) 
+				            quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sx, age=this.age, 
 					                              adjust=adjust, allow.negative.adj = allow.negative.adj)$quantiles
+				    }
 					traj <- NULL
 					reload <- TRUE
 				} else { # vital event
@@ -2501,26 +2943,34 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					if(include.observed)
 						observed.data <- observed$trajectories[,,1]
 					if(!sum.over.ages) {
-						quant <- quant[age-subtract.from.age,,]
-						traj <- traj[age-subtract.from.age,,]
+						#quant <- quant[this.age-subtract.from.age,,]
+						#traj <- traj[this.age-subtract.from.age,,]
 						if(include.observed) {
-							if (age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
+							if (this.age-subtract.from.age > nrow(observed.data)) # because observed goes only up to 100+
 								observed.data <- rep(0, ncol(observed.data))
 							else
-								observed.data <- observed.data[age-subtract.from.age,]
+								observed.data <- observed.data[this.age-subtract.from.age,]
 						}
 					}
 					reload <- FALSE
-					#stop('')
 				}
-				proj.result <- round(rbind(
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
-											trajectories=traj, reload=reload, sex=sex, age=age), 
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
-											trajectories=traj, reload=reload, sex=sex, age=age),
-					get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
-											trajectories=traj, reload=reload, sex=sex, age=age)),
-					digits)
+				if(is.null(quant.all.ages)){
+				    #browser()
+			        proj.result <- rbind(
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age), 
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age),
+					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
+											trajectories=traj, reload=reload, sex=sx, age=this.age))
+			     } else { 
+			        proj.result <- rbind(quant.all.ages[["50"]][this.age-subtract.from.age,],
+							            quant.all.ages[["80"]][,this.age-subtract.from.age,],
+							            quant.all.ages[["95"]][,this.age-subtract.from.age,]
+							        )
+			     }
+				 proj.result <- round(proj.result, digits)
+
 				if(!is.null(observed.data)) {
 					# put it into the same shape as proj.result minus the last observed
 					observed.data <- round(rbind(observed.data, NULL), digits)
@@ -2528,17 +2978,15 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					proj.result <- cbind(observed.data, proj.result)
 				}
 				colnames(proj.result) <- col.names
-				#stop('')
-				this.result <- cbind(this.result, proj.result)
+				this.result <- cbind(this.result, data.table::data.table(proj.result))
 				result <- rbind(result, this.result)
 			}
 		}
 	}
-	colnames(result)[colnames(result)==names(header)] <- header
-	suffix <- paste(file.suffix, paste(c('sex', 'age')[c(bysex, byage)], collapse=''), sep='')
-	file <- paste('projection_summary_', suffix, '.csv', sep='')
-	write.table(result, file=file.path(output.dir, file), sep=',', row.names=FALSE, col.names=TRUE, 
-				quote=which(is.element(colnames(result), c('country_name', 'variant', 'sex', 'age'))))
+	colnames(result)[colnames(result)==names(header)] <- unlist(header)
+	suffix <- paste0(file.suffix, paste(c('sex', 'age')[c(bysex, byage)], collapse=''))
+	file <- paste0('projection_summary_', suffix, '.csv')
+	data.table::fwrite(result, file=file.path(output.dir, file), sep=',',  quote=TRUE)
 	cat('Stored into: ', file.path(output.dir, file), '\n')
 }
 
@@ -2691,205 +3139,205 @@ create.pop.cluster <- function(nr.nodes, ...) {
 }
 
 age.specific.migration <- function(wpp.year=2019, years=seq(1955, 2100, by=5), countries=NULL, smooth=TRUE, 
-									rescale=TRUE, ages.to.zero=18:21, #use.rc = FALSE, gcc.un = FALSE,
-									write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
-									depratio=wpp.year == 2015, verbose=TRUE) {
-	# Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
-	# and other available indicators. It is scaled to the total net migration for each country. 
-	# It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
-	# therefore it is smoothed (in a double pass through the smoother).
-	# If raw residuals are desired, set smooth=FALSE, rescale=FALSE and ages.to.zero=c().
-	if(verbose) {
-		status.text <- paste('Reconstructing sex- and age-specific migration from', paste0('wpp', wpp.year, ' '))
-		cat('\n', status.text)
-	}
-	popm0 <- load.wpp.dataset("popM", wpp.year)
-	popm0.num.cols <- grep('^[0-9]{4}$', colnames(popm0), value=TRUE) # values of year-columns
-	popf0 <- load.wpp.dataset("popF", wpp.year)
-	popf0.num.cols <- grep('^[0-9]{4}$', colnames(popf0), value=TRUE)
-	popmproj <- load.wpp.dataset("popMprojMed", wpp.year)
-	popmproj.num.cols <- grep('^[0-9]{4}$', colnames(popmproj), value=TRUE)
-	popfproj <- load.wpp.dataset("popFprojMed", wpp.year)
-	popfproj.num.cols <- grep('^[0-9]{4}$', colnames(popfproj), value=TRUE)
-	sexrat <- load.wpp.dataset("sexRatio", wpp.year)
-	sexrat.num.cols <- grep('^[0-9]{4}', colnames(sexrat), value=TRUE)
-	mxm <- load.wpp.dataset("mxM", wpp.year)
-	mxm.num.cols <- grep('^[0-9]{4}', colnames(mxm), value=TRUE)
-	mxf <- load.wpp.dataset("mxF", wpp.year)
-	mxf.num.cols <- grep('^[0-9]{4}', colnames(mxf), value=TRUE)
-	mig <- load.wpp.dataset("migration", wpp.year)
-	mig.num.cols <- grep('^[0-9]{4}', colnames(mig), value=TRUE)
-	tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
-	pasfr <- load.wpp.dataset("percentASFR", wpp.year)
-	if(wpp.year >= 2022) pasfr <- .consolidate.pasfr(pasfr)
-	pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
-	vwBase <- get(paste0('vwBaseYear', wpp.year))[,c('country_code', 'MigCode')]
-	pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
-	max.ages <- nrow(pop.first.country)
-	ages <- 1:max.ages
-	age.labels <- get.age.labels(ages, age.is.index=TRUE, last.open=TRUE)
-	years.periods <- paste(years-5, years, sep="-")
-	lyears <- length(years)
-	if(is.null(countries)) {
-		countries <- mig$country_code
-		# filter out non-countries
-		if(!exists("UNlocations")) 
+                                   rescale=TRUE, ages.to.zero=18:21, #use.rc = FALSE, gcc.un = FALSE,
+                                   write.to.disk=FALSE, directory=getwd(), file.prefix="migration", 
+                                   depratio=wpp.year == 2015, verbose=TRUE) {
+    # Reconstruct sex- and age-specific net migration using a residual method using wpp data on population
+    # and other available indicators. It is scaled to the total net migration for each country. 
+    # It is not balanced over the world. Due to rounding issues, often it results in zig-zags over ages,
+    # therefore it is smoothed (in a double pass through the smoother).
+    # If raw residuals are desired, set smooth=FALSE, rescale=FALSE and ages.to.zero=c().
+    if(verbose) {
+        status.text <- paste('Reconstructing sex- and age-specific migration from', paste0('wpp', wpp.year, ' '))
+        cat('\n', status.text)
+    }
+    popm0 <- load.wpp.dataset("popM", wpp.year)
+    popm0.num.cols <- grep('^[0-9]{4}$', colnames(popm0), value=TRUE) # values of year-columns
+    popf0 <- load.wpp.dataset("popF", wpp.year)
+    popf0.num.cols <- grep('^[0-9]{4}$', colnames(popf0), value=TRUE)
+    popmproj <- load.wpp.dataset("popMprojMed", wpp.year)
+    popmproj.num.cols <- grep('^[0-9]{4}$', colnames(popmproj), value=TRUE)
+    popfproj <- load.wpp.dataset("popFprojMed", wpp.year)
+    popfproj.num.cols <- grep('^[0-9]{4}$', colnames(popfproj), value=TRUE)
+    sexrat <- load.wpp.dataset("sexRatio", wpp.year)
+    sexrat.num.cols <- grep('^[0-9]{4}', colnames(sexrat), value=TRUE)
+    mxm <- load.wpp.dataset("mxM", wpp.year)
+    mxm.num.cols <- grep('^[0-9]{4}', colnames(mxm), value=TRUE)
+    mxf <- load.wpp.dataset("mxF", wpp.year)
+    mxf.num.cols <- grep('^[0-9]{4}', colnames(mxf), value=TRUE)
+    mig <- load.wpp.dataset("migration", wpp.year)
+    mig.num.cols <- grep('^[0-9]{4}', colnames(mig), value=TRUE)
+    tfrproj <- .load.wpp.traj('tfr', wpp.year, median.only=TRUE)
+    pasfr <- load.wpp.dataset("percentASFR", wpp.year)
+    if(wpp.year >= 2022) pasfr <- .consolidate.pasfr(pasfr)
+    pasfr.num.cols <- grep('^[0-9]{4}', colnames(pasfr), value=TRUE)
+    vwBase <- get(paste0('vwBaseYear', wpp.year))[,c('country_code', 'MigCode')]
+    pop.first.country <- popm0[popm0$country_code == mig$country_code[1],]
+    max.ages <- nrow(pop.first.country)
+    ages <- 1:max.ages
+    age.labels <- get.age.labels(ages, age.is.index=TRUE, last.open=TRUE)
+    years.periods <- paste(years-5, years, sep="-")
+    lyears <- length(years)
+    if(is.null(countries)) {
+        countries <- mig$country_code
+        # filter out non-countries
+        if(!exists("UNlocations")) 
             bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
-		locs <- UNcountries()
-		#locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
-		countries <- countries[countries %in% locs]
-	} else mig <- mig[which(mig$country_code %in% countries),]
-	depratio.correction <- FALSE
-	if (depratio == TRUE || is.character(depratio)) {
-		# if it's character it is a name of an rda file; if it's TRUE, take the default file.
-		# must have objects depratioM and depratioF
-		# which are data frames with columns country_code, period and three dependency ratio 
-		# columns (for age groups 0-4, 5-9, 10-14).
-		# They represent ratios of that age group to age group 20-25.
-		edr <- new.env()
-		if(is.character(depratio))
-			load(depratio, envir=edr)
-		else do.call("data", list(paste0("migdepratio_", wpp.year), envir=edr))
-		if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
-			stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
-		if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
-				|| !all(c('country_code', "period") %in% colnames(edr$depratioF)))
-			stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
-		ratio.colsM <- (1:ncol(edr$depratioM))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
-		ratio.colsF <- (1:ncol(edr$depratioF))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
-		depratio.correction <- TRUE
-	}
-	all.migM <- all.migF <- NULL
-	lcountries <- length(countries)
-	for(icountry in 1:lcountries) {
-		if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
-		country <- countries[icountry]
-		country.name <- as.character(mig[mig$country_code==country, 'name'])
-		# filter country data
-		popm.obs <- popm0[popm0$country_code==country, popm0.num.cols]
-		popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
-		pop1m <- cbind(popm.obs, popmproj[popmproj$country_code==country, popmproj.num.cols])
-		pop1f <- cbind(popf.obs, popfproj[popfproj$country_code==country, popfproj.num.cols])
-		tfra <- tfrproj[tfrproj$country_code==country,]
-		asfr <- pasfr[pasfr$country_code==country, pasfr.num.cols]
-		sr <- sexrat[sexrat$country_code==country, sexrat.num.cols] 
-		mortM <- mxm[mxm$country_code==country, mxm.num.cols]
-		mortF <- mxf[mxf$country_code==country, mxf.num.cols]
-		totmig <- mig[mig$country_code==country, mig.num.cols]
-		mtype <- vwBase[vwBase$country_code==country,'MigCode']
-		if(length(mtype)==0) mtype <- 9
-		this.all.migM <- this.all.migF <- data.frame(
-				country_code=rep(country, max.ages), name=rep(country.name, max.ages), age=age.labels)
-		for(iyear in 1:lyears) {
-			year <- years[iyear]
-			year.col <- years.periods[iyear]
-			year.char <- as.character(year)
-			pop0m <- pop1m[,as.character(year-5)]
-			pop0f <- pop1f[,as.character(year-5)]
-			mortMy <- mortM[,year.col]
-			mortFy <- mortF[,year.col]
-			sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
-      		sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
-			totmigy <- round(totmig[,year.col],3)
-			if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
-			else {
-			    #if(gcc.un && country %in% c(784, 634, 512, 48)) { # UAE, Qatar, Oman, Bahrain)
-			     #   netmigM <- gcc.mig.schedule(country, sex = "M", total.mig = totmigy, annual = FALSE)
-			     #   netmigF <- gcc.mig.schedule(country, sex = "F", total.mig = totmigy, annual = FALSE)
-			    #} else {
-			        #if(use.rc) 
-			        #       netmigM <- netmigF <- totmigy * rcastro.schedule() / 2
-			        #else {
-			            B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
-			            netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
-			            netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
-			            B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
-			            netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
-			            netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
-			            migdata <- list(M=netmigM, F=netmigF)
-			            sxdata <- list(M=sxm, F=sxf)
-			            for(sex in c('M', 'F')) {
-			                # In wpp2017, for some past years population is reported only up to 85+. 
-			                # Set migration of the open age group to 0. 
-			                if(any(is.na(pop1m[1:max.ages]))) {
-			                    # find the index of the first NA 
-			                    ina <- which(is.na(migdata[[sex]])==TRUE)[1]
-			                    migdata[[sex]][ina-1] = 0
-			                }
-			                if(mtype == 0) { 
-			                    # Migration distributed across the time interval.
-			                    # In projections in this case, the migration is derived as 
-			                    # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
-			                    # Thus, here is the reverse of that. 
-			                    # However, it can yield zig-zags, which are removed in the smoothing step.
-			                    migdata[[sex]][1] <- 2*migdata[[sex]][1]
-			                    for(i in 2:max.ages) {
-			                        migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
-			                    }
-			                    #stop('')
-			                }
-			                migdata[[sex]][ages.to.zero] <- 0
-			                if(smooth) { #smoothing					
-			                    for(izig in 1:2) { # two passes of smoothing
-			                        # are there significant zig-zags?						
-			                        tops <- ((migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][1:(max.ages-2)] & 
-			                                      migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][3:max.ages]) | 
-			                                     (migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][1:(max.ages-2)] & migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][3:max.ages])) & 
-			                            abs(diff(migdata[[sex]])[1:(max.ages-2)]/(totmigy/100)) > 0.05
-			                        cs <- cumsum(c(TRUE, tops)) # consider first point as top
-			                        if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
-			                            migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
-			                            migdata[[sex]][ages.to.zero] <- 0
-			                        } else break
-			                    }
-			                }
-			            }
-			            netmigM <- migdata[['M']]
-			            netmigF <- migdata[['F']]
-			            if(depratio.correction) {
-			                # correct dependency ratio
-			                cntry <- country
-			                rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
-			                if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
-			                rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
-			                if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
-			            }
-			            if(rescale) {
-			                # don't allow the total male mig have a different sign than the female or the totals have a different sign
-			                if(sign((sM <- sum(netmigM))) != sign((sF <- sum(netmigF))) || sign(totmigy) != sign(sum(netmigM + netmigF))) { 
-			                    if(sign(totmigy) == sign(sF)) 
-			                        shift <- -sign(sM)*(abs(sM) + min(0.01, abs(sF)))
-			                    else {  
-			                        if(sign(totmigy) == sign(sM)) {
-			                            shift <- -sign(sF)*(abs(sF) + min(0.01, abs(sM)))
-			                        } else # totmigy has a different sign then the sum of netmigM + netmigF
-			                            shift <- -sign(sM)*(max(abs(sF), abs(sM)) + min(0.01, abs(sM), abs(sF)))
-			                    }
-			                    age.shift <- shift * rcastro.schedule()
-			                    netmigF <- netmigF + age.shift
-			                    netmigM <- netmigM + age.shift
-			                }
-			                s <- sum(netmigM + netmigF)
-			                netmigM <- netmigM/s * totmigy
-			                netmigF <- netmigF/s * totmigy
-			            }
-			        #}
-			    #}
-			}
-			this.all.migM <- cbind(this.all.migM, netmigM)
-			this.all.migF <- cbind(this.all.migF, netmigF)
-		}
-		colnames(this.all.migM) <- colnames(this.all.migF) <- c('country_code', 'name', 'age', years.periods)
-		all.migM <- rbind(all.migM, this.all.migM)
-		all.migF <- rbind(all.migF, this.all.migF)
-	}
-	if(write.to.disk) {
-		write.table(all.migM, file=file.path(directory, paste0(file.prefix, "M.txt")), sep='\t', row.names=FALSE)
-		write.table(all.migF, file=file.path(directory, paste0(file.prefix, "F.txt")), sep='\t', row.names=FALSE)
-		if(verbose) cat('\nMigration files written into ', file.path(directory, paste0(file.prefix, "X.txt")))
-	}
-	if(verbose) cat('\n')
-	return(invisible(list(male=all.migM, female=all.migF)))
+        locs <- UNcountries()
+        #locs <- bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv())
+        countries <- countries[countries %in% locs]
+    } else mig <- mig[which(mig$country_code %in% countries),]
+    depratio.correction <- FALSE
+    if (depratio == TRUE || is.character(depratio)) {
+        # if it's character it is a name of an rda file; if it's TRUE, take the default file.
+        # must have objects depratioM and depratioF
+        # which are data frames with columns country_code, period and three dependency ratio 
+        # columns (for age groups 0-4, 5-9, 10-14).
+        # They represent ratios of that age group to age group 20-25.
+        edr <- new.env()
+        if(is.character(depratio))
+            load(depratio, envir=edr)
+        else do.call("data", list(paste0("migdepratio_", wpp.year), envir=edr))
+        if(!exists("depratioM", envir=edr) || !exists("depratioF", envir=edr))
+            stop("The depratio object must contain objects called depratioM and depratioF\nContains: ", paste(ls(edr), collapse=", "))
+        if(ncol(edr$depratioM) < 5 || ncol(edr$depratioF) < 5 || !all(c('country_code', "period") %in% colnames(edr$depratioM))
+           || !all(c('country_code', "period") %in% colnames(edr$depratioF)))
+            stop("Objects depratioM and depratioF must contain at least 5 columns (country_code, period and three dependency ratio columns).")
+        ratio.colsM <- (1:ncol(edr$depratioM))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+        ratio.colsF <- (1:ncol(edr$depratioF))[-which(colnames(edr$depratioM) %in% c('country_code', "period"))]
+        depratio.correction <- TRUE
+    }
+    all.migM <- all.migF <- NULL
+    lcountries <- length(countries)
+    for(icountry in 1:lcountries) {
+        if(verbose && interactive()) cat('\r', status.text, round(icountry/lcountries*100), '%')
+        country <- countries[icountry]
+        country.name <- as.character(mig[mig$country_code==country, 'name'])
+        # filter country data
+        popm.obs <- popm0[popm0$country_code==country, popm0.num.cols]
+        popf.obs <- popf0[popf0$country_code==country, popf0.num.cols]
+        pop1m <- cbind(popm.obs, popmproj[popmproj$country_code==country, popmproj.num.cols])
+        pop1f <- cbind(popf.obs, popfproj[popfproj$country_code==country, popfproj.num.cols])
+        tfra <- tfrproj[tfrproj$country_code==country,]
+        asfr <- pasfr[pasfr$country_code==country, pasfr.num.cols]
+        sr <- sexrat[sexrat$country_code==country, sexrat.num.cols] 
+        mortM <- mxm[mxm$country_code==country, mxm.num.cols]
+        mortF <- mxf[mxf$country_code==country, mxf.num.cols]
+        totmig <- mig[mig$country_code==country, mig.num.cols]
+        mtype <- vwBase[vwBase$country_code==country,'MigCode']
+        if(length(mtype)==0) mtype <- 9
+        this.all.migM <- this.all.migF <- data.frame(
+            country_code=rep(country, max.ages), name=rep(country.name, max.ages), age=age.labels)
+        for(iyear in 1:lyears) {
+            year <- years[iyear]
+            year.col <- years.periods[iyear]
+            year.char <- as.character(year)
+            pop0m <- pop1m[,as.character(year-5)]
+            pop0f <- pop1f[,as.character(year-5)]
+            mortMy <- mortM[,year.col]
+            mortFy <- mortF[,year.col]
+            sxm <- get.survival(matrix(mortMy, ncol=1), sex="Male")[,1,1]
+            sxf <- get.survival(matrix(mortFy, ncol=1), sex="Female")[,1,1]
+            totmigy <- round(totmig[,year.col],3)
+            if(totmigy == 0) netmigM <- netmigF <- rep(0, max.ages)
+            else {
+                #if(gcc.un && country %in% c(784, 634, 512, 48)) { # UAE, Qatar, Oman, Bahrain)
+                #   netmigM <- gcc.mig.schedule(country, sex = "M", total.mig = totmigy, annual = FALSE)
+                #   netmigF <- gcc.mig.schedule(country, sex = "F", total.mig = totmigy, annual = FALSE)
+                #} else {
+                #if(use.rc) 
+                #       netmigM <- netmigF <- totmigy * rcastro.schedule() / 2
+                #else {
+                B2 <- sum((pop1f[4:10,year.char] + pop0f[4:10])/2 * tfra[tfra$year==year-2,'value'] * asfr[,year.col]/100)
+                netmigM <- c(NA, pop1m[2:max.ages,year.char] - (pop0m[1:(max.ages-1)] * sxm[2:max.ages]))
+                netmigF <- c(NA, pop1f[2:max.ages,year.char] - (pop0f[1:(max.ages-1)] * sxf[2:max.ages]))
+                B2m <- B2 * sr[,year.col]/(1+sr[,year.col])
+                netmigM[1] <- pop1m[1,year.char] - B2m * sxm[1]
+                netmigF[1] <- pop1f[1,year.char] - (B2 - B2m) * sxf[1]
+                migdata <- list(M=netmigM, F=netmigF)
+                sxdata <- list(M=sxm, F=sxf)
+                for(sex in c('M', 'F')) {
+                    # In wpp2017, for some past years population is reported only up to 85+. 
+                    # Set migration of the open age group to 0. 
+                    if(any(is.na(pop1m[1:max.ages]))) {
+                        # find the index of the first NA 
+                        ina <- which(is.na(migdata[[sex]])==TRUE)[1]
+                        migdata[[sex]][ina-1] = 0
+                    }
+                    if(mtype == 0) { 
+                        # Migration distributed across the time interval.
+                        # In projections in this case, the migration is derived as 
+                        # M'_a = (M_a + M_{a-1}*sx_a)/2, M'_0 = M_0/2
+                        # Thus, here is the reverse of that. 
+                        # However, it can yield zig-zags, which are removed in the smoothing step.
+                        migdata[[sex]][1] <- 2*migdata[[sex]][1]
+                        for(i in 2:max.ages) {
+                            migdata[[sex]][i] <- 2*migdata[[sex]][i] - migdata[[sex]][i-1]*sxdata[[sex]][i]
+                        }
+                        #stop('')
+                    }
+                    migdata[[sex]][ages.to.zero] <- 0
+                    if(smooth) { #smoothing					
+                        for(izig in 1:2) { # two passes of smoothing
+                            # are there significant zig-zags?						
+                            tops <- ((migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][1:(max.ages-2)] & 
+                                          migdata[[sex]][2:(max.ages-1)] > migdata[[sex]][3:max.ages]) | 
+                                         (migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][1:(max.ages-2)] & migdata[[sex]][2:(max.ages-1)] < migdata[[sex]][3:max.ages])) & 
+                                abs(diff(migdata[[sex]])[1:(max.ages-2)]/(totmigy/100)) > 0.05
+                            cs <- cumsum(c(TRUE, tops)) # consider first point as top
+                            if(any(cs[3:(max.ages-1)] > 2 & cs[3:(max.ages-1)] - cs[1:(max.ages-3)] > 1))  { # at least 3 neighboring tops
+                                migdata[[sex]] <- smooth.spline(migdata[[sex]], df=10)$y # smooth
+                                migdata[[sex]][ages.to.zero] <- 0
+                            } else break
+                        }
+                    }
+                }
+                netmigM <- migdata[['M']]
+                netmigF <- migdata[['F']]
+                if(depratio.correction) {
+                    # correct dependency ratio
+                    cntry <- country
+                    rowM <- edr$depratioM[edr$depratioM$country_code==cntry & edr$depratioM$period==year.col, ratio.colsM]
+                    if(nrow(rowM) > 0 && !any(is.na(rowM))) netmigM[1:3] <- as.double(netmigM[5]*rowM)
+                    rowF <- edr$depratioF[edr$depratioF$country_code==cntry & edr$depratioF$period==year.col, ratio.colsF]
+                    if(nrow(rowF) > 0 && !any(is.na(rowF))) netmigF[1:3] <- as.double(netmigF[5]*rowF)
+                }
+                if(rescale) {
+                    # don't allow the total male mig have a different sign than the female or the totals have a different sign
+                    if(sign((sM <- sum(netmigM))) != sign((sF <- sum(netmigF))) || sign(totmigy) != sign(sum(netmigM + netmigF))) { 
+                        if(sign(totmigy) == sign(sF)) 
+                            shift <- -sign(sM)*(abs(sM) + min(0.01, abs(sF)))
+                        else {  
+                            if(sign(totmigy) == sign(sM)) {
+                                shift <- -sign(sF)*(abs(sF) + min(0.01, abs(sM)))
+                            } else # totmigy has a different sign then the sum of netmigM + netmigF
+                                shift <- -sign(sM)*(max(abs(sF), abs(sM)) + min(0.01, abs(sM), abs(sF)))
+                        }
+                        age.shift <- shift * rcastro.schedule()
+                        netmigF <- netmigF + age.shift
+                        netmigM <- netmigM + age.shift
+                    }
+                    s <- sum(netmigM + netmigF)
+                    netmigM <- netmigM/s * totmigy
+                    netmigF <- netmigF/s * totmigy
+                }
+                #}
+                #}
+            }
+            this.all.migM <- cbind(this.all.migM, netmigM)
+            this.all.migF <- cbind(this.all.migF, netmigF)
+        }
+        colnames(this.all.migM) <- colnames(this.all.migF) <- c('country_code', 'name', 'age', years.periods)
+        all.migM <- rbind(all.migM, this.all.migM)
+        all.migF <- rbind(all.migF, this.all.migF)
+    }
+    if(write.to.disk) {
+        write.table(all.migM, file=file.path(directory, paste0(file.prefix, "M.txt")), sep='\t', row.names=FALSE)
+        write.table(all.migF, file=file.path(directory, paste0(file.prefix, "F.txt")), sep='\t', row.names=FALSE)
+        if(verbose) cat('\nMigration files written into ', file.path(directory, paste0(file.prefix, "X.txt")))
+    }
+    if(verbose) cat('\n')
+    return(invisible(list(male=all.migM, female=all.migF)))
 }
 
 rcastro.schedule <- function(annual = FALSE) {
@@ -2903,19 +3351,6 @@ rcastro5.schedule <- function()
       0.028, 0.01867, 0.012, 0.008, 0.00533, 
       0.00333, 0.00333, 0, 0, 0, 
       0)
-
-# rcastro1.schedule <- function()
-#     c(0.00734, 0.00734, 0.00734, 0.00694, 0.00654, 0.00614, 0.00573, 0.00533, 0.0051, 0.00486, 
-#       0.00461, 0.00437, 0.00413, 0.0075, 0.01085, 0.01421, 0.01758, 0.02093, 0.02456, 0.02819, 
-#       0.03182, 0.03545, 0.03908, 0.03888, 0.03869, 0.03849, 0.0383, 0.0381, 0.03627, 0.03444, 
-#       0.03261, 0.03078, 0.02894, 0.02697, 0.02499, 0.02302, 0.02104, 0.01907, 0.01782, 0.01656, 
-#       0.0153, 0.01405, 0.0128, 0.01195, 0.01109, 0.01024, 0.00939, 0.00854, 0.00795, 0.00736, 
-#       0.00677, 0.00619, 0.0056, 0.00522, 0.00486, 0.00448, 0.00411, 0.00373, 0.00347, 0.0032, 
-#       0.00293, 0.00267, 0.0024, 0.00224, 0.00208, 0.00192, 0.00176, 0.0016, 0.00149, 0.00139, 
-#       0.00128, 0.00117, 0.00107, 0.00098, 0.00091, 0.00083, 0.00074, 0.00067, 0.00067, 0.00067, 
-#       0.00067, 0.00067, 0.00067, 0.00053, 4e-04, 0.00027, 0.00013, 0, 0, 0, 
-#       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-#       0)
 
 rcastro1.schedule <- function()
     c(0.01604, 0.01362, 0.01157, 0.00983, 0.00837, 0.00712, 0.00606, 0.00517, 0.00442, 0.00382, 
