@@ -1,4 +1,4 @@
-11.0-1 (02/21/2025)
+11.0-1/2 (02/21/2025)
 ------
 Implemented new methods for disaggregating net migration into ages (FDM),
 controlled by the argument mig.age.method in pop.predict and pop.predict.subnat.
