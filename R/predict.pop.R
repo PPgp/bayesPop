@@ -2574,12 +2574,13 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
+	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
+	if(length(MIGfdm) < 5) MIGfdm <- rep(0, 5)
 	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
-	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
-	            MIGfdm = as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout)),
+	            RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF), MIGfdm = MIGfdm,
 		        srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 		        srb=as.numeric(as.matrix(inputs$SRB)), 
 		        Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
@@ -2664,14 +2665,15 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
 	finmigM <- as.numeric(mig.data[[1]])
 	finmigF <- as.numeric(mig.data[[2]])
+	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
+	if(length(MIGfdm) < 5) MIGfdm <- rep(0, 5)
     #stop('')
 	#browser()
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 
 	              as.numeric(mig.data[[1]]), as.numeric(mig.data[[2]]), 
 	              nrow(mig.data[[1]]), ncol(mig.data[[1]]), as.integer(mig.type), 
 	              as.numeric(migrateM[1,]), as.numeric(migrateF[1,]), as.integer(migrateM[2,]),
-	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF),
-	              MIGfdm = as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout)),
+	              RCoutm = as.numeric(rcoutM), RCoutf = as.numeric(rcoutF), MIGfdm = MIGfdm,
 	              srm=LT$sr[[1]], srf=LT$sr[[2]], asfr=as.numeric(as.matrix(asfr)), 
 	              srb=as.numeric(as.matrix(srb)), 
 	              Lm=LT$LLm[[1]], Lf=LT$LLm[[2]], lxm=LT$lx[[1]], lxf=LT$lx[[2]],
