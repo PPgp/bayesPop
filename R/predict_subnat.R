@@ -251,9 +251,10 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     }
     MXm <- MXm[,c('country_code', 'age', estim.periods)]
     if(is.null(inputs$mxF)) {
-      if(!is.null(default.country))
+      if(!is.null(default.country)) {
           MXf <- create.dataset.from.wpp(default.country, region.codes, 'mxF', wpp.year, annual = annual)
-      else stop("mxF must be given if there is no default.country.")
+          match.mx2e0 <- TRUE # if mx is inherited from the country, it needs to be matched to e0
+      } else stop("mxF must be given if there is no default.country.")
     } else MXf <- swap.reg.code(read.pop.file(inputs$mxF), table.name = "mxF")
     if(fixed.mx) MXf.pred <- MXf[,c('country_code', 'age', proj.periods)]
     MXf <- MXf[,c('country_code', 'age', estim.periods)]
@@ -486,8 +487,8 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
     GQf <- GQ[['F']]
 
     inp <- new.env()
-    for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'SRB',
-                 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
+    for(par in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MXm.pred', 'MXf.pred', 'MXpattern', 'match.mx2e0', 
+                 'SRB', 'PASFR', 'PASFRpattern', 'MIGtype', 'MIGm', 'MIGf', 'GQm', 'GQf',
                  'e0Mpred', 'e0Fpred', 'TFRpred', 'migMpred', 'migFpred', 'migBpred', 'migFDMpred', 'estim.years', 'proj.years', 'wpp.year', 
                  'start.year', 'present.year', 'end.year', 'annual', 'fixed.mx', 'fixed.pasfr', 
                  'lc.for.all', 'mig.rate.code', 'mig.age.method', 'mig.rc.fam', 'mig.rc.inout', 'observed'))

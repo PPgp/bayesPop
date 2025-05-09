@@ -204,9 +204,11 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			                                  compute.AxBx=FALSE, annual = inp$annual)
 		}
 		debug <- FALSE
+		match.mx2e0 <- !is.null(inp$match.mx2e0) && inp$match.mx2e0
 		#stop('')
 		if(!fixed.mx) {
-			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all, npred=npred, annual = inp$annual) 
+			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all || match.mx2e0, 
+			                     npred=npred, annual = inp$annual) 
 			mortcast.args <- .prepare.for.mortality.projection(pattern = inpc$MXpattern, mxKan = MxKan, 
 			                                                   hiv.params = inpc$HIVparams, lc.for.all = inp$lc.for.all, 
 			                                                   annual = inp$annual)
@@ -218,7 +220,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		#npasfr <- nrow(inpc$PASFR)
 		if(keep.vital.events) 
 		    observed <- compute.observedVE(inpc, inp$pop.matrix, inpc$MIGtype, MxKan, country, estim.years=inp$estim.years, 
-															mig.rate.code = inp$mig.rate.code[1], annual = inp$annual)
+															mig.rate.code = inp$mig.rate.code[1], annual = inp$annual,
+															match.mx2e0 = match.mx2e0 && !fixed.mx)
 		tfr.med <- apply(inpc$TFRpred, 1, median, na.rm = TRUE)[nrow(inpc$TFRpred)]
 		# iterate over trajectories
 		for(itraj in 1:nr.traj) {
@@ -256,7 +259,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			}
 			popres <- StoPopProj(npred, inpc, LTres, asfr, migpred, inpc$MIGtype, mig.rate.code = inp$mig.rate.code[2],
 			                     country.name=UNlocations[country.idx,'name'],
-								 keep.vital.events=keep.vital.events, annual = inp$annual)
+								 keep.vital.events=keep.vital.events, annual = inp$annual
+								 )
 			totp[,itraj] <- popres$totpop
 			totpm[,,itraj] <- popres$mpop
 			totpf[,,itraj] <- popres$fpop
@@ -2576,7 +2580,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
 	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
 	if(length(MIGfdm) < 5) MIGfdm <- rep(0, 5)
-	#stop("")
+	#browser()
+	#if(country.name == "Balochistan") stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
@@ -2611,7 +2616,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 }
 
 compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code, estim.years, mig.rate.code = 0, 
-                               annual = FALSE) {
+                               annual = FALSE, match.mx2e0 = FALSE) {
 	obs <- inputs$observed
 	if(is.null(obs$PASFR)) return(NULL)
 	npasfr <- nrow(obs$PASFR)
@@ -2646,6 +2651,19 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	pop <- D10 <- list()
 	nmx <- ncol(inputs$MXm)
 	mx <-  list(inputs$MXm[,(nmx-nest+1):nmx, drop=FALSE], inputs$MXf[,(nmx-nest+1):nmx, drop=FALSE])
+
+    if(!is.null(match.mx2e0) && match.mx2e0){
+        # match mx to e0
+        mx2 <- MortCast::mortcast(inputs$obs$e0Mpred[(length(inputs$obs$e0Mpred)-nest+1):length(inputs$obs$e0Mpred)], 
+                                 inputs$obs$e0Fpred[(length(inputs$obs$e0Fpred)-nest+1):length(inputs$obs$e0Fpred)],
+                                      lc.pars = mxKan)
+        # we need to truncate it to 100+
+        mx[[1]] <- LifeTableMxCol(mx2$male$mx, sex = "Male", 
+                                  abridged = !annual, open.age = 100, colname = "mx")
+        mx[[2]] <- LifeTableMxCol(mx2$female$mx, sex = "Female", 
+                                  abridged = !annual, open.age = 100, colname = "mx")
+    }
+	
 	srb <- obs$SRB[(length(obs$SRB)-nest+1):length(obs$SRB)]
 	srb.ratio <- srb / (1 + srb)
 	sr <- deaths <- list(matrix(0, nrow=maxage, ncol=nest), matrix(0, nrow=maxage, ncol=nest))
