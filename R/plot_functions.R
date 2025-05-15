@@ -641,6 +641,8 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 	lages <- length(ages.idx)
 	nquant <- length(pi)
 	quantiles.table <- trajs <- list(male=NULL, female=NULL)
+	adjust.env <- NULL
+	do.adjust <- FALSE
 	if(!any(draw.projection) || !any(draw.projection & (year.idx>1))) nquant <- 0
 	if(nquant > 1 && sort.pi) pi<-sort(pi, decreasing=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
 	ind.trajs <- NULL
@@ -665,13 +667,24 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 				ind.trajs[['male']]$trajectories[,,itraj] <- ind.trajs[['male']]$trajectories[,,itraj]/sTm
 				ind.trajs[['female']]$trajectories[,,itraj] <- ind.trajs[['female']]$trajectories[,,itraj]/sTm
 			}
-		} else 
+		} else # no proportion (raw scale)
 			quantiles.table <- list(male=trajectoriesM$quantiles, female=trajectoriesF$quantiles)
 
 		
-	} else # population indicator
+	} else {# population indicator
 		quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
                        else list(male=pop.pred$quantilesMage, female=pop.pred$quantilesFage)
+		do.adjust <- ("adjust" %in% names(list(...)) && list(...)$adjust) || 
+		    ("adj.to.file" %in% names(list(...)) && !is.null(list(...)$adj.to.file))
+		if(do.adjust){
+		    adjust.env <- new.env()
+		    if(proportion) stop("Adjusted pyramids are not implemented on proportional scale.")
+		    trajectoriesM <- get.pop.trajectories.multiple.age(pop.pred, country$code, "male", adjust.env = adjust.env, ...)
+		    trajectoriesF <- get.pop.trajectories.multiple.age(pop.pred, country$code, "female", adjust.env = adjust.env, ...)
+		    quantiles.table$male <- trajectoriesM$quantiles
+		    quantiles.table$female <- trajectoriesF$quantiles
+		}
+	}
     is.valid.pi <- if(proportion && nquant>0) is.saved.pi(pop.pred, pi)
                    else rep(TRUE, nquant)
 	maxx<-0
@@ -691,6 +704,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 										high=data.frame(male=rep(NA, lages), female=rep(NA, lages), row.names=age.labels))
 		}
 	}
+
 	for(sex in c('male', 'female')) {
 		dimt <- dim(quantiles.table[[sex]])
 		dimn <- dimnames(quantiles.table[[sex]])
@@ -698,7 +712,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		for(iage in 1:lages) {
 			if(any(draw.projection)) {
 				if(length(dim(quantiles.table[[sex]]))==4) { # population
-					table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
+			        table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
 					table <- array(table, dimt[c(1,3:4)], dimnames=c(list(NULL), dimn[3], dimn[4]))
 					cidx <- country$index
 					ci.reload <- TRUE
@@ -710,8 +724,9 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 					cidx <- NULL
 					ci.reload <- FALSE
 				}
-				med <- get.pop.traj.quantiles(table, pop.pred, cidx, country$code, trajectories=this.trajs,
-												q=0.5, reload=FALSE, sex=sex, age=ages.idx[iage])
+			    med <- get.pop.traj.quantiles(table, pop.pred, cidx, country$code, trajectories=this.trajs,
+			                                      q=0.5, reload=FALSE, sex=sex, age=ages.idx[iage], 
+			                                      adjust.env = adjust.env, ...)
 			}
 			if(any(!draw.projection)) {
 				if(indicator != 'P') {
@@ -731,7 +746,8 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 				pi.name <- as.character(pi[i])
 				quant <- get.pop.traj.quantiles(table, 
 												pop.pred, cidx, country$code, trajectories=this.trajs,
-												pi=pi[i], reload=ci.reload, sex=sex, age=ages.idx[iage])
+												pi=pi[i], reload=ci.reload, sex=sex, 
+												age=ages.idx[iage], adjust.env = adjust.env, ...)
 				for(yi in 1:lyears) {
 					if(draw.projection[yi] & (year.idx[yi] > 1)) {
 						pyr.ci[[yi]][[pi.name]]$low[iage,sex] <- quant[1,year.idx[yi]]
@@ -748,12 +764,12 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		mtraj <- ind.trajs$male
 		if(is.null(mtraj)) 
 			mtraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='male', 
-										age=ages.idx, nr.traj, proportion=proportion)
+										age=ages.idx, nr.traj, proportion=proportion, adjust.env = adjust.env, ...)
 		if(!is.null(dim(mtraj$trajectories))) {
 			ftraj <- ind.trajs$female
 			if(is.null(ftraj)) 
 				ftraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='female', 
-										age=ages.idx, nr.traj, proportion=proportion) 
+										age=ages.idx, nr.traj, proportion=proportion, adjust.env = adjust.env, ...) 
 			for(yi in 1:lyears) {
 				if(!draw.projection[yi] || (year.idx[yi] == 1)) {
 					trajs[[yi]] <- list()

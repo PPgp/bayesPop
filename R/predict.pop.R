@@ -2863,7 +2863,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	age.index <- c(TRUE, rep(FALSE, length(pop.pred$ages)))
 	if(byage) age.index <- !age.index
 	ages <- 1:length(pop.pred$ages)
-	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
+	if(adjust) pop.pred$adjust.env <- new.env()
 	age.lables <- get.age.labels(pop.pred$ages, single.year = pop.pred$annual)
     sex <- NULL # to make CRAN check happy
 	all.quantiles <- NULL
@@ -2906,7 +2906,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				}
 			} else { # pop
 		        if(sx == "both" && byage){ # if sx is not 'both', then we already have the quantiles pre-computed in all.quantiles
-		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, adjust = adjust, adj.to.file=adj.to.file)$trajectories
+		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, 
+		                                                      adjust = adjust, adj.to.file=adj.to.file, 
+		                                                      adjust.env = pop.pred$adjust.env)$trajectories
 		            quant.all.ages[["50"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, q=0.5, 
 		                                            trajectories=traj, year.index = 1:nr.proj, sex=sx)
 		            quant.all.ages[["80"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 80, 
@@ -2962,11 +2964,17 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				if(is.null(quant.all.ages)){
 			        proj.result <- rbind(
 					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
-											trajectories=traj, reload=reload, sex=sx, age=this.age), 
+											trajectories=traj, reload=reload, sex=sx, age=this.age,
+											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
+											adjust.env = pop.pred$adjust.env), 
 					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=80, 
-											trajectories=traj, reload=reload, sex=sx, age=this.age),
+											trajectories=traj, reload=reload, sex=sx, age=this.age,
+											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
+											adjust.env = pop.pred$adjust.env),
 					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, pi=95, 
-											trajectories=traj, reload=reload, sex=sx, age=this.age))
+											trajectories=traj, reload=reload, sex=sx, age=this.age,
+											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
+											adjust.env = pop.pred$adjust.env))
 			     } else { 
 			        proj.result <- rbind(quant.all.ages[["50"]][this.age-subtract.from.age,],
 							            quant.all.ages[["80"]][,this.age-subtract.from.age,],

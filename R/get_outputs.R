@@ -284,18 +284,23 @@ pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
  									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE, 
- 									allow.negative.adj = TRUE, adj.to.file = NULL) {
+ 									allow.negative.adj = TRUE, adj.to.file = NULL,
+ 									adjust.env = NULL) {
 	
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
-	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust
+	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust || !is.null(adj.to.file)
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country, e))
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 	if(adjust || !is.null(adj.to.file)) {
-		if(is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
-		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env, allow.negatives = allow.negative.adj,
-		                    adj.to.file = adj.to.file)
+	    if(is.null(adjust.env) || !is.environment(adjust.env)) adjust.env <- new.env()
+		adjust.trajectories(country, e, pop.pred, adjust.env, allow.negatives = allow.negative.adj,
+		                    adj.to.file = adj.to.file) # this updates trajectories in the "e" environment
 		adjust <- TRUE
+		# Do the following so that the .get.pop.quantiles function doesn't need to compute the adjustments again.
+		# It gets it from the environment and therefore adj.to.file doesn't need to be passed again
+		# (apart from M and F, since they are not loaded by default in adjust.trajectories())
+		pop.pred$adjust.env <- adjust.env 
 	}
 	sex <- match.arg(sex)
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
@@ -306,10 +311,9 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	    if(annual) stop(paste('Age index must be between 0 and ', max.age.allowed - 1, '.')) 
 	    stop(paste('Age index must be between 1 and ', max.age.allowed, '(age 130+).'))
 	}
-	#stop("")
 	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
-		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
+		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj)
 		hch <- e$totp.hch
 	} else {
 	    if(sex == 'both') {
@@ -320,12 +324,12 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	            if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
 	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)[,age.idx,,]}
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
 	        } else { # female
 	            if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
 	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)[,age.idx,,]}
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
 	        }
 	    }
 	}
@@ -346,7 +350,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 
 get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', 'male', 'female'), 
 												age='all', nr.traj=NULL, proportion=FALSE, typical.trajectory=FALSE,
-												adjust=FALSE, ...) {
+												adjust=FALSE, adj.to.file = NULL, adjust.env = NULL, ...) {
 	# Like get.pop.trajectories() but it doesn't sum up over ages.
 	# Called when creating pop pyramid and pop.byage.*. Doesn't handle potential support ratio.
 	age.idx <- traj.idx <- traj <- quant <- hch <- NULL
@@ -355,9 +359,14 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		sex <- match.arg(sex)
 		max.age <- dim(e$totpm)[1] # should be 27
 		age.idx <- if(age[1]=='all') 1:max.age else age
-		if(adjust) {
-		    #adjust.env <- new.env()
-		    adjust.trajectories(country, e, pop.pred, ...) # puts the adjusted trajectories into the e environment
+		if(adjust || !is.null(adj.to.file)) {
+		    if(is.null(adjust.env) || !is.environment(adjust.env)) adjust.env <- new.env()
+		    # adjusts trajectories in the e environment
+		    adjust.trajectories(country, e, pop.pred, adj.env = adjust.env, adj.to.file = adj.to.file, ...) 
+		    # Do the following so that the .get.pop.quantiles function doesn't need to compute the adjustments again.
+		    # It gets it from the environment and therefore adj.to.file doesn't need to be passed again.
+		    pop.pred$adjust.env <- adjust.env
+		    adjust <- TRUE
 		}
 		if(sex == 'both') {
 		    traj <- e$totpm[age.idx,,,drop=FALSE] + e$totpf[age.idx,,,drop=FALSE]
