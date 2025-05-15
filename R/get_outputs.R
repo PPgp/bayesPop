@@ -262,11 +262,11 @@ get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both
 	return(list(data=res, age.idx=age.idx))
 }
 
-.get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE, allow.negative.adj = TRUE) {
+.get.pop.quantiles <- function(pop.pred, what='', adjust=FALSE, allow.negative.adj = TRUE, ...) {
 	quant <- pop.pred[[paste0('quantiles', what)]]
 	if(!adjust) return(quant)
 	return(adjust.quantiles(quant, what, wpp.year=pop.pred$wpp.year, annual = pop.pred$annual, 
-	                        env=pop.pred$adjust.env, allow.negatives = allow.negative.adj))
+	                        env=pop.pred$adjust.env, allow.negatives = allow.negative.adj, ...))
 }
 
 .load.traj.file <- function(dir, country, e) {
@@ -283,16 +283,19 @@ pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 }
 
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
- 									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE, allow.negative.adj = TRUE) {
+ 									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE, 
+ 									allow.negative.adj = TRUE, adj.to.file = NULL) {
 	
 	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
 	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country, e))
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
-	if(adjust) {
+	if(adjust || !is.null(adj.to.file)) {
 		if(is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
-		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env, allow.negatives = allow.negative.adj)
+		adjust.trajectories(country, e, pop.pred, pop.pred$adjust.env, allow.negatives = allow.negative.adj,
+		                    adj.to.file = adj.to.file)
+		adjust <- TRUE
 	}
 	sex <- match.arg(sex)
 	max.age <- dim(e$totpf)[1] # should be 27 or 131 if annual = TRUE
@@ -303,9 +306,10 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	    if(annual) stop(paste('Age index must be between 0 and ', max.age.allowed - 1, '.')) 
 	    stop(paste('Age index must be between 1 and ', max.age.allowed, '(age 130+).'))
 	}
+	#stop("")
 	if(sex == 'both' && all((1:max.age) %in% age.idx)) { # for both sexes and all ages
 		if(load.traj) traj <- e$totp
-		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj)
+		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
 		hch <- e$totp.hch
 	} else {
 	    if(sex == 'both') {
@@ -315,13 +319,13 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 	        if(sex=='male') {
 	            if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpm.hch[age.idx,,,drop=FALSE])
-	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust, allow.negative.adj = allow.negative.adj)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='M', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)[,age.idx,,]}
 	        } else { # female
 	            if(load.traj) traj <- colSums(e$totpf[age.idx,,,drop=FALSE])
 	            hch <- colSums(e$totpf.hch[age.idx,,,drop=FALSE])
-	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust, allow.negative.adj = allow.negative.adj)
-	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)[,age.idx,,]}
+	            if (length(age.idx) == max.age) quant <- .get.pop.quantiles(pop.pred, what='F', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)
+	            else {if (length(age.idx) == 1) quant <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj, adj.to.file = adj.to.file)[,age.idx,,]}
 	        }
 	    }
 	}
@@ -335,7 +339,7 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		}
 	}
 	if(!is.null(traj)) 
-	 	rownames(traj) <- litem('proj.years.pop', pop.pred, pop.pred$proj.years+2)
+	 	rownames(traj) <- litem('proj.years.pop', pop.pred, if(pop.pred$annual) pop.pred$proj.years else pop.pred$proj.years+2)
 	return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
 }
 
@@ -351,9 +355,13 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		sex <- match.arg(sex)
 		max.age <- dim(e$totpm)[1] # should be 27
 		age.idx <- if(age[1]=='all') 1:max.age else age
+		if(adjust) {
+		    #adjust.env <- new.env()
+		    adjust.trajectories(country, e, pop.pred, ...) # puts the adjusted trajectories into the e environment
+		}
 		if(sex == 'both') {
-			traj <- e$totpm[age.idx,,,drop=FALSE] + e$totpf[age.idx,,,drop=FALSE]
-			hch <- e$totpm.hch[age.idx,,,drop=FALSE] + e$totpf.hch[age.idx,,,drop=FALSE]
+		    traj <- e$totpm[age.idx,,,drop=FALSE] + e$totpf[age.idx,,,drop=FALSE]
+		    hch <- e$totpm.hch[age.idx,,,drop=FALSE] + e$totpf.hch[age.idx,,,drop=FALSE]
 		} else {
 			if(sex=='male') {
 				traj <- e$totpm[age.idx,,,drop=FALSE] 
@@ -379,7 +387,7 @@ get.pop.trajectories.multiple.age <- function(pop.pred, country, sex=c('both', '
 		}
 	} 
 	if(!is.null(traj)) 
-	 	dimnames(traj)[[2]] <- litem('proj.years.pop', pop.pred, pop.pred$proj.years+2) # pop.pred$proj.years
+	 	dimnames(traj)[[2]] <- litem('proj.years.pop', pop.pred, if(pop.pred$annual) pop.pred$proj.years else pop.pred$proj.years+2)
 	return(list(trajectories=traj, index=traj.idx, age.idx=age.idx, quantiles=quant, half.child=hch))
 }
 

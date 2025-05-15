@@ -1,4 +1,5 @@
-adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.negatives = TRUE) {
+adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.negatives = TRUE,
+                                adj.to.file = NULL) {
 	if(is.null(adj.env)) adj.env <- new.env()
 	wpp.year <- quant.env$wpp.year
 	annual <- quant.env$annual
@@ -12,7 +13,7 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.neg
 		if(is.null(adj.env[[dif.name]])) {
 			#print(c(dif.name, adj.name))
 			q <- quant.env[[paste0('quantiles', adj.name)]]
-			adjust.quantiles(q, adj.name, wpp.year=wpp.year, env=adj.env, annual = annual)
+			adjust.quantiles(q, adj.name, wpp.year=wpp.year, env=adj.env, annual = annual, adj.to.file = adj.to.file)
 		}
 		dif <- if(length(dim(adj.env[[dif.name]]))>2) adj.env[[dif.name]][country.char,,] else adj.env[[dif.name]][country.char,,drop=FALSE]
 		res <- env[[traj.name]]		
@@ -27,13 +28,12 @@ adjust.trajectories <- function(country, env, quant.env, adj.env=NULL, allow.neg
 			if(!allow.negatives) res <- pmax(0, res)
 			res <- aperm(res, c(2,1))
 		}
-		if(is.list(res)) stop('')
-		#if(traj.name == 'totpf') stop('')
 		env[[traj.name]] <- res
 	}
 }
 
-adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.negatives = TRUE) {
+adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.negatives = TRUE,
+                             adj.to.file = NULL) {
 	dif <- NULL
 	if(!is.null(env)) {
 		if(!is.null(env[[paste0('AdjQpop', what)]])) return(env[[paste0('AdjQpop', what)]])
@@ -50,7 +50,9 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 			ages <- dimnames(q)[[2]]
 			ages <- ages[as.numeric(ages)<=100]
 		}
-		wpp <- .get.wpp(env, what, countries, ages, wpp.year=wpp.year, annual = annual)
+		wpp <- if(!is.null(adj.to.file)) .get.adjustments.from.file(
+		    adj.to.file, env, what, countries, ages, wpp.year=wpp.year, annual = annual) else .get.wpp(
+		        env, what, countries, ages, wpp.year=wpp.year, annual = annual)
 		if(length(dim(q))>3) { # includes age dimension
 			years <- as.numeric(dimnames(q)[[4]])
 			if(!annual && (years[1] %% 5) != 0) years <- years+2 
@@ -63,12 +65,17 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 				med[age.idx.old[1]-1,] <- med.raw[age.idx.old[1]-1,] + apply(med.raw[age.idx.old,], 2, sum) 
 				med <- abind(med, along=0) # add dimension
 			}
-			dif <- abind(matrix(0, nrow=dim(med)[1], ncol=length(age.idx)), med-wpp, along=3)		
+			dif <- med-wpp
+			if(! years[1] %in% dimnames(dif)[[3]])
+			    dif <- abind(matrix(0, nrow=dim(med)[1], ncol=length(age.idx)), dif, along=3)		
 		} else {
 			years <- as.numeric(dimnames(q)[[3]])
 			if(!annual && (years[1] %% 5) != 0) years <- years+2 
 			med <- q[,'0.5',as.character(years)%in%colnames(wpp)]
-			dif <- as.matrix(cbind(0, med-wpp))
+			dif <- med-wpp
+			if(! years[1] %in% colnames(dif))
+			    dif <- cbind(0, dif) # add a column for present year
+			dif <- as.matrix(dif)
 		}
 	} else countries <- dimnames(dif)
 	if(length(dim(q))>3) {
@@ -101,6 +108,29 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 				tpopM(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...),
 				tpopF(countries, prediction.only=TRUE, sum.over.ages=FALSE, ages=ages, e=env, annual = annual, ...)
 			)
+}
+
+.get.adjustments.from.file <- function(file, env, what, countries=NULL, ages=NULL, annual = FALSE, ...) {
+    adj.dataset <- fread(file)
+    year.cols <- grep('^[0-9]{4}', colnames(adj.dataset), value = TRUE)
+    idx <- if(!is.null(countries)) which(adj.dataset$country_code %in% countries) else 1:nrow(adj.dataset)
+    adj.dataset.long <- data.table::melt(adj.dataset[idx, c("country_code", "sex", "age", year.cols), with = FALSE], 
+                                         id.vars = c("country_code", "sex", "age"), variable.name = "year",
+                                         variable.factor = FALSE)
+    if(what == "") sx <- c("male", "female")
+    else sx <- list(M = "male", F = "female", Mage = "male", Fage = "female")[[what]]
+    adj.dataset.long <- adj.dataset.long[tolower(sex) %in% sx][, sex := NULL]
+    
+    if(!what %in% c("Mage", "Fage")) {
+        adj.data <- adj.dataset.long[, list(value = sum(value)), by = c("country_code", "year")]
+        adj.data.wide <- data.table::dcast(adj.data, country_code ~ year, value.var = "value")
+        adj.data.mat <- as.matrix(adj.data.wide[, -1, with = FALSE])
+        rownames(adj.data.mat) <- adj.data.wide$country_code
+        return(adj.data.mat)
+    }
+    # age-specific 
+    adj.data.wide <- data.table::dcast(adj.dataset.long, country_code + age ~ year, value.var = "value")
+    return(.reduce.to.countries.and.ages(adj.data.wide, countries, ages, annual = annual))
 }
 
 if.not.exists.load <- function(name, env, wpp.year=2012) {

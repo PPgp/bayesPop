@@ -2833,7 +2833,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	
 .write.pop <- function(pop.pred, output.dir, bysex=FALSE, byage=FALSE, vital.event=NULL, file.suffix='tpop', 
 							what.log='total population', include.observed=FALSE, digits=0, adjust=FALSE, 
-							allow.negative.adj = TRUE, end.time.only=FALSE) {
+							adj.to.file=NULL, allow.negative.adj = TRUE, end.time.only=FALSE) {
 	cat('Creating summary file of ', what.log, ' ')
 	if(bysex) cat('by sex ')
 	if(byage) cat('by age ')
@@ -2869,8 +2869,10 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	all.quantiles <- NULL
 	if(byage && bysex && is.null(vital.event)){
 	    # preload the quantiles (saves tons of time)
-	    all.quantiles[["male"]] <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, allow.negative.adj = allow.negative.adj)
-	    all.quantiles[["female"]] <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, allow.negative.adj = allow.negative.adj)
+	    all.quantiles[["male"]] <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, adj.to.file=adj.to.file,
+	                                                  allow.negative.adj = allow.negative.adj)
+	    all.quantiles[["female"]] <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, adj.to.file=adj.to.file,
+	                                                    allow.negative.adj = allow.negative.adj)
 	}
 	subtract.from.age <- 0
 	observed.data <- NULL
@@ -2878,7 +2880,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
 		for(sx in c('both', 'male', 'female')[sex.index]) {
 		    quant.all.ages <- NULL
-			if(!is.null(vital.event)) {
+			if(!is.null(vital.event)) { # if vital events (not pop)
 			 	sum.over.ages <- age.index[1]
 			 	if(include.observed) 
 			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
@@ -2902,9 +2904,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					age.index <- age.index[1:(length(ages)+1)]
 					subtract.from.age <- traj.and.quantiles$age.idx.raw[1]-traj.and.quantiles$age.idx[1]
 				}
-			} else {
+			} else { # pop
 		        if(sx == "both" && byage){ # if sx is not 'both', then we already have the quantiles pre-computed in all.quantiles
-		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, adjust = adjust)$trajectories
+		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, adjust = adjust, adj.to.file=adj.to.file)$trajectories
 		            quant.all.ages[["50"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, q=0.5, 
 		                                            trajectories=traj, year.index = 1:nr.proj, sex=sx)
 		            quant.all.ages[["80"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 80, 
@@ -2926,7 +2928,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					this.age <- as.integer(this.age)
 					this.result <- this.result[, age := age.lables[this.age]]
 				}
-				if(is.null(vital.event)) {
+				if(is.null(vital.event)) { # pop
 					if(include.observed) 
 						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sx, age=this.age)
 					quant <- NULL
@@ -2935,7 +2937,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				    else {
 				        if(is.null(quant.all.ages)) 
 				            quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sx, age=this.age, 
-					                              adjust=adjust, allow.negative.adj = allow.negative.adj)$quantiles
+					                              adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj
+					                              )$quantiles
 				    }
 					traj <- NULL
 					reload <- TRUE
@@ -2957,7 +2960,6 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					reload <- FALSE
 				}
 				if(is.null(quant.all.ages)){
-				    #browser()
 			        proj.result <- rbind(
 					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
 											trajectories=traj, reload=reload, sex=sx, age=this.age), 
