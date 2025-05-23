@@ -2832,9 +2832,10 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 }	
 	
 .write.pop <- function(pop.pred, output.dir, bysex=FALSE, byage=FALSE, vital.event=NULL, file.suffix='tpop', 
-							what.log='total population', include.observed=FALSE, digits=0, adjust=FALSE, 
-							adj.to.file=NULL, allow.negative.adj = TRUE, end.time.only=FALSE) {
-	cat('Creating summary file of ', what.log, ' ')
+							what.log='total population', include.observed=FALSE, include.means = FALSE, 
+							digits=0, adjust=FALSE, adj.to.file=NULL, allow.negative.adj = TRUE, 
+							end.time.only=FALSE, locations = NULL) {
+	cat('Creating summary file of', what.log, ' ')
 	if(bysex) cat('by sex ')
 	if(byage) cat('by age ')
 	cat ('...\n')
@@ -2868,7 +2869,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
     sex <- NULL # to make CRAN check happy
 	all.quantiles <- NULL
 	if(byage && bysex && is.null(vital.event)){
-	    # preload the quantiles (saves tons of time)
+	    # pre-load the quantiles (saves tons of time)
 	    all.quantiles[["male"]] <- .get.pop.quantiles(pop.pred, what='Mage', adjust=adjust, adj.to.file=adj.to.file,
 	                                                  allow.negative.adj = allow.negative.adj)
 	    all.quantiles[["female"]] <- .get.pop.quantiles(pop.pred, what='Fage', adjust=adjust, adj.to.file=adj.to.file,
@@ -2876,8 +2877,9 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	}
 	subtract.from.age <- 0
 	observed.data <- NULL
-	for (country in 1:nrow(pop.pred$countries)) {
-		country.obj <- get.country.object(country, country.table=pop.pred$countries, index=TRUE)
+	countries.to.process <- if(is.null(locations)) pop.pred$countries else locations
+	for (country in countries.to.process) {
+		country.obj <- get.country.object(country, country.table=pop.pred$countries)
 		for(sx in c('both', 'male', 'female')[sex.index]) {
 		    quant.all.ages <- NULL
 			if(!is.null(vital.event)) { # if vital events (not pop)
@@ -2886,7 +2888,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 			 		observed <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
 										sex=sx, age='all', sum.over.ages=sum.over.ages, is.observed=TRUE)
 				traj.and.quantiles <- get.popVE.trajectories.and.quantiles(pop.pred, country.obj$code, event=vital.event, 
-										sex=sx, age='all', sum.over.ages=sum.over.ages)
+										sex=sx, age='all', sum.over.ages=sum.over.ages, include.means = include.means)
 				if(is.null(traj.and.quantiles$trajectories)) {
 					warning('Problem with loading ', vital.event, '. Possibly no vital events stored during prediction.')
 					return()
@@ -2899,13 +2901,16 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				    quant.all.ages[["95"]] <- abind(traj.and.quantiles$quantiles[,"0.025",], 
 				                                    traj.and.quantiles$quantiles[,"0.975",],
 				                                    along = 0)
+				    if(include.means) quant.all.ages[["mean"]] <- traj.and.quantiles$means
 				    # This is because births have only subset of ages
 					ages <- traj.and.quantiles$age.idx.raw
 					age.index <- age.index[1:(length(ages)+1)]
 					subtract.from.age <- traj.and.quantiles$age.idx.raw[1]-traj.and.quantiles$age.idx[1]
 				}
 			} else { # pop
-		        if(sx == "both" && byage){ # if sx is not 'both', then we already have the quantiles pre-computed in all.quantiles
+		        if(sx == "both" && byage){ 
+		            # If sx is not 'both' or no disaggregation by age, then we already have the quantiles 
+		            # pre-computed in all.quantiles. Here we need to compute them.
 		            traj <- get.pop.trajectories.multiple.age(pop.pred, country.obj$code, nr.traj=2000, sex = sx, 
 		                                                      adjust = adjust, adj.to.file=adj.to.file, 
 		                                                      adjust.env = pop.pred$adjust.env)$trajectories
@@ -2915,6 +2920,11 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 		                                                                    trajectories=traj, year.index = 1:nr.proj, sex=sx)
 		            quant.all.ages[["95"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, pi = 95, 
 		                                                                   trajectories=traj, year.index = 1:nr.proj, sex=sx)
+		            if(include.means)
+		                quant.all.ages[["mean"]] <- get.pop.traj.quantiles.byage(NULL, pop.pred, country.obj$index, country.obj$code, 
+		                                                                       trajectories=traj, year.index = 1:nr.proj, sex=sx,
+		                                                                       compute.mean = TRUE)
+		            
 		        }
 		    }
 			for(age in c('all', ages)[age.index]) {
@@ -2935,7 +2945,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 						observed.data <- get.pop.observed(pop.pred, country.obj$code, sex=sx, age=this.age)
 					quant <- NULL
 					if(!is.null(all.quantiles))
-					    quant <- all.quantiles[[sx]][,this.age,,]
+					    quant <- all.quantiles[[sx]][,this.age,,] # pre-loaded quantiles
 				    else {
 				        if(is.null(quant.all.ages)) 
 				            quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sx, age=this.age, 
@@ -2976,7 +2986,8 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
 											adjust.env = pop.pred$adjust.env))
 			     } else { 
-			        proj.result <- rbind(quant.all.ages[["50"]][this.age-subtract.from.age,],
+			        proj.result <- rbind(if(include.means) quant.all.ages[["mean"]] else c(),
+			                            quant.all.ages[["50"]][this.age-subtract.from.age,],
 							            quant.all.ages[["80"]][,this.age-subtract.from.age,],
 							            quant.all.ages[["95"]][,this.age-subtract.from.age,]
 							        )

@@ -64,7 +64,8 @@ age.specific.migration,
 project.pasfr,
 project.pasfr.traj,
 migration.totals2age,
-rcastro.schedule
+rcastro.schedule,
+adjust.to.aggregation
 )
 
 # register S3 methods

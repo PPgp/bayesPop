@@ -285,10 +285,10 @@ pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'),
 get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'female'), age='all',
  									nr.traj=NULL, typical.trajectory=FALSE, adjust=FALSE, 
  									allow.negative.adj = TRUE, adj.to.file = NULL,
- 									adjust.env = NULL) {
+ 									adjust.env = NULL, include.means = FALSE) {
 	
-	quant <- hch <- age.idx <- traj <- traj.idx <-  NULL
-	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust || !is.null(adj.to.file)
+	quant <- means <- hch <- age.idx <- traj <- traj.idx <-  NULL
+	load.traj <- is.null(nr.traj) || nr.traj > 0 || typical.trajectory || adjust || !is.null(adj.to.file) || include.means
 	e <- new.env()
 	if (!.load.traj.file(pop.output.directory(pop.pred), country, e))
 		return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
@@ -315,6 +315,8 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj)
 		hch <- e$totp.hch
+		if(include.means)
+		    
 	} else {
 	    if(sex == 'both') {
 	        if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE]) + colSums(e$totpf[age.idx,,,drop=FALSE])
@@ -414,11 +416,11 @@ is.saved.pi <- function(pop.pred, pi, warning=TRUE) {
 }
 
 get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index, country.code, year.index,
-									trajectories=NULL, pi=80, q=NULL, reload = FALSE, ...) {
+									trajectories=NULL, pi=80, q=NULL, compute.mean = FALSE, reload = FALSE, ...) {
 	# quantile.array should be 4d-array (country x age x quantiles x time)
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
-	if(!is.null(quantile.array)) {
+	if(!is.null(quantile.array) && !compute.mean) {
 		quantile.values <- as.numeric(dimnames(quantile.array)[[3]])
 		alidx<-round(quantile.values,6)==round(al[1],6)
 		cqp <- NULL
@@ -431,7 +433,7 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 			found <- TRUE
 		} 
 	}
-	if(!found) { # non-standard quantiles
+	if(!found) { # non-standard quantiles or no quantile.array passed or computing means
 		if(is.null(trajectories) && !reload) {
 			warning('Quantiles not found')
 			return(NULL)	
@@ -450,8 +452,15 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 	    if (!is.null(trajectories)) {
 	        if(length(dim(trajectories)) < 3) trajectories <- abind(trajectories, along=3) # only one trajectory
 	        if(length(year.index) == 1){
-		        cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, quantile, al, na.rm = TRUE)
-	        } else cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), quantile, al, na.rm = TRUE)
+	            if(include.means)
+	                cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, mean, na.rm = TRUE)
+	            else 
+		            cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, quantile, al, na.rm = TRUE)
+	        } else {
+	            if(include.means)
+	                cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), mean, na.rm = TRUE)
+	            else
+	                cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), quantile, al, na.rm = TRUE)
 	    } else {
 	        warning('Quantiles not found')
 	        return(NULL)
@@ -670,7 +679,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 									event=c('births', 'deaths', 'survival', 'fertility', 'qx', 'mx', 'migration', 'pasfr', 'ex', 'ax'), 
 									sex=c('both', 'male', 'female'), age='all', sum.over.ages=TRUE,
  									nr.traj=NULL, q=NULL, typical.trajectory=FALSE, is.observed=FALSE,
-									allow.higher.ages = FALSE, ...) {
+									include.means = FALSE, allow.higher.ages = FALSE, ...) {
  	# get trajectories and quantiles for vital events and other indicators
  	input.indicators <- c('migration')
  	#input.indicators <- c()
@@ -680,7 +689,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
  	sex <- match.arg(sex)
  	time.labels <- colnames(pop.pred$inputs$pop.matrix$male)
  	if(!pop.pred$annual) time.labels <- as.character(as.integer(time.labels) - 2)
- 	
+ 	means <- NULL
  	#if (!is.element(event, input.indicators)) {
 		traj.file <- file.path(pop.output.directory(pop.pred), paste('vital_events_country', country, '.rda', sep=''))
 		if (!file.exists(traj.file) && !is.element(event, input.indicators)) 
@@ -807,7 +816,6 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		age.idx.raw <- age.idx
 		age.idx <- age.idx+2
 	}
-	#if(!is.observed) stop('')
 	hch <- NULL
 	if(event  %in% c('fertility', 'pasfr')) sex <- 'female'
 	if(sex == 'both' && !is.element(event, life.table.indicators)) { # summing over sexes
@@ -845,12 +853,16 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		if(sum.over.ages) { # quantiles are 2-d arrays
 			quant <- apply(traj, 1, quantile, quantiles, na.rm = TRUE)
 			dimnames(quant) <- list(quantiles, trajdimnames[[2]])
+			if(include.means)
+			    means <- apply(traj, 1, mean, na.rm = TRUE)
 			traj.for.thinning <- traj
 			year.dim <- 1
 		} else { # quantiles are 3-d arrays: age x quantiles x period
 			quant <- aperm(apply(traj, c(1,2), quantile, quantiles, na.rm = TRUE), c(2,1,3))
 			dimnames(quant) <- list(#pop.pred$ages[age.idx.raw], 
 								trajdimnames[[1]][age.idx], quantiles, trajdimnames[[2]])
+			if(include.means)
+			    means <- aperm(apply(traj, c(1,2), mean, na.rm = TRUE), c(2,1,3))
 			traj.for.thinning <- traj[1,,]
 			if(is.vector(traj.for.thinning)) # in case of one trajectory
 				traj.for.thinning <- abind(traj.for.thinning, NULL, along=2)
@@ -872,7 +884,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 		dimnames(traj)[[year.dim]] <- trajdimnames[[2]]
 	} else if(!is.observed) traj <- NULL
  	
-	return(list(trajectories=traj, index=traj.idx, quantiles=quant, 
+	return(list(trajectories=traj, index=traj.idx, quantiles=quant, means = means, 
 				age.idx=age.idx, age.idx.raw=age.idx.raw, half.child=hch, event=event))
 }
 

@@ -113,6 +113,7 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 .get.adjustments.from.file <- function(file, env, what, countries=NULL, ages=NULL, annual = FALSE, ...) {
     adj.dataset <- fread(file)
     year.cols <- grep('^[0-9]{4}', colnames(adj.dataset), value = TRUE)
+    if("reg_code" %in% colnames(adj.dataset)) adj.dataset[, country_code := reg_code]
     idx <- if(!is.null(countries)) which(adj.dataset$country_code %in% countries) else 1:nrow(adj.dataset)
     adj.dataset.long <- data.table::melt(adj.dataset[idx, c("country_code", "sex", "age", year.cols), with = FALSE], 
                                          id.vars = c("country_code", "sex", "age"), variable.name = "year",
@@ -256,3 +257,115 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	return(NULL)
 }
 
+adjust.to.aggregation <- function(pop.pred, target.file, output.file = "adjusted_population.txt", 
+                                        target.code = NULL, variant.name = "median", 
+                                        target.id.column = "country_code", output.id.column = "reg_code",
+                                        stat = "mean", exclude.codes = NULL){
+    
+    if(!has.pop.aggregation(pop.pred = pop.pred))
+        stop("The pop.pred object does not contain any aggregation. Consider running pop.aggregate().")
+    
+    if(!stat %in% c("median", "mean"))
+        stop("Argument 'stat' must be either 'mean' or 'median'.")
+    
+    agdat <- data.table::fread(target.file)
+    
+    # select the desired variant
+    if("variant" %in% colnames(agdat)){ 
+        if(! tolower(variant.name) %in% tolower(agdat$variant))
+            stop("Value '", variant.name, "' not found in the column 'variant' of the target.file. Consider changing the 'variant.name' argument.")
+        agdat <- agdat[variant == variant.name][, variant := NULL]
+    }
+    
+    # select the desired aggregated location
+    if(target.id.column %in% colnames(agdat)){
+        if(!is.null(target.code)){
+            agdat <- agdat[get(target.id.column) == target.code][, (target.id.column) := NULL]
+            if(nrow(agdat) == 0) stop("Value ", target.code, " not found in target.file.")
+        } else {
+            if(length((target.code <- unique(agdat[[target.id.column]]))) > 1){
+                stop("target.file contains more than one location. Set 'target.code' to specifify which location to use.")
+            }
+        }
+    } else {
+        if(!is.null(target.code) && any(duplicated(agdat[, c("sex", "age"), with = FALSE]))) 
+            stop("Column ", target.id.column, " not found in target.file. Consider changing the 'target.id.column' argument.")
+    }
+    
+    if(any(duplicated(agdat[, c("sex", "age"), with = FALSE])))
+        stop("The target.file contains duplicates of sex and age combinations.")
+    
+    # remove + from age and convert to numeric
+    if(pop.pred$annual) agdat[, age := as.integer(gsub("+", "", age, fixed = TRUE))]
+    
+    # make it a long format
+    year.cols <- grep('^[0-9]{4}', colnames(agdat), value = TRUE)
+    agdat.long <- data.table::melt(agdat, id.vars = c("sex", "age"), measure.vars = year.cols,
+                                   variable.name = "year", variable.factor = FALSE, 
+                                   value.name = "target")
+    agdat.long[, year := as.integer(year)]
+    
+    # get simulated aggregation
+    pop.aggr <- get.pop.aggregation(pop.pred = pop.pred)
+    
+    # determine the id of the (simulated) aggregated location
+    agsimlocs <- pop.aggr$countries
+    if(nrow(agsimlocs) > 1){ # there is more than 1 aggregation
+        if(is.null(target.code))
+            stop("The aggregation of pop.pred contain more than one aggregated locations. Consider setting 'target.code'.")
+        agsim.id <- target.code
+    } else agsim.id <- agsimlocs$code
+    
+    # get simulated aggregated pop trajectories
+    popaggr.traj <- rbind(get.pop.exba(paste0("P", agsim.id, "_M{}"), pop.aggr, as.dt = TRUE)[, sex := "male"],
+                          get.pop.exba(paste0("P", agsim.id, "_F{}"), pop.aggr, as.dt = TRUE)[, sex := "female"]
+                        )
+    
+    # derive the desired statistics from simulated aggregation
+    popaggr.stat <- popaggr.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "sex", "age")]
+    
+    # merge together and determine the differences
+    targets <- merge(agdat.long, popaggr.stat, by = c("year", "sex", "age"))[, shift := sim - target]
+    
+    # get simulated trajectories and statistics for all locations
+    pop.traj <- rbind(get.pop.exba(paste0("PXXX_M{}"), pop.pred, as.dt = TRUE)[, sex := "male"],
+                      get.pop.exba(paste0("PXXX_F{}"), pop.pred, as.dt = TRUE)[, sex := "female"]
+                      )
+    pop.stat <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("country_code", "year", "sex", "age")]
+    
+    # compute pop shares of each location within the aggregation,
+    # to be used for distributing the adjustments
+    pop.stat[, share := sim / sum(sim), by = c("year", "sex", "age")]
+    
+    # for zero shares, use shares derived from total population
+    totpop <- pop.stat[, list(totpop = sum(sim)), by = c("country_code", "year")][, totshare := totpop / sum(totpop), by = c("year")]
+    pop.stat[totpop, totshare := i.totshare, on = c("country_code", "year")]
+    pop.stat[is.na(share), share := totshare]
+    
+    # exclude locations
+    if(!is.null(exclude.codes)){
+        pop.stat[country_id %in% exclude.codes, share := 0]
+    }
+    
+    # rescale
+    pop.stat[, share := share / sum(share), by = c("year", "sex", "age")]
+    
+    # merge in the total shift
+    pop.stat[targets, totshift := i.shift, on = c("year", "sex", "age")]
+    # if the target is smaller than simulated set the share for zero age groups to 0
+    pop.stat[totshift > 0 & sim == 0, share := 0] 
+
+    # rescale again
+    pop.stat[, share := share / sum(share), by = c("year", "sex", "age")][is.na(share), share := 0]
+    
+    
+    # compute adjusted (target) pop for each location
+    pop.stat[, shift := totshift * share][, simadj := pmax(0, sim - shift)]
+    
+    respop <- data.table::dcast(pop.stat, country_code + sex + age ~ year, value.var = "simadj")
+    data.table::setnames(respop, "country_code", output.id.column)
+    
+    data.table::fwrite(respop, file = output.file, sep = "\t")
+    cat("\nAdjustment file written into", output.file, "\n")
+    return(output.file)
+}

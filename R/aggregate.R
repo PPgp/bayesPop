@@ -249,8 +249,7 @@ split.pop05 <- function(dat) {
 
 pop.aggregate.countries <- function(pop.pred, regions, name, 
                                     use.kannisto = TRUE, keep.vital.events = NULL,
-                                    verbose=verbose, adjust=FALSE) {
-    
+                                    verbose=verbose, adjust = FALSE, ...) {
 	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
 	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
@@ -332,10 +331,10 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			country.obs.idx <- grep(paste0('^', countries[cidx], '_'), rownames(obs.data[['male']]), value=FALSE)
 			traj.file <- file.path(pop.output.directory(pop.pred), paste('totpop_country', countries[cidx], '.rda', sep=''))
 			load(traj.file, envir=e)
-			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env)
+			if(adjust) adjust.trajectories(countries[cidx], e, pop.pred, pop.pred$adjust.env, ...)
 			if(!no.vital.events) {
 				ve.file <- file.path(pop.output.directory(pop.pred), 
-									paste('vital_events_country', countries[cidx], '.rda', sep=''))
+									paste0('vital_events_country', countries[cidx], '.rda'))
 				if(file.exists(ve.file)) {
 					if(cidx == 1) {
 					    #requireNamespace("DemoTools")
