@@ -257,13 +257,124 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	return(NULL)
 }
 
-adjust.to.aggregation <- function(pop.pred, target.file, output.file = "adjusted_population.txt", 
+scale.pop.prediction <- function(pop.pred, target.file, output.dir,
+                                 target.code = NULL, variant.name = "mean", 
+                                 target.id.column = "country_code", 
+                                 stat = "mean", exclude.codes = NULL){
+    
+    if(file.exists(output.dir) && normalizePath(output.dir) == pop.pred$base.directory)
+        stop("output.dir is the same as the main prediction directory which would be overwritten. Choose a different directory.")
+    
+    # generates a dataset with scaled population and the corresponding shifts
+    pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
+                                  target.id.column = target.id.column, stat = stat, exclude.codes = exclude.codes)
+    
+    # generate and save a prediction object with the adjusted numbers
+    adjoutdir <- file.path(output.dir, 'predictions')
+    srcoutdir <- file.path(pop.pred$base.directory, pop.pred$output.directory)
+    if(!file.exists(adjoutdir)) 
+        dir.create(adjoutdir, recursive=TRUE)
+    adjpred <- .load.prediction.file(srcoutdir)
+    
+    # copy all vital events files
+    vitfiles <- list.files(srcoutdir, pattern = "vital_events", full.names = TRUE)
+    file.copy(vitfiles, adjoutdir)
+    
+    # iterate over locations, load trajectories, adjust and save
+    e <- new.env()
+    datasets <- list(totp=c(0, FALSE), totp.hch=c(0, FALSE), 
+                     totpf=c(2, TRUE), totpm=c(1, TRUE), 
+                     totpm.hch=c(1, TRUE), totpf.hch=c(2, TRUE)
+    )
+    quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
+    for (iloc in 1:nrow(pop.pred$countries)){
+        loc <- pop.pred$countries[iloc, "code"]
+        rm(list = ls(e), envir = e)
+        .load.traj.file(srcoutdir, loc, e)
+        shifts <- pop.stat[country_code == loc]
+        country.char <- as.character(loc)
+        for(traj.name in names(datasets)) {
+            sexage <- datasets[[traj.name]]
+            if(sexage[1] == 0 && !sexage[2]) { # sum over sexes and ages
+                adj.data <- shifts[, list(value = sum(shift)), by = c("country_code", "year")]
+                adj.data.wide <- data.table::dcast(adj.data, country_code ~ year, value.var = "value")
+                shift.mat <- as.matrix(adj.data.wide[, -1, with = FALSE])
+                rownames(shift.mat) <- adj.data.wide$country_code
+            } else { # distributed into sexes and ages
+                sx <- if(sexage[1] == 1) 'male' else 'female'
+                adj.data <- shifts[sex == sx][, sex := NULL]
+                adj.data.wide <- data.table::dcast(adj.data, country_code + age ~ year, value.var = "shift")
+                shift.mat <- .reduce.to.countries.and.ages(adj.data.wide, loc, as.character(adj.data.wide$age), 
+                                                           annual = pop.pred$annual)[1,,]
+            }
+            res <- e[[traj.name]]
+            res.orig <- res
+            if(length(dim(res))>2) { # includes age dimension
+                resnew <- plyr::aaply(res, 3, '-', shift.mat)
+                res <- aperm(pmax(resnew, 0), c(2,3,1))
+            } else { # no age dimension
+                res <- plyr::aaply(res, 2, '-', shift.mat)
+                res <- aperm(res, c(2,1))
+            }
+            e[[traj.name]] <- res # replace the trajectory object in the environment
+        }
+        # save adjusted trajectories
+        save(list = ls(e), envir = e,
+             file = file.path(adjoutdir, paste0('totpop_country', loc, '.rda')))
+    }
+    # recompute quantiles, means etc
+    # totals
+    adjpred$quantiles[iloc, , ] <- apply(e$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$traj.mean.sd[iloc, 1,] <- apply(e$totp, 1, mean, na.rm = TRUE)
+    adjpred$traj.mean.sd[iloc, 2,] <- apply(e$totp, 1, sd, na.rm = TRUE)
+    # sex- & age-specific counts
+    quant <- plyr::aaply(e$totpm, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$quantilesMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+    quant <- plyr::aaply(e$totpf, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$quantilesFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+    # sex- & age-specific counts proportions
+    quant <- plyr::aaply(plyr::aaply(e$totpm, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$quantilesPropMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+    quant <- plyr::aaply(plyr::aaply(e$totpf, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$quantilesPropFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+    # sex-specific totals
+    stotpm <- colSums(e$totpm, na.rm=TRUE)
+    adjpred$quantilesM[iloc, , ] <- apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$traj.mean.sdM[iloc, 1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
+    adjpred$traj.mean.sdM[iloc, 2,] <- apply(stotpm, 1, sd, na.rm = TRUE)
+    stotpf <- colSums(e$totpf, na.rm=TRUE)
+    adjpred$quantilesF[iloc, , ] <- apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+    adjpred$traj.mean.sdF[iloc, 1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
+    adjpred$traj.mean.sdF[iloc, 2,] <- apply(stotpf, 1, sd, na.rm = TRUE)
+    # save
+    bayesPop.prediction <- adjpred
+    save(bayesPop.prediction, file=file.path(adjoutdir, 'prediction.rda'))
+    invisible(get.pop.prediction(output.dir))
+}
+
+write.scaled.pop <- function(pop.pred, target.file, output.file = "adjusted_population.txt", 
                                         target.code = NULL, variant.name = "median", 
                                         target.id.column = "country_code", output.id.column = "reg_code",
                                         stat = "mean", exclude.codes = NULL){
+    pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
+                                  target.id.column = target.id.column, stat = stat, exclude.codes = exclude.codes)
     
+    respop <- data.table::dcast(pop.stat, country_code + sex + age ~ year, value.var = "simadj")
+    data.table::setnames(respop, "country_code", output.id.column)
+    
+    data.table::fwrite(respop, file = output.file, sep = "\t")
+    cat("\nAdjustment file written into", output.file, "\n")
+    return(output.file)
+    
+}
+
+create.scaled.pop <- function(pop.pred, target.file, 
+                             target.code = NULL, variant.name = "median", 
+                             target.id.column = "country_code", 
+                             stat = "mean", exclude.codes = NULL){
+
     if(!has.pop.aggregation(pop.pred = pop.pred))
-        stop("The pop.pred object does not contain any aggregation. Consider running pop.aggregate().")
+        stop("The pop.pred object does not contain any aggregation. Consider running pop.aggregate() or pop.aggregate.subnat().")
     
     if(!stat %in% c("median", "mean"))
         stop("Argument 'stat' must be either 'mean' or 'median'.")
@@ -306,7 +417,9 @@ adjust.to.aggregation <- function(pop.pred, target.file, output.file = "adjusted
     agdat.long[, year := as.integer(year)]
     
     # get simulated aggregation
-    pop.aggr <- get.pop.aggregation(pop.pred = pop.pred)
+    av.aggrs <- available.pop.aggregations(pop.pred)
+    agname <- if("country" %in% av.aggrs) "country" else av.aggrs[1]
+    pop.aggr <- get.pop.aggregation(pop.pred = pop.pred, name = agname)
     
     # determine the id of the (simulated) aggregated location
     agsimlocs <- pop.aggr$countries
@@ -360,12 +473,7 @@ adjust.to.aggregation <- function(pop.pred, target.file, output.file = "adjusted
     
     
     # compute adjusted (target) pop for each location
-    pop.stat[, shift := totshift * share][, simadj := pmax(0, sim - shift)]
+    pop.stat[, shift := totshift * share][, simadj := pmax(0, sim - shift)][, shift := sim - simadj]
     
-    respop <- data.table::dcast(pop.stat, country_code + sex + age ~ year, value.var = "simadj")
-    data.table::setnames(respop, "country_code", output.id.column)
-    
-    data.table::fwrite(respop, file = output.file, sep = "\t")
-    cat("\nAdjustment file written into", output.file, "\n")
-    return(output.file)
+    return(pop.stat)
 }

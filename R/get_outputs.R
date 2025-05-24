@@ -159,13 +159,18 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL, write.to
 	return(pop.aggr)	
 }
 
+.load.prediction.file <- function(directory) {
+    pred.file <- file.path(directory, 'prediction.rda')
+    if(!file.exists(pred.file)) {
+        warning('File ', pred.file, ' does not exist.')
+        return(NULL)
+    }
+    load(file=pred.file)
+    return(bayesPop.prediction)
+}
+
 .get.prediction.object <- function(directory, name=directory) {
-	pred.file <- file.path(directory, 'prediction.rda')
-	if(!file.exists(pred.file)) {
-		warning('File ', pred.file, ' does not exist.')
-		return(NULL)
-	}
-	load(file=pred.file)
+    bayesPop.prediction <- .load.prediction.file(directory)
 	bayesPop.prediction$output.directory <- name
 	# convert inputs to environment
 	if(!is.environment(bayesPop.prediction$inputs))
@@ -270,7 +275,7 @@ get.pop.observed.multiple.countries <- function(pop.pred, countries, sex=c('both
 }
 
 .load.traj.file <- function(dir, country, e) {
-	traj.file <- file.path(dir, paste('totpop_country', country, '.rda', sep=''))
+	traj.file <- file.path(dir, paste0('totpop_country', country, '.rda'))
 	if (!file.exists(traj.file)) return(0)
 	load(traj.file, envir=e)
 	return(1)
@@ -315,8 +320,6 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 		if(load.traj) traj <- e$totp
 		quant <- .get.pop.quantiles(pop.pred, adjust=adjust, allow.negative.adj = allow.negative.adj)
 		hch <- e$totp.hch
-		if(include.means)
-		    
 	} else {
 	    if(sex == 'both') {
 	        if(load.traj) traj <- colSums(e$totpm[age.idx,,,drop=FALSE]) + colSums(e$totpf[age.idx,,,drop=FALSE])
@@ -343,10 +346,12 @@ get.pop.trajectories <- function(pop.pred, country, sex=c('both', 'male', 'femal
 			if (thintraj$nr.points > 0) 
 		 		traj.idx <- thintraj$index
 		}
+	    if(include.means)
+	        means <- plyr::aaply(traj, 1, "mean")
 	}
 	if(!is.null(traj)) 
 	 	rownames(traj) <- litem('proj.years.pop', pop.pred, if(pop.pred$annual) pop.pred$proj.years else pop.pred$proj.years+2)
-	return(list(trajectories=traj, index=traj.idx, quantiles=quant, age.idx=age.idx, half.child=hch))
+	return(list(trajectories=traj, index=traj.idx, quantiles=quant, means = means, age.idx=age.idx, half.child=hch))
 }
 
 
@@ -452,15 +457,16 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 	    if (!is.null(trajectories)) {
 	        if(length(dim(trajectories)) < 3) trajectories <- abind(trajectories, along=3) # only one trajectory
 	        if(length(year.index) == 1){
-	            if(include.means)
+	            if(compute.mean)
 	                cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, mean, na.rm = TRUE)
 	            else 
 		            cqp <- apply(trajectories[,year.index,,drop=FALSE], 1, quantile, al, na.rm = TRUE)
 	        } else {
-	            if(include.means)
+	            if(compute.mean)
 	                cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), mean, na.rm = TRUE)
 	            else
 	                cqp <- apply(trajectories[,year.index,,drop=FALSE], c(1,2), quantile, al, na.rm = TRUE)
+	        }
 	    } else {
 	        warning('Quantiles not found')
 	        return(NULL)
@@ -471,13 +477,13 @@ get.pop.traj.quantiles.byage <- function(quantile.array, pop.pred, country.index
 
 
 get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL, country.code=NULL, 
-									trajectories=NULL, pi=80, q=NULL, reload=TRUE, ...) {
+									trajectories=NULL, pi=80, q=NULL, compute.mean = FALSE, reload=TRUE, ...) {
 	# quantile.array should be 3d-array (country x quantiles x time). 
 	# If country.index is NULL or there is just one country in the prediction object, 
     # the country dimension can be omitted 
 	al <- if(!is.null(q)) q else c((1-pi/100)/2, (1+pi/100)/2)
 	found <- FALSE
-	if(!is.null(quantile.array)) {
+	if(!is.null(quantile.array) && !compute.mean) {
 		if((is.null(country.index) || nrow(pop.pred$countries) == 1) && length(dim(quantile.array))<3) {
 			quantile.array <- abind(quantile.array, along=0)
 			country.index <- 1
@@ -512,8 +518,10 @@ get.pop.traj.quantiles <- function(quantile.array, pop.pred, country.index=NULL,
 		}
 		if (!is.null(trajectories)) {
 			if(is.null(dim(trajectories))) trajectories <- abind(trajectories, along=2) # only one trajectory
-			cqp <- apply(trajectories, 1, 
-						quantile, al, na.rm = TRUE)
+			if(compute.mean)
+			    cqp <- apply(trajectories, 1, mean, na.rm = TRUE)
+			else 
+			    cqp <- apply(trajectories, 1, quantile, al, na.rm = TRUE)
 		} else {
 			warning('Quantiles not found')
 			return(NULL)
@@ -862,7 +870,7 @@ get.popVE.trajectories.and.quantiles <- function(pop.pred, country,
 			dimnames(quant) <- list(#pop.pred$ages[age.idx.raw], 
 								trajdimnames[[1]][age.idx], quantiles, trajdimnames[[2]])
 			if(include.means)
-			    means <- aperm(apply(traj, c(1,2), mean, na.rm = TRUE), c(2,1,3))
+			    means <- apply(traj, c(1,2), mean, na.rm = TRUE)
 			traj.for.thinning <- traj[1,,]
 			if(is.vector(traj.for.thinning)) # in case of one trajectory
 				traj.for.thinning <- abind(traj.for.thinning, NULL, along=2)

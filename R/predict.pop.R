@@ -204,7 +204,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 			                                  compute.AxBx=FALSE, annual = inp$annual)
 		}
 		debug <- FALSE
-		#stop('')
+
 		if(!fixed.mx) {
 			MxKan <- runKannisto(inpc, inp$start.year, lc.for.all = inp$lc.for.all, npred=npred, annual = inp$annual) 
 			mortcast.args <- .prepare.for.mortality.projection(pattern = inpc$MXpattern, mxKan = MxKan, 
@@ -287,7 +287,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 				migf[,2:npredplus1,migtrajf] <- popres$fmig # migpred[['F']]
 			}
 		}
-		#stop("")
+
 		for (variant in 1:nvariants) { # compute the two half child variants
 			if(!fixed.pasfr) 
 				pasfr <- kantorova.pasfr(c(inpc$observed$TFRpred, inpc$TFRhalfchild[variant,]), inpc, 
@@ -349,7 +349,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		                   new.names = c("mean", "sd"))
 		    qMage <- qFage <- qPropMage <- qPropFage <- array(NA, c(nages, nquant, nr_project+1),
 		          dimnames=list(ages, quantiles.to.keep, present.and.proj.years.pop))
-		    for (i in 1:nages) {
+		    for (i in 1:nages) { # TODO: this can be done more efficiently with aaply; no need to iterate over ages
 		        if(nr.traj == 1) {
 		            qMage[i,,] <- matrix(rep(totpm[i,,1],nquant) , nrow=nquant, byrow=TRUE)
 		            qFage[i,,] <- matrix(rep(totpf[i,,1],nquant) , nrow=nquant, byrow=TRUE)
@@ -2720,65 +2720,71 @@ write.pop.projection.summary <- function(pop.pred, what=NULL, expression=NULL, o
 		do.call(paste0('write.', summary.type), c(list(pred, output.dir=output.dir), params, ...))
 }
 
-write.pop <- function(pop.pred, output.dir, ...) 
-	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=FALSE, ...)
+write.pop <- function(pop.pred, output.dir, file.suffix = '', ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=FALSE, 
+	           file.suffix = paste0(file.suffix, 'tpop'), ...)
 	
-write.popsex <- function(pop.pred, output.dir, ...) 
-	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=FALSE, what.log='population', ...)
+write.popsex <- function(pop.pred, output.dir, file.suffix = '', ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=FALSE, 
+	           file.suffix = paste0(file.suffix, 'tpop'), what.log='population', ...)
 	
-write.popsexage <- function(pop.pred, output.dir, ...) 
-	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=TRUE, what.log='population', ...)
+write.popsexage <- function(pop.pred, output.dir, file.suffix = '', ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=TRUE, 
+	           file.suffix = paste0(file.suffix, 'pop'),
+	           what.log='population', ...)
 	
-write.popage <- function(pop.pred, output.dir, ...) 
-	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, what.log='population', ...)
+write.popage <- function(pop.pred, output.dir, file.suffix = '', ...) 
+	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, 
+	           file.suffix = paste0(file.suffix, 'pop'), what.log='population', ...)
 	
-write.births <- function(pop.pred, output.dir, ...) 
+write.births <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=FALSE, vital.event='births', 
-			file.suffix='births', what.log='total births', ...)
+	           file.suffix = paste0(file.suffix, 'births'), what.log='total births', ...)
 	
-write.birthssex <- function(pop.pred, output.dir, ...) 
+write.birthssex <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=FALSE, vital.event='births', 
-			file.suffix='births', what.log='births', ...)
+			file.suffix = paste0(file.suffix, 'births'), what.log='births', ...)
 
-write.birthsage <- function(pop.pred, output.dir, ...) 
+write.birthsage <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='births', 
-			file.suffix='births', what.log='births', ...)
+			file.suffix = paste0(file.suffix, 'births'), what.log='births', ...)
 
-write.birthssexage <- function(pop.pred, output.dir, ...) 
+write.birthssexage <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=TRUE, vital.event='births', 
-			file.suffix='births', what.log='births', ...)
+			file.suffix = paste0(file.suffix, 'births'), what.log='births', ...)
 
-write.deaths <- function(pop.pred, output.dir, ...) 
+write.deaths <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=FALSE, vital.event='deaths', 
-			file.suffix='deaths', what.log='total deaths', ...)
+			file.suffix = paste0(file.suffix, 'deaths'), what.log='total deaths', ...)
 	
-write.deathssex <- function(pop.pred, output.dir, ...) 
+write.deathssex <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=FALSE, vital.event='deaths', 
-			file.suffix='deaths', what.log='deaths', ...)
+			file.suffix = paste0(file.suffix, 'deaths'), what.log='deaths', ...)
 
-write.deathsage <- function(pop.pred, output.dir, ...) 
+write.deathsage <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='deaths', 
-			file.suffix='deaths', what.log='deaths', ...)
+			file.suffix = paste0(file.suffix, 'deaths'), what.log='deaths', ...)
 	
-write.deathssexage <- function(pop.pred, output.dir, ...) 
+write.deathssexage <- function(pop.pred, output.dir, file.suffix = '', ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=TRUE, vital.event='deaths', 
-			file.suffix='deaths', what.log='deaths', ...)
+			file.suffix = paste0(file.suffix, 'deaths'), what.log='deaths', ...)
 			
-write.srsexage <- function(pop.pred, output.dir, ...) 
+write.srsexage <- function(pop.pred, output.dir, file.suffix = '', digits = 4, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=TRUE, byage=TRUE, vital.event='survival', 
-			file.suffix='sr', what.log='survival ratio', digits=litem('digits', list(...), 4))
+			file.suffix = paste0(file.suffix, 'sr'), what.log='survival ratio', digits = digits, ...)
 			
-write.fertility <- function(pop.pred, output.dir, ...) 
+write.fertility <- function(pop.pred, output.dir, file.suffix = '', digits = 4, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=FALSE, vital.event='fertility', 
-			file.suffix='asfr', what.log='fertility rate', digits=litem('digits', list(...), 4))
+			file.suffix = paste0(file.suffix, 'tfr'), what.log='fertility rate', digits = digits, ...)
 			
-write.fertilityage <- function(pop.pred, output.dir, ...) 
+write.fertilityage <- function(pop.pred, output.dir, file.suffix = '', digits = 4, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='fertility', 
-			file.suffix='asfr', what.log='fertility rate', digits=litem('digits', list(...), 4))
+			file.suffix = paste0(file.suffix, 'asfr'), what.log='fertility rate', digits = digits, ...)
 			
-write.pfertilityage <- function(pop.pred, output.dir, ...) 
+write.pfertilityage <- function(pop.pred, output.dir, file.suffix = '', digits = 4, ...) 
 	.write.pop(pop.pred, output.dir=output.dir, bysex=FALSE, byage=TRUE, vital.event='pasfr', 
-			file.suffix='pasfr', what.log='percent fertility rate', digits=litem('digits', list(...), 4))
+			file.suffix = paste0(file.suffix, 'pasfr'), what.log='percent fertility rate', 
+			digits = digits, ...)
 	
 write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
 							expression.label=expression, include.observed=FALSE, digits=NULL, 
@@ -2843,6 +2849,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	if(bysex) header[['sex']] <- 'sex'
 	if(byage) header[['age']] <- 'age'
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
+	if(include.means) variant.names <- c("mean", variant.names)
 	nr.var <- length(variant.names)
 	if(missing(end.time.only)) end.time.only <- is.null(vital.event)
 	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.only)
@@ -2947,10 +2954,10 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 					if(!is.null(all.quantiles))
 					    quant <- all.quantiles[[sx]][,this.age,,] # pre-loaded quantiles
 				    else {
-				        if(is.null(quant.all.ages)) 
+				        if(is.null(quant.all.ages)) { # TODO: this can be very inefficient as it loads trajectories over and over again for each age
 				            quant <- get.pop.trajectories(pop.pred, country.obj$code, nr.traj=0, sex=sx, age=this.age, 
-					                              adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj
-					                              )$quantiles
+					                              adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj)$quantiles
+				        }
 				    }
 					traj <- NULL
 					reload <- TRUE
@@ -2973,6 +2980,10 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 				}
 				if(is.null(quant.all.ages)){
 			        proj.result <- rbind(
+			            if(include.means) get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, 
+			                                   trajectories=traj, reload=reload, sex=sx, age=this.age,
+			                                   adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
+			                                   adjust.env = pop.pred$adjust.env, compute.mean = TRUE) else c(), 
 					    get.pop.traj.quantiles(quant, pop.pred, country.obj$index, country.obj$code, q=0.5, 
 											trajectories=traj, reload=reload, sex=sx, age=this.age,
 											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
@@ -2986,7 +2997,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 											adjust=adjust, adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj,
 											adjust.env = pop.pred$adjust.env))
 			     } else { 
-			        proj.result <- rbind(if(include.means) quant.all.ages[["mean"]] else c(),
+			        proj.result <- rbind(if(include.means) quant.all.ages[["mean"]][this.age-subtract.from.age,] else c(),
 			                            quant.all.ages[["50"]][this.age-subtract.from.age,],
 							            quant.all.ages[["80"]][,this.age-subtract.from.age,],
 							            quant.all.ages[["95"]][,this.age-subtract.from.age,]
