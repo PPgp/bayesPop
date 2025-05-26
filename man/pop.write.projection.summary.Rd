@@ -33,10 +33,13 @@ write.pop.trajectories(pop.pred, expression = "PXXX",
   \item{na.rm}{Logical indicating if records with \code{NA} values should be included in the dataset.}
   \item{\dots}{For \code{write.pop.projection.summary}, these are:
   \itemize{
-  \item if \code{expression} is given, then one can use here \code{file.suffix} (defines the file suffix) and/or \code{expression.label} which defaults to the actual expression and is put as the first line in the resulting file;
+  \item character \code{file.suffix} defines the file suffix;
+  \item if \code{expression} is given, then one can use here \code{expression.label} which defaults to the actual expression and is put as the first line in the resulting file;
   \item logical \code{include.observed} determines if observed data should be included;
   \item integer \code{digits} defines the number of decimal places in the resulting file;
   \item for 5-year projections, logical \code{end.time.only} determines if the time columns should be in form of time periods (as XXXX-YYYY) or just the end years (YYYY);
+  \item integer vector \code{locations} (location identifiers) limits the output to those locations only (used only if \code{expression} is not given);
+  \item logical \code{include.means} determines if distribution means should be included in the output (defaults to \code{FALSE}; used only if \code{expression} is not given);
   \item logical \code{adjust} determines if the numbers should be adjusted; in such a case, \code{adj.to.file} and \code{allow.negative.adj} give the file name to which to adjust and a switch if negatives are allowed for the adjustments, respectively.
  }
   For \code{write.pop.trajectories}, these are arguments passed to \code{\link{get.pop.ex}} (if \code{byage} is \code{FALSE}) or \code{\link{get.pop.exba}} (if \code{byage} is \code{TRUE}). }
@@ -46,7 +49,7 @@ The \code{write.pop.projection.summary} function creates one file per value of \
 \itemize{
 	\item \dQuote{country_name}: country name 
 	\item \dQuote{country_code}: country code 
-	\item \dQuote{variant}: name of the variant, such as \dQuote{median}, \dQuote{lower 80}, \dQuote{upper 80}, \dQuote{lower 95}, \dQuote{upper 95}
+	\item \dQuote{variant}: name of the variant, such as \dQuote{median}, \dQuote{lower 80}, \dQuote{upper 80}, \dQuote{lower 95}, \dQuote{upper 95}, optionally \dQuote{mean}
 	\item period1: e.g. \dQuote{2005-2010}, or \dQuote{2010}: Given population measure for the first time period
 	\item period2: e.g. \dQuote{2010-2015}, or \dQuote{2015}: Given population measure for the second time period
 	\item \dots further time period columns	
@@ -79,7 +82,7 @@ write.pop.projection.summary(pred, expression="PXXX[14:27] / PXXX", file.suffix=
     
 # various measures
 write.pop.projection.summary(pred, what=c("pop", "popsexage", "popsex"),
-    output.dir=outdir)
+    output.dir = outdir, include.means = TRUE)
 
 unlink(outdir, recursive=TRUE)
 }

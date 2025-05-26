@@ -1,3 +1,11 @@
+11.1-0 (05/26/2025)
+------
+Scaling function pop.scale.prediction added.
+
+Adjustments by sex and age to data in given files.
+
+Added "mean" variant to the summary files (argument include.means).
+
 11.0-3 (04/06/2025)
 ------
 Fixed segmentation fault.

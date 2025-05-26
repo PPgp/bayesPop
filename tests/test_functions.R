@@ -52,14 +52,16 @@ test.prediction <- function(parallel = FALSE) {
 	stopifnot(all(round(tfr[1,1,2:dim(tfr)[3],1],2) == tfr.should.be))
 	
 	# check that writing summary is OK
-	write.pop.projection.summary(pred, what=c("popsexage", "popage"), output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
+	write.pop.projection.summary(pred, what=c("popsexage", "popage"), output.dir=sim.dir, include.means = TRUE)
+	t <- read.table(file.path(sim.dir, 'projection_summary_popsexage.csv'), sep=',', header=TRUE)
 	s <- summary(pred, country = 528)
 	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2020"]))
+	stopifnot('mean' %in% t$variant)
 	
-	t <- read.table(file.path(sim.dir, 'projection_summary_tpopage.csv'), sep=',', header=TRUE)
+	t <- read.table(file.path(sim.dir, 'projection_summary_popage.csv'), sep=',', header=TRUE)
 	s <- pop.byage.table(pred, country = 528, year = 2040)
 	stopifnot(round(s[2,1]) == t[t$variant == "median" & t$age == "5-9", "X2040"])
+	stopifnot('mean' %in% t$variant)
 	
 	pred <- pop.predict(countries=528, keep.vital.events=TRUE,
 				nr.traj = 3, verbose=FALSE, output.dir=sim.dir, replace.output=TRUE, end.year=2040,
@@ -70,7 +72,7 @@ test.prediction <- function(parallel = FALSE) {
 
 	# check that writing summary is OK
 	write.pop.projection.summary(pred, what=c("popsexage"), output.dir=sim.dir)
-	t <- read.table(file.path(sim.dir, 'projection_summary_tpopsexage.csv'), sep=',', header=TRUE)
+	t <- read.table(file.path(sim.dir, 'projection_summary_popsexage.csv'), sep=',', header=TRUE)
 	s <- summary(pred, country = 528)
 	stopifnot(round(s$projections[1,1]) == sum(t[t$variant == "median", "X2020"]))
 	

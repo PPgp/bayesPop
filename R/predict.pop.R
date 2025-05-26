@@ -2884,7 +2884,7 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	}
 	subtract.from.age <- 0
 	observed.data <- NULL
-	countries.to.process <- if(is.null(locations)) pop.pred$countries else locations
+	countries.to.process <- if(is.null(locations)) pop.pred$countries$code else locations
 	for (country in countries.to.process) {
 		country.obj <- get.country.object(country, country.table=pop.pred$countries)
 		for(sx in c('both', 'male', 'female')[sex.index]) {

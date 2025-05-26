@@ -111,6 +111,7 @@ adjust.quantiles <- function(q, what, wpp.year, annual = FALSE, env=NULL, allow.
 }
 
 .get.adjustments.from.file <- function(file, env, what, countries=NULL, ages=NULL, annual = FALSE, ...) {
+    country_code <- reg_code <- sex <- value <- NULL
     adj.dataset <- fread(file)
     year.cols <- grep('^[0-9]{4}', colnames(adj.dataset), value = TRUE)
     if("reg_code" %in% colnames(adj.dataset)) adj.dataset[, country_code := reg_code]
@@ -257,11 +258,11 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 	return(NULL)
 }
 
-scale.pop.prediction <- function(pop.pred, target.file, output.dir,
+pop.scale.prediction <- function(pop.pred, target.file, output.dir,
                                  target.code = NULL, variant.name = "mean", 
                                  target.id.column = "country_code", 
                                  stat = "mean", exclude.codes = NULL){
-    
+    country_code <- sex <- NULL
     if(file.exists(output.dir) && normalizePath(output.dir) == pop.pred$base.directory)
         stop("output.dir is the same as the main prediction directory which would be overwritten. Choose a different directory.")
     
@@ -353,7 +354,7 @@ scale.pop.prediction <- function(pop.pred, target.file, output.dir,
 }
 
 write.scaled.pop <- function(pop.pred, target.file, output.file = "adjusted_population.txt", 
-                                        target.code = NULL, variant.name = "median", 
+                                        target.code = NULL, variant.name = "mean", 
                                         target.id.column = "country_code", output.id.column = "reg_code",
                                         stat = "mean", exclude.codes = NULL){
     pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
@@ -369,10 +370,10 @@ write.scaled.pop <- function(pop.pred, target.file, output.file = "adjusted_popu
 }
 
 create.scaled.pop <- function(pop.pred, target.file, 
-                             target.code = NULL, variant.name = "median", 
+                             target.code = NULL, variant.name = "mean", 
                              target.id.column = "country_code", 
                              stat = "mean", exclude.codes = NULL){
-
+    variant <- sex <- age <- indicator <- sim <- target <- share <- totshare <- i.totshare <- totshift <- i.shift <- simadj <- NULL
     if(!has.pop.aggregation(pop.pred = pop.pred))
         stop("The pop.pred object does not contain any aggregation. Consider running pop.aggregate() or pop.aggregate.subnat().")
     
@@ -457,7 +458,7 @@ create.scaled.pop <- function(pop.pred, target.file,
     
     # exclude locations
     if(!is.null(exclude.codes)){
-        pop.stat[country_id %in% exclude.codes, share := 0]
+        pop.stat[pop.stat$country_code %in% exclude.codes, share := 0]
     }
     
     # rescale

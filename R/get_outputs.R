@@ -165,6 +165,7 @@ get.pop.aggregation <- function(sim.dir=NULL, pop.pred=NULL, name=NULL, write.to
         warning('File ', pred.file, ' does not exist.')
         return(NULL)
     }
+    bayesPop.prediction <- NULL
     load(file=pred.file)
     return(bayesPop.prediction)
 }

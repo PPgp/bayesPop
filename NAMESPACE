@@ -65,7 +65,7 @@ project.pasfr,
 project.pasfr.traj,
 migration.totals2age,
 rcastro.schedule,
-scale.pop.prediction,
+pop.scale.prediction,
 write.scaled.pop
 )
 

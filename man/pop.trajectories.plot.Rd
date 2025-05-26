@@ -31,10 +31,9 @@ pop.trajectories.table(pop.pred, country = NULL, expression = NULL, pi = c(80, 9
 pop.byage.plot(pop.pred, country = NULL, year = NULL, expression = NULL, 
     pi = c(80, 95), sex = c("both", "male", "female"), 
     half.child.variant = FALSE, nr.traj = NULL, typical.trajectory=FALSE,
-    xlim = NULL, ylim = NULL, xlab = "", ylab = "Population projection", 
-    main = NULL, lwd = c(2,2,2,1), col = c("red", "red", "blue", "#00000020"),
-    show.legend = TRUE, add = FALSE, ann = par("ann"), type = "l", pch = NA, 
-    pt.cex = 1, \dots)
+    xlab = "", ylab = "Population projection", 
+    lwd = c(2,2,2,1), col = c("red", "red", "blue", "#00000020"),
+    show.legend = TRUE, add = FALSE, type = "l", pch = NA, \dots)
     
 pop.byage.plotAll(pop.pred, 
     output.dir=file.path(getwd(), "pop.byage"),
@@ -42,7 +41,7 @@ pop.byage.plotAll(pop.pred,
 
 pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL, 
     pi = c(80, 95), sex = c("both", "male", "female"), 
-    half.child.variant = FALSE)
+    half.child.variant = FALSE, \dots)
 }
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}}.}
@@ -56,7 +55,7 @@ pop.byage.table(pop.pred, country = NULL, year = NULL, expression = NULL,
 }
   \item{nr.traj}{Number of trajectories to be plotted. If \code{NULL}, all trajectories are plotted, otherwise they are thinned evenly.}
   \item{typical.trajectory}{Logical. If \code{TRUE} one trajectory is shown that has the smallest distance to the median.}
-  \item{xlim, ylim, xlab, ylab, main, ann, pt.cex}{Graphical parameters passed to the \code{plot} function.}
+  \item{xlab, ylab, main, ann}{Graphical parameters passed to the \code{plot} function.}
   \item{xshift}{Constant added to the x-axis (year).}
   \item{dev.ncol}{Number of column for the graphics device if \code{sum.over.ages} is \code{FALSE}. If the number of age groups is smaller than \code{dev.ncol}, the number of columns is automatically decreased.}
     \item{lwd, col}{For the first three functions it is a vector of five elements giving the line width and color for: 1. observed data, 2. median, 3. quantiles, 4. half-child variant, 5. trajectories. For functions that show results by age it is a vector of four elements - as above without the first item (observed data).}

@@ -1,5 +1,5 @@
-\name{scale.pop.prediction}
-\alias{scale.pop.prediction}
+\name{pop.scale.prediction}
+\alias{pop.scale.prediction}
 \alias{write.scaled.pop}
 
 \title{
@@ -9,7 +9,7 @@ Population Scaling To Match Aggregated Targets
 Functions scale given sex- and age-specific population counts for each location and year, so that the sum of the scaled counts over all locations matches the given target for each year, sex and age. Function \code{scale.pop.prediction} creates a new prediction object that contain the scaled trajectories. Function \code{write.scaled.pop} writes a file containing the scaled statistics for each location, year, sex and age.
 }
 \usage{
-scale.pop.prediction(pop.pred, target.file, output.dir,
+pop.scale.prediction(pop.pred, target.file, output.dir,
     target.code = NULL, variant.name = "mean", 
     target.id.column = "country_code", stat = "mean", 
     exclude.codes = NULL)
@@ -28,7 +28,7 @@ write.scaled.pop(pop.pred, target.file,
   \item{output.dir}{Directory to write the scaled projection into.}
   \item{target.code}{If the \code{target.file} contains more than one aggregated location, this argument gives the code of the location to use.
   }
-  \item{variant.name}{If the \code{target.file} contains the column \code{variant}, this argument gives the value of that column for selecting the summary statistics. If the \code{target.file} is created via the \code{\link{write.pop.projection.summary} function, run it with the argument \code{include.means = TRUE} to generate a file with the \dQuote{mean} variant, which is the default value here.
+  \item{variant.name}{If the \code{target.file} contains the column \code{variant}, this argument gives the value of that column for selecting the summary statistics. If the \code{target.file} is created via the \code{\link{write.pop.projection.summary}} function, run it with the argument \code{include.means = TRUE} to generate a file with the \dQuote{mean} variant, which is the default value here.
 }
   \item{target.id.column}{Name of the column in \code{target.file} that determines the unique identifiers of the aggregated locations.
 }
@@ -40,7 +40,6 @@ write.scaled.pop(pop.pred, target.file,
 }
   \item{output.id.column}{Column name of the unique identifier of the locations in the output file. 
 }
- 
 }
 \details{
 These functions can be used if it is necessary to scale the population distribution so that a summary statistics of the sum of the locations matches some given targets. For example, if states should sum up to a given country projection. Thus, its use is meant to be mainly for subnational projections.
