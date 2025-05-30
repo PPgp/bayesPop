@@ -1675,12 +1675,19 @@ mac.expression <- function(country) {
 }
 
 	
-.solve.expression.for.country <- function(icountry, pop.pred, expression, adjust=FALSE, ...) {
+.solve.expression.for.country <- function(icountry, pop.pred, expression, 
+                                          include.means = FALSE, adjust=FALSE, ...) {
     country <- pop.pred$countries$code[icountry]
     expr <- gsub('XXX', as.character(country), expression, fixed=TRUE)
     trajectories <- get.pop.trajectories.from.expression(expr, pop.pred, adjust=adjust, ...)
-    return(get.pop.traj.quantiles(NULL, pop.pred, icountry, country, 
-                                  trajectories=trajectories$trajectories,	q=get.quantiles.to.keep()))
+    quant <- get.pop.traj.quantiles(NULL, pop.pred, icountry, country, 
+                                  trajectories=trajectories$trajectories, q=get.quantiles.to.keep())
+    if(include.means)
+        quant <- rbind(quant, 
+                       mean = get.pop.traj.quantiles(NULL, pop.pred, icountry, country, 
+                                                  trajectories=trajectories$trajectories, compute.mean = TRUE)
+                    )
+    return(quant)
 }
 
 .solve.observed.expression.for.country <- function(icountry, pop.pred, expression) {
@@ -1691,9 +1698,11 @@ mac.expression <- function(country) {
 
 get.pop.from.expression.all.countries <- function(expression, pop.pred, quantiles = NULL, 
                                                   time.index, observed = FALSE, 
+                                                  include.means = FALSE,
                                                   adjust=FALSE, adj.to.file=NULL, 
                                                   allow.negative.adj = TRUE) {
     # get quantiles from expression for all countries
+    # argument "quantiles" can be NULL if observed = TRUE
 	compressed.expr <- gsub("[[:blank:]]*", "", expression) # remove spaces
 	if(observed) compressed.expr <- paste0(compressed.expr, "_observed")
 	if(!is.null(adj.to.file)) {
@@ -1716,22 +1725,46 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 	#if(adjust) compressed.expr <- paste0(compressed.expr, '_adjusted')
 	if(!is.null(pop.pred$cache) && !is.null(pop.pred$cache[[compressed.expr]])) {
 		data <- pop.pred$cache[[compressed.expr]][,,time.index, drop = FALSE]
-		if(!observed) 
-		    data <- data[,as.character(quantiles),, drop=FALSE]
+		if(!observed) {
+		    if(is.null(quantiles))
+		        quantiles <- dimnames(data)[[2]]
+		    data.colnames <- as.character(quantiles)
+		    if(include.means)
+		        data.colnames <- c("mean", data.colnames)
+		    data <- data[,data.colnames,, drop=FALSE]
+		}
 		if(dim(data)[3] == 1) data <- adrop(data, 3)
 		.all.is.na <- function(x) return(all(is.na(x)))
 		countries.idx <- which(apply(data, 1, .all.is.na))
 		if(length(countries.idx) <= 0) return(.adjust.to.dataset.if.needed(data, 1:nrow(pop.pred$countries)))
 	} else {
 		countries.idx <- 1:nrow(pop.pred$countries)
-		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], ncol=if(observed) 1 else length(quantiles))
+		if(!observed) {
+		    if(is.null(quantiles))
+		        quantiles <- dimnames(pop.pred$quantiles)[[2]]
+		    data.colnames <- as.character(quantiles)
+		    if(include.means)
+		        data.colnames <- c("mean", data.colnames)
+		}
+		data <- matrix(NA, nrow=dim(pop.pred$quantiles)[1], 
+		               ncol=if(observed) 1 else length(data.colnames))
 		rownames(data) <- dimnames(pop.pred$quantiles)[[1]]
 		if(!observed) {
-		    colnames(data) <- quantiles
-		    pop.pred$cache[[compressed.expr]] <- array(NA, dim(pop.pred$quantilesM), dimnames=dimnames(pop.pred$quantilesM))
+		    colnames(data) <- data.colnames
+		    cache.dims <- dim(pop.pred$quantilesM)
+		    cache.dimnames <- dimnames(pop.pred$quantilesM)
+		    if(include.means) { # add space for storing "mean"
+		        cache.dims[2] <- cache.dims[2] + 1
+		        cache.dimnames[[2]] <- c(cache.dimnames[[2]], "mean")
+		    }
+		    pop.pred$cache[[compressed.expr]] <- array(NA, cache.dims, dimnames=cache.dimnames)
 		} else pop.pred$cache[[compressed.expr]] <- array(NA, 
 		                                                  c(dim(pop.pred$quantilesM)[1], 1, dim(pop.pred$inputs$pop.matrix$male)[2]),
 		                                                  dimnames=list(dimnames(pop.pred$quantilesM)[[1]], NULL, dimnames(pop.pred$inputs$pop.matrix$male)[[2]]))
+	}
+	if(!observed){
+	    quant.rows <-  paste0(quantiles*100, '%')
+	    if(include.means) quant.rows <- c("mean", quant.rows)
 	}
 	ncores <- getOption("cl.cores", detectCores(logical = FALSE))
 	if(ncores > 1 && length(countries.idx)>10) {
@@ -1740,21 +1773,22 @@ get.pop.from.expression.all.countries <- function(expression, pop.pred, quantile
 		cl <- create.pop.cluster(ncores)
 		clusterExport(cl, c("pop.pred", "expression"), envir=environment())
 		if(!observed)
-		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust, allow.negative.adj = allow.negative.adj))
+		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.expression.for.country(i, pop.pred, expression, adjust=adjust, 
+		                                                                  allow.negative.adj = allow.negative.adj, include.means = include.means))
 		else 
 		    quant.list <- parLapplyLB(cl, countries.idx, function(i) .solve.observed.expression.for.country(i, pop.pred, expression))
 		stopCluster(cl)
 		for(icountry in countries.idx) {
 			pop.pred$cache[[compressed.expr]][icountry,,] <- quant.list[[icountry]]
-			data[icountry,] <- if(observed) quant.list[[icountry]][time.index] else quant.list[[icountry]][paste0(quantiles*100, '%'), time.index]
+			data[icountry,] <- if(observed) quant.list[[icountry]][time.index] else quant.list[[icountry]][quant.rows, time.index]
 		}
 	} else { # run sequentially
 		if(length(countries.idx)>10) cat('Evaluating expression for all countries sequentially. Please be patient.\n')
 		for(icountry in countries.idx) {
 		    if(!observed) {
-			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust, allow.negative.adj = allow.negative.adj)
-			    data[icountry,] <- quant[paste0(quantiles*100, '%'), time.index]
-			    #stop('')
+			    quant <- .solve.expression.for.country(icountry, pop.pred, expression, adjust=adjust, 
+			                   allow.negative.adj = allow.negative.adj, include.means = include.means)
+			    data[icountry,] <- quant[quant.rows, time.index]
 		    } else {
 		        quant <- .solve.observed.expression.for.country(icountry, pop.pred, expression)
 		        quant <- abind(quant, along = 2)

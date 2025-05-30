@@ -2787,11 +2787,13 @@ write.pfertilityage <- function(pop.pred, output.dir, file.suffix = '', digits =
 			digits = digits, ...)
 	
 write.expression <- function(pop.pred, expression, output.dir, file.suffix='expression', 
-							expression.label=expression, include.observed=FALSE, digits=NULL, 
+							expression.label=expression, include.observed=FALSE, 
+							include.means = FALSE, digits=NULL, 
 							adjust=FALSE, adj.to.file=NULL, allow.negative.adj = TRUE, end.time.only=FALSE) {
 	cat('Creating summary file for expression ', expression, ' ...\n')
 	header <- list(country.name='country_name',  country.code='country_code', variant='variant')
 	variant.names <- c('median', 'lower 80', 'upper 80', 'lower 95', 'upper 95')
+	if(include.means) variant.names <- c("mean", variant.names)
 	nr.var <- length(variant.names)
 	pred.period <- get.pop.prediction.periods(pop.pred, end.time.only=end.time.only)
 	nr.proj <- length(pred.period)
@@ -2806,19 +2808,19 @@ write.expression <- function(pop.pred, expression, output.dir, file.suffix='expr
 	col.names <- grep('year', names(header), value=TRUE)
 	result <- NULL
 	if(include.observed) {
-		#res <- get.pop.observed.from.expression.all.countries(expression, pop.pred, time.index=1:nr.obs)
 	    res <- c()
 	    for(iyear in 1:nr.obs)
 		    res <- cbind(res, get.pop.from.expression.all.countries(expression, pop.pred, 
 		                                                            time.index=iyear, observed = TRUE))
 		#copy the same data into the variant rows 
-		result <- matrix(NA, nrow=nrow(res)*5, ncol=ncol(res))
-		for(i in 1:5) result[seq(i,by=5, length=nrow(res)),] <- res
+		result <- matrix(NA, nrow=nrow(res)*nr.var, ncol=ncol(res))
+		for(i in 1:nr.var) result[seq(i,by=nr.var, length=nrow(res)),] <- res
 	}
 	if(adjust && is.null(pop.pred$adjust.env)) pop.pred$adjust.env <- new.env()
 	for(iyear in 1:nr.proj) {	
 		result <- cbind(result, as.vector(t(get.pop.from.expression.all.countries(expression, pop.pred, 
-						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, adjust=adjust, 
+						quantiles=c(0.5, 0.1, 0.9, 0.025, 0.975), time.index=iyear, 
+						include.means = include.means, adjust=adjust, 
 						adj.to.file=adj.to.file, allow.negative.adj = allow.negative.adj))))
 	}
 	if(!is.null(digits)) result <- round(result, digits)
