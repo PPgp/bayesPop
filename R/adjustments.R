@@ -442,10 +442,26 @@ create.scaled.pop <- function(pop.pred, target.file,
     targets <- merge(agdat.long, popaggr.stat, by = c("year", "sex", "age"))[, shift := sim - target]
     
     # get simulated trajectories and statistics for all locations
-    pop.traj <- rbind(get.pop.exba(paste0("PXXX_M{}"), pop.pred, as.dt = TRUE)[, sex := "male"],
-                      get.pop.exba(paste0("PXXX_F{}"), pop.pred, as.dt = TRUE)[, sex := "female"]
-                      )
-    pop.stat <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("country_code", "year", "sex", "age")]
+
+##    this uses too much memory in a real (not toy example) usage
+#    pop.traj <- rbind(get.pop.exba(paste0("PXXX_M{}"), pop.pred, as.dt = TRUE)[, sex := "male"],
+#                      get.pop.exba(paste0("PXXX_F{}"), pop.pred, as.dt = TRUE)[, sex := "female"]
+#                      )
+#    pop.stat <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("country_code", "year", "sex", "age")]
+##  need to loop over locations due to memory issues    
+    pop.stat <- NULL
+    for (loc in pop.pred$countries$code){
+        pop.traj <- get.pop.exba(paste0("P", loc, "_M{}"), pop.pred, as.dt = TRUE)
+        pop.stat <- rbind(pop.stat, 
+                          pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
+                              , `:=`(country_code = loc, sex = "male")
+                          ])
+        pop.traj <- get.pop.exba(paste0("P", loc, "_F{}"), pop.pred, as.dt = TRUE)
+        pop.stat <- rbind(pop.stat, 
+                          pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
+                              , `:=`(country_code = loc, sex = "female")
+                          ])
+    }
     
     # compute pop shares of each location within the aggregation,
     # to be used for distributing the adjustments
