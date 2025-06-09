@@ -261,14 +261,17 @@ adjust.to.dataset <- function(country, q, adj.dataset=NULL, adj.file=NULL, years
 pop.scale.prediction <- function(pop.pred, target.file, output.dir,
                                  target.code = NULL, variant.name = "mean", 
                                  target.id.column = "country_code", 
-                                 stat = "mean", exclude.codes = NULL){
+                                 stat = "mean", exclude.codes = NULL, verbose = TRUE){
     country_code <- sex <- NULL
     if(file.exists(output.dir) && normalizePath(output.dir) == pop.pred$base.directory)
         stop("output.dir is the same as the main prediction directory which would be overwritten. Choose a different directory.")
     
     # generates a dataset with scaled population and the corresponding shifts
+    if(verbose)
+        cat("\nRetrieve shifts to match targets.")
     pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
-                                  target.id.column = target.id.column, stat = stat, exclude.codes = exclude.codes)
+                                  target.id.column = target.id.column, stat = stat, 
+                                  exclude.codes = exclude.codes, verbose = verbose)
     
     # generate and save a prediction object with the adjusted numbers
     adjoutdir <- file.path(output.dir, 'predictions')
@@ -288,8 +291,10 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
                      totpm.hch=c(1, TRUE), totpf.hch=c(2, TRUE)
     )
     quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
+    if(verbose) cat("\nCopying and adjusting trajectories of locations: ")
     for (iloc in 1:nrow(pop.pred$countries)){
         loc <- pop.pred$countries[iloc, "code"]
+        if(verbose) cat(loc, ", ")
         rm(list = ls(e), envir = e)
         .load.traj.file(srcoutdir, loc, e)
         shifts <- pop.stat[country_code == loc]
@@ -350,15 +355,17 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
     # save
     bayesPop.prediction <- adjpred
     save(bayesPop.prediction, file=file.path(adjoutdir, 'prediction.rda'))
+    if(verbose) cat("\nScaled prediction saved into ", output.dir, "\n")
     invisible(get.pop.prediction(output.dir))
 }
 
 write.scaled.pop <- function(pop.pred, target.file, output.file = "adjusted_population.txt", 
                                         target.code = NULL, variant.name = "mean", 
                                         target.id.column = "country_code", output.id.column = "reg_code",
-                                        stat = "mean", exclude.codes = NULL){
+                                        stat = "mean", exclude.codes = NULL, verbose = TRUE){
     pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
-                                  target.id.column = target.id.column, stat = stat, exclude.codes = exclude.codes)
+                                  target.id.column = target.id.column, stat = stat, exclude.codes = exclude.codes,
+                                  verbose = verbose)
     
     respop <- data.table::dcast(pop.stat, country_code + sex + age ~ year, value.var = "simadj")
     data.table::setnames(respop, "country_code", output.id.column)
@@ -372,7 +379,7 @@ write.scaled.pop <- function(pop.pred, target.file, output.file = "adjusted_popu
 create.scaled.pop <- function(pop.pred, target.file, 
                              target.code = NULL, variant.name = "mean", 
                              target.id.column = "country_code", 
-                             stat = "mean", exclude.codes = NULL){
+                             stat = "mean", exclude.codes = NULL, verbose = FALSE){
     variant <- sex <- age <- indicator <- sim <- target <- share <- totshare <- i.totshare <- totshift <- i.shift <- simadj <- NULL
     if(!has.pop.aggregation(pop.pred = pop.pred))
         stop("The pop.pred object does not contain any aggregation. Consider running pop.aggregate() or pop.aggregate.subnat().")
@@ -450,7 +457,10 @@ create.scaled.pop <- function(pop.pred, target.file,
 #    pop.stat <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("country_code", "year", "sex", "age")]
 ##  need to loop over locations due to memory issues    
     pop.stat <- NULL
+    if(verbose) cat("\nProcessing ")
     for (loc in pop.pred$countries$code){
+        if(verbose)
+            cat(loc, ", ")
         pop.traj <- get.pop.exba(paste0("P", loc, "_M{}"), pop.pred, as.dt = TRUE)
         pop.stat <- rbind(pop.stat, 
                           pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
@@ -462,7 +472,7 @@ create.scaled.pop <- function(pop.pred, target.file,
                               , `:=`(country_code = loc, sex = "female")
                           ])
     }
-    
+    if(verbose) cat("\n")
     # compute pop shares of each location within the aggregation,
     # to be used for distributing the adjustments
     pop.stat[, share := sim / sum(sim), by = c("year", "sex", "age")]

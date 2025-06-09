@@ -12,12 +12,13 @@ Functions scale given sex- and age-specific population counts for each location 
 pop.scale.prediction(pop.pred, target.file, output.dir,
     target.code = NULL, variant.name = "mean", 
     target.id.column = "country_code", stat = "mean", 
-    exclude.codes = NULL)
+    exclude.codes = NULL, verbose = TRUE)
     
 write.scaled.pop(pop.pred, target.file, 
     output.file = "adjusted_population.txt", target.code = NULL, 
     variant.name = "mean", target.id.column = "country_code", 
-    output.id.column = "reg_code", stat = "mean", exclude.codes = NULL)
+    output.id.column = "reg_code", stat = "mean", 
+    exclude.codes = NULL, verbose = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -40,6 +41,7 @@ write.scaled.pop(pop.pred, target.file,
 }
   \item{output.id.column}{Column name of the unique identifier of the locations in the output file. 
 }
+\item{verbose}{Logical switching processing info on and off.}
 }
 \details{
 These functions can be used if it is necessary to scale the population distribution so that a summary statistics of the sum of the locations matches some given targets. For example, if states should sum up to a given country projection. Thus, its use is meant to be mainly for subnational projections.
