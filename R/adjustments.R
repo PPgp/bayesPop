@@ -268,7 +268,7 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
     
     # generates a dataset with scaled population and the corresponding shifts
     if(verbose)
-        cat("\nRetrieve shifts to match targets.")
+        cat("\nCompute differences between the summary stats '", stat, "'.")
     pop.stat <- create.scaled.pop(pop.pred, target.file, target.code = target.code, variant.name = variant.name,
                                   target.id.column = target.id.column, stat = stat, 
                                   exclude.codes = exclude.codes, verbose = verbose)
@@ -355,7 +355,7 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
     # save
     bayesPop.prediction <- adjpred
     save(bayesPop.prediction, file=file.path(adjoutdir, 'prediction.rda'))
-    if(verbose) cat("\nScaled prediction saved into ", output.dir, "\n")
+    if(verbose) cat("\nScaled prediction saved into", output.dir, "\n")
     invisible(get.pop.prediction(output.dir))
 }
 
