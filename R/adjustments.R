@@ -282,7 +282,7 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
     
     # copy all vital events files
     vitfiles <- list.files(srcoutdir, pattern = "vital_events", full.names = TRUE)
-    file.copy(vitfiles, adjoutdir)
+    file.copy(vitfiles, adjoutdir, overwrite = TRUE)
     
     # iterate over locations, load trajectories, adjust and save
     e <- new.env()
