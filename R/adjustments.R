@@ -327,31 +327,32 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
         # save adjusted trajectories
         save(list = ls(e), envir = e,
              file = file.path(adjoutdir, paste0('totpop_country', loc, '.rda')))
+        
+        # recompute quantiles, means etc
+        # totals
+        adjpred$quantiles[iloc, , ] <- apply(e$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$traj.mean.sd[iloc, 1,] <- apply(e$totp, 1, mean, na.rm = TRUE)
+        adjpred$traj.mean.sd[iloc, 2,] <- apply(e$totp, 1, sd, na.rm = TRUE)
+        # sex- & age-specific counts
+        quant <- plyr::aaply(e$totpm, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$quantilesMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+        quant <- plyr::aaply(e$totpf, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$quantilesFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+        # sex- & age-specific counts proportions
+        quant <- plyr::aaply(plyr::aaply(e$totpm, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$quantilesPropMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+        quant <- plyr::aaply(plyr::aaply(e$totpf, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$quantilesPropFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
+        # sex-specific totals
+        stotpm <- colSums(e$totpm, na.rm=TRUE)
+        adjpred$quantilesM[iloc, , ] <- apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$traj.mean.sdM[iloc, 1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
+        adjpred$traj.mean.sdM[iloc, 2,] <- apply(stotpm, 1, sd, na.rm = TRUE)
+        stotpf <- colSums(e$totpf, na.rm=TRUE)
+        adjpred$quantilesF[iloc, , ] <- apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
+        adjpred$traj.mean.sdF[iloc, 1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
+        adjpred$traj.mean.sdF[iloc, 2,] <- apply(stotpf, 1, sd, na.rm = TRUE)
     }
-    # recompute quantiles, means etc
-    # totals
-    adjpred$quantiles[iloc, , ] <- apply(e$totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$traj.mean.sd[iloc, 1,] <- apply(e$totp, 1, mean, na.rm = TRUE)
-    adjpred$traj.mean.sd[iloc, 2,] <- apply(e$totp, 1, sd, na.rm = TRUE)
-    # sex- & age-specific counts
-    quant <- plyr::aaply(e$totpm, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$quantilesMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
-    quant <- plyr::aaply(e$totpf, c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$quantilesFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
-    # sex- & age-specific counts proportions
-    quant <- plyr::aaply(plyr::aaply(e$totpm, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$quantilesPropMage[iloc, , ,]  <- aperm(quant, c(1,3,2))
-    quant <- plyr::aaply(plyr::aaply(e$totpf, 1, '/', e$totp), c(1,2), quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$quantilesPropFage[iloc, , ,]  <- aperm(quant, c(1,3,2))
-    # sex-specific totals
-    stotpm <- colSums(e$totpm, na.rm=TRUE)
-    adjpred$quantilesM[iloc, , ] <- apply(stotpm, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$traj.mean.sdM[iloc, 1,] <- apply(stotpm, 1, mean, na.rm = TRUE)
-    adjpred$traj.mean.sdM[iloc, 2,] <- apply(stotpm, 1, sd, na.rm = TRUE)
-    stotpf <- colSums(e$totpf, na.rm=TRUE)
-    adjpred$quantilesF[iloc, , ] <- apply(stotpf, 1, quantile, quantiles.to.keep, na.rm = TRUE)
-    adjpred$traj.mean.sdF[iloc, 1,] <- apply(stotpf, 1, mean, na.rm = TRUE)
-    adjpred$traj.mean.sdF[iloc, 2,] <- apply(stotpf, 1, sd, na.rm = TRUE)
     # save
     bayesPop.prediction <- adjpred
     save(bayesPop.prediction, file=file.path(adjoutdir, 'prediction.rda'))
