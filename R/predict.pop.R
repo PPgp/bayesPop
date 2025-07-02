@@ -644,7 +644,7 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	            stop("Column 'in' or 'out' is missing in the mig.fdm dataset.")
 	    }
 	    fdmMIGtype.names <- list(MigFDMb0 = "beta0", MigFDMb1 = "beta1", 
-	                             MigFDMb1 = "beta1neg", MigFDMmin = "min", 
+	                             MigFDMb1neg = "beta1neg", MigFDMmin = "min", 
 	                             MigFDMsrin = "in_sex_ratio", MigFDMsrout = "out_sex_ratio")
 	    fdmMIGtype.defaults <- list(beta0 = if(annual) 0.07 else 0.35, beta1 = 0.5, beta1neg = 0.5, 
 	                                in_sex_ratio = 0.5, out_sex_ratio = 0.5, min = if(annual) 0.02 else 0.2)
