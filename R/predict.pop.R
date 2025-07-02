@@ -643,13 +643,14 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        if(! "in" %in% colnames(mig.rc.inout) || ! "out" %in% colnames(mig.rc.inout))
 	            stop("Column 'in' or 'out' is missing in the mig.fdm dataset.")
 	    }
-	    fdmMIGtype.names <- list(MigFDMb0 = "beta0", MigFDMb1 = "beta1", MigFDMmin = "min", 
+	    fdmMIGtype.names <- list(MigFDMb0 = "beta0", MigFDMb1 = "beta1", 
+	                             MigFDMb1 = "beta1neg", MigFDMmin = "min", 
 	                             MigFDMsrin = "in_sex_ratio", MigFDMsrout = "out_sex_ratio")
-	    fdmMIGtype.defaults <- list(beta0 = if(annual) 0.07 else 0.35, beta1 = 0.5, in_sex_ratio = 0.5, out_sex_ratio = 0.5,
-	                                min = if(annual) 0.02 else 0.2)
+	    fdmMIGtype.defaults <- list(beta0 = if(annual) 0.07 else 0.35, beta1 = 0.5, beta1neg = 0.5, 
+	                                in_sex_ratio = 0.5, out_sex_ratio = 0.5, min = if(annual) 0.02 else 0.2)
 	    for(fdmvar in names(fdmMIGtype.names)){
 	        default.value <- fdmMIGtype.defaults[[fdmMIGtype.names[[fdmvar]]]]
-	        default.values <- if(fdmvar == "min") pmin(default.value, MIGtype[["MigFDMb0"]]/10) else rep(default.value, nrow(MIGtype))
+	        default.values <- if(fdmMIGtype.names[[fdmvar]] == "min") pmin(default.value, MIGtype[["MigFDMb0"]]/10) else rep(default.value, nrow(MIGtype))
 	        if(fdmvar %in% colnames(MIGtype)){
 	            if(any((fdm.na <- is.na(MIGtype[[fdmvar]]))))  # NAs can appear if running for a different wpp.year than 2024 (due to merging) and there is a mismatch in countries between the two revisions
 	                MIGtype[[fdmvar]][fdm.na] <- default.values[fdm.na]
@@ -951,7 +952,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
                                  ) {
     mig <- i.mig <- migf <- totmig <- rc <- prop <- i.prop <- popglob <- i.pop <- in_sex_ratio <- out_sex_ratio <- in_sex_factor <- out_sex_factor <- NULL
     age <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- totpop <- NULL
-    IM <- beta0 <- beta1 <- OM <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
+    IM <- beta0 <- beta1 <- beta1neg <- OM <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
     i.IM <- i.OM <- i.out <- i.v <- i.rxstar_out_denom <- i.totmig <- NULL
     mig_sign <- sx <- i.prop_in <- i.prop_out <- NULL
     debug <- FALSE
@@ -1102,9 +1103,9 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             # Correctly it should happen during the projection.
             # Make totmig age-specific
             migiotmp[, totmig := as.double(totmig)]
-            migiotmp[totmig < 0, totmig := totmig *  out_sex_factor]
-            migiotmp[totmig > 0, totmig := totmig *  in_sex_factor]
-            migiotmp[, IM := pmax(totpop * beta0 + beta1 * totmig, totpop * min, totmig + min * pop)][, OM := IM - totmig] # in- and out-migration totals over sexes
+            migiotmp[totmig < 0, `:=`(totmig = totmig * out_sex_factor, slope = beta1neg)]
+            migiotmp[totmig > 0, `:=`(totmig = totmig *  in_sex_factor, slope = beta1)]
+            migiotmp[, IM := pmax(totpop * beta0 + slope * totmig, totpop * min, totmig + min * pop)][, OM := IM - totmig] # in- and out-migration totals over sexes
             #migiotmp[, `:=`(IMs = in_sex_factor * IM, OMs = out_sex_factor * OM)][, totmig := IMs - OMs] # in-, out-migration & totmig for this sex
             migiotmp[, `:=`(rxstar_in = `in`, rxstar_out = out)]
             if(method == "fdmp")
@@ -1360,7 +1361,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
         else colnames(pattern) <- c('country_code', c(columns, char.columns)[c(columns, char.columns) %in% colnames(dataset)])
         return(pattern)
     }
-    fdm.columns <- c('MigFDMb0', 'MigFDMb1', 'MigFDMmin', 'MigFDMsrin', "MigFDMsrout")
+    fdm.columns <- c('MigFDMb0', 'MigFDMb1', 'MigFDMb1neg', 'MigFDMmin', 'MigFDMsrin', "MigFDMsrout")
     MIGtype <- create.pattern(vwBase, c('ProjFirstYear', 'MigCode', fdm.columns))
     if(wpp.year < 2024 && sum(! fdm.columns %in% colnames(MIGtype)) > 3){
         # load the columns from 2024 base year
@@ -1940,7 +1941,7 @@ get.country.inputs <- function(country, inputs, nr.traj, country.name) {
 	ioinput <- list(rc.fdm = NULL, popdt = NULL, globpop = NULL)
 	is.fdm <- startsWith(inputs$mig.age.method, "fdm")
 	if(is.fdm){
-	    for(it in c("b0", "b1", "min", "srin", "srout")){
+	    for(it in c("b0", "b1", "b1neg", "min", "srin", "srout")){
 	        inpc[[paste0('MIG_FDM', it)]] <- inpc[['MIGtype']][, paste0("MigFDM", it)]
 	    }
 	    ioinput <- .prepare.pop.for.fdm(inputs$mig.age.method, country, inputs$pop.matrix, inputs$present.year, inputs$mig.rc.inout)
@@ -2574,8 +2575,9 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	finmigF <- as.numeric(migF)
 	observed <- 0
 	if(!all(migratecodeF == migratecodeM)) warning('mismatch in rate codes in ', country.name)
-	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
-	if(length(MIGfdm) < 5) MIGfdm <- rep(0, 5)
+	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMb1neg, 
+	                      inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
+	if(length(MIGfdm) < 6) MIGfdm <- rep(0, 6)
 	#stop("")
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
@@ -2665,8 +2667,9 @@ compute.observedVE <- function(inputs, pop.matrix, mig.type, mxKan, country.code
 	LT <- survival.fromLT(nest, LTinputs, annual = annual, observed = TRUE)
 	finmigM <- as.numeric(mig.data[[1]])
 	finmigF <- as.numeric(mig.data[[2]])
-	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
-	if(length(MIGfdm) < 5) MIGfdm <- rep(0, 5)
+	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMb1neg, 
+	                      inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
+	if(length(MIGfdm) < 6) MIGfdm <- rep(0, 6)
     #stop('')
 	#browser()
 	ccmres <- .C("CCM", as.integer(nobs), as.integer(!annual), as.integer(nest), 

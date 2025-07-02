@@ -88,14 +88,15 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
     double migrcoutm[adim], migrcoutf[adim], migvf, migvm, iota_m, iota_f, o_m, o_f;
     double totmigcount, totmigcountm, totmigcountf;
     double tpopm, tpopf, trmig, trmigpos, trmigneg, trxm, trxf, tsgm, tsgf, tsmigposm, tsmigposf, tsmigagem, tsmigagef;
-    double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig;
+    double IMm, IMf, OMm, OMf, Cm, Cf, ssigma_m, ssigma_f, tmptotmig, mig_slope;
     /*double tpop, IM, OM;*/
     double sigma_m[adim], sigma_f[adim];
     double mig_fdm_b0 = MIGfdm[0];
     double mig_fdm_b1 = MIGfdm[1];
-    double mig_fdm_min = MIGfdm[2];
-    double mig_fdm_sr_in = MIGfdm[3];
-    double mig_fdm_sr_out = MIGfdm[4];
+    double mig_fdm_b1neg = MIGfdm[2];
+    double mig_fdm_min = MIGfdm[3];
+    double mig_fdm_sr_in = MIGfdm[4];
+    double mig_fdm_sr_out = MIGfdm[5];
     
     double csfm[adim],csff[adim]; /* cohort separation factor males, females*/
     
@@ -314,13 +315,16 @@ void CCM(int *nobserved, int *abridged, int *npred, double *MIGm, double *MIGf, 
                         if(totmigcount > 0) {
                             totmigcountm = totmigcount * (1 - mig_fdm_sr_in);
                             totmigcountf = totmigcount * mig_fdm_sr_in;
+                            mig_slope = mig_fdm_b1;
                         } else {
                             totmigcountm = totmigcount * (1 - mig_fdm_sr_out);
                             totmigcountf = totmigcount * mig_fdm_sr_out;
+                            mig_slope = mig_fdm_b1neg;
                         }
-                        IMm = fmax(fmax(tpopm * mig_fdm_b0 + totmigcountm * mig_fdm_b1, tpopm * mig_fdm_min), tpopm * mig_fdm_min + totmigcountm);
+                        
+                        IMm = fmax(fmax(tpopm * mig_fdm_b0 + totmigcountm * mig_slope, tpopm * mig_fdm_min), tpopm * mig_fdm_min + totmigcountm);
                         OMm = totmigcountm - IMm;
-                        IMf = fmax(fmax(tpopf * mig_fdm_b0 + totmigcountf * mig_fdm_b1, tpopf * mig_fdm_min), tpopf * mig_fdm_min + totmigcountf);
+                        IMf = fmax(fmax(tpopf * mig_fdm_b0 + totmigcountf * mig_slope, tpopf * mig_fdm_min), tpopf * mig_fdm_min + totmigcountf);
                         OMf = totmigcountf - IMf;
                         
                         if((debug>=1)){

@@ -1,4 +1,8 @@
-11.1-1 (05/30/2025)
+11.1-5 (07/02/2025)
+------
+Added option of negative slope for FDM.
+
+11.1-1/4 (05/30/2025)
 ------
 Scaling function pop.scale.prediction added.
 
