@@ -654,7 +654,10 @@ load.inputs <- function(inputs, start.year, present.year, end.year, wpp.year, fi
 	        if(fdmvar %in% colnames(MIGtype)){
 	            if(any((fdm.na <- is.na(MIGtype[[fdmvar]]))))  # NAs can appear if running for a different wpp.year than 2024 (due to merging) and there is a mismatch in countries between the two revisions
 	                MIGtype[[fdmvar]][fdm.na] <- default.values[fdm.na]
-	        } else MIGtype[[fdmvar]] <- default.values
+	        } else {
+	            if(fdmvar == "MigFDMb1neg" && "MigFDMb1" %in% colnames(MIGtype)) MIGtype[[fdmvar]] <- MIGtype[["MigFDMb1"]] # if b1neg is missing, use b1
+	            else MIGtype[[fdmvar]] <- default.values
+	        }
 	        mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", fdmvar)], by = "country_code")
 	        setnames(mig.rc.inout, fdmvar, fdmMIGtype.names[[fdmvar]])
 	    }
@@ -954,6 +957,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
     age <- sex.ratio <- summig.orig <- migrate <- rate_code <- year <- totpop <- NULL
     IM <- beta0 <- beta1 <- beta1neg <- OM <- `in` <- out <- rxstar_in <- rxstar_out <- i.rxstar_in <- i.rxstar_in_denom <- i.rxstar_out <- NULL
     i.IM <- i.OM <- i.out <- i.v <- i.rxstar_out_denom <- i.totmig <- NULL
+    slope <- iota <- o <- mig2 <- sigma <- mig_dif <- i.mig_dif <- sum_mig_sampl <- sum_mig <- i.sum_sigma <- NULL
     mig_sign <- sx <- i.prop_in <- i.prop_out <- NULL
     debug <- FALSE
     if(is.null(dim(df))) df <- t(df)
@@ -1101,19 +1105,36 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             }
             # To do this for projected trajectories will yield less uncertainty because totpop is deterministic.
             # Correctly it should happen during the projection.
+            # Also needs sampling using the v parameter.
             # Make totmig age-specific
             migiotmp[, totmig := as.double(totmig)]
             migiotmp[totmig < 0, `:=`(totmig = totmig * out_sex_factor, slope = beta1neg)]
             migiotmp[totmig > 0, `:=`(totmig = totmig *  in_sex_factor, slope = beta1)]
             migiotmp[, IM := pmax(totpop * beta0 + slope * totmig, totpop * min, totmig + min * pop)][, OM := IM - totmig] # in- and out-migration totals over sexes
-            #migiotmp[, `:=`(IMs = in_sex_factor * IM, OMs = out_sex_factor * OM)][, totmig := IMs - OMs] # in-, out-migration & totmig for this sex
             migiotmp[, `:=`(rxstar_in = `in`, rxstar_out = out)]
             if(method == "fdmp")
                 migiotmp[, `:=`(rxstar_in = rxstar_in * popglob, rxstar_out = rxstar_out * pop)] # weight by population
             migiotmp[, `:=`(rxstar_in_denom = sum(rxstar_in), rxstar_out_denom = sum(rxstar_out)), by = c(id.col, "year")]
             migtmp[, totmig := as.double(totmig)]
-            migtmp[migiotmp, `:=`(totmig = i.totmig, mig = i.IM * i.rxstar_in / i.rxstar_in_denom  - i.OM * i.rxstar_out / i.rxstar_out_denom), 
-                   on = c(id.col, "age", "year")]
+            migtmp[migiotmp, `:=`(totmig = i.totmig, iota = i.IM * i.rxstar_in / i.rxstar_in_denom,
+                                  o = i.OM * i.rxstar_out / i.rxstar_out_denom), on = c(id.col, "age", "year")][,
+                                  mig := iota - o]
+            # sample if needed
+            if(method != "fdmnop"){
+                has.mult.traj <- id.col == "trajectory" && length(unique(migiotmp[[id.col]])) > 1
+                if(has.mult.traj){
+                    # sample
+                    migtmp[migiotmp, `:=`(sigma = pmin(sqrt((iota + o)/i.v), (pop + 0.0005)/2)), on = c(id.col, "age", "year")][
+                        , mig2 := rnorm(mig, sd = sigma)]
+                    # adjust to sum to total mig
+                    migsampl <- migtmp[, list(sum_sigma = sum(sigma), sum_mig_sampl = sum(mig2), 
+                                           sum_mig = sum(mig)), by = c(id.col, "year")][
+                                               , mig_dif := sum_mig_sampl - sum_mig]
+                    migtmp[migsampl, mig := mig2 - sigma/i.sum_sigma * i.mig_dif, on = c(id.col, "year")][
+                        , `:=`(iota = NULL, o = NULL, mig2 = NULL, sigma = NULL)
+                    ]
+                }
+            }
             migtmp[, prop := mig / totmig][totmig == 0, prop := 0]
         } else { # mig is a rate
             migiotmp[, `:=`(rxstar_in = `in`)]
@@ -1163,7 +1184,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             res.io <- iotmp[, c(iocol, "age", "prop.out", "v"), with = FALSE]
             attr(res, "rc.out") <- res.io
             has.mult.traj <- id.col == "trajectory" && length(unique(res.io[[id.col]])) > 1
-            if(method == "fdmnopop") migtmp[, rate_code := 4] else migtmp[, rate_code := if(has.mult.traj) 6 else 5] # using code 5 & 6 for fdmp (6 samples from age-schedules)
+            if(method == "fdmnop") migtmp[, rate_code := 4] else migtmp[, rate_code := if(has.mult.traj) 6 else 5] # using code 5 & 6 for fdmp (6 samples from age-schedules)
         }
         frm <- paste(id.col, "~ year")
         res2 <- dcast(migtmp, frm, value.var = "migrate", fun.aggregate = mean)
@@ -1562,7 +1583,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 }
 
 .get.migration.traj <- function(pred, par, country, sex, scale = 1, ...) {
-    trajectory <- country_code <- v <- i.value <- age <- NULL # to avoid CRAN NOTEs
+    trajectory <- i.trajectory2 <- country_code <- v <- i.value <- age <- NULL # to avoid CRAN NOTEs
 	cidx <- pred$inputs[[par]][,'country_code'] == country 
 	idx <- cidx & is.element(pred$inputs[[par]][,'year'], pred$inputs$proj.years)
 	if(sum(idx) == 0) return(NULL)
@@ -1577,18 +1598,29 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
 	    is.fdm <- startsWith(pred$inputs$mig.age.method, "fdm")
 	    if(is.fdm){
 	        if(!is.null(pred$inputs$migFDMpred)){ # there are trajectories of FDM RC curves
-	            iotraj.traj <- unique(pred$inputs$migFDMpred$trajectory)
-	            iotraj.traj.index <- if(length(iotraj.traj) == nrow(dfw)) 1:nrow(dfw) else sample(
-	                seq_along(iotraj.traj), nrow(dfw), replace = length(iotraj.traj) < nrow(dfw))
 	            iotrajall <- pred$inputs$migFDMpred[country_code == country][, country_code := NULL]
-	            if(length(iotraj.traj) >= nrow(dfw)) {
-	                iotraj <- iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index]]
-	                iotraj[, trajectory := .GRP, by = "trajectory"] # re-number trajectories by their index
-	            } else { # some trajectories will to be repeated, so construct via rbind
+	            iotraj.traj <- unique(iotrajall$trajectory)
+	            if(length(iotraj.traj) > nrow(dfw)) { # we have more FDM trajectories than of total migration; expand total migration dataset to match FDM
+	                dfw.index <- sample(1:nrow(dfw), length(iotraj.traj), replace = TRUE)
+	                dfw <- dfw[dfw.index,]
+	                dfw[, trajectory := iotraj.traj]
+	                utrajs <- sort(unique(dfw$trajectory))
+	                ntrajs <- length(utrajs)
+	            }
+	            if(length(iotraj.traj) == nrow(dfw)){
+	                iotraj.traj.index <- 1:nrow(dfw)
+	                iotraj <- iotrajall
+	                if(!setequal(utrajs, iotraj.traj)){ # trajectories are numbered differently; re-number
+	                    iotraj[data.table(trajectory = iotraj.traj, trajectory2 = utrajs), 
+	                           trajectory := i.trajectory2, on = "trajectory"]
+	                }
+	            } else { # now the only case left is when the FDM dataset is smaller than dfw
+	                iotraj.traj.index <- sample(seq_along(iotraj.traj), nrow(dfw), replace = TRUE) # if FDM smaller, re-sample trajectories
+                    # construct the fdm dataset by binding the rows belonging to the sampled trajectories
 	                iotraj <- NULL
 	                for(i in 1:length(iotraj.traj.index)){
 	                    iotraj <- rbind(iotraj, iotrajall[trajectory %in% iotraj.traj[iotraj.traj.index[i]]][
-	                        , trajectory := i])
+	                        , trajectory := dfw[i, trajectory]])
 	                }
 	            }
 	            iotraj[, age := factor(age, levels = unique(pred$inputs$migFDMpred$age))] # change it to factor in order not to re-order the rows

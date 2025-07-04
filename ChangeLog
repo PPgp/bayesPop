@@ -1,6 +1,10 @@
-11.1-5 (07/02/2025)
+11.1-5/6 (07/04/2025)
 ------
 Added option of negative slope for FDM.
+
+Number of migration trajectories is now max(total mig trajectories, FDM trajectories).
+
+Added sampling if FDM applied to counts.
 
 11.1-1/4 (05/30/2025)
 ------
