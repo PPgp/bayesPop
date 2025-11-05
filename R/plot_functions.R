@@ -98,7 +98,7 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 								  ) {
 
 	sex <- match.arg(sex)
-	if(!is.null(adj.to.file)) {
+	if(!is.null(adj.to.file) && !is.null(expression)) {
 		adjust <- FALSE
 		if (is.null(country))
 			stop('Argument "country" must be given for the adjustment.')
@@ -117,10 +117,10 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 		reload.traj.if.needed <- FALSE
 	} else {
 		trajectories <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj, 
-										typical.trajectory=typical.trajectory, adjust=adjust)
+								typical.trajectory=typical.trajectory, adjust=adjust, adj.to.file=adj.to.file)
 		pop.observed.all <- get.pop.observed(pop.pred, country$code, sex=sex, age=age)
 	}
-	#stop('')
+
 	cqp <- list()
 	for (i in 1:length(pi))
 		cqp[[i]] <- get.pop.traj.quantiles(trajectories$quantiles, pop.pred, country$index, country$code, 
@@ -192,8 +192,15 @@ do.pop.trajectories.plot <- function(pop.pred, country=NULL, expression=NULL, pi
 	if (half.child.variant && !is.null(trajectories$half.child)) {
 		lty <- c(lty, max(lty)+1)
 		llty <- length(lty)
-		lines(x2, trajectories$half.child[,1], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
-		lines(x2, trajectories$half.child[,2], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
+		hch <- trajectories$half.child
+		if(adjust && !is.null(trajectories$trajectories)){ # shift half child to be centered around the median
+		    midhch <- hch[,1] + (hch[,2] - hch[,1])/2.
+		    medproj <- apply(trajectories$trajectories, 1, median)
+		    shift <- medproj - midhch
+		    hch <- hch + shift
+		}
+		lines(x2, hch[,1], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
+		lines(x2, hch[,2], type='l', col=col[4], lty=lty[llty], lwd=lwd[4])
 		legend <- c(legend, '+/- 0.5 child')
 		cols <- c(cols, col[4])
 		lwds <- c(lwds, lwd[4])
@@ -217,12 +224,11 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	if (is.null(country)  && is.null(expression)) 
 		stop('Argument "country" or "expression" must be given.')
 				
-	if(!is.null(adj.to.file)) {
+	if(!is.null(adj.to.file) && !is.null(expression)) {
 		adjust <- FALSE
 		if (is.null(country))
 			stop('Argument "country" must be given for the adjustment.')
 	}
-	
 	if(!is.null(country))
 		country <- get.country.object(country, country.table=pop.pred$countries)
 	
@@ -243,8 +249,8 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 		trajectories <- list(trajectories=NULL)
 		pop.observed <- get.pop.observed(pop.pred, country$code, sex=sex, age=age.idx)
 		if(lage==max.age.idx) {
-			if(sex == 'both') quant <- .get.pop.quantiles(pop.pred, '', adjust=adjust, ...)
-			else quant <- .get.pop.quantiles(pop.pred, if(sex=='male') 'M' else 'F', adjust=adjust, ...)
+			if(sex == 'both') quant <- .get.pop.quantiles(pop.pred, '', adjust=adjust, adj.to.file=adj.to.file, ...)
+			else quant <- .get.pop.quantiles(pop.pred, if(sex=='male') 'M' else 'F', adjust=adjust, adj.to.file=adj.to.file, ...)
 		}
 	}
 	x1 <- names(pop.observed)[-length(pop.observed)]
@@ -259,14 +265,16 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 	rownames(pred.table) <- c(x1, x2)
 	pred.table[x1,1] <- pop.observed[-length(pop.observed)]
 	pred.table[x2,1] <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
+							trajectories=trajectories$trajectories,	q=0.5, sex=sex, age=age.idx, reload=is.null(expression), 
+							adjust=adjust, adj.to.file=adj.to.file)
 	#if(is.na(pred.table[x2[1],1])) pred.table[x2[1],1] <- pop.observed[length(pop.observed)]
 	
 	colnames(pred.table) <- c('median', rep(NA,ncol(pred.table)-1))
 	idx <- 2
 	for (i in 1:length(pi)) {
 		cqp <- get.pop.traj.quantiles(quant, pop.pred, country$index, country$code, 
-							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression), adjust=adjust)
+							trajectories=trajectories$trajectories, pi=pi[i], sex=sex, age=age.idx, reload=is.null(expression), 
+							adjust=adjust, adj.to.file=adj.to.file)
 		if (!is.null(cqp)) {
 			pred.table[x2,idx:(idx+1)] <- t(cqp)
 		} else{
@@ -283,7 +291,14 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 		# load the half child variants from trajectory file
 		traj <- get.pop.trajectories(pop.pred, country$code, sex, age, nr.traj=0, adjust=adjust)
 		if(!is.null(traj$half.child)) {
-			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), traj$half.child))
+		    hch <- traj$half.child
+		    if(adjust && !is.null(traj$trajectories)){ # shift half child to be centered around the median
+		        midhch <- hch[,1] + (hch[,2] - hch[,1])/2.
+		        medproj <- apply(traj$trajectories, 1, median)
+		        shift <- medproj - midhch
+		        hch <- hch + shift
+		    }
+			pred.table <- cbind(pred.table, rbind(matrix(NA, nrow=length(x1), ncol=2), hch))
 			colnames(pred.table)[(ncol(pred.table)-1):ncol(pred.table)] <- c('-0.5child', '+0.5child')
 		}
 	}
@@ -294,7 +309,8 @@ do.pop.trajectories.table <- function(pop.pred, country=NULL, expression=NULL, p
 }
 
 get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL, pi=c(80, 95),
-							sex=c('both', 'male', 'female'), nr.traj=NULL, typical.trajectory=FALSE, load.trajectories=TRUE) {
+							sex=c('both', 'male', 'female'), nr.traj=NULL, typical.trajectory=FALSE, 
+							load.trajectories=TRUE, ...) {
 	projection <- TRUE
 	projection.index <- 1
 	if(!is.null(year)) {
@@ -311,21 +327,21 @@ get.data.byage <- function(pop.pred, country.object, year=NULL, expression=NULL,
 	if(projection) {
 		if(!is.null(expression)) {
 			trajectories <- get.pop.trajectories.from.expression.multiple.age(expression, pop.pred, nr.traj, 
-										typical.trajectory=typical.trajectory)
+										typical.trajectory=typical.trajectory, ...)
 			age.idx <- if(!is.null(rownames(trajectories$trajectories))) 
 							as.integer(rownames(trajectories$trajectories)) 
 						else 1:nrow(trajectories$trajectories)
 		} else {
 			if(load.trajectories) {
 				trajectories <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex, nr.traj=nr.traj, 
-										typical.trajectory=typical.trajectory)
+										typical.trajectory=typical.trajectory, ...)
 				age.idx <- trajectories$age.idx
 			} else {
 				if(sex == 'male') trajectories$quantiles <- pop.pred$quantilesMage
 				else {
 					if(sex=='female') trajectories$quantiles <- pop.pred$quantilesFage
 					else # load trajectories to get quantiles 
-						trajectories <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex)
+						trajectories <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex, ...)
 				}
 				age.idx <- seq_along(pop.pred$ages)
 			}
@@ -382,10 +398,9 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 								  sex=c('both', 'male', 'female'), 
 								  half.child.variant=FALSE,
 								  nr.traj=NULL, typical.trajectory=FALSE,
-								  xlim=NULL, ylim=NULL,  
-								  xlab='', ylab='Population projection', main=NULL, 
+								  xlab='', ylab='Population projection', 
 								  lwd=c(2,2,2,1), col=c('red', 'red', 'blue', '#00000020'),
-								  show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=NA, pt.cex=1, ...
+								  show.legend=TRUE, add=FALSE, type='l', pch=NA, ...
 								  ) {
 
 	sex <- match.arg(sex)
@@ -395,82 +410,104 @@ pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, p
 	if(!is.null(country))
 		country <- get.country.object(country, country.table=pop.pred$countries)
 		
-	data <- get.data.byage(pop.pred, country, year, expression, pi=pi,
-							sex=sex, nr.traj=nr.traj, typical.trajectory=typical.trajectory)
 	if(missing(ylab) && !is.null(expression)) ylab <- ''
 	# recycle the last value to ensure there are at least 4 elements
 	col <- c(col, rep(col[length(col)],3))
 	lwd <- c(lwd, rep(lwd[length(lwd)],3))
 	type <- c(type, rep(type[length(type)],3))
 	pch <- c(pch, rep(pch[length(pch)],3))
-	with(data, {
-	x <- 1:length(age.idx)
-	y <- pop.median
-	if(is.null(xlim)) xlim <- c(min(x), max(x))
-	if(is.null(ylim)) ylim <- ylim.loc
-		
-	if(is.null(main)) {
-		if(!is.null(expression)) main <- paste(year.label, ':', expression)
-		else {
-			main <- paste(country$name, year.label) 
-			if(sex != 'both') main <- paste(main, ': ', sex, sep='')		
-		}
-	}
-	if(!add) {
-		plot(x, y, type='n', xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
-			panel.first = grid(), ann=ann,  xaxt='n', ...)
-		if(ann) axis(1, at=1:length(age.idx), labels=age.labels, las=2)
-	}
-	# plot trajectories
-	if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
-		for (i in 1:length(trajectories$index)) {
-			lines(x, trajectories$trajectories[,projection.index,trajectories$index[i]], 
-					type=type[4], col=col[4], lwd=lwd[4], pch=pch[4], cex=pt.cex)
-		}
-	}
-	# median
-	lines(x,y, lwd=lwd[1], col=col[1], type=type[1], pch=pch[1], cex=pt.cex)
-	# plot given CIs
-	if(projection) {
-		lty <- 2:(length(pi)+1)
-		for (i in 1:length(pi)) {		
-			if (!is.null(cqp[[i]])) {
-				lines(x, cqp[[i]][1,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
-				lines(x, cqp[[i]][2,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
-			}
-		}
-		legend <- c('median', paste(pi, '% PI', sep=''))
-	} else {
-		legend <- c('observed')
-		lty <- c()
-		pi <- c()
-	}
-	lty <- c(1, lty)
-	lwds <- c(lwd[1], rep(lwd[2], length(pi)))
-	cols <- c(col[1], rep(col[2], length(pi)))
-	types <- c(type[1], rep(type[2], length(pi)))
-	pchs <- c(pch[1], rep(pch[2], length(pi)))
-	if (half.child.variant && !is.null(trajectories$half.child)) {
-		lty <- c(lty, max(lty)+1)
-		llty <- length(lty)
-		lines(x, trajectories$half.child[,projection.index,1], type=type[3], col=col[3], 
-					lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
-		lines(x, trajectories$half.child[,projection.index,2], type=type[3], col=col[3], 
-					lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
-		legend <- c(legend, '+/- 0.5 child')
-		cols <- c(cols, col[3])
-		lwds <- c(lwds, lwd[3])
-		types <- c(types, type[3])
-		pchs <- c(pchs, lwd[3])
-	}
-	if(show.legend && ann)
-		legend('topleft', legend=legend, lty=lty, bty='n', col=cols, lwd=lwds, pch=pchs, pt.cex=pt.cex)
-	})
+	
+	do.pop.byage.plot(pop.pred, country=country, year=year, expression=expression, pi=pi,
+	                              sex = sex, half.child.variant = half.child.variant,
+	                              nr.traj=nr.traj, typical.trajectory=typical.trajectory,
+	                              xlab=xlab, ylab=ylab, lwd=lwd, col=col,
+	                              show.legend=show.legend, add=add, type=type, pch=pch, ...)
+}
+
+
+do.pop.byage.plot <- function(pop.pred, country=NULL, year=NULL, expression=NULL, pi=c(80, 95),
+                           sex=c('both', 'male', 'female'), 
+                           half.child.variant=FALSE,
+                           nr.traj=NULL, typical.trajectory=FALSE,
+                           xlim=NULL, ylim=NULL,  
+                           xlab='', ylab='Population projection', main=NULL, 
+                           lwd=c(2,2,2,1), col=c('red', 'red', 'blue', '#00000020'),
+                           show.legend=TRUE, add=FALSE, ann=par('ann'), type='l', pch=NA, pt.cex=1, 
+                           adjust=FALSE, adj.to.file=NULL, ...
+                    ) {
+    
+    data <- get.data.byage(pop.pred, country, year, expression, pi=pi,
+                           sex=sex, nr.traj=nr.traj, typical.trajectory=typical.trajectory,
+                           adjust=adjust, adj.to.file=adj.to.file)
+
+    with(data, {
+        x <- 1:length(age.idx)
+        y <- pop.median
+        if(is.null(xlim)) xlim <- c(min(x), max(x))
+        if(is.null(ylim)) ylim <- ylim.loc
+        
+        if(is.null(main)) {
+            if(!is.null(expression)) main <- paste(year.label, ':', expression)
+            else {
+                main <- paste(country$name, year.label) 
+                if(sex != 'both') main <- paste(main, ': ', sex, sep='')		
+            }
+        }
+        if(!add) {
+            plot(x, y, type='n', xlim=xlim, ylim=ylim, ylab=ylab, xlab=xlab, main=main, 
+                 panel.first = grid(), ann=ann,  xaxt='n', ...)
+            if(ann) axis(1, at=1:length(age.idx), labels=age.labels, las=2)
+        }
+        # plot trajectories
+        if(!is.null(trajectories$index) && !is.null(trajectories$trajectories)) {
+            for (i in 1:length(trajectories$index)) {
+                lines(x, trajectories$trajectories[,projection.index,trajectories$index[i]], 
+                      type=type[4], col=col[4], lwd=lwd[4], pch=pch[4], cex=pt.cex)
+            }
+        }
+        # median
+        lines(x,y, lwd=lwd[1], col=col[1], type=type[1], pch=pch[1], cex=pt.cex)
+        # plot given CIs
+        if(projection) {
+            lty <- 2:(length(pi)+1)
+            for (i in 1:length(pi)) {		
+                if (!is.null(cqp[[i]])) {
+                    lines(x, cqp[[i]][1,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
+                    lines(x, cqp[[i]][2,], type=type[2], col=col[2], lty=lty[i], lwd=lwd[2], pch=pch[2], cex=pt.cex)
+                }
+            }
+            legend <- c('median', paste(pi, '% PI', sep=''))
+        } else {
+            legend <- c('observed')
+            lty <- c()
+            pi <- c()
+        }
+        lty <- c(1, lty)
+        lwds <- c(lwd[1], rep(lwd[2], length(pi)))
+        cols <- c(col[1], rep(col[2], length(pi)))
+        types <- c(type[1], rep(type[2], length(pi)))
+        pchs <- c(pch[1], rep(pch[2], length(pi)))
+        if (half.child.variant && !is.null(trajectories$half.child)) {
+            lty <- c(lty, max(lty)+1)
+            llty <- length(lty)
+            lines(x, trajectories$half.child[,projection.index,1], type=type[3], col=col[3], 
+                  lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
+            lines(x, trajectories$half.child[,projection.index,2], type=type[3], col=col[3], 
+                  lty=lty[llty], lwd=lwd[3], pch=pch[3], cex=pt.cex)
+            legend <- c(legend, '+/- 0.5 child')
+            cols <- c(cols, col[3])
+            lwds <- c(lwds, lwd[3])
+            types <- c(types, type[3])
+            pchs <- c(pchs, lwd[3])
+        }
+        if(show.legend && ann)
+            legend('topleft', legend=legend, lty=lty, bty='n', col=cols, lwd=lwds, pch=pchs, pt.cex=pt.cex)
+    })
 }
 
 pop.byage.table <- function(pop.pred, country=NULL, year=NULL, expression=NULL, pi=c(80, 95),
 								  sex=c('both', 'male', 'female'), 
-								  half.child.variant=FALSE) {
+								  half.child.variant=FALSE, ...) {
 	sex <- match.arg(sex)
 	if (is.null(country)  && is.null(expression)) 
 		stop('Argument "country" or "expression" must be given.')
@@ -479,7 +516,8 @@ pop.byage.table <- function(pop.pred, country=NULL, year=NULL, expression=NULL, 
 		country <- get.country.object(country, country.table=pop.pred$countries)
 		
 	data <- get.data.byage(pop.pred, country, year, expression, pi=pi,
-							sex=sex, load.trajectories= if(half.child.variant && is.null(expression)) TRUE else FALSE)
+							sex=sex, load.trajectories= if(half.child.variant && is.null(expression)) TRUE else FALSE,
+							...)
 	with(data, {
 	x <- age.labels
 	l <- length(x)
@@ -603,6 +641,8 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 	lages <- length(ages.idx)
 	nquant <- length(pi)
 	quantiles.table <- trajs <- list(male=NULL, female=NULL)
+	adjust.env <- NULL
+	do.adjust <- FALSE
 	if(!any(draw.projection) || !any(draw.projection & (year.idx>1))) nquant <- 0
 	if(nquant > 1 && sort.pi) pi<-sort(pi, decreasing=TRUE) # this is needed for drawing the largest intervals first (because of overlapping issues)
 	ind.trajs <- NULL
@@ -627,13 +667,24 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 				ind.trajs[['male']]$trajectories[,,itraj] <- ind.trajs[['male']]$trajectories[,,itraj]/sTm
 				ind.trajs[['female']]$trajectories[,,itraj] <- ind.trajs[['female']]$trajectories[,,itraj]/sTm
 			}
-		} else 
+		} else # no proportion (raw scale)
 			quantiles.table <- list(male=trajectoriesM$quantiles, female=trajectoriesF$quantiles)
 
 		
-	} else # population indicator
+	} else {# population indicator
 		quantiles.table <- if(proportion) list(male=pop.pred$quantilesPropMage, female=pop.pred$quantilesPropFage)
                        else list(male=pop.pred$quantilesMage, female=pop.pred$quantilesFage)
+		do.adjust <- ("adjust" %in% names(list(...)) && list(...)$adjust) || 
+		    ("adj.to.file" %in% names(list(...)) && !is.null(list(...)$adj.to.file))
+		if(do.adjust){
+		    adjust.env <- new.env()
+		    if(proportion) stop("Adjusted pyramids are not implemented on proportional scale.")
+		    trajectoriesM <- get.pop.trajectories.multiple.age(pop.pred, country$code, "male", adjust.env = adjust.env, ...)
+		    trajectoriesF <- get.pop.trajectories.multiple.age(pop.pred, country$code, "female", adjust.env = adjust.env, ...)
+		    quantiles.table$male <- trajectoriesM$quantiles
+		    quantiles.table$female <- trajectoriesF$quantiles
+		}
+	}
     is.valid.pi <- if(proportion && nquant>0) is.saved.pi(pop.pred, pi)
                    else rep(TRUE, nquant)
 	maxx<-0
@@ -653,6 +704,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 										high=data.frame(male=rep(NA, lages), female=rep(NA, lages), row.names=age.labels))
 		}
 	}
+
 	for(sex in c('male', 'female')) {
 		dimt <- dim(quantiles.table[[sex]])
 		dimn <- dimnames(quantiles.table[[sex]])
@@ -660,7 +712,7 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		for(iage in 1:lages) {
 			if(any(draw.projection)) {
 				if(length(dim(quantiles.table[[sex]]))==4) { # population
-					table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
+			        table <- drop(quantiles.table[[sex]][,ages.idx[iage],,])
 					table <- array(table, dimt[c(1,3:4)], dimnames=c(list(NULL), dimn[3], dimn[4]))
 					cidx <- country$index
 					ci.reload <- TRUE
@@ -672,8 +724,9 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 					cidx <- NULL
 					ci.reload <- FALSE
 				}
-				med <- get.pop.traj.quantiles(table, pop.pred, cidx, country$code, trajectories=this.trajs,
-												q=0.5, reload=FALSE, sex=sex, age=ages.idx[iage])
+			    med <- get.pop.traj.quantiles(table, pop.pred, cidx, country$code, trajectories=this.trajs,
+			                                      q=0.5, reload=FALSE, sex=sex, age=ages.idx[iage], 
+			                                      adjust.env = adjust.env, ...)
 			}
 			if(any(!draw.projection)) {
 				if(indicator != 'P') {
@@ -693,7 +746,8 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 				pi.name <- as.character(pi[i])
 				quant <- get.pop.traj.quantiles(table, 
 												pop.pred, cidx, country$code, trajectories=this.trajs,
-												pi=pi[i], reload=ci.reload, sex=sex, age=ages.idx[iage])
+												pi=pi[i], reload=ci.reload, sex=sex, 
+												age=ages.idx[iage], adjust.env = adjust.env, ...)
 				for(yi in 1:lyears) {
 					if(draw.projection[yi] & (year.idx[yi] > 1)) {
 						pyr.ci[[yi]][[pi.name]]$low[iage,sex] <- quant[1,year.idx[yi]]
@@ -710,12 +764,12 @@ get.bPop.pyramid.bayesPop.prediction <- function(data, country, year=NULL, indic
 		mtraj <- ind.trajs$male
 		if(is.null(mtraj)) 
 			mtraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='male', 
-										age=ages.idx, nr.traj, proportion=proportion)
+										age=ages.idx, nr.traj, proportion=proportion, adjust.env = adjust.env, ...)
 		if(!is.null(dim(mtraj$trajectories))) {
 			ftraj <- ind.trajs$female
 			if(is.null(ftraj)) 
 				ftraj <- get.pop.trajectories.multiple.age(pop.pred, country$code, sex='female', 
-										age=ages.idx, nr.traj, proportion=proportion) 
+										age=ages.idx, nr.traj, proportion=proportion, adjust.env = adjust.env, ...) 
 			for(yi in 1:lyears) {
 				if(!draw.projection[yi] || (year.idx[yi] == 1)) {
 					trajs[[yi]] <- list()
@@ -1219,13 +1273,16 @@ pop.cohorts.plot <- function(pop.pred, country=NULL, expression=NULL, cohorts=NU
 		cohort.data <- cohorts(pop.pred, country=country, expression=expression, pi=pi)
 	all.cohorts <- names(cohort.data)[-which(names(cohort.data) == 'last.observed')]
 	all.cohorts.num.start <- as.integer(substr(all.cohorts, 1, 4))
+	step <- if(pop.pred$annual) 1 else 5
 	if(is.null(cohorts)) 
-		cohorts <- seq(cohort.data[['last.observed']], by=5, 
+		cohorts <- seq(cohort.data[['last.observed']], by=step, 
 							length=min(10, sum(all.cohorts.num.start > cohort.data[['last.observed']])))
-	if(any(is.numeric(cohorts))) {
-		# convert to the from-to format, e.g. 2000-2005
-		from.cohorts <- .round.to.lower5(cohorts)
-		cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	if(any(is.numeric(cohorts))){
+	    if(!pop.pred$annual) {
+		    # convert to the from-to format, e.g. 2000-2005
+		    from.cohorts <- .round.to.lower5(cohorts)
+		    cohorts <- paste(from.cohorts, '-', from.cohorts+5, sep="")
+	    } else cohorts <- as.character(cohorts)
 	}
 	if(is.null(xlim))
 		xlim <- range(unlist(sapply(cohorts, function(x) range(as.integer(colnames(cohort.data[[x]]))))))

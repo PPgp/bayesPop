@@ -39,7 +39,7 @@ If observed PASFR is given (in \code{inputs$pasfr}), it is a tab-separated file 
 
 In addition, if the present year differs by country, the \code{inputs} list accepts the entry \code{last.observed}, which is a tab-separated file with columns \dQuote{country_code} and \dQuote{last.observed}. It can contain the year of the last observed time period for each country. 
 
-In the \code{project.pasfr} function, if the TFR input (given either as a long file or as a simulation directory), contains more than one trajectory, the median is derived over the trajectories for each time period. Then, PASFR corresponding to this median is projected using the method from Sevcikova et al (2015).
+In the \code{project.pasfr} function, if the TFR input (given either as a long file or as a simulation directory), contains more than one trajectory, the median is derived over the trajectories for each time period. Then, PASFR corresponding to this median is projected using the method from Sevcikova et al (2016).
 
 For \code{project.pasfr.traj}, the PASFR is projected for single trajectories of TFR.
 }
@@ -49,7 +49,8 @@ Returns invisible data frame with the projected PASFR.
 }
 
 \references{
-H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version: \url{https://arxiv.org/abs/1503.05215}
+H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2016). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. In: Dynamic Demographic Analysis, ed. Schoen R. (Springer), pp. 285-310. Earlier version in \href{https://arxiv.org/abs/1503.05215}{arXiv:1503.05215}.
+
 }
 
 \author{

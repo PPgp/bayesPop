@@ -8,7 +8,7 @@ import(
 importFrom("graphics", "par", "plot", "grid", "lines", "mtext", "axis", "segments")
 importFrom("grDevices", "dev.off", "rainbow", "adjustcolor")
 importFrom("stats", "reshape", "lm", "coefficients", "smooth.spline", "splinefun", "approx", "median", "quantile", 
-           "sd", "aggregate")
+           "sd", "aggregate", "rnorm")
 importFrom("utils", "write.table", "read.table", "menu", "read.csv", "read.delim", "data")
 importFrom("reshape2", "melt")
 importFrom("plyr", "aaply")
@@ -54,6 +54,7 @@ get.trajectory.indices,
 extract.trajectories.eq,
 extract.trajectories.ge,
 extract.trajectories.le,
+peak.probability,
 cohorts,
 pop.cohorts.plot,
 mac.expression,
@@ -63,7 +64,9 @@ age.specific.migration,
 project.pasfr,
 project.pasfr.traj,
 migration.totals2age,
-rcastro.schedule
+rcastro.schedule,
+pop.scale.prediction,
+write.scaled.pop
 )
 
 # register S3 methods
