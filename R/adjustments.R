@@ -457,22 +457,23 @@ create.scaled.pop <- function(pop.pred, target.file,
 #                      )
 #    pop.stat <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("country_code", "year", "sex", "age")]
 ##  need to loop over locations due to memory issues    
-    pop.stat <- NULL
+    pop.stat.list <- NULL
     if(verbose) cat("\nProcessing ")
-    for (loc in pop.pred$countries$code){
+    for (iloc in 1:length(pop.pred$countries$code)){
+        loc <- pop.pred$countries$code[iloc]
         if(verbose)
             cat(loc, ", ")
         pop.traj <- get.pop.exba(paste0("P", loc, "_M{}"), pop.pred, as.dt = TRUE)
-        pop.stat <- rbind(pop.stat, 
-                          pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
+        pop.stat.list[[iloc]] <- pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
                               , `:=`(country_code = loc, sex = "male")
-                          ])
+                                        ]
         pop.traj <- get.pop.exba(paste0("P", loc, "_F{}"), pop.pred, as.dt = TRUE)
-        pop.stat <- rbind(pop.stat, 
+        pop.stat.list[[iloc]] <- rbind(pop.stat.list[[iloc]], 
                           pop.traj[, list(sim = do.call(stat, list(indicator))), by = c("year", "age")][
                               , `:=`(country_code = loc, sex = "female")
                           ])
     }
+    pop.stat <- rbindlist(pop.stat.list)
     if(verbose) cat("\n")
     # compute pop shares of each location within the aggregation,
     # to be used for distributing the adjustments
@@ -493,12 +494,11 @@ create.scaled.pop <- function(pop.pred, target.file,
     
     # merge in the total shift
     pop.stat[targets, totshift := i.shift, on = c("year", "sex", "age")]
-    # if the target is smaller than simulated set the share for zero age groups to 0
+    # if the target is smaller than simulated, set the share for zero age groups to 0
     pop.stat[totshift > 0 & sim == 0, share := 0] 
 
     # rescale again
     pop.stat[, share := share / sum(share), by = c("year", "sex", "age")][is.na(share), share := 0]
-    
     
     # compute adjusted (target) pop for each location
     pop.stat[, shift := totshift * share][, simadj := pmax(0, sim - shift)][, shift := sim - simadj]
