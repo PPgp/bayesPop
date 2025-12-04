@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova
-date: 2025-11-13
+date: 2025-11-26
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -17,6 +17,8 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 download_data <- FALSE
+simulate_comp <- FALSE
+simulate_pop <- FALSE
 ```
 
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual 1x1 data. We will use example data for the US states to demonstrate the various functionalities. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
@@ -106,6 +108,14 @@ library(bayesPop)
 library(bayesMig)
 ```
 
+We decide on how many trajectories we'd like to generate in each step. The more trajectories, the smoother the results, but the longer the processing time in some cases, especially in step 4. Thus, for steps 1. to 3., we choose 1000 trajectories, while for step 4., to keep the processing time low we will generate only 50 trajectories. Note however, that in a real world simulation one would need to increase it to at least 1000.
+
+```{r}
+nr_traj_comp <- 1000
+nr_traj_pop <- 50
+```
+
+
 # Total Fertility Rate
 
 The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in  the **bayesTFR** package. It is based on the idea that TFR in sub-national units closely follow the corresponding national projections. Thus, we base our projections on the US probabilistic projections that approximate the United Nations' official projections from the [World Population Prospects 2024](https://population.un.org/wpp) (UN WPP 2024). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08). 
@@ -141,32 +151,30 @@ The subnational TFR predictions will be stored in the sub-directory "tfr" of our
 dir_tfr <- file.path(wrk_dir, "tfr")
 ```
 
-We decide on how many trajectories we'd like to generate. The more trajectories, the smoother the results, but the longer the processing time. One can also choose the same number as the national simulation (in our case 1000), obtained via `summary(tfr_world_pred)`. To keep the processing time low, for this example we choose 50 trajectories. However, this would not be sufficient in a real world simulation.
-
-```{r}
-nr_traj <- 50
-```
+The chosen number of trajectories (`r nr_traj_comp`) is the same as in the national simulation, obtained via `summary(tfr_world_pred)`, which is the upper bound for this choice.
 
 To launch the predictions, we use the function `tfr.predict.subnat()`:
 
-```{r eval=TRUE, include=TRUE, results = FALSE}
+```{r eval=simulate_comp, include=TRUE, results = FALSE}
 tfr_pred <- tfr.predict.subnat(countries = 840, sim.dir = world_dir_tfr, output.dir = dir_tfr,
-                               annual = TRUE, end.year = 2050, nr.traj = nr_traj, 
+                               annual = TRUE, end.year = 2050, nr.traj = nr_traj_comp, 
                                verbose = TRUE, my.tfr.file = tfr_subnat_file
                                )
 ```
 
-Here, we are directing the function to generate `r nr_traj`  trajectories of future annual TFR until 2050 for regions found in the file given by argument `my.tfr.file`, that is for regions that belong to country 840 (i.e. the US). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
+
+
+Here, we are directing the function to generate `r nr_traj_comp`  trajectories of future annual TFR until 2050 for regions found in the file given by argument `my.tfr.file`, that is for regions that belong to country 840 (i.e. the US). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
 
 Since the `tfr.predict.subnat()` function allows to run predictions for multiple countries at once (given by the vector `countries`), the return value is a list with names corresponding to the country codes. Thus, to extract the list item for the US, we do:
 
-```{r}
+```{r eval=simulate_comp}
 tfr_pred_us <- tfr_pred[["840"]]
 ```
 
 Alternatively, if the predictions are accessed at a later time point, one can obtain the same object by pointing to the simulation directory: 
 
-```{r}
+```{r eval=!simulate_comp}
 tfr_pred_us <- get.regtfr.prediction(dir_tfr, country = 840)
 ```
 
@@ -196,7 +204,7 @@ One can extract all trajectories as a matrix, for example to be used as an input
 trajs <- get.tfr.trajectories(tfr_pred_us, "Washington")
 dim(trajs)
 ```
-The dimensions of the resulting matrix correspond to the number of time points (`r nrow(trajs)`) x number of trajectories (`r nr_traj`).
+The dimensions of the resulting matrix correspond to the number of time points (`r nrow(trajs)`) x number of trajectories (`r nr_traj_comp`).
 
 Note that since the **bayesTFR** package was originally designed to work on the national level, many functions accept the argument `country` or have "country/ies" in its name. When using in the subnational context, country means a region. For example, to view all regions included in the projection, including their codes, one can use:
 
@@ -255,25 +263,25 @@ dir_e0 <- file.path(wrk_dir, "e0")
 
 Now we can launch the $e_0$ predictions:
 
-```{r eval=TRUE, include=TRUE, results = FALSE}
+```{r eval=simulate_comp, include=TRUE, results = FALSE}
 e0_pred <- e0.predict.subnat(countries = 840, sim.dir= world_dir_e0, output.dir = dir_e0,
-                             annual = TRUE, end.year = 2050, nr.traj = nr_traj,
+                             annual = TRUE, end.year = 2050, nr.traj = nr_traj_comp,
                              my.e0.file = e0F_subnat_file, 
                              predict.jmale = TRUE, my.e0M.file = e0M_subnat_file
                              )
 ```
 
-Here, we are generating `r nr_traj` trajectories of annual future $e_0$ until 2050 using data found in the file given by the `my.e0.file` argument, which in our case is female $e_0$. However, setting the argument `predict.jmale` to `TRUE`, we are directing the function to also predict male $e_0$ by applying the female-male gap model using the male $e_0$ found in the file given by the `my.e0M.file` argument. 
+Here, we are generating `r nr_traj_comp` trajectories of annual future $e_0$ until 2050 using data found in the file given by the `my.e0.file` argument, which in our case is female $e_0$. However, setting the argument `predict.jmale` to `TRUE`, we are directing the function to also predict male $e_0$ by applying the female-male gap model using the male $e_0$ found in the file given by the `my.e0M.file` argument. 
 
 As in the TFR case, the resulting object from the above call is a list and we can extract the US results by
 
-```{r}
+```{r eval=simulate_comp}
 e0_pred_us <- e0_pred[["840"]]
 ```
 
 Or, if the predictions are accessed at a later time point: 
 
-```{r}
+```{r eval=!simulate_comp}
 e0_pred_us <- get.rege0.prediction(dir_e0, country = 840)
 ```
 
@@ -338,7 +346,7 @@ e0.trajectories.table(e0M_world_pred, "USA")["2023", "median"]
 
 In this step, we will generate probabilistic projection of net migration rates (NMR) for all states, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical (BHM) model by  [Azose and Raftery (2015)](http://link.springer.com/article/10.1007/s13524-015-0415-0).
 
-The units in our historical estimates are the number of migrants per 1000 people. Here are the first few lines in that dataset:
+The units in our historical estimates are the number of migrants per population. Here are the first few lines in that dataset:
 
 ```{r eval=TRUE}
 mig_subnat_file <- file.path(data_dir_us, "US_states_migrate.txt")
@@ -352,54 +360,55 @@ The methodology and the **bayesMig** package itself have been designed for a mod
 subset(mig_data, include_code == 1)[, 1:2]
 ```
 
-To estimate the model to derive state-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain and the number of chains:
+To estimate the model to derive state-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain, the thinning interval and the number of chains:
 
 ```{r eval=TRUE}
-mig_iter <- 250
+mig_iter <- 3000
+mig_thin <- 3
 mig_nr_chains <- 2
 ```
 
-Normally in a real-world example, about 3 x 50,000 iterations would be needed. For our toy example, we will only iterate `r mig_nr_chains` x `r mig_iter` times. The simulation results will be stored in the sub-directory "mig" of our working directory:
+Normally in a real-world example, about 3 x 50,000 iterations would be needed. For our toy example, we will only iterate `r mig_nr_chains` x `r mig_iter` times and keep every `r mig_thin`rd iteration. The simulation results will be stored in the sub-directory "mig" of our working directory:
 
 ```{r eval=TRUE, include=TRUE}
 dir_mig <- file.path(wrk_dir, "mig")
 ```
 
-```{r eval=TRUE, include = FALSE}
+```{r eval=simulate_comp, include = FALSE}
 if(dir.exists(dir_mig)) unlink(dir_mig, recursive = TRUE)
 ```
 
 To launch the MCMCs with these settings, we use the function `run.mig.mcmc()` as follows:
 
-```{r eval=TRUE, results = FALSE}
+```{r eval=simulate_comp, results = FALSE}
 mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter, 
-                         output.dir = dir_mig, my.mig.file = mig_subnat_file,
-                         annual = TRUE, present.year = 2024, pop.denom = 1000)
+                         thin = mig_thin, output.dir = dir_mig, 
+                         my.mig.file = mig_subnat_file,
+                         annual = TRUE, present.year = 2023,
+                         verbose.iter = 500)
 ```
 
-The `pop.denom` argument tells the model that the denominator in our historical dataset is 1000. If the units were migrants per person, we would use the default of `pop.denom = 1`. 
+The function also accepts an optional argument `exclude.from.world`. This can be used in addition to the `include_code` column to explicitly specify additional locations to be excluded from influencing the global parameters. For example, to exclude all territories and Rhode Island, one could use `exclude.from.world = 44`. The function `get.countries.table(mig_mcmc)` can help to see the location codes. States excluded from influencing the global parameters are sorted at the end of that list. In [Yu et al. (2023)](https://doi.org/10.1215/00703370-10772782) which generates population projections for all counties in the Washington State, all counties below population of 25,000 were passed to the `exclude.from.world` argument.
 
-The function also accepts an argument `exclude.from.world`. This can be used in addition to the `include_code` column to explicitly specify additional locations to be excluded from influencing the global parameters. For example, to exclude all territories and Rhode Island, one could use `exclude.from.world = 44`. The function `get.countries.table(mig_mcmc)` can help to see the location codes. States excluded from influencing the global parameters are sorted at the end of that list. In [Yu et al. (2023)](https://doi.org/10.1215/00703370-10772782) which generates population projections for all counties in the Washington State, all counties below population of 25,000 were passed to the `exclude.from.world` argument.
+An optional argument `start.year` could be used to limit the time span of the observed data used for the estimation. Here we use all available data from 2010 to 2023.
 
-An optional argument `start.year` could be used to limit the time span of the observed data used for the estimation. Here we use all available data from 2010 to 2024.
+Now various **bayesMig** functions can be used to explore the results of the estimation. For example, `mig.partraces.plot(mig_mcmc, burnin = 1000)` for plotting the traces of global parameters, or `mig.partraces.cs.plot` for traces of the state-specific parameters. See `?bayesMig` for more info.
 
-Now various **bayesMig** functions can be used to explore the results of the estimation. For example, `mig.partraces.plot(mig_mcmc, burnin = 100)` for plotting the traces of global parameters, or `mig.partraces.cs.plot` for traces of the state-specific parameters. See `?bayesMig` for more info.
+We will now use the MCMC results which are stored in `dir_mig` to generate future trajectories of NMR for each state from 2024 to 2050:
 
-We will now use the MCMC results which are stored in `dir_mig` to generate future trajectories of NMR for each state from 2025 to 2050:
-
-```{r eval=TRUE, results = FALSE}
+```{r eval=simulate_comp, results = FALSE}
 mig_pred <- mig.predict(sim.dir = dir_mig, end.year = 2050, 
-                        nr.traj = nr_traj, burnin = 100,
-                        save.as.ascii = nr_traj, replace.output = TRUE)
+                        nr.traj = nr_traj_comp, burnin = 1000,
+                        save.as.ascii = nr_traj_pop, replace.output = TRUE)
 ```
 
-We are using the same number of trajectories as for TFR and $e_0$, namely `r nr_traj` while discarding first 100 iterations from each chain as burnin. Note that after applying the burnin, our toy MCMCs will contain `r mig_nr_chains` x (`r mig_iter` - 100) = `r mig_nr_chains*(mig_iter - 100)` iterations. These will be then collapsed and thinned by `r mig_nr_chains*(mig_iter - 100)/nr_traj` to yield `r nr_traj` trajectories. In a real-world simulation with 3 x 50,000 iterations, we would recommend to use about 20,000 burnin.
+We are using the same number of trajectories as for TFR and $e_0$, namely `r nr_traj_comp` while discarding first 1000 iterations from each chain as burnin. Note that after applying the burnin, our toy MCMCs will contain `r mig_nr_chains` x (`r mig_iter` - 1000) = `r mig_nr_chains*(mig_iter - 1000)` iterations. These will be then collapsed and thinned by `r mig_nr_chains*(mig_iter - 1000)/nr_traj_comp` to yield `r nr_traj_comp` trajectories. In a real-world simulation with 3 x 50,000 iterations, we would recommend to use about 20,000 burnin.
 
 The last option, `save.as.ascii`, causes that the projection directory "{dir_mig}/predictions" contains a file called "ascii_trajectories.csv" which will be used as input to the population projection in the next section.
 
 To retrieve the MCMC object and the prediction from disk, for example at later time, one can use:
 
-```{r eval=TRUE}
+```{r eval=!simulate_comp}
 mig_mcmc <- get.mig.mcmc(dir_mig)
 mig_pred <- get.mig.prediction(dir_mig)
 ```
@@ -414,6 +423,8 @@ One can see that for Washington, the NMR is projected likely to be positive, whi
 
 
 # Population
+
+## Inputs 
 
 The inputs for probabilistic population projections consist of the three **probabilistic components** we just generated, namely future 
 
@@ -436,12 +447,20 @@ file_mig_traj <- file.path(dir_mig, "predictions/ascii_trajectories.csv")
 
 In addition to the probabilistic inputs, the following **deterministic datasets** are needed, most of which we downloaded in the first section:
 
-* initial population estimates by sex and age (files "US_states_popM.txt" and "US_states_popF.txt")
-* historical estimates of sex- and age-specific mortality rates (files "US_states_mxM.txt" and "US_states_mxF.txt")
-* historical estimates of percent age-specific fertility (file "US_states_pasfr.txt")
-* historical estimates of sex-ratio at birth
-* historical migration counts (file "US_states_migcounts.txt")
-* dataset of locations (file "US_states_fips.txt")
+* Initial population estimates by sex and age (files "US_states_popM.txt" and "US_states_popF.txt").
+  * Only population at the present time is required, but longer series are helpful for viewing trends of various output indicators.
+* Historical estimates of sex- and age-specific mortality rates (files "US_states_mxM.txt" and "US_states_mxF.txt").
+  * These are needed to estimate Lee-Carter parameters in order to match future mortality rates to future $e_0$.
+* Historical estimates of percent age-specific fertility (file "US_states_pasfr.txt").
+  * Should include ages from 10 to 54.
+* Historical migration counts (file "US_states_migcounts.txt").
+  * Can be given as totals, totals by sex or age- and sex specific counts. We use total counts. The dataset is only used for viewing trends. It does not influence projected migration.
+* Historical estimates of sex-ratio at birth.
+  * An optional dataset. We will use the national values for all states.
+* Dataset of locations (file "US_states_fips.txt").
+  *  Regions with "location_type" of 4 will be processed, while the rest will be ignored. The last entry (United States of America) is needed for aggregations.
+
+In all of these deterministic input datasets, the region-specific ID column is called "reg_code".
 
 Before launching the population predictions, we set the location for storing the results. It will be sub-directory "pop" of our working directory:
 
@@ -449,14 +468,26 @@ Before launching the population predictions, we set the location for storing the
 dir_pop <- file.path(wrk_dir, "pop")
 ```
 
-Now we generate future population trajectories for all US states:
+```{r eval=simulate_pop, include = FALSE}
+if(dir.exists(dir_pop)) unlink(dir_pop, recursive = TRUE)
+```
 
-```{r eval=TRUE, include=TRUE, results = FALSE}
-pop_pred <- pop.predict.subnat(output.dir = dir_pop, default.country = 840, 
-                locations = file.path(data_dir_us, "US_states_fips.txt"),
+In addition, we create a pointer to the location file containing codes for all regions:
+
+```{r eval=TRUE}
+file_locs <- file.path(data_dir_us, "US_states_fips.txt")
+```
+
+## Generating Population Projections
+
+Now we generate future population sex- and age-specific trajectories for all US states:
+
+```{r eval=simulate_pop, include=TRUE, results = FALSE}
+pop_pred <- pop.predict.subnat(output.dir = dir_pop, 
+                locations = file_locs, default.country = 840, 
                 annual = TRUE, wpp.year = 2024, 
                 present.year = 2023, end.year = 2050,
-                nr.traj = nr_traj, verbose = TRUE, 
+                nr.traj = nr_traj_pop, verbose = TRUE, 
                 inputs = list(
                     popM = file.path(data_dir_us, "US_states_popM.txt"),
                     popF = file.path(data_dir_us, "US_states_popF.txt"),
@@ -469,13 +500,81 @@ pop_pred <- pop.predict.subnat(output.dir = dir_pop, default.country = 840,
                     e0M.sim.dir = "joint_"
                   ),
                   mig.age.method = "rc", mig.is.rate = c(FALSE, TRUE), 
-                  keep.vital.events = TRUE, pasfr.ignore.phase2 = TRUE,
-                  replace.output = TRUE
+                  keep.vital.events = TRUE, pasfr.ignore.phase2 = TRUE
             )
 ```
-Note that by default total migration is distributed into ages using a basic Rogers-Castro function. An alternative method is implemented in **bayesPop**, the Flow Difference Method (Ševčíková, Raymer and Raftery, 2024), which might be more suitable for subnational units that experience a different pattern than Rogers-Castro, for example, regions with high migration of retirees.
+The `default.country` argument determines the country to which the regions belong to, as it is used for extracting default datasets in case some input datasets are missing. Such datasets would be pulled from a **wpp** package given by the `wpp.year` argument. In our example, since there is no entry for the dataset of sex-ratio at birth, it is taken from the US values in the **wpp2024** package.
+
+The `annual` argument determines that this is a 1x1 simulation. If it is `FALSE`, it is assumed that the simulation is 5x5. In such a case however, all input datasets, including the probabilistic inputs, must be on a 5x5 scale.
+
+By default total migration is distributed into ages using a basic Rogers-Castro function (argument `mig.age.method`). An alternative method is implemented in **bayesPop**, the Flow Difference Method (Ševčíková, Raymer and Raftery, 2024), which might be more suitable for subnational units that experience a different pattern than Rogers-Castro, for example, regions with high migration of retirees.
     
-Also note that this is a toy simulation. Normally we would want to generate 1000 or more trajectories.
+The two elements in the argument `mig.is.rate` determine that 1. the observed migration data are on the scale of counts (`FALSE`), and 2. the predicted migration trajectories are on the scale of rates (`TRUE`).
+
+If `keep.vital.events` is set to `FALSE`, only population results are stored and thus, can save significant amount of space on the hard drive. However, if you want to have an access to other indicators than population, set this argument to `TRUE`.
+
+If the current total fertility rate of all regions already passed the fertility transition, set the argument `pasfr.ignore.phase2` to `TRUE` as in this example. It has an impact on predicting the future fertility age distribution. 
+
+Note that this is a toy simulation where the number of trajectories (`nr.traj`) is set to a small number. Normally we would want to generate 1000 or more trajectories.
+
+Now we will aggregate over all states.
+
+```{r eval=simulate_pop, include=TRUE, results = FALSE}
+pop_aggr <- pop.aggregate.subnat(pop_pred, regions = 840, 
+                                 locations = file_locs)
+```
+
+To access the projection and aggregation objects from disk, e.g. at a later time point, one would do
+
+```{r eval=!simulate_pop}
+pop_pred <- get.pop.prediction(dir_pop)
+pop_aggr <- get.pop.aggregation(sim.dir = dir_pop)
+```
+
+## Results
+
+As in the case of the previous packages, the function `get.countries.table()` work with both, the `pop_pred` and `pop_aggr` objects:
+
+```{r, eval = TRUE}
+get.countries.table(pop_pred) |> tail()
+
+get.countries.table(pop_aggr)
+```
+
+Projection results can be viewed either as a function of time or as a function of age. These will be described below. 
+
+### Projections by time
+
+One can plot population projections by time for individual regions (here states) or for the aggregated geography (here the country):
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.trajectories.plot(pop_pred, "Washington", nr.traj = 20)
+```
+   
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.trajectories.plot(pop_aggr, 840, nr.traj = 20)
+``` 
+
+Tabular results can be viewed for example via
+
+```{r, eval = TRUE}
+pop.trajectories.table(pop_pred, "Washington") |> head()
+```
+
+### Projections by age
+
+To view projections as a function of age, do for example
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.byage.plot(pop_pred, "Texas", year = 2050, nr.traj = 20)
+```
+
+Functions to view probabilistic population pyramids are available. Here for example comparing two years on proportional scale.
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.pyramid(pop_pred, "Nebraska", year = c(2050, 2023), proportion = TRUE)
+```
+
 
 
 # References
