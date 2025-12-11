@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova, Aapo Hiilamo
-date: 2025-12-10
+date: 2025-12-11
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -548,7 +548,7 @@ get.countries.table(pop_pred) |> tail()
 get.countries.table(pop_aggr)
 ```
 
-Projection results can be viewed either as a function of time or as a function of age. These will be described below. 
+Projection results can be viewed either as a function of time, as a function of age, as well as by individual cohorts. These will be described below. See Ševčíková & Raftery (2016) for more detailed explanations and more examples.
 
 ### Projections by time
 
@@ -594,6 +594,55 @@ Functions to view probabilistic population pyramids are available. Here for exam
 pop.pyramid(pop_pred, "Kainuu", year = c(2050, 2024), proportion = TRUE)
 ```
 
+### Cohort projections
+
+One can view population projections for specific cohorts. For example, the following call will show projections of population born in ten different years:
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.cohorts.plot(pop_pred, "Pohjois-Pohjanmaa", 
+                 cohorts = seq(2000, 2045, by = 5))
+```
+
+The underlying data can be extracted via the function `cohorts()`. 
+
+### Using expressions to retrieve other indicators
+
+To retrieve other quantities of interest, **bayesPop** offers a simple expression language. An expression is a collection of basic components connected by arithmetic operations. A basic component has four parts, two of which are optional. They are summarized in the following figure.
+
+<img src="expression_basic_component.png" height="300"/>
+
+A basic component starts with a letter that defines what kind of indicator it is (e.g. "G" for net migration), which is followed by an indication of a location. In a national context, one could use 2- or 3-character ISO3166 codes or numerical codes. In the subnational context, these should be numerical identifiers only. Another option is to use "XXX", which is a wildcard for all locations. In our example, "G19" means net migration for Lappi. The location identifier can be followed by either "_M" or "_F", specifying male or female, respectively. Finally, a basic component can be concluded by a definition of age, enclosed either in square brackets or curly braces. In an 1x1 simulation, age is given by the actual age values, starting with 0. In a 5x5 simulation it should be an index, as explained in Ševčíková & Raftery (2016). Square brackets trigger a summation of the given ages, while curly braces keep the ages disaggregated. If the age definition is not used, the default behaviour is summing over all ages. If curly braces do not contain any age specification, i.e. they are left empty, it is the same as all ages would be given. 
+
+Basic components can be connected by arithmetic operations. Here are some example of expressions that could be used in our simulation: 
+
+* "P1": Total population of Uusimaa
+* "P6_F / P6_M": Sex ratio of Pirkanmaa
+* "P18[20:64] / P18[65:130]": Potential support ratio in Kainuu (ratio of 20-64 years old to 65+)
+* "B19 / D19": Births to deaths ratio
+* "log(MFIN_M{})": log of male age-specific mortality rates for Finland
+
+Additional pre-defined functions are available, for example for computing group means and medians, or for the mean age of childbearing. See `?pop.expressions` for more detail.
+
+Various functions in the package accept these expressions via the argument `expression`. They can be used to view projection trajectories by time using functions `pop.trajectories.plot()` and `pop.trajectories.table()`, as well as trajectories by age using functions
+`plot.byage.plot()` and `pop.byage.table()`.
+
+For example, to view the potential support ratio for Uusimaa, one can use
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.trajectories.plot(pop_pred, expression = "P1[20:64] / P1[65:130]", 
+                      nr.traj = 20,
+                      main = "Potential Support Ratio for Uusimaa")
+
+```
+
+Or quantities by age, here log of male probability of dying in Varsinais-Suomi in 2050:
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+pop.byage.plot(pop_pred, expression = "log(Q2_M{})", nr.traj = 20, year = 2050,
+               main = "2050 Male prob. of dying in Varsinais-Suomi")
+```
+
+Similarly, one can use expressions for aggregated locations. Here 
 
 
 # References
