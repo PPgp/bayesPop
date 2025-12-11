@@ -568,13 +568,25 @@ Tabular results can be viewed for example via
 pop.trajectories.table(pop_pred, "Satakunta") |> tail()
 ```
 
+Both functions accept an argument `pi` specifying the probability intervals to be viewed. To generate projections plots for all provinces at once, use the function `pop.trajectories.plotAll()`.
+
 ### Projections by age
 
-To view projections as a function of age, do for example
+To view projections as a function of age, one would use the function `pop.byage.plot()`. Here is an example of comparing the projected age structure for 2050 with the observed age structure in 2024 for UUsimaa:
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
-pop.byage.plot(pop_pred, "Lappi", year = 2050, nr.traj = 20)
+pop.byage.plot(pop_pred, "Uusimaa", year = 2050, nr.traj = 20)
+pop.byage.plot(pop_pred, "Uusimaa", year = 2024, add = TRUE, 
+               col = "blue", show.legend = FALSE)
 ```
+
+To view these results as a table, do 
+
+```{r, eval = TRUE}
+pop.byage.table(pop_pred, "Uusimaa", year = 2050) |> head()
+```
+
+Here too, one can use the argument `pi` to specify probability intervals, and use `pop.byage.plotAll()` to plot all provinces at once. 
 
 Functions to view probabilistic population pyramids are available. Here for example comparing two years on proportional scale.
 
