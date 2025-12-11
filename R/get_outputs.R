@@ -1869,7 +1869,9 @@ cohorts <- function(pop.pred, country=NULL, expression=NULL, pi=c(80, 95)) {
 	nage <- dim(alldata)[1]
 	years <- dimnames(alldata)[[2]]
 	step <- if(pop.pred$annual) 1 else 5
-	last.observed.cohort <- pop.pred$proj.years.pop[1]-age.index[1]*step
+	aidx0 <- age.index[1]
+	if(step == 1) aidx0 <- aidx0 - 1 # in 1x1 simulation proj.years.pop[1] is the last observed year
+	last.observed.cohort <- pop.pred$proj.years.pop[1]-aidx0*step
 	from.cohorts <- seq(last.observed.cohort, length=nage-1, by=-step)
 	observed.cohorts <- if(step == 5) paste(from.cohorts, '-', from.cohorts+step, sep="") else as.character(from.cohorts)
 	for(cohort in length(observed.cohorts):1) {
