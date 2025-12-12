@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova, Aapo Hiilamo
-date: 2025-12-11
+date: 2025-12-12
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -623,6 +623,9 @@ Basic components can be connected by arithmetic operations. Here are some exampl
 
 Additional pre-defined functions are available, for example for computing group means and medians, or for the mean age of childbearing. See `?pop.expressions` for more detail.
 
+
+#### Visualizing expression results
+
 Various functions in the package accept these expressions via the argument `expression`. They can be used to view projection trajectories by time using functions `pop.trajectories.plot()` and `pop.trajectories.table()`, as well as trajectories by age using functions
 `plot.byage.plot()` and `pop.byage.table()`.
 
@@ -642,7 +645,86 @@ pop.byage.plot(pop_pred, expression = "log(Q2_M{})", nr.traj = 20, year = 2050,
                main = "2050 Male prob. of dying in Varsinais-Suomi")
 ```
 
-Similarly, one can use expressions for aggregated locations. Here 
+Similarly, one can use expressions for aggregated locations. Here, we'll show a few examples when using pre-defined functions. These can be used to apply expressions to the various dimensions of the basic components. For example, to compute the median age of women in childbearing ages, one would use the `pop.apply` function which applies the given function (here group median) to the age dimension. When applied to our aggregated object, one can use the ISO3166 character code for Finland as follows:
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+expr <- "pop.apply(PFIN_F{10:54}, gmedian, cat = 10:55)"
+pop.trajectories.plot(pop_aggr, nr.traj = 20, expression = expr, 
+                      main = "Median age of women in childbearing ages (Finland)")
+```
+The `cat` argument to be passed to the `gmedian` function defines the brackets of the age categories. Note that in an 1x1 simulation, childbearing ages are 10-54, while in a 5x5 simulation it is 15-49. Similarly, the average age in Finland could be expressed as 
+* "pop.apply(PFIN{}, gmean, cat = 0:131)", or equivalently as 
+* "pop.apply(age.func1(PFIN{}), fun = sum) / PFIN"
+
+Regarding the latter expression, the `age.func1()` by default multiplies the middle of each age category with the result of its first argument. The `pop.apply()` function then sums along the age dimension. 
+
+An example of an indicator by age for Finland is age-specific fertility rate, here for two different years:
+
+```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+expr <- "F246_F{10:54}"
+pop.byage.plot(pop_aggr, nr.traj = 20, expression = expr, year = 2050,
+               main = "Age-specific fertility (Finland)")
+pop.byage.plot(pop_aggr, expression = expr, year = 2024, add = TRUE, 
+               col = "blue", show.legend = FALSE)
+legend("topright", legend = c(2050, 2023), col = c("red", "blue"), 
+       lty = 1, bty = "n")
+```
+
+Note that expression "F246", i.e. fertility summed over ages, is the total fertility rate of Finland. For mean age of childbearing in an 1x1 simulation, one would could use the expression-generating function `mac.expression1(code)` where code is the unique identifier of the location, and pass it to a function that returns results by time. 
+
+The cohort functions also accept expressions. For example, showing births to mothers of three different cohorts in Pohjois-Pohjanmaa (code 17), one could do:
+
+```{r eval = TRUE, fig.width = 6, fig.height = 2.5, fig.align='center'}
+pop.cohorts.plot(pop_pred, expression = "B17{}", cohorts = c(1990, 2010, 2030))
+```
+Note that when using within the cohort functions, the expression has to contain curly braces ("{}"). 
+
+#### Extracting expressions results
+
+The values of a basic component can be extracted via the `get.pop()` function, which returns a four dimensional array of locations x ages x time x trajectories. The location dimension in most cases will be one, as a location must be specified when using this function. In an 1x1 simulation, fertility related indicators (F, R, B) have an age dimension 45 (ages from 10 to 54), while all other indicators have a dimension 101 for observed data and 131 for projected data. However, if the basic component is defined as a summation over ages, the age dimension is one. The time dimension depends if we are extracting projected data or observed data, which is controlled by the argument `observed`. The trajectories dimension will be one on observed data, while for projected data it corresponds to the number of trajectories in the prediction object.
+
+For example, observe the dimensions of the arrays resulting from the following basic components:
+
+```{r eval = TRUE}
+get.pop("P13{}", pop_pred) |> dim()
+get.pop("P13{}", pop_pred, observed = TRUE) |> dim()
+get.pop("P19", pop_pred) |> dim()
+get.pop("P19", pop_pred, observed = TRUE) |> dim()
+get.pop("D1_M[0:10]", pop_pred) |> dim()
+get.pop("D1_M{0:10}", pop_pred) |> dim()
+get.pop("B19{}", pop_pred) |> dim()
+get.pop("F2{}", pop_pred, observed = TRUE) |> dim()
+```
+
+Knowing the resulting dimensions is important when combining different basic components into one expression, as any combined arrays should have the same dimensions. However, the pre-defined function `pop.combine()` can help if it's not the case, see `?pop.expressions` for more detail.
+
+There are two convenience functions that can handle more complex expressions, as well as can drop unnecessary dimensions. These are `get.pop.ex()` for retrieving expression results by time, and `get.pop.exba()` for retrieving results by age. These two functions can also handle retrieving data for all locations at once and thus, they allow to use the wildcard "XXX". 
+
+For example, to retrieve data on the percent of total population in Uusimaa (code 1) within the country, one would use the `get.pop.ex()` function which drops the location and age dimension:
+
+```{r eval = TRUE}
+get.pop.ex("P1 / P246 * 100", pop_pred) |> dim()
+```
+
+Applying the same computation to all locations at once, the location dimension is retained:
+```{r eval = TRUE}
+get.pop.ex("PXXX / P246 * 100", pop_pred) |> dim()
+```
+In such a case, the order of the locations along the first dimension is the same as in the table returned by `get.countries.table(pop_pred)`.
+
+Note that the above mentioned expressions that use the pre-defined function `pop.apply()` that performs operations along the age dimension, e.g. mean age, could be passed to the `get.pop.ex()` function, as they result in an indicator by time. 
+
+To extract values by age, e.g. the sex ratio in Ahvenanmaa (code 21), the `get.pop.exba()` function retains the age dimension:
+```{r eval = TRUE}
+get.pop.exba("P21_M{} / P21_F{}", pop_pred) |> dim()
+```
+
+Both functions also accepts the logical argument `observed` to indicate if the values should be for the past or future time periods. In addition, a logical argument `as.dt` can be used to return the results as a `data.table` format, instead of an array. E.g.,
+
+```{r eval = TRUE}
+get.pop.exba("PXXX_M{} / PXXX_F{}", pop_pred, observed = TRUE, 
+             as.dt = TRUE) |> head()
+```
 
 
 # References
