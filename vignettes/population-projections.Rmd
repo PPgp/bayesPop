@@ -16,14 +16,25 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-download_data <- TRUE
+download_data <- FALSE
 simulate_comp <- FALSE
 simulate_pop <- FALSE
 ```
 
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
 
-We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy (LE at birth 84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country.
+We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024.
+
+
+<!-- The following two commands leave lots of space above and below the map -->
+<!--![](finland_regions_pop.svg){width=70% align="center"}-->
+<!--<img src="finland_regions_pop.svg" style="width: 70%; display: block; margin: 0 auto;">-->
+
+<!-- The following command does not scale it down, even if used with fig.height or out.height -->
+```{r eval = TRUE, fig.align='center', echo = FALSE}
+knitr::include_graphics("finland_regions_pop.svg")
+```
+
 
 To organize our work, let's set up a working directory for all inputs and outputs:
 
@@ -33,6 +44,7 @@ wrk_dir <- "bayesPopSubnatProj"
 
 ```{r eval = !download_data, include = FALSE}
 wrk_dir <- "ADD YOURS"
+wrk_dir <- "~/bayespop/R/Pop/subnat/bayesPopSubnatProj"
 ```
 
 ```{r eval = download_data, include = FALSE}
@@ -65,7 +77,7 @@ unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
 ```
 
-It creates a directory "bayesPopFINdata-main" which contains text files with among others total fertility rates ("tfr.txt"), sex-specific life expectancy at birth ("e0F.txt", "e0M.txt"), net migration rates ("mig_rates.txt"), net migration counts ("mig_counts.txt"), sex- and age-specific population ("popM.txt", "popF.txt"), sex- and age-specific mortality rates ("mxM.txt", "mxF.txt"), and percent age-specific fertility ("pasfr.txt"). The diroctory also contains the map of the regions.
+It creates a directory "bayesPopFINdata-main" which contains text files with among others total fertility rates ("tfr.txt"), sex-specific life expectancy at birth ("e0F.txt", "e0M.txt"), net migration rates ("mig_rates.txt"), net migration counts ("mig_counts.txt"), sex- and age-specific population ("popM.txt", "popF.txt"), sex- and age-specific mortality rates ("mxM.txt", "mxF.txt"), and percent age-specific fertility ("pasfr.txt"). The directory also contains the map of the regions shown above.
 
 For the purpose of accessing these dataset, we create an object pointing to this directory:
 
@@ -142,7 +154,7 @@ tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 50, half.child.
 
 Here, for the `country` argument the ISO-3 code is used. An ISO-2 or a numerical UN code (which is 246 for Finland) is also accepted. In addition to the predictive distribution (shown as grey trajectories) with its probability intervals (shown as red lines), the graph also shows uncertainty around the observed data (controlled by the argument `uncertainty`), which is in the case of Finland very narrow. Numerical values from this graph can be seen using the function `tfr.trajectories.table()`. For more information on how to explore such national projections see [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08).
 
-To generate subnational projections for the Finnish regions, we will use observed TRF data in "tfr.txt" that we downloaded above.
+To generate subnational projections for the Finnish regions, we will use observed TFR data in "tfr.txt" that we downloaded above.
 
 ```{r eval=TRUE, include=TRUE}
 tfr_subnat_file <- file.path(data_dir_reg, "tfr.txt")
@@ -164,12 +176,12 @@ To launch the predictions, we use the function `tfr.predict.subnat()`:
 ```{r eval=simulate_comp, include=TRUE, results = FALSE}
 tfr_pred <- tfr.predict.subnat(countries = 246, sim.dir = world_dir_tfr, output.dir = dir_tfr,
                                annual = TRUE, start.year = 2025, end.year = 2050, 
-                               nr.traj = 5000, my.tfr.file = tfr_subnat_file,
+                               nr.traj = nr_traj_comp, my.tfr.file = tfr_subnat_file,
                                verbose = TRUE
                                )
 ```
 
-Here, we are directing the function to generate `r nr_traj_comp` trajectories of future annual TFR from 2025 until 2050 for regions found in the file given by argument `my.tfr.file`, that is for regions that belong to country 246 (i.e. Finland). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
+Here, we are directing the function to generate `r nr_traj_comp` trajectories of future annual TFR from 2025 until 2050 for regions found in the file given by argument `my.tfr.file`, that is, for regions that belong to country 246 (i.e. Finland). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
 
 Since the `tfr.predict.subnat()` function allows to run predictions for multiple countries at once (given by the vector `countries`), the return value is a list with names corresponding to the country codes. Thus, to extract the list item for Finland, we do:
 
@@ -193,7 +205,7 @@ for (loc in c("Central Ostrobothnia", "Kymenlaakso")){
 }
 ```
 
-In each graph, we have also drawn a gray line at the replacement level of 2.1. One can see that while Kymenlaakso have almost zero probability that TFR will reach the replacement level before 2050, for Keski-Pohjanmaa there is a somewhat larger chance that TFR will not get far below the replacement level.
+In each graph, we have also drawn a gray line at the replacement level of 2.1. One can see that while Kymenlaakso have almost zero probability that TFR will reach the replacement level before 2050, for Central Ostrobothnia there is a somewhat larger chance that TFR will get to or even above the replacement level.
 
 Tabular results can be viewed using either the `summary()` function which returns among others the mean and standard deviation, or the `tfr.trajectories.table()` function which can return any quantile of interest of the given location:
 
