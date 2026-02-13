@@ -1,7 +1,7 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova, Aapo Hiilamo
-date: 2025-12-31
+date: 2026-02-13
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{population-projections}
@@ -10,6 +10,14 @@ vignette: >
 editor_options: 
   chunk_output_type: console
 ---
+
+<!-- avoid border around images -->
+<style>
+    img {
+        border: 0;
+    }
+</style>
+
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -31,10 +39,13 @@ We will use example data for 19 subnational (NUTS 2) units in Finland to demonst
 <!--<img src="finland_regions_pop.svg" style="width: 70%; display: block; margin: 0 auto;">-->
 
 <!-- The following command does not scale it down, even if used with fig.height or out.height -->
-```{r eval = TRUE, fig.align='center', echo = FALSE}
-knitr::include_graphics("finland_regions_pop.svg")
+<!-- ```{r eval = TRUE, fig.align='center', echo = FALSE}
+#knitr::include_graphics("finland_regions_pop.svg")
 ```
+-->
 
+<!-- Using a png version of the map -->
+<img src="finland_regions_pop_rescaled.png" style="width: 50%; display: block; margin: 0 auto">
 
 To organize our work, let's set up a working directory for all inputs and outputs:
 
@@ -145,7 +156,7 @@ world_dir_tfr <- file.path(data_dir, "TFR1unc", "sim20241101")
 
 One can explore the Finnish projections with various functions from the **bayesTFR** package. For example as a graph:
 
-```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
+```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center', border = "0"}
 tfr_world_pred <- get.tfr.prediction(world_dir_tfr)
 tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 50, half.child.variant = FALSE,
                       uncertainty = TRUE)
@@ -197,7 +208,7 @@ tfr_pred_reg <- get.regtfr.prediction(dir_tfr, country = 246)
 
 Now various **bayesTFR** functions for analyzing results can be used. For example, to view the projected TFR for two different regions (here historically high and low fertility regions Central Ostrobothnia and Kymenlaakso, respectively), do:
 
-```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 3.5, fig.align='center'}
+```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
 for (loc in c("Central Ostrobothnia", "Kymenlaakso")){
   tfr.trajectories.plot(tfr_pred_reg, loc, half.child = FALSE, nr.traj = 50, pi = 95, ylim = c(0.5,2.5))
@@ -205,7 +216,7 @@ for (loc in c("Central Ostrobothnia", "Kymenlaakso")){
 }
 ```
 
-In each graph, we have also drawn a gray line at the replacement level of 2.1. One can see that while Kymenlaakso have almost zero probability that TFR will reach the replacement level before 2050, for Central Ostrobothnia there is a somewhat larger chance that TFR will get to or even above the replacement level.
+In each graph, we have also drawn a grey horizontal line at the replacement level of 2.1. One can see that while Kymenlaakso have almost zero probability that TFR will reach the replacement level before 2050, for Central Ostrobothnia there is a somewhat larger chance that TFR will get to or even above the replacement level.
 
 Tabular results can be viewed using either the `summary()` function which returns among others the mean and standard deviation, or the `tfr.trajectories.table()` function which can return any quantile of interest of the given location:
 
@@ -319,7 +330,7 @@ for (loc in c("Åland", "Lapland")){
                        xlim = c(1970, 2050), ylim = c(70, 93), pi = 80, 
                        show.legend = FALSE, main = loc, col = rep("grey", 4))
   # add sub-national projections
-  e0.trajectories.plot(e0_pred_reg, loc, nr.traj = 0, pi = 95, 
+  e0.trajectories.plot(e0_pred_reg, loc, nr.traj = 0, pi = 80, 
                        both.sexes = TRUE, add = TRUE, show.legend = FALSE)
   legend("topleft", legend = c("female", "male", "FIN female", "median", "80% PI"),
          bty = "n", col = c("pink", "darkgreen", "grey", "black", "black"),
@@ -327,7 +338,7 @@ for (loc in c("Åland", "Lapland")){
 }
 ```
 
-This marginal distribution may suggest that crossovers between female and male $e_0$ are possible. However, when viewing the joint distribution between male and female, here for three different years, it is obvious that it is not the case:
+This marginal distribution may suggest that crossovers between female and male $e_0$ are possible. However, when viewing the joint distribution between male and female $e_0$, here for three different years, it is obvious that it is not the case:
 
 ```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
@@ -338,7 +349,7 @@ for (loc in c("Åland", "Lapland"))
 
 The minimum and maximum gap between female and male $e_0$ is controlled via an optional argument `gap.lim` that can be passed to the `e0.predict.subnat()` function. Its default value is `c(0, 18)`, meaning that the difference cannot be negative and cannot be larger than 18 years. However, if one would replace it for example with `c(-2, 18)`, trajectories where male $e_0$ is larger than female $e_0$ by up to 2 years would be allowed. By default, values outside of the `gap.lim` range are re-sampled.
 
-Functions `e0.trajectories.table()` and `summary()` can be used to explore tabular results. When passing the `e0_pred_reg` object to them, the operation is performed on the female prediction object. To retrieve the male prediction object, do one of the following:
+Functions `e0.trajectories.table()` and `summary()` can be used to explore tabular results. When passing the `e0_pred_reg` object to them, the operation is performed on the female prediction object. To retrieve the male prediction object, do:
 
 ```{r eval=TRUE}
 e0M_pred_reg <- get.e0.jmale.prediction(e0_pred_reg)
@@ -378,7 +389,7 @@ tail(mig_data)
 The methodology and the **bayesMig** package itself have been designed for a model hierarchy of countries -\> world. However, we found that the model also works well when applied to sub-national units, in our case using the hierarchy regions -\> Finland. Thus, when using within **bayesMig** we are pretending that the Finnish regions are countries and call the unique identifier `country_code`. The `include_code` column specifies if the corresponding location should be included in the BHM and its data should influence the global parameters (value 2), or if only location-specific parameters will be estimated using the global experience without back-influencing it (value 1), or not be included at all (value 0). The second case (value 1) is to be used for locations with unusual patterns, or simply for very small locations without a representative historical experience. In our dataset we set `include_code` to 2 for all regions and 0 for the national data. In our dataset we don't have locations with small population and thus, we don't have records with value 1.
 
 ```{r eval=TRUE}
-subset(mig_data, include_code == 0)[, 1:2]
+subset(mig_data, include_code != 2)[, 1:3]
 ```
 
 To estimate the model to derive region-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain, the thinning interval and the number of chains:
@@ -406,7 +417,7 @@ mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter,
                          thin = mig_thin, output.dir = dir_mig, 
                          my.mig.file = mig_subnat_file,
                          annual = TRUE, present.year = 2024,
-                         verbose.iter = 500,replace.output=TRUE)
+                         verbose.iter = 500, replace.output = TRUE)
 ```
 
 The function also accepts an optional argument `exclude.from.world`. This can be used in addition to the `include_code` column to explicitly specify additional locations to be excluded from influencing the global parameters. The function `get.countries.table(mig_mcmc)` can help to see the location codes. Locations excluded from influencing the global parameters would be sorted at the end of that list. In [Yu et al. (2023)](https://doi.org/10.1215/00703370-10772782) which generates population projections for all counties in the Washington State, all counties below population of 25,000 were passed to the `exclude.from.world` argument.
@@ -439,6 +450,7 @@ As in the case of TFR and $e_0$, various functions can be used to analyze the pr
 ```{r eval=TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 par(mfrow = c(1,1))
 mig.trajectories.plot(mig_pred, "Kanta-Häme", nr.traj = 20)
+abline(h = 0, col = "grey")
 ```
 
 One can see that for Kanta-Häme, the NMR is projected likely to be positive, which is in line with the historical experience. However, the results of this toy example do not exclude the possibility of having negative net migration in this region, which was also observed in the past.
@@ -474,8 +486,8 @@ In addition to the probabilistic inputs, the following **deterministic datasets*
     -   These are needed to estimate Lee-Carter parameters in order to match future mortality rates to future $e_0$.
 -   Historical estimates of percent age-specific fertility (file "pasfr.txt").
     -   Should include ages from 10 to 54.
--   Historical migration counts (file "mig_counts.txt").
-    -   Can be given as totals, totals by sex, or age- or sex-specific counts. We use total counts. The dataset is only used for viewing trends. It does not influence projected migration.
+-   Historical migration counts (files "migrationM.txt", "migrationF.txt").
+    -   Can be given as totals, totals by sex, or age- or sex-specific counts. We use the latter, namely age-specific female counts ("migrationF.txt") and age-specific male counts ("migrationM.txt"). If only totals are provided, they are distributed into ages via one of the methods given in the arguments. These datasets are only used for viewing trends. They do not influence projected migration.
 -   Historical estimates of sex-ratio at birth.
     -   An optional dataset. We will use the national values for all regions.
 -   Dataset of locations (file "locations.txt").
@@ -508,14 +520,15 @@ pop_pred <- pop.predict.subnat(output.dir = dir_pop,
                 locations = file_locs, default.country = 246, 
                 annual = TRUE, wpp.year = 2024, 
                 present.year = 2024, end.year = 2050,
-                nr.traj = 50, verbose = TRUE, 
+                nr.traj = nr_traj_pop, verbose = TRUE, 
                 inputs = list(
                     popM = file.path(data_dir_reg, "popM.txt"),
                     popF = file.path(data_dir_reg, "popF.txt"),
                     mxM = file.path(data_dir_reg, "mxM.txt"), 
                     mxF = file.path(data_dir_reg, "mxF.txt"),
                     pasfr = file.path(data_dir_reg, "pasfr.txt"),
-                    mig = file.path(data_dir_reg, "mig_counts.txt"), 
+                    migM = file.path(data_dir_reg, "migrationM.txt"),
+                    migF = file.path(data_dir_reg, "migrationF.txt"),
                     migtraj = file_mig_traj,
                     tfr.sim.dir = dir_tfr_reg,
                     e0F.sim.dir = dir_e0_reg,
@@ -532,13 +545,17 @@ The `annual` argument determines that this is a 1x1 simulation. If it is `FALSE`
 
 By default total migration is distributed into ages using a basic Rogers-Castro function (argument `mig.age.method`). An alternative method is implemented in **bayesPop**, the Flow Difference Method (Ševčíková, Raymer and Raftery, 2024), which might be more suitable for subnational units that experience a different pattern than Rogers-Castro, for example, regions with high migration of retirees.
 
+The given method is used for both, historical migration and projected migration, if these datasets are not provided by age. In our case, we have provided historical data by age (via the elements `migM` and `migF`), therefore no age-splitting is applied to historical data. However, if we would have passed total counts of historical migration, e.g. `mig = file.path(data_dir_reg, "mig_counts.txt")` instead of providing `migM` and `migF`, the method given in the argument `mig.age.method` would be applied. 
+
+In addition to historical time periods, the datasets given in `migM`, `migF` or `mig` can contain future time periods as well. In such a case, and if the component `migtraj` is not given, future migration is considered to be deterministic.
+
 The two elements in the argument `mig.is.rate` determine that 1. the observed migration data are on the scale of counts (`FALSE`), and 2. the predicted migration trajectories are on the scale of rates (`TRUE`).
 
-If `keep.vital.events` is set to `FALSE`, only population results are stored and thus, can save significant amount of space on the hard drive. However, if you want to have an access to other indicators than population, such as the projected number of deaths, set this argument to `TRUE`.
+If `keep.vital.events` is set to `FALSE`, only population results are stored and thus, can save significant amount of space on the hard drive. However, if you want to have an access to other indicators than population, such as the projected number of births and deaths, set this argument to `TRUE`.
 
 If the current total fertility rate of all regions already passed the fertility transition, set the argument `pasfr.ignore.phase2` to `TRUE` as in this example. It has an impact on predicting the future fertility age distribution.
 
-Note that this is a toy simulation where the number of trajectories (`nr.traj`) is set to a small number. Normally we would want to generate 1000 or more trajectories.
+Note that this is a toy simulation where the number of trajectories (`nr.traj`) is set to a small number, here `r nr_traj_pop`. Normally we would want to generate 1000 or more trajectories.
 
 Now we will aggregate over all regions.
 
@@ -567,7 +584,7 @@ Projection results can be viewed either as a function of time, as a function of 
 
 ### Projections by time
 
-One can plot population projections by time for individual regions (here regions) or for the aggregated geography (here the country):
+One can plot population projections by time for individual regions or for the aggregated geography (here the country):
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 pop.trajectories.plot(pop_pred, "Kanta-Häme", nr.traj = 20)
@@ -603,7 +620,7 @@ pop.byage.table(pop_pred, "Uusimaa", year = 2050) |> head()
 
 Here too, one can use the argument `pi` to specify probability intervals, and use `pop.byage.plotAll()` to plot all regions at once.
 
-Functions to view probabilistic population pyramids are available. Here for example comparing two years on proportional scale.
+Functions to view probabilistic population pyramids are available. Here for example, comparing two years on proportional scale.
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 pop.pyramid(pop_pred, "Kainuu", year = c(2050, 2024), proportion = TRUE)
@@ -613,7 +630,7 @@ pop.pyramid(pop_pred, "Kainuu", year = c(2050, 2024), proportion = TRUE)
 
 One can view population projections for specific cohorts. For example, the following call will show projections of population born in ten different years:
 
-```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+```{r eval = TRUE, fig.width = 7, fig.height = 4.5, fig.align='center'}
 pop.cohorts.plot(pop_pred, "Kainuu", 
                  cohorts = seq(2000, 2045, by = 5))
 ```
@@ -653,7 +670,7 @@ pop.trajectories.plot(pop_pred, expression = "P1[20:64] / P1[65:130]",
 
 Or quantities by combining areas, here the population in Eastern vs. Western Finland:
 
-```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
+```{r eval = TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
 
 pop.trajectories.plot(pop_pred, expression = "P10+P11+P12", 
@@ -665,13 +682,13 @@ pop.trajectories.plot(pop_pred, expression = "P2+P4+P6+P13+P14+P15+P16",
 
 ```
 
-Or quantities by age, here log of male probability of dying in Southwest Finland in 2050:
+Or quantities by age, here log of female probability of dying in Southwest Finland in 2050:
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 par(mfrow = c(1,1))
 
 pop.byage.plot(pop_pred, expression = "log(Q2_F{})", nr.traj = 20, year = 2050,
-               main = "2050 Male prob. of dying in Southwest Finland")
+               main = "2050 Female prob. of dying in Southwest Finland")
 ```
 
 Similarly, one can use expressions for aggregated locations. Here, we'll show a few examples when using pre-defined functions. These can be used to apply expressions to the various dimensions of the basic components. For example, to compute the median age of women in childbearing ages, one would use the `pop.apply` function which applies the given function (here group median) to the age dimension. When applied to our aggregated object, one can use the ISO3166 character code for Finland as follows:
@@ -682,7 +699,7 @@ pop.trajectories.plot(pop_aggr, nr.traj = 20, expression = expr,
                       main = "Median age of women in childbearing ages (Finland)")
 ```
 
-The `cat` argument to be passed to the `gmedian` function defines the brackets of the age categories. Note that in an 1x1 simulation, childbearing ages are 10-54, while in a 5x5 simulation it is 15-49. Similarly, the average age in Finland could be expressed as \* "pop.apply(PFIN{}, gmean, cat = 0:131)", or equivalently as \* "pop.apply(age.func1(PFIN{}), fun = sum) / PFIN"
+The `cat` argument to be passed to the `gmedian` function defines the brackets of the age categories. Note that in an 1x1 simulation, childbearing ages are 10-54, while in a 5x5 simulation it is 15-49. Similarly, the average age in Finland could be expressed as "pop.apply(PFIN{}, gmean, cat = 0:131)", or equivalently as "pop.apply(age.func1(PFIN{}), fun = sum) / PFIN".
 
 Regarding the latter expression, the `age.func1()` by default multiplies the middle of each age category with the result of its first argument. The `pop.apply()` function then sums along the age dimension.
 
@@ -694,25 +711,25 @@ pop.byage.plot(pop_aggr, nr.traj = 20, expression = expr, year = 2050,
                main = "Age-specific fertility (Finland)")
 pop.byage.plot(pop_aggr, expression = expr, year = 2024, add = TRUE, 
                col = "blue", show.legend = FALSE)
-legend("topright", legend = c(2050, 2023), col = c("red", "blue"), 
+legend("topright", legend = c(2050, 2024), col = c("red", "blue"), 
        lty = 1, bty = "n")
 ```
 
-Note that expression "F246", i.e. fertility summed over ages, is the total fertility rate of Finland. For mean age of childbearing in an 1x1 simulation, one would could use the expression-generating function `mac.expression1(code)` where code is the unique identifier of the location, and pass it to a function that returns results by time.
+Note that expression "F246", i.e. fertility summed over ages, is the total fertility rate of Finland. For mean age of childbearing in an 1x1 simulation, one could use the expression-generating function `mac.expression1(code)` where code is the unique identifier of the location, and pass it to a function that returns results by time, e.g. `pop.trajectories.plot()`.
 
-The cohort functions also accept expressions. For example, showing births to mothers of three different cohorts in Pohjois-Pohjanmaa (code 17), one could do:
+The cohort functions also accept expressions. For example, showing births to mothers of three different cohorts in `r subset(get.countries.table(pop_pred), code == 17)$name` (code 17), one could do:
 
-```{r eval = TRUE, fig.width = 6, fig.height = 2.5, fig.align='center'}
+```{r eval = TRUE, fig.width = 7, fig.height = 2.5, fig.align='center'}
 pop.cohorts.plot(pop_pred, expression = "B17{}", cohorts = c(1990, 2010, 2030))
 ```
 
-Note that when using within the cohort functions, the expression has to contain curly braces ("{}").
+Note that when passing an expression the cohort functions, it has to contain curly braces ("{}").
 
 #### Extracting expressions results
 
 The values of a basic component can be extracted via the `get.pop()` function, which returns a four dimensional array of locations x ages x time x trajectories. The location dimension in most cases will be one, as a location must be specified when using this function. In an 1x1 simulation, fertility related indicators (F, R, B) have an age dimension 45 (ages from 10 to 54), while all other indicators have a dimension 101 for observed data and 131 for projected data. However, if the basic component is defined as a summation over ages, the age dimension is one. The time dimension depends if we are extracting projected data or observed data, which is controlled by the argument `observed`. The trajectories dimension will be one on observed data, while for projected data it corresponds to the number of trajectories in the prediction object.
 
-For example, observe the dimensions of the arrays resulting from the following basic components:
+Given that in our toy simulation, we have `r length(pop_pred$proj.years)` projected time points (including the present year), `r ncol(pop_pred$inputs$pop.matrix[[1]])` time points of historical population data, and `r nr_traj_pop` trajectories, observe the dimensions of the arrays resulting from the following basic components:
 
 ```{r eval = TRUE}
 get.pop("P13{}", pop_pred) |> dim()
@@ -729,7 +746,7 @@ Knowing the resulting dimensions is important when combining different basic com
 
 There are two convenience functions that can handle more complex expressions, as well as can drop unnecessary dimensions. These are `get.pop.ex()` for retrieving expression results by time, and `get.pop.exba()` for retrieving results by age. These two functions can also handle retrieving data for all locations at once and thus, they allow to use the wildcard "XXX".
 
-For example, to retrieve data on the percent of total population in Uusimaa (code 1) within the country, one would use the `get.pop.ex()` function which drops the location and age dimension:
+For example, to retrieve data on the percent of total population in `r subset(get.countries.table(pop_pred), code == 1)$name` (code 1) within the country, one would use the `get.pop.ex()` function which drops the location and age dimension:
 
 ```{r eval = TRUE}
 get.pop.ex("P1 / P246 * 100", pop_pred) |> dim()
@@ -745,7 +762,7 @@ In such a case, the order of the locations along the first dimension is the same
 
 Note that the above mentioned expressions that use the pre-defined function `pop.apply()` that performs operations along the age dimension, e.g. mean age, could be passed to the `get.pop.ex()` function, as they result in an indicator by time.
 
-To extract values by age, e.g. the sex ratio in Ahvenanmaa (code 21), the `get.pop.exba()` function retains the age dimension:
+To extract values by age, e.g. the sex ratio in `r subset(get.countries.table(pop_pred), code == 21)$name` (code 21), the `get.pop.exba()` function retains the age dimension:
 
 ```{r eval = TRUE}
 get.pop.exba("P21_M{} / P21_F{}", pop_pred) |> dim()
@@ -758,18 +775,21 @@ get.pop.exba("PXXX_M{} / PXXX_F{}", pop_pred, observed = TRUE,
              as.dt = TRUE) |> head()
 ```
 
-Trajectories may be useful to combine, explore, and use in downstream analyses, for example, in prevalence-based projections of older adults’ residential care needs. Trajectories of population components may also be combined to  understand the sources of uncertainty. Below, we scatter the uncertainty in the support ratio in Kainuu in 2050 against the uncertainty in the development of life expectancy at birth, TFR, and migration in the region.
+Trajectories may be useful to combine, explore, and use in downstream analyses, for example, in prevalence-based projections of older adults’ residential care needs. Trajectories of population components may also be combined to  understand the sources of uncertainty. Below, we scatter the uncertainty in the support ratio in `r subset(get.countries.table(pop_pred), code == 18)$name` (code 18) in 2050 against the uncertainty in the development of life expectancy at birth, TFR, and migration in the region.
 
-```{r eval = TRUE}
-mean_mig_NMR<-get.pop.ex("G18/P18 ", pop_pred) |> colMeans()
-mean_tfr<-get.pop.ex("F18", pop_pred) |> colMeans()
-e0<-get.pop.ex("E18[0]", pop_pred) 
-support_ratio_Kainuu <-get.pop.ex("P18[20:64] / P18[65:130]", pop_pred) 
+```{r eval = TRUE, fig.width = 7, fig.height = 3.5, fig.align='center'}
+mean_mig_NMR <- get.pop.ex("G18/P18 ", pop_pred) |> colMeans()
+mean_tfr <- get.pop.ex("F18", pop_pred) |> colMeans()
+e0 <- get.pop.ex("E18[0]", pop_pred) 
+support_ratio_Kainuu <- get.pop.ex("P18[20:64] / P18[65:130]", pop_pred) 
 
 par(mfrow = c(1,3))
-plot(e0["2050", ], support_ratio_Kainuu["2050", ])
-plot(mean_tfr, support_ratio_Kainuu["2050", ])
-plot(mean_mig_NMR, support_ratio_Kainuu["2050", ])
+plot(e0["2050", ], support_ratio_Kainuu["2050", ], xlab = "e0 (2050)", 
+     ylab = "Potential Support Ratio (2050)", main = "Kainuu PSR vs e0")
+plot(mean_tfr, support_ratio_Kainuu["2050", ], xlab = "mean TFR", 
+     ylab = "Potential Support Ratio (2050)", main = "Kainuu PSR vs TFR")
+plot(mean_mig_NMR, support_ratio_Kainuu["2050", ], xlab = "mean net migration", 
+     ylab = "Potential Support Ratio (2050)", main = "Kainuu PSR vs net migration")
 
 ```
 
