@@ -2,8 +2,8 @@
 title: "Subnational Probabilistic Population Projections"
 author: Hana Ševčíková, Aapo Hiilamo
 date: 2026-02-16
-#output: rmarkdown::pdf_document
-output: rmarkdown::html_vignette
+output: rmarkdown::pdf_document
+#output: rmarkdown::html_vignette
 editor_options: 
   chunk_output_type: console
 ---
@@ -27,7 +27,7 @@ simulate_pop <- FALSE
 ```
 
 The **bayesPop** R package can be used to produce probabilistic population projections on a national as well as a subnational level.
-In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05). 
+In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05). This vignette is available as pdf (included in the package), as well as in [html format](https://bayespop.csss.washington.edu/bayesPop/vignettes/population-projections.html).
 
 We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024.
 

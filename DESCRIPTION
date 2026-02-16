@@ -27,5 +27,5 @@ Description: Generating population projections for all countries of the world us
      The package can be also used for subnational population projections.
 License: GPL-3 | file LICENSE
 LazyData: true
-URL: https://bayespop.csss.washington.edu
+URL: https://bayespop.csss.washington.edu, https://bayespop.csss.washington.edu/bayesPop/vignettes/population-projections.html
 VignetteBuilder: R.rsp

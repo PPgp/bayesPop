@@ -4,7 +4,7 @@
 %% %\VignetteIndexEntry{}), we must tell R about it
 %%\VignetteEncoding{UTF-8}
 %% Optional:
-%%\VignetteKeyword{PDF}
-%\VignetteKeyword{HTML}
+%\VignetteKeyword{PDF}
+%%\VignetteKeyword{HTML}
 %\VignetteKeyword{vignette}
 %\VignetteKeyword{package}
