@@ -1,7 +1,8 @@
 ---
 title: "Subnational Probabilistic Population Projections"
-author: Hana Sevcikova, Aapo Hiilamo
+author: Hana Ševčíková, Aapo Hiilamo
 date: 2026-02-16
+#output: rmarkdown::pdf_document
 output: rmarkdown::html_vignette
 editor_options: 
   chunk_output_type: console
@@ -25,7 +26,8 @@ simulate_comp <- FALSE
 simulate_pop <- FALSE
 ```
 
-In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05).
+The **bayesPop** R package can be used to produce probabilistic population projections on a national as well as a subnational level.
+In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05). 
 
 We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024.
 
@@ -66,7 +68,8 @@ The subnational data needed to follow examples in this vignette are in the GitHu
 
 ```{r eval = download_data, include = TRUE}
 repo_file <- file.path(data_dir, "main.zip")
-download.file("https://github.com/PPgp/bayesPopFINdata/archive/refs/heads/main.zip", repo_file)
+download.file("https://github.com/PPgp/bayesPopFINdata/archive/refs/heads/main.zip", 
+              repo_file)
 unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
 ```
@@ -141,8 +144,8 @@ One can explore the Finnish projections with various functions from the **bayesT
 
 ```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center', border = "0"}
 tfr_world_pred <- get.tfr.prediction(world_dir_tfr)
-tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 10, half.child.variant = FALSE,
-                      uncertainty = TRUE)
+tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 10, 
+                      half.child.variant = FALSE, uncertainty = TRUE)
 
 ```
 
@@ -168,8 +171,9 @@ The chosen number of trajectories (`r nr_traj_comp`) is the same as in the natio
 To launch the predictions, we use the function `tfr.predict.subnat()`:
 
 ```{r eval=simulate_comp, include=TRUE, results = FALSE}
-tfr_pred <- tfr.predict.subnat(countries = 246, sim.dir = world_dir_tfr, output.dir = dir_tfr,
-                               annual = TRUE, start.year = 2025, end.year = 2050, 
+tfr_pred <- tfr.predict.subnat(countries = 246, sim.dir = world_dir_tfr, 
+                               output.dir = dir_tfr, annual = TRUE, 
+                               start.year = 2025, end.year = 2050, 
                                nr.traj = nr_traj_comp, my.tfr.file = tfr_subnat_file,
                                verbose = TRUE
                                )
@@ -194,7 +198,8 @@ Now various **bayesTFR** functions for analyzing results can be used. For exampl
 ```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
 for (loc in c("Central Ostrobothnia", "Kymenlaakso")){
-  tfr.trajectories.plot(tfr_pred_reg, loc, half.child = FALSE, nr.traj = 10, pi = 95, ylim = c(0.5,2.5))
+  tfr.trajectories.plot(tfr_pred_reg, loc, half.child = FALSE, nr.traj = 10, pi = 95, 
+                        ylim = c(0.5,2.5))
   abline(h = 2.1, col = "grey")
 }
 ```
@@ -587,7 +592,7 @@ Both functions accept an argument `pi` specifying the probability intervals to b
 
 ### Projections by age
 
-To view projections as a function of age, one would use the function `pop.byage.plot()`. Here is an example of comparing the projected age structure for 2050 with the observed age structure in 2024 for UUsimaa:
+To view projections as a function of age, one would use the function `pop.byage.plot()`. Here is an example of comparing the projected age structure for 2050 with the observed age structure in 2024 for Uusimaa:
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 pop.byage.plot(pop_pred, "Uusimaa", year = 2050, nr.traj = 20)

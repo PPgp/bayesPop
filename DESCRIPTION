@@ -22,7 +22,9 @@ Suggests:
     knitr,
     R.rsp
 Imports: parallel, abind, data.table, wpp2019, wpp2012, graphics, grDevices, stats, utils, rworldmap, fields, googleVis, reshape2, plyr
-Description: Generating population projections for all countries of the world using several probabilistic components, such as total fertility rate and life expectancy (Raftery et al., 2012 <doi:10.1073/pnas.1211452109>).
+Description: Generating population projections for all countries of the world using several probabilistic components,
+     such as total fertility rate, life expectancy at birth and net migration (Raftery et al., 2012 <doi:10.1073/pnas.1211452109>).
+     The package can be also used for subnational population projections.
 License: GPL-3 | file LICENSE
 LazyData: true
 URL: https://bayespop.csss.washington.edu
