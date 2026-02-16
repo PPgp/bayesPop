@@ -5,4 +5,4 @@
 \.gitignore$
 ^.github$
 ^data-raw
-vignettes
+^vignettes/.*[.](r|R|Rmd|png)$

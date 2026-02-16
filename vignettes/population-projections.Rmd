@@ -1,12 +1,8 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Sevcikova, Aapo Hiilamo
-date: 2026-02-13
+date: 2026-02-16
 output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{population-projections}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   chunk_output_type: console
 ---
@@ -33,16 +29,6 @@ In this vignette we will show how **bayesPop** can be used in subnational settin
 
 We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024.
 
-
-<!-- The following two commands leave lots of space above and below the map -->
-<!--![](finland_regions_pop.svg){width=70% align="center"}-->
-<!--<img src="finland_regions_pop.svg" style="width: 70%; display: block; margin: 0 auto;">-->
-
-<!-- The following command does not scale it down, even if used with fig.height or out.height -->
-<!-- ```{r eval = TRUE, fig.align='center', echo = FALSE}
-#knitr::include_graphics("finland_regions_pop.svg")
-```
--->
 
 <!-- Using a png version of the map -->
 <img src="finland_regions_pop_rescaled.png" style="width: 50%; display: block; margin: 0 auto">
@@ -80,9 +66,6 @@ The subnational data needed to follow examples in this vignette are in the GitHu
 
 ```{r eval = download_data, include = TRUE}
 repo_file <- file.path(data_dir, "main.zip")
-# The following line should work after the repo is made public.
-# Before that, on the GitHub repo click on "Code" -> Download ZIP
-# and move main.zip into data_dir. Then continue with the "unzip" line.
 download.file("https://github.com/PPgp/bayesPopFINdata/archive/refs/heads/main.zip", repo_file)
 unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
@@ -115,7 +98,7 @@ err <- untar(e0_world_file, exdir = data_dir)
 if(err == 0) unlink(e0_world_file)
 ```
 
-Note that these are big files. Therefore, if you are on a slow network and get a timeout error, you might want to increase the `timeout` option.
+Note that these are big files. Therefore, if you are on a slow network and/or get a timeout error, you might want to increase the `timeout` option. Alternatively, download these files manually outside of R and place them into the `data_dir` directory. Then in  the above code you can skip the `download.file()` call and continue with the `untar()` command.
 
 # Outline
 
@@ -130,7 +113,7 @@ Results of each of the steps will be stored in its own directory in the parent w
 
 We will work with four R packages, namely **bayesTFR**, **bayesLife**, **bayesMig**, and **bayesPop**. Loading **bayesPop** pulls also the first two packages into the namespace. Thus, loading the last two packages will be sufficient.
 
-```{r eval = TRUE, results = FALSE}
+```{r eval = TRUE, results = FALSE, message=FALSE}
 library(bayesPop)
 library(bayesMig)
 ```
@@ -158,7 +141,7 @@ One can explore the Finnish projections with various functions from the **bayesT
 
 ```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center', border = "0"}
 tfr_world_pred <- get.tfr.prediction(world_dir_tfr)
-tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 50, half.child.variant = FALSE,
+tfr.trajectories.plot(tfr_world_pred, country = "FIN", nr.traj = 10, half.child.variant = FALSE,
                       uncertainty = TRUE)
 
 ```
@@ -211,7 +194,7 @@ Now various **bayesTFR** functions for analyzing results can be used. For exampl
 ```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
 for (loc in c("Central Ostrobothnia", "Kymenlaakso")){
-  tfr.trajectories.plot(tfr_pred_reg, loc, half.child = FALSE, nr.traj = 50, pi = 95, ylim = c(0.5,2.5))
+  tfr.trajectories.plot(tfr_pred_reg, loc, half.child = FALSE, nr.traj = 10, pi = 95, ylim = c(0.5,2.5))
   abline(h = 2.1, col = "grey")
 }
 ```
@@ -277,7 +260,7 @@ To explore the Finnish projections one can use various functions from the **baye
 ```{r eval = TRUE, include = TRUE, fig.width = 7, fig.height = 5, fig.align='center'}
 par(mfrow = c(1,1))
 e0_world_pred <- get.e0.prediction(world_dir_e0)
-e0.trajectories.plot(e0_world_pred, country = "FIN", nr.traj = 50, both.sexes = TRUE)
+e0.trajectories.plot(e0_world_pred, country = "FIN", nr.traj = 10, both.sexes = TRUE)
 ```
 
 For subnational observed data we will use the two files we downloaded earlier, one for female and one for male.
@@ -344,7 +327,7 @@ This marginal distribution may suggest that crossovers between female and male $
 par(mfrow = c(1,2))
 for (loc in c("Åland", "Lapland"))
   e0.joint.plot(e0_pred_reg, loc, years = c(2025, 2035, 2050), 
-                xlim = c(75, 95), ylim = c(75, 95))
+                xlim = c(75, 95), ylim = c(75, 95), nr.points = 100)
 ```
 
 The minimum and maximum gap between female and male $e_0$ is controlled via an optional argument `gap.lim` that can be passed to the `e0.predict.subnat()` function. Its default value is `c(0, 18)`, meaning that the difference cannot be negative and cannot be larger than 18 years. However, if one would replace it for example with `c(-2, 18)`, trajectories where male $e_0$ is larger than female $e_0$ by up to 2 years would be allowed. By default, values outside of the `gap.lim` range are re-sampled.
