@@ -1824,7 +1824,11 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	if(startTi < nr.est.points+1) { # the years vector does not include all the observed data
 	    yd <- years[1] - by * (nr.est.points - startTi)
 	} else yd <- years[startTi - nr.est.points]
-	p.e <- pasfr.obs[,ncol(pasfr.obs)-nr.est.points+1]/100.
+	if(ncol(pasfr.obs) == 1)
+	    stop("Not enough data on PASFR available to estimate future trends. At least two time periods required.")
+	if(ncol(pasfr.obs) < nr.est.points)
+	    warning("The number of observed PASFR years is less than the recommended 15 years.")
+	p.e <- pasfr.obs[,max(1, ncol(pasfr.obs)-nr.est.points+1)]/100.
 	if(any(is.na(p.e))) stop("Not enough data on PASFR available to estimate future trends.")
 	p.e <- pmax(p.e, min.value)
 	p.e <- p.e/sum(p.e)
