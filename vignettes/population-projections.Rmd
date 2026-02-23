@@ -84,7 +84,7 @@ data_dir_reg <- file.path(data_dir, "bayesPopFINdata-main")
 
 ## National projections
 
-To project subnational total fertility rate (TFR) and life expectancy at birth ($e_0$) we will need probabilistic national projections of the corresponding country. Such projections, generated using the **bayesTFR** and **bayesLife** R packages, which align well with the United Nations projections published in the World Population Prospects can be downloaded from [our website](https://bayespop.csss.washington.edu/download) as follows:
+To project subnational total fertility rate (TFR) and life expectancy at birth ($e_0$) we will need probabilistic national projections of the corresponding country. Such projections, generated using the **bayesTFR** and **bayesLife** R packages, which align well with the United Nations projections published in the World Population Prospects can be downloaded from [our website](https://bayespop.csss.washington.edu/download/) as follows:
 
 ```{r eval = download_data, include = TRUE}
 options(timeout = 600)
@@ -132,7 +132,7 @@ nr_traj_pop <- 50
 
 # Total Fertility Rate
 
-The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/volumes/vol38/60/default.htm) and implemented in the **bayesTFR** package. It is based on the idea that TFR in subnational units closely follow the corresponding national projections. Thus, we base our projections on the probabilistic projections for Finland that approximate the United Nations' official projections from the [World Population Prospects 2024](https://population.un.org/wpp) (UN WPP 2024). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08).
+The probabilistic projection of subnational TFR is generated using the methodology by [Ševčíková et al. (2018)](https://www.demographic-research.org/articles/volume/38/60/) and implemented in the **bayesTFR** package. It is based on the idea that TFR in subnational units closely follow the corresponding national projections. Thus, we base our projections on the probabilistic projections for Finland that approximate the United Nations' official projections from the [World Population Prospects 2024](https://population.un.org/wpp) (UN WPP 2024). These projections which we downloaded in the previous step were generated using the methodology and software described in [Liu et al. (2023)](https://doi.org/10.18637/jss.v106.i08).
 
 The directory pointing to these national projections for all countries of the world is
 
@@ -250,9 +250,9 @@ The working directory now should contain a sub-directory "tfr" that contains a d
 
 # Life Expectancy at Birth
 
-The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://sciendo.com/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the Finnish $e_0$ which we generated to approximate the [UN WPP 2024](https://population.un.org/wpp) and which we downloaded previously. They were produced using the methodology of [Raftery et al. (2013)](http://link.springer.com/content/pdf/10.1007%2Fs13524-012-0193-x.pdf).
+The probabilistic projections of subnational life expectancy at birth ($e_0$) is generated using the methodology of [Ševčíková and Raftery (2021)](https://reference-global.com:443/article/10.2478/jos-2021-0027) which is implemented in the **bayesLife** package. Similarly to modeling subnational fertility, $e_0$ in subnational units can be also modeled by following closely the national projections, in our case the probabilistic projections of the Finnish $e_0$ which we generated to approximate the [UN WPP 2024](https://population.un.org/wpp) and which we downloaded previously. They were produced using the methodology of [Raftery et al. (2013)](https://link.springer.com/content/pdf/10.1007/s13524-012-0193-x.pdf).
 
-As in the national case, we first project female $e_0$. Then the male $e_0$ is projected using the gap model as described in [Raftery et al. (2014)](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf).
+As in the national case, we first project female $e_0$. Then the male $e_0$ is projected using the gap model as described in [Raftery et al. (2014)](https://www.demographic-research.org/volumes/vol30/27/30-27.pdf).
 
 The directory pointing to the national $e_0$ projections for all countries is
 
@@ -364,7 +364,7 @@ e0.trajectories.table(e0M_world_pred, "FIN")["2024", "median"]
 
 # Migration
 
-In this third step, we will generate probabilistic projection of net migration rates (NMR) for all regions, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical (BHM) model by [Azose and Raftery (2015)](http://link.springer.com/article/10.1007/s13524-015-0415-0).
+In this third step, we will generate probabilistic projection of net migration rates (NMR) for all regions, using the **bayesMig** package. First, we will use our example historical data (downloaded above) to estimate the Bayesian hierarchical (BHM) model by [Azose and Raftery (2015)](https://link.springer.com/article/10.1007/s13524-015-0415-0).
 
 The units in our historical estimates are the number of migrants per population. Here are the first few lines in that dataset:
 
@@ -783,19 +783,19 @@ plot(mean_mig_NMR, support_ratio_Kainuu["2050", ], xlab = "mean net migration",
 
 # References
 
-Azose, J.J. and Raftery, A.E. (2015). [Bayesian Probabilistic Projection of International Migration Rates](http://link.springer.com/article/10.1007/s13524-015-0415-0). Demography 52:1627-1650.
+Azose, J.J. and Raftery, A.E. (2015). [Bayesian Probabilistic Projection of International Migration Rates](https://link.springer.com/article/10.1007/s13524-015-0415-0). Demography 52:1627-1650.
 
 Liu, P.R., Ševčíková, H., and Raftery, A.E. (2023) [Probabilistic Estimation and Projection of the Annual Total Fertility Rate Accounting for Past Uncertainty](https://doi.org/10.18637/jss.v106.i08). Journal of Statistical Software, Vol. 106(8).
 
-Raftery, A.E., Chunn, J.L., Gerland, P. and Ševčíková , H. (2013). [Bayesian Probabilistic Projections of Life Expectancy for All Countries](http://link.springer.com/content/pdf/10.1007%2Fs13524-012-0193-x.pdf). Demography, 50:777-801.
+Raftery, A.E., Chunn, J.L., Gerland, P. and Ševčíková , H. (2013). [Bayesian Probabilistic Projections of Life Expectancy for All Countries](https://link.springer.com/content/pdf/10.1007/s13524-012-0193-x.pdf). Demography, 50:777-801.
 
-Raftery, A.E., Lalic, N. and Gerland, P. (2014). [Joint Probabilistic Projection of Female and Male Life Expectancy](http://www.demographic-research.org/volumes/vol30/27/30-27.pdf). Demographic Research, 30:795-822.
+Raftery, A.E., Lalic, N. and Gerland, P. (2014). [Joint Probabilistic Projection of Female and Male Life Expectancy](https://www.demographic-research.org/volumes/vol30/27/30-27.pdf). Demographic Research, 30:795-822.
 
 Ševčíková, H. and Raftery, A.E. (2016). [bayesPop: Probabilistic Population Projections](https://www.jstatsoft.org/article/view/v075i05). Journal of Statistical Software, Vol. 75(5).
 
-Ševčíková, H. and Raftery, A.E. (2021). [Probabilistic Projection of Subnational Life Expectancy](https://sciendo.com/article/10.2478/jos-2021-0027). Journal of Official Statistics, Vol. 37, no. 3, 591-610.
+Ševčíková, H. and Raftery, A.E. (2021). [Probabilistic Projection of Subnational Life Expectancy](https://reference-global.com:443/article/10.2478/jos-2021-0027). Journal of Official Statistics, Vol. 37, no. 3, 591-610.
 
-Ševčíková, H., Raftery, A.E. and Gerland, P. (2018). [Probabilistic projection of subnational total fertility rates](https://www.demographic-research.org/volumes/vol38/60/default.htm). Demographic Research, Vol. 38(60): 1843-1884.
+Ševčíková, H., Raftery, A.E. and Gerland, P. (2018). [Probabilistic projection of subnational total fertility rates](https://www.demographic-research.org/articles/volume/38/60/). Demographic Research, Vol. 38(60): 1843-1884.
 
 Ševčíková, H., Raymer J., Raftery, A. E. (2024). [Forecasting Net Migration By Age: The Flow-Difference Approach](https://arxiv.org/abs/2411.09878). arXiv:2411.09878.
 

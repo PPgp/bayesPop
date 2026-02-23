@@ -2614,7 +2614,7 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	MIGfdm <- as.double(c(inputs$MIG_FDMb0, inputs$MIG_FDMb1, inputs$MIG_FDMb1neg, 
 	                      inputs$MIG_FDMmin, inputs$MIG_FDMsrin, inputs$MIG_FDMsrout))
 	if(length(MIGfdm) < 6) MIGfdm <- rep(0, 6)
-	#stop("")
+
 	res <- .C("CCM", as.integer(observed), as.integer(!annual), as.integer(nproj), 
 	            as.numeric(migM), as.numeric(migF), nrow(migM), ncol(migM), as.integer(mig.type),
 	            as.numeric(migrateM), as.numeric(migrateF), as.integer(migratecodeM), 
@@ -2635,6 +2635,8 @@ StoPopProj <- function(npred, inputs, LT, asfr, mig.pred=NULL, mig.type=NULL, mi
 	    res$totp <- colSums(res$popm + res$popf)
 	}
 	
+	if(any(is.na(res$popm)) || any(is.na(res$popf)))
+	    stop("Population projections resulted in NA values. Check inputs.")
  	if(any(res$popm < 0)) warnings('Negative male population for ', country.name)
 	if(any(res$popf < 0)) warnings('Negative female population for ', country.name)
 	
