@@ -1,3 +1,7 @@
+12.0-2 (05/11/2026)
+------
+A bug in subnational FDM inputs fixed.
+
 12.0-1 (02/17/2026)
 ------
 Added vignette, co-authored with Aapo Hiilamo. It shows how to generate subnational 
