@@ -1,9 +1,9 @@
 ---
 title: "Subnational Probabilistic Population Projections"
 author: Hana Ševčíková, Aapo Hiilamo
-date: 2026-02-16
-output: rmarkdown::pdf_document
-#output: rmarkdown::html_vignette
+date: 2026-06-26
+#output: rmarkdown::pdf_document
+output: rmarkdown::html_vignette
 editor_options: 
   chunk_output_type: console
 ---
@@ -29,11 +29,11 @@ simulate_pop <- FALSE
 The **bayesPop** R package can be used to produce probabilistic population projections on a national as well as a subnational level.
 In this vignette we will show how **bayesPop** can be used in subnational settings, using annual single age (1x1) data. For instructions how to use **bayesPop** to generate national projections, see [Ševčíková and Raftery (2016)](https://www.jstatsoft.org/article/view/v075i05). This vignette is available as pdf (included in the package), as well as in [html format](https://bayespop.csss.washington.edu/bayesPop/vignettes/population-projections.html).
 
-We will use example data for 19 subnational (NUTS 2) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024.
+We will use example data for 19 subnational (NUTS 3) units in Finland to demonstrate the various functionalities. To briefly contextualise these data, the Finnish regions are responsible for organising health, social, and rescue services in the country (with the exception of the largest region, Uusimaa), making subnational population projections highly relevant for them. The median population is 180 thousand, with a range of 31 thousand to 1.8 million. All regions have seen falling fertility levels (nationally total fertility rate of 1.25 in 2024) and increasing life expectancy at birth (84.8 years for females and 79.7 years for males in 2024). There are substantial regional differences: the eastern regions of the country has lower life expectancy and fertility levels than the western part of the country. The map below shows the geographic location of the regions and its population in 2024, as well as their unique identifiers.
 
 
 <!-- Using a png version of the map -->
-<img src="finland_regions_pop_rescaled.png" style="width: 50%; display: block; margin: 0 auto">
+<img src="finland_regions_pop.png" style="width: 50%; display: block; margin: 0 auto">
 
 To organize our work, let's set up a working directory for all inputs and outputs:
 
@@ -74,7 +74,7 @@ unzip(repo_file, exdir = data_dir)
 unlink(repo_file)
 ```
 
-It creates a directory "bayesPopFINdata-main" which contains text files with among others total fertility rates ("tfr.txt"), sex-specific life expectancy at birth ("e0F.txt", "e0M.txt"), net migration rates ("mig_rates.txt"), net migration counts ("mig_counts.txt"), sex- and age-specific population ("popM.txt", "popF.txt"), sex- and age-specific mortality rates ("mxM.txt", "mxF.txt"), and percent age-specific fertility ("pasfr.txt"). The directory also contains the map of the regions shown above.
+It creates a directory "bayesPopFINdata-main" which contains text files with among others total fertility rates ("tfr.txt"), sex-specific life expectancy at birth ("e0F.txt", "e0M.txt"), net migration rates ("mig_rates.txt"), net migration counts ("mig_counts.txt"), sex- and age-specific population ("popM.txt", "popF.txt"), sex- and age-specific mortality rates ("mxM.txt", "mxF.txt"), and percent age-specific fertility ("pasfr.txt"). The directory also contains a map of the regions shown above.
 
 For the purpose of accessing these dataset, we create an object pointing to this directory:
 
@@ -158,7 +158,7 @@ tfr_subnat_file <- file.path(data_dir_reg, "tfr.txt")
 read.table(tfr_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
 ```
 
-It contains TFR for 19 Finnish regions, from 1990 to 2024. A unique identifier of the regions is given by the column "reg_code". The column "country_code" defines the corresponding country, here 246 for Finland. The column "include_code" specifies if the region should be included in the prediction (value 2) or not (value 0). Here, the last entry of the dataset corresponds to the national values and therefore has "include_code" of 0. Note that the data can contain missing values at the beginning or/and the end of the time series. In our case, no missing values are present.
+It contains TFR for 19 Finnish regions, from 1990 to 2025. A unique identifier of the regions is given by the column "reg_code". The column "country_code" defines the corresponding country, here 246 for Finland. The column "include_code" specifies if the region should be included in the prediction (value 2) or not (value 0). Here, the last entry of the dataset corresponds to the national values and therefore has "include_code" of 0. Note that the data can contain missing values at the beginning or/and the end of the time series. In our case, no missing values are present.
 
 The subnational TFR predictions will be stored in the sub-directory "tfr" of our working directory:
 
@@ -173,13 +173,13 @@ To launch the predictions, we use the function `tfr.predict.subnat()`:
 ```{r eval=simulate_comp, include=TRUE, results = FALSE}
 tfr_pred <- tfr.predict.subnat(countries = 246, sim.dir = world_dir_tfr, 
                                output.dir = dir_tfr, annual = TRUE, 
-                               start.year = 2025, end.year = 2050, 
+                               start.year = 2026, end.year = 2050, 
                                nr.traj = nr_traj_comp, my.tfr.file = tfr_subnat_file,
                                verbose = TRUE
                                )
 ```
 
-Here, we are directing the function to generate `r nr_traj_comp` trajectories of future annual TFR from 2025 until 2050 for regions found in the file given by argument `my.tfr.file`, that is, for regions that belong to country 246 (i.e. Finland). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
+Here, we are directing the function to generate `r nr_traj_comp` trajectories of future annual TFR from 2026 until 2050 for regions found in the file given by argument `my.tfr.file`, that is, for regions that belong to country 246 (i.e. Finland). Argument `annual` determines that the function expects annual subnational data, as oppose to 5-year data. Argument `sim.dir` points to the national projections, while argument `output.dir` determines where the results are to be stored.
 
 Since the `tfr.predict.subnat()` function allows to run predictions for multiple countries at once (given by the vector `countries`), the return value is a list with names corresponding to the country codes. Thus, to extract the list item for Finland, we do:
 
@@ -276,7 +276,7 @@ e0M_subnat_file <- file.path(data_dir_reg, "e0M.txt")
 read.table(e0F_subnat_file, sep= "\t", header = TRUE, check.names = FALSE) |> head()
 ```
 
-For each region, the files contain $e_0$ from 1992 through 2024. The meaning of the remaining columns (`reg_code`, `country_code`, `include_code`) is the same as in the case of TFR.
+For each region, the files contain $e_0$ from 1992 through 2025. The meaning of the remaining columns (`reg_code`, `country_code`, `include_code`) is the same as in the case of TFR.
 
 We set the directory for storing the subnational prediction of $e_0$ to "e0", located inside the main working directory:
 
@@ -288,13 +288,13 @@ Now we can launch the $e_0$ predictions:
 
 ```{r eval=simulate_comp, include=TRUE, results = FALSE}
 e0_pred <- e0.predict.subnat(countries = 246, sim.dir= world_dir_e0, output.dir = dir_e0,
-                             annual = TRUE, start.year = 2025, end.year = 2050, 
+                             annual = TRUE, start.year = 2026, end.year = 2050, 
                              nr.traj = nr_traj_comp, my.e0.file = e0F_subnat_file, 
                              predict.jmale = TRUE, my.e0M.file = e0M_subnat_file
                              )
 ```
 
-Here, we are generating `r nr_traj_comp` trajectories of annual future $e_0$ from 2025 until 2050 using data found in the file given by the `my.e0.file` argument, which in our case is female $e_0$. However, setting the argument `predict.jmale` to `TRUE`, we are directing the function to also predict male $e_0$ by applying the female-male gap model using the male $e_0$ found in the file given by the `my.e0M.file` argument.
+Here, we are generating `r nr_traj_comp` trajectories of annual future $e_0$ from 2026 until 2050 using data found in the file given by the `my.e0.file` argument, which in our case is female $e_0$. However, setting the argument `predict.jmale` to `TRUE`, we are directing the function to also predict male $e_0$ by applying the female-male gap model using the male $e_0$ found in the file given by the `my.e0M.file` argument.
 
 As in the TFR case, the resulting object from the above call is a list and we can extract the Finnish results by
 
@@ -331,7 +331,7 @@ This marginal distribution may suggest that crossovers between female and male $
 ```{r eval=TRUE, include=TRUE, fig.width = 7, fig.height = 4, fig.align='center'}
 par(mfrow = c(1,2))
 for (loc in c("Åland", "Lapland"))
-  e0.joint.plot(e0_pred_reg, loc, years = c(2025, 2035, 2050), 
+  e0.joint.plot(e0_pred_reg, loc, years = c(2026, 2035, 2050), 
                 xlim = c(75, 95), ylim = c(75, 95), nr.points = 100)
 ```
 
@@ -380,6 +380,9 @@ The methodology and the **bayesMig** package itself have been designed for a mod
 subset(mig_data, include_code != 2)[, 1:3]
 ```
 
+The column "last.observed" and optionally "first.observed" (here left out) determines the time span that should be used for estimation. We set it to 2021 for all regions in order to exclude increased in-migration due to the Ukrainian war.
+
+
 To estimate the model to derive region-level parameters, we will run Markov Chain Monte Carlo (MCMC) for which we set the number of iterations per chain, the thinning interval and the number of chains:
 
 ```{r eval=TRUE}
@@ -404,17 +407,17 @@ To launch the MCMCs with these settings, we use the function `run.mig.mcmc()` as
 mig_mcmc <- run.mig.mcmc(nr.chains = mig_nr_chains, iter = mig_iter, 
                          thin = mig_thin, output.dir = dir_mig, 
                          my.mig.file = mig_subnat_file,
-                         annual = TRUE, present.year = 2024,
-                         verbose.iter = 500, replace.output = TRUE)
+                         annual = TRUE, present.year = 2025,
+                         verbose.iter = 500)
 ```
 
 The function also accepts an optional argument `exclude.from.world`. This can be used in addition to the `include_code` column to explicitly specify additional locations to be excluded from influencing the global parameters. The function `get.countries.table(mig_mcmc)` can help to see the location codes. Locations excluded from influencing the global parameters would be sorted at the end of that list. In [Yu et al. (2023)](https://doi.org/10.1215/00703370-10772782) which generates population projections for all counties in the Washington State, all counties below population of 25,000 were passed to the `exclude.from.world` argument.
 
-An optional argument `start.year` could be used to limit the time span of the observed data used for the estimation. Here we use all available data from 1990 to 2024.
+An optional argument `start.year` could be used to limit the time span of the observed data used for the estimation, if the "first.observed" column is not supplied. Here we use all available data from 1990 to 2021, where 2021 is given by the "last.observed" column. Without that column, it would be given by the value of the `present.year` argument.
 
 Now various **bayesMig** functions can be used to explore the results of the estimation. For example, `mig.partraces.plot(mig_mcmc, burnin = 1000)` for plotting the traces of global parameters, or `mig.partraces.cs.plot` for traces of the state-specific parameters. See `?bayesMig` for more info.
 
-We will now use the MCMC results which are stored in `dir_mig` to generate future trajectories of NMR for each region from 2025 to 2050:
+We will now use the MCMC results which are stored in `dir_mig` to generate future trajectories of NMR for each region from 2026 to 2050:
 
 ```{r eval=simulate_comp, results = FALSE}
 mig_pred <- mig.predict(sim.dir = dir_mig, end.year = 2050, 
@@ -507,7 +510,7 @@ Now we generate future population sex- and age-specific trajectories for all reg
 pop_pred <- pop.predict.subnat(output.dir = dir_pop, 
                 locations = file_locs, default.country = 246, 
                 annual = TRUE, wpp.year = 2024, 
-                present.year = 2024, end.year = 2050,
+                present.year = 2025, end.year = 2050,
                 nr.traj = nr_traj_pop, verbose = TRUE, 
                 inputs = list(
                     popM = file.path(data_dir_reg, "popM.txt"),
@@ -523,7 +526,7 @@ pop_pred <- pop.predict.subnat(output.dir = dir_pop,
                     e0M.sim.dir = "joint_"
                   ),
                   mig.age.method = "rc", mig.is.rate = c(FALSE, TRUE), 
-                  keep.vital.events = TRUE, pasfr.ignore.phase2 = TRUE, replace=TRUE
+                  keep.vital.events = TRUE, pasfr.ignore.phase2 = TRUE
             )
 ```
 
@@ -592,11 +595,11 @@ Both functions accept an argument `pi` specifying the probability intervals to b
 
 ### Projections by age
 
-To view projections as a function of age, one would use the function `pop.byage.plot()`. Here is an example of comparing the projected age structure for 2050 with the observed age structure in 2024 for Uusimaa:
+To view projections as a function of age, one would use the function `pop.byage.plot()`. Here is an example of comparing the projected age structure for 2050 with the observed age structure in 2025 for Uusimaa:
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
 pop.byage.plot(pop_pred, "Uusimaa", year = 2050, nr.traj = 20)
-pop.byage.plot(pop_pred, "Uusimaa", year = 2024, add = TRUE, 
+pop.byage.plot(pop_pred, "Uusimaa", year = 2025, add = TRUE, 
                col = "blue", show.legend = FALSE)
 ```
 
@@ -611,7 +614,7 @@ Here too, one can use the argument `pi` to specify probability intervals, and us
 Functions to view probabilistic population pyramids are available. Here for example, comparing two years on proportional scale.
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
-pop.pyramid(pop_pred, "Kainuu", year = c(2050, 2024), proportion = TRUE)
+pop.pyramid(pop_pred, "Kainuu", year = c(2050, 2025), proportion = TRUE)
 ```
 
 ### Cohort projections
@@ -682,12 +685,12 @@ pop.byage.plot(pop_pred, expression = "log(Q2_F{})", nr.traj = 20, year = 2050,
 Similarly, one can use expressions for aggregated locations. Here, we'll show a few examples when using pre-defined functions. These can be used to apply expressions to the various dimensions of the basic components. For example, to compute the median age of women in childbearing ages, one would use the `pop.apply` function which applies the given function (here group median) to the age dimension. When applied to our aggregated object, one can use the ISO3166 character code for Finland as follows:
 
 ```{r eval = TRUE, fig.width = 6, fig.height = 4.5, fig.align='center'}
-expr <- "pop.apply(PFIN_F{10:54}, gmedian, cat = 10:55)"
+expr <- "pop.apply(PFIN_F{10:54}, gmedian1, cat = 10:55)"
 pop.trajectories.plot(pop_aggr, nr.traj = 20, expression = expr, 
                       main = "Median age of women in childbearing ages (Finland)")
 ```
 
-The `cat` argument to be passed to the `gmedian` function defines the brackets of the age categories. Note that in an 1x1 simulation, childbearing ages are 10-54, while in a 5x5 simulation it is 15-49. Similarly, the average age in Finland could be expressed as "pop.apply(PFIN{}, gmean, cat = 0:131)", or equivalently as "pop.apply(age.func1(PFIN{}), fun = sum) / PFIN".
+The `cat` argument to be passed to the `gmedian1` function defines the brackets of the age categories. Note that in an 1x1 simulation, childbearing ages are 10-54, while in a 5x5 simulation it is 15-49. Similarly, the average age in Finland could be expressed as "pop.apply(PFIN{}, gmean1, cat = 0:131)", or equivalently as "pop.apply(age.func1(PFIN{}), fun = sum) / PFIN".
 
 Regarding the latter expression, the `age.func1()` by default multiplies the middle of each age category with the result of its first argument. The `pop.apply()` function then sums along the age dimension.
 
@@ -697,9 +700,9 @@ An example of an indicator by age for Finland is age-specific fertility rate, he
 expr <- "F246_F{10:54}"
 pop.byage.plot(pop_aggr, nr.traj = 20, expression = expr, year = 2050,
                main = "Age-specific fertility (Finland)")
-pop.byage.plot(pop_aggr, expression = expr, year = 2024, add = TRUE, 
+pop.byage.plot(pop_aggr, expression = expr, year = 2025, add = TRUE, 
                col = "blue", show.legend = FALSE)
-legend("topright", legend = c(2050, 2024), col = c("red", "blue"), 
+legend("topright", legend = c(2050, 2025), col = c("red", "blue"), 
        lty = 1, bty = "n")
 ```
 

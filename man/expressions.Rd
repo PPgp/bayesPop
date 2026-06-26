@@ -57,16 +57,16 @@ While \code{\link{get.pop}} can be used to obtain results of a basic component, 
 \section{Pre-defined functions}{
 The following functions can be used within an expression:
 \itemize{
-	\item \code{gmedian(f, cat)} \cr
-	It gives a median for grouped data with frequencies \code{f} and categories \code{cat}. This function is to be used in combination with \code{apply} or \code{pop.apply} (see below) along the age dimension. For example, \cr
+	\item \code{gmedian(f, cat)}, \code{gmedian1(f, cat)} \cr
+	It gives a median for grouped data with frequencies \code{f} and categories \code{cat}. If \code{cat} is missing, \code{gmedian} uses all 5-year age groups, while \code{gmedian1} uses all one-year ages. This function is to be used in combination with \code{apply} or \code{pop.apply} (see below) along the age dimension. For example, \cr
 	\dQuote{apply(P380\{\}, c(1,3,4), gmedian, cats=seq(0, by=5, length=28))} \cr
-	is an expression for median age in Italy. (See \code{pop.apply} below for a simplified version.) 
+	is an expression for median age in Italy in a 5x5 simulation. (See \code{pop.apply} below for a simplified version.) 
 
-\item \code{gmean(f, cat)} \cr
-	Works like \code{gmedian} but gives the grouped mean.
+\item \code{gmean(f, cat)}, \code{gmean1(f, cat)} \cr
+	Works like \code{gmedian} and \code{gmedian1} but gives the grouped mean.
 	
-\item \code{age.func(data, fun="*")} \cr
-	This function applies \code{fun} to \code{data} and the corresponding age (the middle point of each age category). The default case would multiply data by the corresponding age. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
+\item \code{age.func(data, fun="*")}, \code{age.func1(data, fun="*")} \cr
+	This function applies \code{fun} to \code{data} and the corresponding age (the middle point of each age category). The default case would multiply data by the corresponding age. \code{age.func} should be used in a 5x5 simulation, while \code{age.func1} should be used in a 1x1 settings. As \code{gmedian}, it is to be used in combination with \code{apply} or \code{pop.apply}.
 
 \item \code{drop.age(data)} \cr
 	Drops the age dimension of the data. For example, if two basic components are combined where one is used within the \code{apply} function, the other will need to change its dimension in order to have conformable arrays. For example, \cr
@@ -74,7 +74,7 @@ The following functions can be used within an expression:
 	is an expression for the average age in Sweden. (See \code{pop.apply} below for a simplified version.)
 
 \item \code{pop.apply(data, fun, \dots, split.along=c("None", "age", "traj", "country"))} \cr
-	By default applies function \code{fun} to the age dimension of \code{data} and converts the result into the same format as returned by a basic component. This allows combining the \code{apply} function with other basic components without having to modify their dimensions. For example, \cr
+	By default applies function \code{fun} to the age dimension of \code{data} and converts the result into the same format as returned by a basic component. This allows combining the \code{apply} function with other basic components without having to modify their dimensions. For example in 5x5 prediction, \cr
 	\dQuote{pop.apply(age.func(P752\{\}), fun=sum) / P752} gives the average age in Sweden, or \cr
 	\dQuote{pop.apply(P380\{\}, gmedian, cats=seq(0, by=5, length=28))} gives the median age of Italy.
 	If \code{slice.along} is not \sQuote{None}, it can be used as an \code{apply} function where the data is sliced along one axis. 
@@ -83,9 +83,9 @@ The following functions can be used within an expression:
 	\dQuote{pop.combine(PIND\{\}, PIND, '/')} give population by age per total population in India, or \cr
 	\dQuote{pop.combine(BFR - DFR, GFR, '+', split.along='traj')} gives births minus deaths plus net migration in France. Here, \code{pop.combine} is necessary, because \sQuote{GFR} is a deterministic component and thus, has only one trajectory, whereas births and deaths are probabilistic.
 \item \code{age.index01(end)} \cr
-	Can be used with indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}.
+	Can be used in a 5x5 simulation with indicators \sQuote{S}, \sQuote{M}, \sQuote{Q} and \sQuote{E} only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is \code{end}. 
 \item \code{age.index05(end)} \cr
-	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}.
+	Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index \code{end}. For the use in a 5x5 simulation only.
 }
 There is also a help function available that generates an expression for the mean age of childbearing, see \code{\link{mac.expression}}.
 
