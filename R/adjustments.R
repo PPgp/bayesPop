@@ -324,9 +324,10 @@ pop.scale.prediction <- function(pop.pred, target.file, output.dir,
             }
             e[[traj.name]] <- res # replace the trajectory object in the environment
         }
-        # save adjusted trajectories
+        # save adjusted trajectories, using the same compression as the original file
         save(list = ls(e), envir = e,
-             file = file.path(adjoutdir, paste0('totpop_country', loc, '.rda')))
+             file = file.path(adjoutdir, paste0('totpop_country', loc, '.rda')),
+             compress = .get.rda.compression(file.path(srcoutdir, paste0('totpop_country', loc, '.rda'))))
         
         # recompute quantiles, means etc
         # totals
@@ -504,4 +505,14 @@ create.scaled.pop <- function(pop.pred, target.file,
     pop.stat[, shift := totshift * share][, simadj := pmax(0, sim - shift)][, shift := sim - simadj]
     
     return(pop.stat)
+}
+
+.get.rda.compression <- function(file) {
+    # determine the compression type of an .rda file from its first bytes, 
+    # in the form accepted by the compress argument of save()
+    magic <- readBin(file, "raw", 5)
+    if(identical(magic[1:2], as.raw(c(0x1f, 0x8b)))) return("gzip")
+    if(identical(magic[1:3], charToRaw("BZh"))) return("bzip2")
+    if(identical(magic[1:5], as.raw(c(0xfd, 0x37, 0x7a, 0x58, 0x5a)))) return("xz")
+    return(FALSE)
 }

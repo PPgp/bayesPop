@@ -20,7 +20,7 @@ pop.aggregate <- function(pop.pred, regions, input.type=c('country', 'region'),
 	if(method == 'country') 
 		aggr.pred <- pop.aggregate.countries(pop.pred, regions, name, verbose=verbose, ...)
 	if(method == 'region')
-		aggr.pred <- pop.aggregate.regional(pop.pred, regions, name, inputs=inputs, verbose=verbose)
+		aggr.pred <- pop.aggregate.regional(pop.pred, regions, name, inputs=inputs, verbose=verbose, ...)
 	invisible(get.pop.aggregation(pop.pred=pop.pred, name=name))
 }
 
@@ -47,7 +47,7 @@ get.countries.for.region <- function(region, pop.pred) {
 
 pop.aggregate.regional <- function(pop.pred, regions, name,
 						inputs=list(e0F.sim.dir=NULL, e0M.sim.dir='joint_', tfr.sim.dir=NULL), 
-						verbose=FALSE) {
+						verbose=FALSE, ...) {
 	inp <- load.inputs(pop.pred$function.inputs, pop.pred$inputs$start.year, pop.pred$inputs$present.year, pop.pred$inputs$end.year, 
 								pop.pred$wpp.year, verbose=verbose)
 	for (item in c('POPm0', 'POPf0', 'MXm', 'MXf', 'MIGm', 'MIGf', 'SRB', 'PASFR', 'MIGtype'))
@@ -109,7 +109,7 @@ pop.aggregate.regional <- function(pop.pred, regions, name,
 	outdir <- gsub('predictions', paste('aggregations', name, sep='_'), pop.output.directory(pop.pred))
 	if(file.exists(outdir)) unlink(outdir, recursive=TRUE)
 	dir.create(outdir, recursive=TRUE)
-	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose)
+	aggr.pred <- do.pop.predict(regions, inp=inp, outdir=outdir, nr.traj=pop.pred$nr.traj, ages=pop.pred$ages, verbose=verbose, ...)
 	aggr.pred <- .cleanup.pop.before.save(aggr.pred, remove.cache=TRUE)
 	aggr.pred$aggregation.method <- 'region'
 	aggr.pred$aggregated.countries <- aggregated.countries
@@ -249,7 +249,7 @@ split.pop05 <- function(dat) {
 
 pop.aggregate.countries <- function(pop.pred, regions, name, 
                                     use.kannisto = TRUE, keep.vital.events = NULL,
-                                    verbose=verbose, adjust = FALSE, ...) {
+                                    verbose=verbose, adjust = FALSE, compress.trajectories = FALSE, ...) {
 	if(verbose) cat('\nAggregating using countries as inputs.')
 	nreg <- length(regions)
 	quantiles.to.keep <- as.numeric(dimnames(pop.pred$quantiles)[[2]])
@@ -437,7 +437,7 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			}
 		}
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
-			 file = file.path(outdir, paste0('totpop_country', id, '.rda')))
+			 file = file.path(outdir, paste0('totpop_country', id, '.rda')), compress = compress.trajectories)
 		if(!no.vital.events) {
 		    popfwprev <- array(0, c(max.lage.fert, dim(totpf)[2]+1, dim(totpf)[3]))
 		    popfwprev[,1,] <- aggrobs[["female"]][fert.age.idx, prev.year]
@@ -497,7 +497,8 @@ pop.aggregate.countries <- function(pop.pred, regions, name,
 			})
 			save(btm, btf, deathsm, deathsf, mxm, mxf, migm, migf, asfert, pasfert,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, mxm.hch, mxf.hch,
-				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')))
+				observed, file=file.path(outdir, paste0('vital_events_country', id, '.rda')), 
+				compress = compress.trajectories)
 		}
 		#stop("")
 		quant[id.idx,,] = apply(totp, 1, quantile, quantiles.to.keep, na.rm = TRUE)

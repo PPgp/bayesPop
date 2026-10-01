@@ -101,7 +101,8 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
 							fixed.pasfr=FALSE, function.inputs=NULL, pasfr.ignore.phase2 = FALSE, verbose=FALSE, 
-							parallel = FALSE, nr.nodes = NULL, checkpoint.interval = 300, ...) {
+							parallel = FALSE, nr.nodes = NULL, checkpoint.interval = 300, 
+							compress.trajectories = FALSE, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 
@@ -151,7 +152,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 	exporting.objects <- c("country.codes", "countries.idx", "UNlocations", "inp", "inp.to.save",
 	                       "present.and.proj.years.pop", "present.and.proj.years", "keep.vital.events",
 	                       "ages", "nages", "fixed.mx", "fixed.pasfr", "pasfr.ignore.phase2", "verbose", 
-	                       "nquant", "quantiles.to.keep", "ncountries")
+	                       "nquant", "quantiles.to.keep", "ncountries", "compress.trajectories")
 
 	
 	# prediction function
@@ -335,13 +336,13 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		}
 		trajectory.indices <- inpc$trajectory.indices
 		save(totp, totpm, totpf, totp.hch, totpm.hch, totpf.hch, trajectory.indices,
-			 file = file.path(outdir, paste0('totpop_country', country, '.rda')))
+			 file = file.path(outdir, paste0('totpop_country', country, '.rda')), compress = compress.trajectories)
 		if(keep.vital.events) 
 			save(btm, btf, deathsm, deathsf, asfert, pasfert, mxm, mxf, migm, migf,
 				btm.hch, btf.hch, deathsm.hch, deathsf.hch, asfert.hch, pasfert.hch, 
 				mxm.hch, mxf.hch, 
 				observed,
-					file=file.path(outdir, paste0('vital_events_country', country, '.rda')))
+					file=file.path(outdir, paste0('vital_events_country', country, '.rda')), compress = compress.trajectories)
 		
 		res <- list()
 		within(res, {

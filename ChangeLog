@@ -7,6 +7,11 @@ and written atomically. This speeds up large (especially annual) projections con
 pop.predict with countries = NA also re-runs countries that were not finished 
 in an existing prediction (e.g. when resuming an interrupted run from a checkpoint).
 
+Trajectory files (totpop_country*.rda, vital_events_country*.rda) are saved uncompressed 
+by default, which makes saving and loading them much faster for about 10-25% more disk space. 
+Use compress.trajectories = TRUE in pop.predict to compress them. The same applies to 
+pop.aggregate. pop.scale.prediction uses the compression of the original trajectory files.
+
 12.0-3 (06/26/2026)
 ------
 Vignette updated to data up to 2025. 
