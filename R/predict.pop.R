@@ -73,8 +73,11 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 	} else pop.cleanup.cache(pred)
 	if(!is.null(countries) && is.na(countries[1])) { # all countries that are not included in the existing prediction
 		all.countries <- intersect(unique(inp$POPm0[,'country_code']), UNcountries())
-		country.codes <- if(!prediction.exist) all.countries
-						else all.countries[!is.element(all.countries, pred$countries[,'code'])]
+		if(prediction.exist) {
+			# countries with all quantiles missing were not finished, e.g. if the run was interrupted after a checkpoint
+			finished <- !apply(is.na(pred$quantiles), 1, all)
+			country.codes <- all.countries[!is.element(all.countries, pred$countries[finished, 'code'])]
+		} else country.codes <- all.countries
 	} else {
 		if(!is.null(countries)) {
 			if (is.character(countries)) { # at least one of the codes is a character string
@@ -98,7 +101,7 @@ pop.predict <- function(end.year=2100, start.year=1950, present.year=2020, wpp.y
 
 do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL, keep.vital.events=FALSE, fixed.mx=FALSE, 
 							fixed.pasfr=FALSE, function.inputs=NULL, pasfr.ignore.phase2 = FALSE, verbose=FALSE, 
-							parallel = FALSE, nr.nodes = NULL, ...) {
+							parallel = FALSE, nr.nodes = NULL, checkpoint.interval = 300, ...) {
 	not.valid.countries.idx <- c()
 	countries.idx <- rep(NA, length(country.codes))
 
@@ -377,7 +380,7 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
 		})
     } # end of predict.one.country
     
-    update.results <- function(cidx, res, bayesPop.prediction) {
+    update.results <- function(cidx, res, bayesPop.prediction, do.save = TRUE, final = TRUE) {
         if(length(cidx) == 1 && length(res) > 1) res <- list(res)
         migr.modified <- FALSE
         remove <- c()
@@ -452,7 +455,8 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
                 bayesPop.prediction$countries <- bayesPop.prediction$countries[-idx.in.pred,, drop = FALSE]
             }
         }
-        save(bayesPop.prediction, file=prediction.file)
+        # intermediate checkpoints are saved uncompressed as it is much faster
+        if(do.save) .save.pop.prediction(bayesPop.prediction, prediction.file, compress = final)
         return(bayesPop.prediction)
     } # end of updating result
     
@@ -489,13 +493,28 @@ do.pop.predict <- function(country.codes, inp, outdir, nr.traj, ages, pred=NULL,
         stopCluster(cl)
         bayesPop.prediction <- update.results(1:ncountries, cntry.res, bayesPop.prediction)
     } else {
+        # save results after the first and last country and otherwise in intervals given by checkpoint.interval (in seconds)
+        last.save <- Sys.time()
         for(cidx in 1:ncountries) {
             cntry.res <- predict.one.country(cidx, nr.traj, nr_project)
-            bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction)
+            final <- cidx == ncountries
+            do.save <- final || cidx == 1 || 
+                difftime(Sys.time(), last.save, units = "secs") >= checkpoint.interval
+            bayesPop.prediction <- update.results(cidx, cntry.res, bayesPop.prediction, 
+                                                  do.save = do.save, final = final)
+            if(do.save) last.save <- Sys.time()
         }
 	} 
 	cat('\nPrediction stored into', outdir, '\n')
 	return(bayesPop.prediction)
+}
+
+.save.pop.prediction <- function(bayesPop.prediction, file, compress = TRUE) {
+    # save into a temporary file first, so that a valid prediction file exists even if the process is killed while saving
+    tmp.file <- paste0(file, ".tmp")
+    save(bayesPop.prediction, file = tmp.file, compress = compress)
+    if(!file.rename(tmp.file, file)) 
+        stop("Unable to rename ", tmp.file, " to ", file)
 }
 
 read.pop.file <- function(file, ...) 
