@@ -24,7 +24,7 @@ write.scaled.pop(pop.pred, target.file,
 \arguments{
   \item{pop.pred}{Object of class \code{\link{bayesPop.prediction}} containing population projections to be scaled.}
   \item{target.file}{Comma-delimited file containing the summary statistics of the aggregated targets. For example, if locations in \code{pop.pred} are states, this file would contain the summary statistics for the corresponding country. 
-  It is expected to have the same format as a file created with \code{\link{write.pop.projection.summary}(what = 'popsexage')}. That is, it should have the following columns: \code{country_code} (unique identifier of the aggregated locations), \code{sex} (either \dQuote{male} or \dQuote{female}), \code{age} (values from 0 to 130), columns for each year or time period.  Optionally, column \code{variant} can be present.
+  It is expected to have the same format as a file created with \code{\link{write.pop.projection.summary}(what = 'popsexage')}. That is, it should have the following columns: \code{country_code} (unique identifier of the aggregated locations), \code{sex} (either \dQuote{male} or \dQuote{female}), \code{age} (starting age of the age groups, i.e. 0 to 130, or age groups as written by \code{\link{write.pop.projection.summary}}, e.g. \dQuote{0-4}, \dQuote{130+} for a 5-year projection), columns for each year or time period.  Optionally, column \code{variant} can be present.
 }
   \item{output.dir}{Directory to write the scaled projection into.}
   \item{target.code}{If the \code{target.file} contains more than one aggregated location, this argument gives the code of the location to use.

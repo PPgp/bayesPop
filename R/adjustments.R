@@ -197,7 +197,7 @@ tpop.sex <- function(sex, countries, sum.over.ages=TRUE, ages=NULL, prediction.o
 	nage <- length(unique(dataset$age))
 	if(is.null(ages)) ages <- as.character(seq(0,100, by=by))
 	age.vector <- as.character(dataset$age[1:nage])
-	if(!annual) {
+	if(!annual && any(grepl('-', age.vector))) { # age groups given as ranges, e.g. 0-4; take the starting age
 	    age.vector <- unlist(strsplit(gsub('\\+', '-130', age.vector), '-'))
 	    age.vector <- age.vector[seq(1,length(age.vector), by=2)]
 	} else age.vector <- gsub('\\+', '', age.vector)
@@ -416,8 +416,8 @@ create.scaled.pop <- function(pop.pred, target.file,
     if(any(duplicated(agdat[, c("sex", "age"), with = FALSE])))
         stop("The target.file contains duplicates of sex and age combinations.")
     
-    # remove + from age and convert to numeric
-    if(pop.pred$annual) agdat[, age := as.integer(gsub("+", "", age, fixed = TRUE))]
+    # convert age to numeric starting age of the age group, e.g. 100+ -> 100, 0-4 -> 0
+    if(is.character(agdat$age)) agdat[, age := as.integer(sub("[-+].*$", "", age))]
     
     # make it a long format
     year.cols <- grep('^[0-9]{4}', colnames(agdat), value = TRUE)
