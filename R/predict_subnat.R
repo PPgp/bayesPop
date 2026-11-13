@@ -327,7 +327,7 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
                                   in_sex_ratio = 0.5, out_sex_ratio = 0.5, min = if(annual) 0.02 else 0.2)
       for(fdmvar in names(fdmMIGtype.names)){
         default.value <- fdmMIGtype.defaults[[fdmMIGtype.names[[fdmvar]]]]
-        default.values <- if(fdmvar == "min") pmin(default.value, MIGtype[["MigFDMb0"]]/10) else rep(default.value, nrow(MIGtype))
+        default.values <- if(fdmMIGtype.names[[fdmvar]] == "min") pmin(default.value, MIGtype[["MigFDMb0"]]/10) else rep(default.value, nrow(MIGtype))
         if(fdmvar %in% colnames(MIGtype)){
           if(any((fdm.na <- is.na(MIGtype[[fdmvar]]))))  # NAs can appear if running for a different wpp.year than 2024 (due to merging) and there is a mismatch in countries between the two revisions
             MIGtype[[fdmvar]][fdm.na] <- default.values[fdm.na]
