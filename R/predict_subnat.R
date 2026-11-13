@@ -331,7 +331,10 @@ load.subnat.inputs <- function(inputs, start.year, present.year, end.year, wpp.y
         if(fdmvar %in% colnames(MIGtype)){
           if(any((fdm.na <- is.na(MIGtype[[fdmvar]]))))  # NAs can appear if running for a different wpp.year than 2024 (due to merging) and there is a mismatch in countries between the two revisions
             MIGtype[[fdmvar]][fdm.na] <- default.values[fdm.na]
-        } else MIGtype[[fdmvar]] <- default.values
+        } else {
+          if(fdmvar == "MigFDMb1neg" && "MigFDMb1" %in% colnames(MIGtype)) MIGtype[[fdmvar]] <- MIGtype[["MigFDMb1"]] # if b1neg is missing, use b1
+          else MIGtype[[fdmvar]] <- default.values
+        }
         mig.rc.inout <- merge(mig.rc.inout, MIGtype[, c("country_code", fdmvar)], by = "country_code")
         setnames(mig.rc.inout, fdmvar, fdmMIGtype.names[[fdmvar]])
       }

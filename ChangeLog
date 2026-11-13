@@ -14,6 +14,10 @@ pop.aggregate. pop.scale.prediction uses the compression of the original traject
 
 Bug in pop.scale.prediction and write.scaled.pop for 5-year projections fixed.
 
+In pop.predict.subnat with an FDM migration method, if the patterns file contains MigFDMb1 
+but not MigFDMb1neg, MigFDMb1 is used for negative net migration (consistent with pop.predict). 
+Previously the default of 0.5 was used.
+
 12.0-3 (06/26/2026)
 ------
 Vignette updated to data up to 2025. 
