@@ -2,7 +2,7 @@ Package: bayesPop
 Type: Package
 Title: Probabilistic Population Projection
 Version: 12.0-4
-Date: 2026-10-01
+Date: 2026-11-14
 Authors@R: c(person(given = "Hana",
                       family = "Sevcikova",
                       role = c("aut", "cre"),
