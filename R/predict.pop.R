@@ -1130,7 +1130,7 @@ migration.totals2age <- function(df, ages = NULL, annual = FALSE, time.periods =
             migiotmp[, `:=`(totmig = as.double(totmig), slope = beta1)]
             migiotmp[totmig < 0, `:=`(totmig = totmig * out_sex_factor, slope = beta1neg)]
             migiotmp[totmig > 0, `:=`(totmig = totmig *  in_sex_factor)]
-            migiotmp[, IM := pmax(totpop * beta0 + slope * totmig, totpop * min, totmig + min * pop)][, OM := IM - totmig] # in- and out-migration totals over sexes
+            migiotmp[, IM := pmax(totpop * beta0 + slope * totmig, totpop * min, totmig + min * totpop)][, OM := IM - totmig] # in- and out-migration totals over sexes
             migiotmp[, `:=`(rxstar_in = `in`, rxstar_out = out)]
             if(method == "fdmp")
                 migiotmp[, `:=`(rxstar_in = rxstar_in * popglob, rxstar_out = rxstar_out * pop)] # weight by population

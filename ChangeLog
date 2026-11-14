@@ -23,6 +23,11 @@ cannot be taken from the default country, its default value is min(0.02, MigFDMb
 for annual and min(0.2, MigFDMb0/10) for 5-year projections, consistent with pop.predict. 
 Previously, 0.02 and 0.2, respectively, was used.
 
+Bug fixed in disaggregating observed migration counts by age with the FDM methods: the lower bound 
+of the in-migration total (net migration plus MigFDMmin times population) used the age-specific 
+instead of the total population. Thus, if this bound was reached, the age-specific migration 
+did not sum to the total net migration. The projection (C code) was not affected.
+
 12.0-3 (06/26/2026)
 ------
 Vignette updated to data up to 2025. 
