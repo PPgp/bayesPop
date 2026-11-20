@@ -1,5 +1,6 @@
 prepare.inputs.for.pasfr.projection <- function(inputs = NULL, present.year = 2020, end.year = 2100, 
-                                                wpp.year = 2019, annual = FALSE, trajectories = FALSE, verbose = FALSE) {
+                                                wpp.year = 2019, annual = FALSE, trajectories = FALSE, 
+                                                stat = "median", verbose = FALSE) {
     bayesTFR:::load.bdem.dataset('UNlocations', wpp.year, envir=globalenv(), verbose = verbose)
     observed <- list()
     
@@ -34,8 +35,9 @@ prepare.inputs.for.pasfr.projection <- function(inputs = NULL, present.year = 20
             TFRpred$year <- as.integer(substr(TFRpred$year, 1,4))+3
             TFRpred.sub <- TFRpred[TFRpred$year %in% c(obs.years, proj.years),]
         }
-        # in case there are more trajectories and aggregated result is required, get the median
-        TFRpred <- if(!trajectories) aggregate(value ~ year + country_code, TFRpred.sub, median) else TFRpred.sub 
+        # in case there are more trajectories and aggregated result is required, get the median (or mean)
+        TFRpred <- if(!trajectories) aggregate(value ~ year + country_code, TFRpred.sub, 
+                                               if(stat == "mean") mean else median) else TFRpred.sub 
         #TFRpred <- aggregate(formula("value ~ year + country_code"), TFRpred, median) # using formula to trick the CRAN check
         TFRpred <- TFRpred[order(TFRpred$year),]
         country.table <- unique(merge(TFRpred[,'country_code', drop=FALSE], 
@@ -66,13 +68,15 @@ prepare.inputs.for.pasfr.projection <- function(inputs = NULL, present.year = 20
 
 project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100, 
                           wpp.year = 2019, annual = FALSE, nr.est.points = if(annual) 15 else 3,
-                          digits = 2, out.file.name = "percentASFR.txt", verbose = FALSE) {
+                          stat = c("median", "mean"), digits = 2, out.file.name = "percentASFR.txt", verbose = FALSE) {
   # Generate PASFR for given TFR using the kantorova.pasfr method.
   # This function allows to generate PASFR outside of a bayesPop simulation.
   # Results are written into a file given by out.file.name.
   # ########
     
-    inp <- prepare.inputs.for.pasfr.projection(inputs, present.year, end.year, wpp.year, annual, verbose = verbose)
+    stat <- match.arg(stat)
+    inp <- prepare.inputs.for.pasfr.projection(inputs, present.year, end.year, wpp.year, annual, 
+                                               stat = stat, verbose = verbose)
     
     # iterate over countries
     resdf <- with(inp, {
@@ -87,7 +91,8 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
         country <- country.table[icountry,]
         if (!is.data.frame(TFRpred)) {
             country.obj <- get.country.object(country$code, TFRpred$mcmc.set$meta)
-            country.medians.TFRpred <- bayesTFR::get.median.from.prediction(TFRpred, country.obj$index, country.obj$code)[-1]
+            country.medians.TFRpred <- if(stat == "mean") bayesTFR::get.mean.from.prediction(TFRpred, country.obj$index, country.obj$code)[-1]
+                                       else bayesTFR::get.median.from.prediction(TFRpred, country.obj$index, country.obj$code)[-1]
             country.obs.tfr <- bayesTFR:::get.tfr.reconstructed(TFRpred$tfr_matrix_reconstructed, TFRpred$mcmc.set$meta)
             country.obs.TFRpred <- country.obs.tfr[1:if(!is.null(TFRpred$present.year.index)) TFRpred$present.year.index else nrow(country.obs.tfr),country.obj$index]
             country.tfr <- c(country.obs.TFRpred, country.medians.TFRpred)
@@ -118,7 +123,7 @@ project.pasfr <- function(inputs = NULL, present.year = 2020, end.year = 2100,
                 country.inputs$observed$PASFR <- country.inputs$observed$PASFR[, !colnames(country.inputs$observed$PASFR) %in% this.proj.periods]
             }
         }
-        # compute pasfr for the median TFR
+        # compute pasfr for the median (or mean) TFR
         pasfr <- kantorova.pasfr(country.tfr, country.inputs, norms = kant$PASFRnorms, proj.years = this.proj.years, 
                                 tfr.med = country.tfr[length(country.tfr)], annual = annual, nr.est.points = nr.est.points)
         # as percentage

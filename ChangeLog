@@ -1,4 +1,10 @@
-12.0-4 (10/01/2026)
+12.0-5 (11/20/2026)
+------
+New argument 'stat' in project.pasfr allows to project PASFR for the mean TFR 
+instead of the median.
+
+
+12.0-4 (11/14/2026)
 ------
 pop.predict saves the prediction object as a checkpoint only every checkpoint.interval 
 seconds (default 300) instead of after every country. Intermediate saves are uncompressed 

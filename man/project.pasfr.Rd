@@ -11,7 +11,8 @@ The projections of percent age-specific fertility rate (PASFR) is normally compu
 \usage{
 project.pasfr(inputs = NULL, present.year = 2020, end.year = 2100, 
     wpp.year = 2019, annual = FALSE, nr.est.points = if(annual) 15 else 3,
-    digits = 2, out.file.name = "percentASFR.txt", verbose = FALSE)
+    stat = c("median", "mean"), digits = 2, out.file.name = "percentASFR.txt", 
+    verbose = FALSE)
     
 project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL, 
     present.year = 2020, end.year = 2100, wpp.year = 2019, 
@@ -26,6 +27,7 @@ project.pasfr.traj(inputs = NULL, countries = NULL, nr.traj = NULL,
   \item{wpp.year}{Year for which WPP data is used if one of the \code{inputs} components is left out.}
   \item{annual}{Logical that should be \code{TRUE} if the provided data on TFR and PASFR are annual-based data.}
   \item{nr.est.points}{Number of time points to be used for estimating the continuation of the observed PASFR trend. By default it is 15 years, corresponding to three time points for 5-year data.}
+  \item{stat}{Character determining which summary statistic of the TFR trajectories should be used in \code{project.pasfr}, either \dQuote{median} (default) or \dQuote{mean}. It is only relevant if the TFR input contains more than one trajectory.}
   \item{digits}{Number of decimal places in the results.}
   \item{out.file.name}{Name of the resulting file. If \code{NULL} nothing is written.}
   \item{verbose}{Logical switching verbose messages on and off.}
@@ -39,7 +41,7 @@ If observed PASFR is given (in \code{inputs$pasfr}), it is a tab-separated file 
 
 In addition, if the present year differs by country, the \code{inputs} list accepts the entry \code{last.observed}, which is a tab-separated file with columns \dQuote{country_code} and \dQuote{last.observed}. It can contain the year of the last observed time period for each country. 
 
-In the \code{project.pasfr} function, if the TFR input (given either as a long file or as a simulation directory), contains more than one trajectory, the median is derived over the trajectories for each time period. Then, PASFR corresponding to this median is projected using the method from Sevcikova et al (2016).
+In the \code{project.pasfr} function, if the TFR input (given either as a long file or as a simulation directory), contains more than one trajectory, the median (or the mean if \code{stat = "mean"}) is derived over the trajectories for each time period. Then, PASFR corresponding to this summary TFR is projected using the method from Sevcikova et al (2016).
 
 For \code{project.pasfr.traj}, the PASFR is projected for single trajectories of TFR.
 }
