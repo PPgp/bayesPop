@@ -1749,7 +1749,22 @@ compute.pasfr.global.norms <- function(inputs) {
 	return(result)
 }
 
-kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE, 
+get.pasfr.phase3.findfct <- function() {
+    # Function for finding the end of Phase II (i.e. start of Phase III - 1) used in the PASFR projection.
+    # Option "PASFRphase3findfct" takes precedence; otherwise use the same option as bayesTFR
+    # ("TFRphase3findfct"); default is bayesTFR's find.lambda.for.one.country.
+    # It is called as fct(tfr, T_end, annual = annual) and should return the index of the end of Phase II
+    # (T_end if Phase III has not started).
+    fct <- getOption("PASFRphase3findfct", getOption("TFRphase3findfct", NULL))
+    if(is.null(fct)) return(bayesTFR:::find.lambda.for.one.country)
+    if(is.character(fct)) {
+        fct <- if(exists(fct, mode = "function", envir = globalenv())) get(fct, mode = "function", envir = globalenv())
+                else get(fct, mode = "function", envir = asNamespace("bayesTFR"))
+    }
+    return(fct)
+}
+
+kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FALSE,
                             nr.est.points = if(annual) 15 else 3, ignore.phase2 = FALSE) {
 	logit <- function(x) log(x/(1-x))
 	inv.logit <- function(x) exp(x)/(1+exp(x))
@@ -1792,7 +1807,7 @@ kantorova.pasfr <- function(tfr, inputs, norms, proj.years, tfr.med, annual = FA
 	years.long <- c(years, seq(years[lyears]+by, by=by, length=75/by)) # up to 2175
 	tobs <- lyears - length(proj.years)
 	end.year <- years[lyears]
-	end.phase2 <- if(ignore.phase2) 0 else bayesTFR:::find.lambda.for.one.country(tfr, lyears, annual = annual)
+	end.phase2 <- if(ignore.phase2) 0 else do.call(get.pasfr.phase3.findfct(), list(tfr, lyears, annual = annual))
 	start.phase3 <- end.phase2 + 1
 	if(start.phase3 > lyears) { # Phase 3 not observed until the end of projection (Case 2)
 		if(tfr[lyears] > 1.8) { # regress the last 20 years to approximate start of Phase 3

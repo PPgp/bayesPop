@@ -43,6 +43,8 @@ In addition, if the present year differs by country, the \code{inputs} list acce
 
 In the \code{project.pasfr} function, if the TFR input (given either as a long file or as a simulation directory), contains more than one trajectory, the median (or the mean if \code{stat = "mean"}) is derived over the trajectories for each time period. Then, PASFR corresponding to this summary TFR is projected using the method from Sevcikova et al (2016).
 
+The start of Phase III (needed by the PASFR projection method) is by default determined using the same rule as in \pkg{bayesTFR}. A different rule can be given via the option \code{PASFRphase3findfct}. If it is not set, the \pkg{bayesTFR} option \code{TFRphase3findfct} is used, if set. The option value is a function or its name. It is called as \code{fct(tfr, T_end, annual = annual)} where \code{tfr} is the vector of observed and projected TFR (named by years), and \code{T_end} is its length. It should return the index of the end of Phase II, i.e. the time period before the start of Phase III, or \code{T_end} if Phase III has not started. E.g. \code{options(PASFRphase3findfct = "my.phase3.fct")}. The same rule applies to PASFR projected in \code{\link{pop.predict}}.
+
 For \code{project.pasfr.traj}, the PASFR is projected for single trajectories of TFR.
 }
 

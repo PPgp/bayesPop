@@ -3,6 +3,10 @@
 New argument 'stat' in project.pasfr allows to project PASFR for the mean TFR 
 instead of the median.
 
+The function for finding the start of Phase III in the PASFR projection can be
+changed via options("PASFRphase3findfct"). If not set, the bayesTFR option
+"TFRphase3findfct" is used, if set.
+
 
 12.0-4 (11/14/2026)
 ------
